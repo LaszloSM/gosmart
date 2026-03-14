@@ -1,0 +1,675 @@
+openapi: 3.1.0
+info:
+  title: GoSmart API
+  version: 1.0.0
+  description: |
+    REST API for GoSmart — universal transit card with AI routing.
+    Base URL: https://api.gosmart.app/v1
+
+servers:
+  - url: https://api.gosmart.app/v1
+    description: Production
+  - url: http://localhost:3000/v1
+    description: Local development
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ── Auth ─────────────────────────────────────────────────────────────────
+    AuthRequest:
+      type: object
+      required: [phone]
+      properties:
+        phone:
+          type: string
+          example: "+15550001234"
+        email:
+          type: string
+          example: "user@example.com"
+        method:
+          type: string
+          enum: [sms, email]
+          default: sms
+
+    AuthVerifyRequest:
+      type: object
+      required: [phone, code]
+      properties:
+        phone:
+          type: string
+          example: "+15550001234"
+        code:
+          type: string
+          example: "123456"
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refresh_token:
+          type: string
+        expires_in:
+          type: integer
+          example: 3600
+        user:
+          $ref: '#/components/schemas/User'
+
+    # ── User ─────────────────────────────────────────────────────────────────
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        name:
+          type: string
+          example: "Muhammad Ali"
+        phone:
+          type: string
+          example: "+15550001234"
+        email:
+          type: string
+          example: "user@example.com"
+        avatar_url:
+          type: string
+          nullable: true
+        eco_points:
+          type: integer
+          example: 1240
+        created_at:
+          type: string
+          format: date-time
+
+    # ── Card ─────────────────────────────────────────────────────────────────
+    Card:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        number_masked:
+          type: string
+          example: "•••• •••• •••• 4242"
+        balance:
+          type: number
+          format: float
+          example: 100.00
+        currency:
+          type: string
+          example: "USD"
+        status:
+          type: string
+          enum: [active, locked, suspended, lost]
+        expires_at:
+          type: string
+          example: "2028-12"
+        nfc_enabled:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    BalanceResponse:
+      type: object
+      properties:
+        card_id:
+          type: string
+          format: uuid
+        balance:
+          type: number
+          example: 100.00
+        currency:
+          type: string
+          example: "USD"
+        last_updated:
+          type: string
+          format: date-time
+
+    RechargeRequest:
+      type: object
+      required: [amount, payment_method_id]
+      properties:
+        amount:
+          type: number
+          example: 20.00
+        currency:
+          type: string
+          default: "USD"
+        payment_method_id:
+          type: string
+          example: "pm_1234abcd"
+
+    RechargeResponse:
+      type: object
+      properties:
+        transaction_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [success, failed, pending]
+        new_balance:
+          type: number
+          example: 120.00
+        receipt_url:
+          type: string
+
+    # ── Routes ────────────────────────────────────────────────────────────────
+    RouteRequest:
+      type: object
+      required: [origin, destination]
+      properties:
+        origin:
+          $ref: '#/components/schemas/LatLon'
+        destination:
+          $ref: '#/components/schemas/LatLon'
+        departure_time:
+          type: string
+          format: date-time
+        passengers:
+          type: integer
+          default: 1
+        preferences:
+          type: array
+          items:
+            type: string
+            enum: [fastest, cheapest, eco]
+
+    LatLon:
+      type: object
+      required: [lat, lon]
+      properties:
+        lat:
+          type: number
+          format: float
+          example: 14.5506
+        lon:
+          type: number
+          format: float
+          example: 121.0223
+        label:
+          type: string
+          example: "Cubao, Quezon City"
+
+    RouteResponse:
+      type: object
+      properties:
+        routes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Route'
+
+    Route:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [fastest, cheapest, eco]
+        total_duration_min:
+          type: integer
+          example: 42
+        total_cost_usd:
+          type: number
+          example: 2.80
+        total_co2_kg:
+          type: number
+          example: 0.3
+        legs:
+          type: array
+          items:
+            $ref: '#/components/schemas/RouteLeg'
+        polyline:
+          type: string
+          description: Encoded Google polyline
+
+    RouteLeg:
+      type: object
+      properties:
+        mode:
+          type: string
+          enum: [walk, bus, metro, taxi, bike, car]
+        line:
+          type: string
+          nullable: true
+          example: "Bus 22"
+        from:
+          $ref: '#/components/schemas/LatLon'
+        to:
+          $ref: '#/components/schemas/LatLon'
+        duration_min:
+          type: integer
+        distance_km:
+          type: number
+        cost_usd:
+          type: number
+        co2_kg:
+          type: number
+
+    # ── Transactions ──────────────────────────────────────────────────────────
+    AuthorizeRequest:
+      type: object
+      required: [card_id, amount, validator_id]
+      properties:
+        card_id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          example: 2.80
+        currency:
+          type: string
+          default: "USD"
+        validator_id:
+          type: string
+          example: "VLD-MNL-0042"
+        route_id:
+          type: string
+          nullable: true
+
+    AuthorizeResponse:
+      type: object
+      properties:
+        transaction_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [authorized, declined_insufficient, declined_locked, error]
+        amount_charged:
+          type: number
+        remaining_balance:
+          type: number
+        authorized_at:
+          type: string
+          format: date-time
+        validator_id:
+          type: string
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [trip, recharge, refund]
+        origin:
+          type: string
+          nullable: true
+        destination:
+          type: string
+          nullable: true
+        amount:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [completed, failed, pending]
+        mode:
+          type: string
+          nullable: true
+        co2_kg:
+          type: number
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    # ── AI ────────────────────────────────────────────────────────────────────
+    AiRequest:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+          example: "Best route from Makati to the airport now"
+        user_location:
+          $ref: '#/components/schemas/LatLon'
+        context:
+          type: string
+          nullable: true
+          description: Previous message context for multi-turn
+
+    AiResponse:
+      type: object
+      properties:
+        reply:
+          type: string
+          example: "The fastest route takes 38 min via Bus 22..."
+        routes:
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/Route'
+        intent:
+          type: string
+          enum: [route_query, balance_query, general, unknown]
+
+    # ── Error ─────────────────────────────────────────────────────────────────
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "INSUFFICIENT_BALANCE"
+        message:
+          type: string
+          example: "Card balance is too low for this transaction"
+        details:
+          type: object
+          nullable: true
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ── Auth ───────────────────────────────────────────────────────────────────
+  /auth/send-otp:
+    post:
+      tags: [Auth]
+      summary: Send OTP via SMS or email
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: OTP sent
+          content:
+            application/json:
+              example:
+                message: "OTP sent to +15550001234"
+                expires_in: 300
+        '429':
+          description: Rate limited
+
+  /auth/verify-otp:
+    post:
+      tags: [Auth]
+      summary: Verify OTP and get tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthVerifyRequest'
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid or expired OTP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: New tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  # ── Cards ──────────────────────────────────────────────────────────────────
+  /cards:
+    get:
+      tags: [Cards]
+      summary: List user's cards
+      responses:
+        '200':
+          description: Card list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Card'
+
+  /cards/{id}/balance:
+    get:
+      tags: [Cards]
+      summary: Get card balance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceResponse'
+              example:
+                card_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                balance: 100.00
+                currency: "USD"
+                last_updated: "2026-03-13T09:30:00Z"
+        '404':
+          description: Card not found
+
+  /cards/{id}/lock:
+    post:
+      tags: [Cards]
+      summary: Lock or unlock card
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                locked:
+                  type: boolean
+      responses:
+        '200':
+          description: Updated card
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+
+  # ── Routes ────────────────────────────────────────────────────────────────
+  /routes:
+    post:
+      tags: [Routes]
+      summary: Plan routes between two points
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouteRequest'
+            example:
+              origin:
+                lat: 14.5086
+                lon: 121.0217
+                label: "PITX, Parañaque"
+              destination:
+                lat: 14.6261
+                lon: 121.0525
+                label: "Cubao, Quezon City"
+              passengers: 1
+              preferences: ["fastest", "eco"]
+      responses:
+        '200':
+          description: Route options
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteResponse'
+
+  # ── Transactions ──────────────────────────────────────────────────────────
+  /transactions/authorize:
+    post:
+      tags: [Transactions]
+      summary: Authorize payment at validator (NFC/QR)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorizeRequest'
+            example:
+              card_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+              amount: 2.80
+              currency: "USD"
+              validator_id: "VLD-MNL-0042"
+      responses:
+        '200':
+          description: Authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizeResponse'
+              example:
+                transaction_id: "txn_abc123"
+                status: "authorized"
+                amount_charged: 2.80
+                remaining_balance: 97.20
+                authorized_at: "2026-03-13T09:30:00Z"
+                validator_id: "VLD-MNL-0042"
+        '402':
+          description: Insufficient balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: "INSUFFICIENT_BALANCE"
+                message: "Card balance too low"
+                details:
+                  required: 2.80
+                  available: 0.45
+
+  /transactions:
+    get:
+      tags: [Transactions]
+      summary: Get transaction history
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [trip, recharge, refund]
+      responses:
+        '200':
+          description: Transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+                  total:
+                    type: integer
+                  has_more:
+                    type: boolean
+
+  # ── Payments ──────────────────────────────────────────────────────────────
+  /payments/recharge:
+    post:
+      tags: [Payments]
+      summary: Recharge card balance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RechargeRequest'
+      responses:
+        '200':
+          description: Recharged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RechargeResponse'
+
+  # ── AI ────────────────────────────────────────────────────────────────────
+  /ai/recommendations:
+    post:
+      tags: [AI]
+      summary: Natural language route query
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiRequest'
+            example:
+              query: "Fastest way to get to the airport from downtown"
+              user_location:
+                lat: 14.5506
+                lon: 121.0223
+      responses:
+        '200':
+          description: AI response with optional routes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiResponse'
+              example:
+                reply: "The fastest route to the airport takes 45 min via Bus 501 + Metro Line 1, costing $2.50."
+                intent: "route_query"
+                routes:
+                  - id: "route_abc"
+                    type: "fastest"
+                    total_duration_min: 45
+                    total_cost_usd: 2.50
+                    total_co2_kg: 0.4

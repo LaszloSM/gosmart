@@ -1,0 +1,149 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "meta": {
+    "name": "GoSmart Design System",
+    "version": "1.0.0",
+    "description": "Universal transport card app — design tokens"
+  },
+  "color": {
+    "brand": {
+      "primary": { "value": "#2D5BFF", "type": "color", "description": "Main action blue" },
+      "primary-hover": { "value": "#1A45E8", "type": "color" },
+      "primary-light": { "value": "#EEF2FF", "type": "color", "description": "Backgrounds/chips" },
+      "eco": { "value": "#3CB371", "type": "color", "description": "Eco-friendly accent" },
+      "eco-light": { "value": "#E8F5EE", "type": "color" },
+      "eco-dark": { "value": "#28865A", "type": "color" }
+    },
+    "neutral": {
+      "bg": { "value": "#F5F7FB", "type": "color", "description": "App background" },
+      "surface": { "value": "#FFFFFF", "type": "color", "description": "Card surface" },
+      "surface-2": { "value": "#EFF1F6", "type": "color" },
+      "border": { "value": "#E2E6F0", "type": "color" },
+      "text-primary": { "value": "#0B1226", "type": "color" },
+      "text-secondary": { "value": "#5A6484", "type": "color" },
+      "text-disabled": { "value": "#A8B0C8", "type": "color" }
+    },
+    "semantic": {
+      "success": { "value": "#22C55E", "type": "color" },
+      "success-light": { "value": "#DCFCE7", "type": "color" },
+      "warning": { "value": "#F59E0B", "type": "color" },
+      "warning-light": { "value": "#FEF3C7", "type": "color" },
+      "error": { "value": "#EF4444", "type": "color" },
+      "error-light": { "value": "#FEE2E2", "type": "color" },
+      "info": { "value": "#3B82F6", "type": "color" },
+      "info-light": { "value": "#DBEAFE", "type": "color" }
+    },
+    "transport": {
+      "car": { "value": "#2D5BFF", "type": "color" },
+      "taxi": { "value": "#F59E0B", "type": "color" },
+      "bus": { "value": "#8B5CF6", "type": "color" },
+      "bike": { "value": "#3CB371", "type": "color" },
+      "walk": { "value": "#5A6484", "type": "color" },
+      "metro": { "value": "#EF4444", "type": "color" }
+    }
+  },
+  "typography": {
+    "fontFamily": {
+      "title": { "value": "Poppins", "type": "fontFamily" },
+      "body": { "value": "Inter", "type": "fontFamily" },
+      "mono": { "value": "JetBrains Mono", "type": "fontFamily" }
+    },
+    "fontSize": {
+      "xs": { "value": "11", "type": "fontSize" },
+      "sm": { "value": "13", "type": "fontSize" },
+      "base": { "value": "15", "type": "fontSize" },
+      "md": { "value": "17", "type": "fontSize" },
+      "lg": { "value": "20", "type": "fontSize" },
+      "xl": { "value": "24", "type": "fontSize" },
+      "2xl": { "value": "28", "type": "fontSize" },
+      "3xl": { "value": "32", "type": "fontSize" }
+    },
+    "fontWeight": {
+      "regular": { "value": "400", "type": "fontWeight" },
+      "medium": { "value": "500", "type": "fontWeight" },
+      "semibold": { "value": "600", "type": "fontWeight" },
+      "bold": { "value": "700", "type": "fontWeight" },
+      "extrabold": { "value": "800", "type": "fontWeight" }
+    },
+    "lineHeight": {
+      "tight": { "value": "1.2", "type": "lineHeight" },
+      "normal": { "value": "1.5", "type": "lineHeight" },
+      "relaxed": { "value": "1.75", "type": "lineHeight" }
+    }
+  },
+  "spacing": {
+    "0": { "value": "0", "type": "spacing" },
+    "1": { "value": "4", "type": "spacing" },
+    "2": { "value": "8", "type": "spacing" },
+    "3": { "value": "12", "type": "spacing" },
+    "4": { "value": "16", "type": "spacing" },
+    "5": { "value": "20", "type": "spacing" },
+    "6": { "value": "24", "type": "spacing" },
+    "8": { "value": "32", "type": "spacing" },
+    "10": { "value": "40", "type": "spacing" },
+    "12": { "value": "48", "type": "spacing" },
+    "16": { "value": "64", "type": "spacing" }
+  },
+  "borderRadius": {
+    "sm": { "value": "8", "type": "borderRadius" },
+    "md": { "value": "12", "type": "borderRadius" },
+    "lg": { "value": "16", "type": "borderRadius" },
+    "xl": { "value": "20", "type": "borderRadius" },
+    "2xl": { "value": "24", "type": "borderRadius" },
+    "full": { "value": "9999", "type": "borderRadius" }
+  },
+  "shadow": {
+    "sm": {
+      "value": "0 1px 3px rgba(11,18,38,0.06), 0 1px 2px rgba(11,18,38,0.04)",
+      "type": "shadow"
+    },
+    "md": {
+      "value": "0 4px 12px rgba(11,18,38,0.08), 0 2px 4px rgba(11,18,38,0.04)",
+      "type": "shadow"
+    },
+    "lg": {
+      "value": "0 8px 24px rgba(11,18,38,0.10), 0 4px 8px rgba(11,18,38,0.06)",
+      "type": "shadow"
+    },
+    "primary": {
+      "value": "0 8px 24px rgba(45,91,255,0.25)",
+      "type": "shadow",
+      "description": "Blue glow for primary buttons"
+    },
+    "eco": {
+      "value": "0 8px 20px rgba(60,179,113,0.22)",
+      "type": "shadow"
+    },
+    "neumorphic": {
+      "value": "6px 6px 14px rgba(11,18,38,0.07), -4px -4px 10px rgba(255,255,255,0.9)",
+      "type": "shadow",
+      "description": "Light neumorphic effect for cards"
+    }
+  },
+  "animation": {
+    "duration": {
+      "fast": { "value": "150ms", "type": "duration" },
+      "normal": { "value": "250ms", "type": "duration" },
+      "slow": { "value": "400ms", "type": "duration" },
+      "page": { "value": "350ms", "type": "duration" }
+    },
+    "easing": {
+      "default": { "value": "cubic-bezier(0.4, 0, 0.2, 1)", "type": "cubicBezier" },
+      "spring": { "value": "cubic-bezier(0.34, 1.56, 0.64, 1)", "type": "cubicBezier" },
+      "ease-in": { "value": "cubic-bezier(0.4, 0, 1, 1)", "type": "cubicBezier" },
+      "ease-out": { "value": "cubic-bezier(0, 0, 0.2, 1)", "type": "cubicBezier" }
+    }
+  },
+  "size": {
+    "touch-target": { "value": "44", "type": "sizing", "description": "WCAG minimum touch target" },
+    "icon-sm": { "value": "16", "type": "sizing" },
+    "icon-md": { "value": "20", "type": "sizing" },
+    "icon-lg": { "value": "24", "type": "sizing" },
+    "icon-xl": { "value": "32", "type": "sizing" },
+    "avatar-sm": { "value": "32", "type": "sizing" },
+    "avatar-md": { "value": "44", "type": "sizing" },
+    "avatar-lg": { "value": "64", "type": "sizing" },
+    "bottom-nav": { "value": "72", "type": "sizing" },
+    "top-bar": { "value": "56", "type": "sizing" }
+  }
+}
