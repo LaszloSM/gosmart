@@ -1,4 +1,5 @@
 // lib/main.dart
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -19,9 +20,11 @@ Future<void> main() async {
   // Initialize Supabase
   await GoSmartSupabase.initialize();
 
-  // Initialize Stripe
-  Stripe.publishableKey = Env.stripePublishableKey;
-  await Stripe.instance.applySettings();
+  // Initialize Stripe (mobile only — web uses stripe.js loaded in index.html)
+  if (!kIsWeb) {
+    Stripe.publishableKey = Env.stripePublishableKey;
+    await Stripe.instance.applySettings();
+  }
 
   // Portrait only
   await SystemChrome.setPreferredOrientations([
