@@ -104,13 +104,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   Widget _buildBody() {
     switch (_tabIndex) {
       case 1:
-        return GSEmptyState(
+        return const GSEmptyState(
           icon: Icons.confirmation_number_rounded,
           title: 'Sin tickets',
           subtitle: 'Tus tickets de transporte aparecerán aquí',
         );
       case 2:
-        return GSEmptyState(
+        return const GSEmptyState(
           icon: Icons.receipt_long_rounded,
           title: 'Sin recibos',
           subtitle: 'Los recibos detallados de cada viaje se guardan aquí',
@@ -186,9 +186,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'Total este mes',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
                               color: GSColors.textSecondary,
                             ),
@@ -216,9 +216,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                               color: GSColors.textPrimary,
                             ),
                           ),
-                          Text(
+                          const Text(
                             'viajes',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
                               color: GSColors.textSecondary,
                             ),
