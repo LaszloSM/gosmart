@@ -4,8 +4,8 @@ import '../theme/design_tokens.dart';
 enum GSButtonVariant { primary, secondary, outline, ghost, eco, danger }
 enum GSButtonSize { sm, md, lg }
 
-/// GoSmart reusable button — covers all design system button variants.
-class GSButton extends StatelessWidget {
+/// GoSmart reusable button with AnimatedScale press feedback.
+class GSButton extends StatefulWidget {
   const GSButton({
     super.key,
     required this.label,
@@ -30,97 +30,116 @@ class GSButton extends StatelessWidget {
   final String? semanticLabel;
 
   @override
+  State<GSButton> createState() => _GSButtonState();
+}
+
+class _GSButtonState extends State<GSButton> {
+  bool _pressed = false;
+
+  void _onTapDown(TapDownDetails _) => setState(() => _pressed = true);
+  void _onTapUp(TapUpDetails _) => setState(() => _pressed = false);
+  void _onTapCancel() => setState(() => _pressed = false);
+
+  @override
   Widget build(BuildContext context) {
     final colors = _variantColors;
     final dims = _sizeDims;
+    final isDisabled = widget.isLoading || widget.onPressed == null;
 
     return Semantics(
-      label: semanticLabel ?? label,
+      label: widget.semanticLabel ?? widget.label,
       button: true,
-      child: SizedBox(
-        width: isFullWidth ? double.infinity : null,
-        height: dims.height,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(GSRadius.full),
-            boxShadow: variant == GSButtonVariant.primary
-                ? GSShadow.primary
-                : variant == GSButtonVariant.eco
-                    ? GSShadow.eco
-                    : [],
-          ),
-          child: ElevatedButton(
-            onPressed: isLoading ? null : onPressed,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colors.bg,
-              foregroundColor: colors.fg,
-              disabledBackgroundColor: GSColors.textDisabled,
-              disabledForegroundColor: Colors.white,
-              elevation: 0,
-              minimumSize: Size(0, dims.height),
-              padding: EdgeInsets.symmetric(horizontal: dims.hPad),
-              shape: RoundedRectangleBorder(
+      child: AnimatedScale(
+        scale: (_pressed && !isDisabled) ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        curve: Curves.easeIn,
+        child: GestureDetector(
+          onTapDown: isDisabled ? null : _onTapDown,
+          onTapUp: isDisabled ? null : _onTapUp,
+          onTapCancel: isDisabled ? null : _onTapCancel,
+          onTap: isDisabled ? null : widget.onPressed,
+          child: SizedBox(
+            width: widget.isFullWidth ? double.infinity : null,
+            height: dims.height,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(GSRadius.full),
-                side: variant == GSButtonVariant.outline
-                    ? const BorderSide(color: GSColors.primary, width: 1.5)
-                    : variant == GSButtonVariant.danger
-                        ? const BorderSide(color: GSColors.error, width: 1.5)
-                        : BorderSide.none,
+                boxShadow: isDisabled
+                    ? []
+                    : widget.variant == GSButtonVariant.primary
+                        ? GSShadow.accent
+                        : widget.variant == GSButtonVariant.eco
+                            ? GSShadow.eco
+                            : [],
+              ),
+              child: Container(
+                height: dims.height,
+                padding: EdgeInsets.symmetric(horizontal: dims.hPad),
+                decoration: BoxDecoration(
+                  color: isDisabled ? GSColors.textDisabled : colors.bg,
+                  borderRadius: BorderRadius.circular(GSRadius.full),
+                  border: widget.variant == GSButtonVariant.outline
+                      ? Border.all(color: GSColors.accent, width: 1.5)
+                      : widget.variant == GSButtonVariant.danger
+                          ? Border.all(color: GSColors.error, width: 1.5)
+                          : null,
+                ),
+                child: _buildChild(dims, colors, isDisabled),
               ),
             ),
-            child: _buildChild(dims),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildChild(_SizeDims dims) {
-    if (isLoading) {
-      return SizedBox(
-        width: dims.iconSize,
-        height: dims.iconSize,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          color: _variantColors.fg,
+  Widget _buildChild(_SizeDims dims, _VariantColors colors, bool isDisabled) {
+    if (widget.isLoading) {
+      return Center(
+        child: SizedBox(
+          width: dims.iconSize,
+          height: dims.iconSize,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: isDisabled ? Colors.white : colors.fg,
+          ),
         ),
       );
     }
-
-    final children = <Widget>[
-      if (leadingIcon != null) ...[
-        Icon(leadingIcon, size: dims.iconSize),
-        SizedBox(width: GSSpacing.s2),
-      ],
-      Text(
-        label,
-        style: TextStyle(
-          
-          fontSize: dims.fontSize,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      if (trailingIcon != null) ...[
-        SizedBox(width: GSSpacing.s2),
-        Icon(trailingIcon, size: dims.iconSize),
-      ],
-    ];
-
     return Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
-      children: children,
+      children: [
+        if (widget.leadingIcon != null) ...[
+          Icon(widget.leadingIcon, size: dims.iconSize,
+              color: isDisabled ? Colors.white : colors.fg),
+          SizedBox(width: GSSpacing.s2),
+        ],
+        Text(
+          widget.label,
+          style: TextStyle(
+            fontSize: dims.fontSize,
+            fontWeight: FontWeight.w600,
+            color: isDisabled ? Colors.white : colors.fg,
+          ),
+        ),
+        if (widget.trailingIcon != null) ...[
+          SizedBox(width: GSSpacing.s2),
+          Icon(widget.trailingIcon, size: dims.iconSize,
+              color: isDisabled ? Colors.white : colors.fg),
+        ],
+      ],
     );
   }
 
   _VariantColors get _variantColors {
-    switch (variant) {
+    switch (widget.variant) {
       case GSButtonVariant.primary:
-        return _VariantColors(GSColors.primary, Colors.white);
+        return _VariantColors(GSColors.accent, Colors.white);
       case GSButtonVariant.secondary:
-        return _VariantColors(GSColors.primaryLight, GSColors.primary);
+        return _VariantColors(GSColors.accentLight, GSColors.accent);
       case GSButtonVariant.outline:
-        return _VariantColors(Colors.transparent, GSColors.primary);
+        return _VariantColors(Colors.transparent, GSColors.accent);
       case GSButtonVariant.ghost:
         return _VariantColors(Colors.transparent, GSColors.textSecondary);
       case GSButtonVariant.eco:
@@ -131,7 +150,7 @@ class GSButton extends StatelessWidget {
   }
 
   _SizeDims get _sizeDims {
-    switch (size) {
+    switch (widget.size) {
       case GSButtonSize.sm:
         return _SizeDims(height: 36, hPad: 16, fontSize: 13, iconSize: 16);
       case GSButtonSize.md:
@@ -199,7 +218,7 @@ class GSIconButton extends StatelessWidget {
             decoration: BoxDecoration(
               color: backgroundColor,
               shape: BoxShape.circle,
-              boxShadow: hasShadow ? GSShadow.md : [],
+              boxShadow: hasShadow ? GSShadow.card : [],
             ),
             child: Icon(icon, color: iconColor, size: size * 0.45),
           ),
