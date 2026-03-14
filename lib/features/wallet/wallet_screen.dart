@@ -1,13 +1,18 @@
+// lib/features/wallet/wallet_screen.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../theme/design_tokens.dart';
-import '../../widgets/gs_button.dart';
-import '../../widgets/gs_card.dart';
-import '../../widgets/gs_bottom_sheet.dart';
-import '../../widgets/gs_toast.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../models/transaction_model.dart';
 import '../../providers/card_provider.dart';
-import '../../services/card_service.dart';
+import '../../providers/transaction_provider.dart';
+import '../../router/app_router.dart';
+import '../../theme/design_tokens.dart';
+import '../../widgets/gs_bottom_nav.dart';
+import '../../widgets/gs_card.dart';
+import '../../widgets/gs_empty_state.dart';
+import '../../widgets/gs_skeleton_loader.dart';
+import '../../widgets/gs_toast.dart';
 
 class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
@@ -16,490 +21,534 @@ class WalletScreen extends ConsumerStatefulWidget {
   ConsumerState<WalletScreen> createState() => _WalletScreenState();
 }
 
-class _WalletScreenState extends ConsumerState<WalletScreen>
-    with SingleTickerProviderStateMixin {
-  bool _showNumber = false;
-  bool _useNfc = true;
-  late final TabController _tabCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
+class _WalletScreenState extends ConsumerState<WalletScreen> {
+  // ── Navigation ──────────────────────────────────────────────────────────────
+  void _onNavTap(int i) {
+    switch (i) {
+      case 0:
+        context.go(AppRoutes.home);
+      case 1:
+        context.go(AppRoutes.history);
+      case 2:
+        context.go(AppRoutes.wallet);
+      case 3:
+        context.go(AppRoutes.profile);
+    }
   }
 
-  @override
-  void dispose() {
-    _tabCtrl.dispose();
-    super.dispose();
+  // ── Card lock toggle ────────────────────────────────────────────────────────
+  Future<void> _toggleLock() async {
+    final card = ref.read(activeCardProvider).valueOrNull;
+    if (card == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final newLocked = !card.isLocked;
+    try {
+      await ref.read(activeCardProvider.notifier).toggleLock(card.id, newLocked);
+      GSToast.showWithMessenger(
+        messenger,
+        message: newLocked ? 'Tarjeta bloqueada' : 'Tarjeta desbloqueada',
+        type: newLocked ? GSToastType.warning : GSToastType.success,
+      );
+    } catch (e) {
+      GSToast.showWithMessenger(
+        messenger,
+        message: 'Error al cambiar estado',
+        type: GSToastType.error,
+      );
+    }
   }
 
+  // ── Recharge snackbar ───────────────────────────────────────────────────────
+  void _showRechargeSnackbar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Función de recarga próximamente'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  // ── Mode helpers ────────────────────────────────────────────────────────────
+  Color _modeColor(String? mode) {
+    switch (mode) {
+      case 'car':
+        return GSColors.car;
+      case 'taxi':
+        return GSColors.taxi;
+      case 'bus':
+        return GSColors.bus;
+      case 'bike':
+        return GSColors.bike;
+      case 'walk':
+        return GSColors.walk;
+      case 'metro':
+        return GSColors.metro;
+      default:
+        return GSColors.accent;
+    }
+  }
+
+  IconData _modeIcon(String? mode) {
+    switch (mode) {
+      case 'car':
+        return Icons.directions_car_rounded;
+      case 'taxi':
+        return Icons.local_taxi_rounded;
+      case 'bus':
+        return Icons.directions_bus_rounded;
+      case 'bike':
+        return Icons.pedal_bike_rounded;
+      case 'walk':
+        return Icons.directions_walk_rounded;
+      case 'metro':
+        return Icons.subway_rounded;
+      default:
+        return Icons.commute_rounded;
+    }
+  }
+
+  String _typeLabel(String type) {
+    switch (type) {
+      case 'trip':
+        return 'Viaje';
+      case 'recharge':
+        return 'Recarga';
+      case 'refund':
+        return 'Reembolso';
+      default:
+        return 'Movimiento';
+    }
+  }
+
+  String _formatDate(DateTime dt) {
+    final local = dt.toLocal();
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final txDate = DateTime(local.year, local.month, local.day);
+    final diff = todayDate.difference(txDate).inDays;
+    if (diff == 0) return 'Hoy';
+    if (diff == 1) return 'Ayer';
+    return '${local.day}/${local.month}/${local.year}';
+  }
+
+  String _formatAmount(TransactionModel t) {
+    final amt = t.amount
+        .toStringAsFixed(0)
+        .replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (m) => '${m[1]}.',
+        );
+    return '\$$amt COP';
+  }
+
+  // ── Build ───────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    final cardAsync = ref.watch(activeCardProvider);
+    final theme = Theme.of(context);
+
     return Scaffold(
       backgroundColor: GSColors.bg,
       appBar: AppBar(
-        title: const Text('My Wallet'),
-        leading: const BackButton(),
-        actions: [
-          IconButton(
-            icon: Icon(
-              cardAsync.valueOrNull?.isLocked ?? false
-                  ? Icons.lock_rounded
-                  : Icons.lock_open_rounded,
-              color: cardAsync.valueOrNull?.isLocked ?? false
-                  ? GSColors.error
-                  : GSColors.textSecondary,
-            ),
-            tooltip: cardAsync.valueOrNull?.isLocked ?? false ? 'Unlock card' : 'Lock card',
-            onPressed: () async {
-              final card = ref.read(activeCardProvider).valueOrNull;
-              if (card == null) return;
-              final newLocked = !card.isLocked;
-              await cardService.setLocked(card.id, newLocked);
-              ref.read(activeCardProvider.notifier).refresh();
-              if (mounted) {
-                GSToast.show(
-                  context,
-                  message: newLocked ? 'Tarjeta bloqueada' : 'Tarjeta desbloqueada',
-                  type: newLocked ? GSToastType.warning : GSToastType.success,
-                );
-              }
-            },
-          ),
-        ],
+        automaticallyImplyLeading: false,
+        title: const Text('Mi Billetera'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(GSSpacing.s5),
+        padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Physical / NFC card ─────────────────────────────────────────
-            cardAsync.when(
-              loading: () => const AspectRatio(
-                aspectRatio: 1.586,
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (e, _) => Text('Error: $e'),
-              data: (card) => _SmartCard(
-                locked: card?.isLocked ?? false,
-                balance: card?.formattedBalance ?? '\$0 COP',
-                cardNumber: card?.numberMasked ?? '•••• •••• •••• 0000',
-                expiresAt: card?.expiresAt ?? '--/--',
-                showNumber: _showNumber,
-                onToggleNumber: () => setState(() => _showNumber = !_showNumber),
-              ),
-            ),
-            const SizedBox(height: GSSpacing.s5),
+            const SizedBox(height: GSSpacing.s4),
 
-            // ── NFC / QR toggle ─────────────────────────────────────────────
-            _PaymentModeToggle(
-              useNfc: _useNfc,
-              onToggle: (v) => setState(() => _useNfc = v),
-            ),
-            const SizedBox(height: GSSpacing.s5),
+            // ── Section 1: Physical card ──────────────────────────────────────
+            _buildCardSection(),
+            const SizedBox(height: GSSpacing.s4),
 
-            // ── Quick actions ────────────────────────────────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: GSButton(
-                    label: 'Top up',
-                    onPressed: () => _showTopUpSheet(context),
-                    leadingIcon: Icons.add_rounded,
-                    size: GSButtonSize.md,
-                  ),
-                ),
-                const SizedBox(width: GSSpacing.s3),
-                Expanded(
-                  child: GSButton(
-                    label: 'Send',
-                    onPressed: () {},
-                    leadingIcon: Icons.send_rounded,
-                    variant: GSButtonVariant.outline,
-                    size: GSButtonSize.md,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: GSSpacing.s5),
+            // ── Section 2: Quick actions ──────────────────────────────────────
+            _buildQuickActions(),
+            const SizedBox(height: GSSpacing.s4),
 
-            // ── Linked payment methods ───────────────────────────────────────
-            Text('Payment methods',
-                style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: GSSpacing.s3),
-            GSCard(
-              padding: const EdgeInsets.all(GSSpacing.s5),
-              child: Column(
-                children: [
-                  const Icon(Icons.credit_card_off_rounded,
-                      size: 36, color: GSColors.textDisabled),
-                  const SizedBox(height: GSSpacing.s2),
-                  const Text('No payment methods added yet',
-                      style: TextStyle(
-                          fontSize: 13, color: GSColors.textSecondary)),
-                  const SizedBox(height: GSSpacing.s4),
-                  GSButton(
-                    label: 'Add payment method',
-                    onPressed: () {},
-                    variant: GSButtonVariant.secondary,
-                    leadingIcon: Icons.add_rounded,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: GSSpacing.s5),
+            // ── Section 3: Recent transactions ───────────────────────────────
+            _buildRecentTransactions(theme),
+            const SizedBox(height: GSSpacing.s4),
 
-            // ── Card controls ────────────────────────────────────────────────
-            Text('Card controls',
-                style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: GSSpacing.s3),
-            GSCard(
-              padding: const EdgeInsets.all(GSSpacing.s4),
-              child: Column(
-                children: [
-                  _ControlRow(
-                    icon: Icons.lock_rounded,
-                    label: 'Lock card',
-                    sublabel: 'Temporarily disable card',
-                    iconColor: GSColors.error,
-                    trailing: Switch(
-                      value: cardAsync.valueOrNull?.isLocked ?? false,
-                      activeColor: GSColors.error,
-                      onChanged: (v) async {
-                        final card = ref.read(activeCardProvider).valueOrNull;
-                        if (card == null) return;
-                        await cardService.setLocked(card.id, v);
-                        ref.read(activeCardProvider.notifier).refresh();
-                      },
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  _ControlRow(
-                    icon: Icons.report_problem_rounded,
-                    label: 'Report lost/stolen',
-                    sublabel: 'Block and request new card',
-                    iconColor: GSColors.warning,
-                    trailing: const Icon(Icons.arrow_forward_ios_rounded,
-                        size: 14, color: GSColors.textDisabled),
-                    onTap: () {},
-                  ),
-                  const Divider(height: 1),
-                  _ControlRow(
-                    icon: Icons.contactless_rounded,
-                    label: 'NFC payments',
-                    sublabel: 'Use phone as card',
-                    iconColor: GSColors.primary,
-                    trailing: Switch(
-                      value: _useNfc,
-                      activeColor: GSColors.primary,
-                      onChanged: (v) => setState(() => _useNfc = v),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // ── Section 4: Card controls ──────────────────────────────────────
+            _buildCardControls(theme),
+            const SizedBox(height: GSSpacing.s6),
           ],
         ),
       ),
-    );
-  }
-
-  void _showTopUpSheet(BuildContext context) {
-    GSBottomSheet.show(
-      context: context,
-      title: 'Top up credit',
-      initialChildSize: 0.60,
-      child: Column(
-        children: [
-          // Amounts
-          Wrap(
-            spacing: GSSpacing.s3,
-            runSpacing: GSSpacing.s3,
-            children: ['\$5', '\$10', '\$20', '\$50', '\$100'].map((a) {
-              return ChoiceChip(
-                label: Text(a,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 15)),
-                selected: false,
-                onSelected: (_) {},
-                selectedColor: GSColors.accentLight,
-                backgroundColor: GSColors.surfaceDark,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: GSSpacing.s4, vertical: GSSpacing.s2),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: GSSpacing.s5),
-          const Divider(),
-          const SizedBox(height: GSSpacing.s4),
-          GSButton(
-            label: 'Pay with Apple Pay',
-            onPressed: () => Navigator.pop(context),
-            leadingIcon: Icons.apple_rounded,
-          ),
-          const SizedBox(height: GSSpacing.s3),
-          GSButton(
-            label: 'Pay with card',
-            onPressed: () => Navigator.pop(context),
-            variant: GSButtonVariant.outline,
-            leadingIcon: Icons.credit_card_rounded,
-          ),
-        ],
+      bottomNavigationBar: GSBottomNav(
+        currentIndex: 2,
+        onTap: _onNavTap,
       ),
     );
   }
 
-}
-
-// ─── Smart Card widget ────────────────────────────────────────────────────────
-
-class _SmartCard extends StatelessWidget {
-  const _SmartCard({
-    required this.locked,
-    required this.balance,
-    required this.cardNumber,
-    required this.expiresAt,
-    required this.showNumber,
-    required this.onToggleNumber,
-  });
-  final bool locked;
-  final String balance;
-  final String cardNumber;
-  final String expiresAt;
-  final bool showNumber;
-  final VoidCallback onToggleNumber;
-
-  @override
-  Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 1.586,
-      child: AnimatedContainer(
-        duration: GSDuration.normal,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(GSRadius.xl),
-          gradient: LinearGradient(
-            colors: locked
-                ? [const Color(0xFF6B7280), const Color(0xFF374151)]
-                : [GSColors.primary, const Color(0xFF1A3FCC)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          boxShadow: locked
-              ? [
-                  BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
+  // ── Section 1 ───────────────────────────────────────────────────────────────
+  Widget _buildCardSection() {
+    return ref.watch(activeCardProvider).when(
+      loading: () => const GSSkeletonLoader(
+        width: double.infinity,
+        height: 200,
+        radius: 20,
+      ),
+      error: (e, _) => GSErrorCard(
+        message: 'No se pudo cargar la tarjeta',
+        onRetry: () => ref.read(activeCardProvider.notifier).refresh(),
+      ),
+      data: (card) {
+        final isLocked = card?.isLocked ?? false;
+        return Container(
+          width: double.infinity,
+          height: 200,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isLocked
+                  ? const [Color(0xFF6B7280), Color(0xFF374151)]
+                  : const [Color(0xFF1A1A2E), Color(0xFF6C63FF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: isLocked
+                ? [
+                    BoxShadow(
+                      color: Colors.grey.withValues(alpha: 0.3),
                       blurRadius: 20,
-                      offset: const Offset(0, 8))
-                ]
-              : GSShadow.primary,
-        ),
-        padding: const EdgeInsets.all(GSSpacing.s6),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('GoSmart',
-                        style: TextStyle(
-                            
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800)),
-                    Text('Transit Card',
-                        style: TextStyle(
-                            color: Colors.white60, fontSize: 12)),
+                      offset: const Offset(0, 8),
+                    ),
+                  ]
+                : const [
+                    BoxShadow(
+                      color: Color(0x406C63FF),
+                      blurRadius: 32,
+                      offset: Offset(0, 16),
+                    ),
                   ],
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Top row
+              Row(
+                children: [
+                  const Icon(
+                    Icons.credit_card_rounded,
+                    color: Color(0xFFFFD700),
+                    size: 32,
+                  ),
+                  const Spacer(),
+                  if (isLocked)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: GSColors.error.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(GSRadius.full),
+                        border: Border.all(color: GSColors.error),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.lock_rounded,
+                            size: 12,
+                            color: Colors.white,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'BLOQUEADA',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    const Text(
+                      'GoSmart',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                ],
+              ),
+
+              // Card number
+              Text(
+                card?.numberMasked ?? '•••• •••• •••• 0000',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  letterSpacing: 3,
+                  fontWeight: FontWeight.w500,
                 ),
-                if (locked)
+              ),
+
+              // Bottom row — balance + status badge
+              Row(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Saldo disponible',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                        ),
+                      ),
+                      Text(
+                        card?.formattedBalance ?? '\$0 COP',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
-                      color: GSColors.error.withOpacity(0.2),
+                      color: isLocked ? GSColors.error : GSColors.success,
                       borderRadius: BorderRadius.circular(GSRadius.full),
-                      border: Border.all(color: GSColors.error),
                     ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.lock_rounded,
-                            size: 12, color: Colors.white),
-                        SizedBox(width: 4),
-                        Text('LOCKED',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700)),
-                      ],
+                    child: Text(
+                      isLocked ? 'Bloqueada' : 'Activa',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  )
-                else
-                  const Icon(Icons.contactless_rounded,
-                      color: Colors.white60, size: 32),
-              ],
-            ),
-            const Spacer(),
-            // Card number
-            GestureDetector(
-              onTap: onToggleNumber,
-              child: Row(
-                children: [
-                  Text(
-                    cardNumber,
-                    style: const TextStyle(
-                      
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    showNumber ? Icons.visibility_off : Icons.visibility,
-                    color: Colors.white54,
-                    size: 16,
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: GSSpacing.s4),
-            // Bottom row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Balance',
-                        style: TextStyle(color: Colors.white60, fontSize: 11)),
-                    Text(balance,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700)),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    const Text('Valid thru',
-                        style: TextStyle(
-                            color: Colors.white60, fontSize: 11)),
-                    Text(expiresAt,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── NFC / QR toggle ─────────────────────────────────────────────────────────
-
-class _PaymentModeToggle extends StatelessWidget {
-  const _PaymentModeToggle({
-    required this.useNfc,
-    required this.onToggle,
-  });
-  final bool useNfc;
-  final ValueChanged<bool> onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    return GSCard(
-      padding: const EdgeInsets.all(GSSpacing.s4),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              _ModeBtn(
-                icon: Icons.contactless_rounded,
-                label: 'Tap to Pay (NFC)',
-                selected: useNfc,
-                color: GSColors.primary,
-                onTap: () => onToggle(true),
-              ),
-              const SizedBox(width: GSSpacing.s3),
-              _ModeBtn(
-                icon: Icons.qr_code_rounded,
-                label: 'QR Code',
-                selected: !useNfc,
-                color: GSColors.eco,
-                onTap: () => onToggle(false),
               ),
             ],
           ),
-          const SizedBox(height: GSSpacing.s4),
-          if (useNfc) ...[
-            Container(
-              padding: const EdgeInsets.all(GSSpacing.s4),
-              decoration: BoxDecoration(
-                color: GSColors.accentLight,
-                borderRadius: BorderRadius.circular(GSRadius.lg),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.contactless_rounded,
-                      color: GSColors.primary, size: 32),
-                  SizedBox(width: GSSpacing.s3),
-                  Text('Hold phone near validator',
-                      style: TextStyle(
-                        
-                        color: GSColors.primary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      )),
-                ],
+        );
+      },
+    );
+  }
+
+  // ── Section 2 ───────────────────────────────────────────────────────────────
+  Widget _buildQuickActions() {
+    return Row(
+      children: [
+        _QuickAction(
+          icon: Icons.add_circle_rounded,
+          label: 'Recargar',
+          color: GSColors.accent,
+          onTap: _showRechargeSnackbar,
+        ),
+        const SizedBox(width: 8),
+        _QuickAction(
+          icon: Icons.qr_code_scanner_rounded,
+          label: 'Pagar',
+          color: GSColors.accentAlt,
+          onTap: () {},
+        ),
+        const SizedBox(width: 8),
+        Builder(
+          builder: (context) {
+            final card = ref.watch(activeCardProvider).valueOrNull;
+            return _QuickAction(
+              icon: card?.isLocked ?? false
+                  ? Icons.lock_open_rounded
+                  : Icons.lock_rounded,
+              label: card?.isLocked ?? false ? 'Desbloquear' : 'Bloquear',
+              color: card?.isLocked ?? false ? GSColors.success : GSColors.error,
+              onTap: _toggleLock,
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  // ── Section 3 ───────────────────────────────────────────────────────────────
+  Widget _buildRecentTransactions(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Movimientos recientes',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
               ),
             ),
-          ] else ...[
-            Container(
-              width: 160,
-              height: 160,
-              decoration: BoxDecoration(
-                color: GSColors.surfaceDark,
-                borderRadius: BorderRadius.circular(GSRadius.lg),
-              ),
-              child: const Icon(Icons.qr_code_2_rounded,
-                  size: 120, color: GSColors.textPrimary),
+            const Spacer(),
+            TextButton(
+              onPressed: () => context.go(AppRoutes.history),
+              child: const Text('Ver todos'),
             ),
-            const SizedBox(height: GSSpacing.s2),
-            const Text('Temporary QR — expires in 5:00',
-                style: TextStyle(
-                    fontSize: 12, color: GSColors.textSecondary)),
           ],
+        ),
+        const SizedBox(height: 8),
+        ref.watch(transactionListProvider).when(
+          loading: () => Column(
+            children: List.generate(
+              5,
+              (_) => const Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: GSTransactionSkeleton(),
+              ),
+            ),
+          ),
+          error: (e, _) => GSErrorCard(
+            message: e.toString(),
+            onRetry: () => ref
+                .read(transactionListProvider.notifier)
+                .load(refresh: true),
+          ),
+          data: (list) {
+            if (list.isEmpty) {
+              return const GSEmptyState(
+                icon: Icons.receipt_long_rounded,
+                title: 'Sin movimientos',
+                subtitle: 'Tus transacciones aparecerán aquí',
+              );
+            }
+            return Column(
+              children: list
+                  .take(5)
+                  .map(
+                    (t) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(
+                          radius: 22,
+                          backgroundColor:
+                              _modeColor(t.mode).withValues(alpha: 0.15),
+                          child: Icon(
+                            _modeIcon(t.mode),
+                            color: _modeColor(t.mode),
+                            size: 18,
+                          ),
+                        ),
+                        title: Text(
+                          t.destination ?? t.origin ?? _typeLabel(t.type),
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        subtitle: Text(
+                          _formatDate(t.createdAt),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: GSColors.textSecondary,
+                              ),
+                        ),
+                        trailing: Text(
+                          _formatAmount(t),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  // ── Section 4 ───────────────────────────────────────────────────────────────
+  Widget _buildCardControls(ThemeData theme) {
+    return GSCard(
+      padding: const EdgeInsets.all(GSSpacing.s4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Controles de tarjeta',
+            style: theme.textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 8),
+          ref.watch(activeCardProvider).when(
+            data: (card) => Column(
+              children: [
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Bloquear tarjeta'),
+                  subtitle:
+                      const Text('Desactiva temporalmente la tarjeta'),
+                  secondary: Icon(
+                    Icons.lock_rounded,
+                    color: card?.isLocked ?? false
+                        ? GSColors.error
+                        : GSColors.textSecondary,
+                  ),
+                  value: card?.isLocked ?? false,
+                  activeThumbColor: GSColors.error,
+                  onChanged: (_) => _toggleLock(),
+                ),
+                const Divider(),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(
+                    Icons.report_problem_rounded,
+                    color: GSColors.error,
+                  ),
+                  title: const Text('Reportar pérdida'),
+                  subtitle:
+                      const Text('Bloquea y solicita nueva tarjeta'),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14,
+                    color: GSColors.textDisabled,
+                  ),
+                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Contacta con soporte al cliente'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            loading: () => const GSSkeletonLoader(
+              width: double.infinity,
+              height: 100,
+              radius: 12,
+            ),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
         ],
       ),
     );
   }
 }
 
-class _ModeBtn extends StatelessWidget {
-  const _ModeBtn({
+// ─── Quick Action tile ────────────────────────────────────────────────────────
+
+class _QuickAction extends StatelessWidget {
+  const _QuickAction({
     required this.icon,
     required this.label,
-    required this.selected,
     required this.color,
     required this.onTap,
   });
+
   final IconData icon;
   final String label;
-  final bool selected;
   final Color color;
   final VoidCallback onTap;
 
@@ -508,30 +557,26 @@ class _ModeBtn extends StatelessWidget {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: GSDuration.normal,
-          padding: const EdgeInsets.symmetric(
-              horizontal: GSSpacing.s3, vertical: GSSpacing.s3),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: selected ? color.withOpacity(0.10) : GSColors.surfaceDark,
-            borderRadius: BorderRadius.circular(GSRadius.md),
-            border: Border.all(
-              color: selected ? color : Colors.transparent,
-              width: 1.5,
-            ),
+            color: GSColors.surface,
+            borderRadius: BorderRadius.circular(GSRadius.xl),
+            boxShadow: GSShadow.card,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon,
-                  size: 18, color: selected ? color : GSColors.textSecondary),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(label,
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: selected ? color : GSColors.textSecondary)),
+              Icon(icon, color: color, size: 28),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: GSColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -540,62 +585,3 @@ class _ModeBtn extends StatelessWidget {
     );
   }
 }
-
-
-class _ControlRow extends StatelessWidget {
-  const _ControlRow({
-    required this.icon,
-    required this.label,
-    required this.sublabel,
-    required this.iconColor,
-    required this.trailing,
-    this.onTap,
-  });
-  final IconData icon;
-  final String label;
-  final String sublabel;
-  final Color iconColor;
-  final Widget trailing;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: GSSpacing.s3),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.10),
-                borderRadius: BorderRadius.circular(GSRadius.sm),
-              ),
-              child: Icon(icon, size: 18, color: iconColor),
-            ),
-            const SizedBox(width: GSSpacing.s3),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: GSColors.textPrimary)),
-                  Text(sublabel,
-                      style: const TextStyle(
-                          fontSize: 12, color: GSColors.textSecondary)),
-                ],
-              ),
-            ),
-            trailing,
-          ],
-        ),
-      ),
-    );
-  }
-}
-
