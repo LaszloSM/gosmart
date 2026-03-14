@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_card.dart';
+import '../../services/ai_service.dart';
 
 class AiChatScreen extends StatefulWidget {
   const AiChatScreen({super.key});
@@ -45,32 +46,30 @@ class _AiChatScreenState extends State<AiChatScreen> {
     });
     _scrollToBottom();
 
-    // Simulate AI response
-    await Future.delayed(const Duration(milliseconds: 1500));
-
-    if (mounted) {
-      setState(() {
-        _isTyping = false;
-        _messages.add(_Message(
-          text: _mockResponse(msg),
-          isUser: false,
-          hasRouteCard: msg.toLowerCase().contains('route') ||
-              msg.toLowerCase().contains('get to') ||
-              msg.toLowerCase().contains('way to'),
-        ));
-      });
-      _scrollToBottom();
+    try {
+      final reply = await aiService.sendMessage(query: msg);
+      if (mounted) {
+        setState(() {
+          _isTyping = false;
+          _messages.add(_Message(
+            text: reply.content,
+            isUser: false,
+            hasRouteCard: reply.routes != null && reply.routes!.isNotEmpty,
+          ));
+        });
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isTyping = false;
+          _messages.add(const _Message(
+            text: 'Error al contactar el asistente. Intenta de nuevo.',
+            isUser: false,
+          ));
+        });
+      }
     }
-  }
-
-  String _mockResponse(String query) {
-    if (query.toLowerCase().contains('airport')) {
-      return 'The fastest route to the airport is:\n\n1. 🚌 Bus 501 from your location (8 min away)\n2. 🚇 Metro Line 1 → NAIA Terminal\n\nEstimated time: 45 min | Cost: \$2.50 | CO₂: 0.4 kg\n\nShall I book this route?';
-    }
-    if (query.toLowerCase().contains('eco')) {
-      return 'Here\'s the greenest route:\n\n1. 🚲 Bike share to the nearest station\n2. 🚇 Metro Line 3 direct\n\nEstimated time: 52 min | Cost: \$1.80 | CO₂: 0.05 kg 🌿\n\nYou\'d earn 120 Eco Points!';
-    }
-    return 'I found 3 route options for you. The fastest takes 38 minutes via Bus 22 + Metro Line 3, costing \$2.80. Want me to show you all alternatives or book the fastest one?';
   }
 
   void _scrollToBottom() {
