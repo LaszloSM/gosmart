@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_card.dart';
@@ -75,7 +76,7 @@ class _RoutePlannerScreenState extends State<RoutePlannerScreen> {
           IconButton(
             icon: const Icon(Icons.auto_awesome_rounded),
             tooltip: 'Ask AI',
-            onPressed: () => Navigator.pushNamed(context, AppRoutes.aiChat),
+            onPressed: () => context.push(AppRoutes.aiChat),
           ),
         ],
       ),
@@ -108,7 +109,7 @@ class _RoutePlannerScreenState extends State<RoutePlannerScreen> {
             child: GSButton(
               label: 'View Route Details',
               onPressed: () =>
-                  Navigator.pushNamed(context, AppRoutes.routeDetail),
+                  context.push(AppRoutes.routeDetail),
               leadingIcon: Icons.navigation_rounded,
             ),
           ),

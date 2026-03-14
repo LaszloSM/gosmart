@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_card.dart';
@@ -148,7 +149,7 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
             label: 'Confirm & Pay',
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.paymentValidation);
+              context.push(AppRoutes.paymentValidation);
             },
             leadingIcon: Icons.payment_rounded,
           ),

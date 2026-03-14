@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../router/app_router.dart';
@@ -87,20 +88,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           curve: Curves.easeInOut,
                         );
                       } else {
-                        Navigator.pushReplacementNamed(
-                            context, AppRoutes.login);
+                        context.go(AppRoutes.login);
                       }
                     },
                   ),
                   const SizedBox(height: GSSpacing.s3),
                   TextButton(
-                    onPressed: () => Navigator.pushReplacementNamed(
-                        context, AppRoutes.login),
+                    onPressed: () => context.go(AppRoutes.login),
                     child: const Text('Already have an account? Sign in'),
                   ),
                   TextButton(
-                    onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                        context, AppRoutes.home, (_) => false),
+                    onPressed: () => context.go(AppRoutes.home),
                     child: const Text('Skip — explore demo',
                         style: TextStyle(color: GSColors.textSecondary,
                             fontSize: 13)),

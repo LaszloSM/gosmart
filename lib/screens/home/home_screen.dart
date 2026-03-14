@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
 import '../../widgets/gs_button.dart';
@@ -48,7 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 body: 'Your route changes due to congestion on Line 3',
                 icon: Icons.warning_amber_rounded,
                 onDismiss: () => setState(() => _showNotification = false),
-                onTap: () => Navigator.pushNamed(context, AppRoutes.routePlanner),
+                onTap: () => context.push(AppRoutes.routePlanner),
               ),
             ),
 
@@ -91,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       hint: 'Enter destination',
                       readOnly: true,
                       onTap: () =>
-                          Navigator.pushNamed(context, AppRoutes.routePlanner),
+                          context.push(AppRoutes.routePlanner),
                       trailing: Container(
                         margin: const EdgeInsets.only(right: 4),
                         padding: const EdgeInsets.all(8),
@@ -151,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     GSButton(
                       label: 'Search',
                       onPressed: () =>
-                          Navigator.pushNamed(context, AppRoutes.routeDetail),
+                          context.push(AppRoutes.routeDetail),
                       leadingIcon: Icons.search_rounded,
                     ),
                     const SizedBox(height: GSSpacing.s5),
@@ -170,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             iconBgColor: GSColors.primary,
                             subtitle: 'Top up credit',
                             onTap: () =>
-                                Navigator.pushNamed(context, AppRoutes.wallet),
+                                context.push(AppRoutes.wallet),
                           ),
                         ),
                         const SizedBox(width: GSSpacing.s3),
@@ -189,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     // AI quick access
                     GSCard(
-                      onTap: () => Navigator.pushNamed(context, AppRoutes.aiChat),
+                      onTap: () => context.push(AppRoutes.aiChat),
                       padding: const EdgeInsets.all(GSSpacing.s4),
                       shadow: GSShadow.primary,
                       child: Row(
@@ -241,13 +242,13 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() => _navIndex = i);
           switch (i) {
             case 1:
-              Navigator.pushNamed(context, AppRoutes.history);
+              context.push(AppRoutes.history);
               break;
             case 2:
-              Navigator.pushNamed(context, AppRoutes.wallet);
+              context.push(AppRoutes.wallet);
               break;
             case 3:
-              Navigator.pushNamed(context, AppRoutes.profile);
+              context.push(AppRoutes.profile);
               break;
           }
         },

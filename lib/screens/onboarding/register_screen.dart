@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_text_field.dart';
@@ -43,8 +44,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     await Future.delayed(const Duration(seconds: 2));
     if (mounted) {
       setState(() => _isLoading = false);
-      Navigator.pushNamed(context, AppRoutes.smsVerify,
-          arguments: _phoneCtrl.text);
+      context.push(AppRoutes.smsVerify, extra: _phoneCtrl.text);
     }
   }
 
@@ -212,8 +212,7 @@ class _SmsVerificationScreenState extends State<SmsVerificationScreen> {
     await Future.delayed(const Duration(milliseconds: 800));
     if (mounted) {
       setState(() => _isLoading = false);
-      Navigator.pushNamedAndRemoveUntil(
-          context, AppRoutes.home, (_) => false);
+      context.go(AppRoutes.home);
     }
   }
 
