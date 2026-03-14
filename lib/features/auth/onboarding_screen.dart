@@ -4,166 +4,143 @@ import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../router/app_router.dart';
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});
-
-  @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
-}
-
-class _OnboardingScreenState extends State<OnboardingScreen> {
-  final PageController _page = PageController();
-  int _current = 0;
-
-  static const _slides = [
-    _Slide(
-      icon: Icons.route_rounded,
-      color: GSColors.primary,
-      title: 'One card,\nevery route',
-      body:
-          'Bus, metro, bike, taxi — all connected in one smart transit card powered by AI.',
-    ),
-    _Slide(
-      icon: Icons.account_balance_wallet_rounded,
-      color: GSColors.eco,
-      title: 'Instant top-up,\nzero friction',
-      body:
-          'Recharge in seconds with any payment method. Tap your phone or card on any validator.',
-    ),
-    _Slide(
-      icon: Icons.eco_rounded,
-      color: GSColors.eco,
-      title: 'Travel smarter,\nlive greener',
-      body:
-          'Track your CO₂ savings and earn Eco Points every time you choose sustainable transport.',
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GSColors.bg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: PageView.builder(
-                controller: _page,
-                onPageChanged: (i) => setState(() => _current = i),
-                itemCount: _slides.length,
-                itemBuilder: (_, i) => _SlideView(slide: _slides[i]),
-              ),
+      body: Stack(children: [
+        // Layer 1 — dark gradient background (fills screen)
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF1A1A2E), Color(0xFF0D1117)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            // Dots
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                _slides.length,
-                (i) => AnimatedContainer(
-                  duration: GSDuration.normal,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: _current == i ? 24 : 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color:
-                        _current == i ? GSColors.primary : GSColors.border,
-                    borderRadius: BorderRadius.circular(GSRadius.full),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: GSSpacing.s8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s6),
-              child: Column(
-                children: [
-                  GSButton(
-                    label: _current < _slides.length - 1
-                        ? 'Continue'
-                        : 'Get Started',
-                    onPressed: () {
-                      if (_current < _slides.length - 1) {
-                        _page.nextPage(
-                          duration: GSDuration.page,
-                          curve: Curves.easeInOut,
-                        );
-                      } else {
-                        context.go(AppRoutes.login);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: GSSpacing.s3),
-                  TextButton(
-                    onPressed: () => context.go(AppRoutes.login),
-                    child: const Text('Already have an account? Sign in'),
-                  ),
-                  TextButton(
-                    onPressed: () => context.go(AppRoutes.home),
-                    child: const Text('Skip — explore demo',
-                        style: TextStyle(color: GSColors.textSecondary,
-                            fontSize: 13)),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: GSSpacing.s6),
-          ],
+          ),
         ),
-      ),
-    );
-  }
-}
-
-class _SlideView extends StatelessWidget {
-  const _SlideView({required this.slide});
-  final _Slide slide;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(GSSpacing.s6),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 160,
-            height: 160,
-            decoration: BoxDecoration(
-              color: slide.color.withOpacity(0.10),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(slide.icon, size: 80, color: slide.color),
-          ),
-          const SizedBox(height: GSSpacing.s10),
-          Text(
-            slide.title,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.displaySmall,
-          ),
-          const SizedBox(height: GSSpacing.s4),
-          Text(
-            slide.body,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: GSColors.textSecondary,
-                  height: 1.6,
+        // Layer 2 — content
+        SafeArea(
+          child: Column(children: [
+            // Hero area (flex:5) — illustration or icon fallback
+            Expanded(
+              flex: 5,
+              child: Center(
+                child: Image.asset(
+                  'assets/images/onboarding_illustration.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // GoSmart logo mark
+                      Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: GSColors.accent.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.directions_transit_rounded,
+                          size: 64,
+                          color: GSColors.accent,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // Decorative mode icons row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _modeIcon(Icons.directions_car_rounded, GSColors.accent),
+                          const SizedBox(width: 16),
+                          _modeIcon(Icons.directions_bus_rounded, const Color(0xFF6C63FF)),
+                          const SizedBox(width: 16),
+                          _modeIcon(Icons.pedal_bike_rounded, const Color(0xFF3CB371)),
+                          const SizedBox(width: 16),
+                          _modeIcon(Icons.subway_rounded, const Color(0xFFFF4757)),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-          ),
-        ],
-      ),
+              ),
+            ),
+            // Bottom card (flex:4) — white rounded top
+            Expanded(
+              flex: 4,
+              child: Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                ),
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Brand name in accent teal
+                    const Text(
+                      'GoSmart',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        color: GSColors.accent,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Tu movilidad inteligente',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: GSColors.textSecondary,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    GSButton(
+                      label: 'Iniciar sesión',
+                      onPressed: () => context.go(AppRoutes.login),
+                    ),
+                    const SizedBox(height: 12),
+                    GSButton(
+                      label: 'Crear cuenta',
+                      variant: GSButtonVariant.outline,
+                      onPressed: () => context.go(AppRoutes.register),
+                    ),
+                    const Spacer(),
+                    const Text(
+                      'Al continuar aceptas nuestros Términos y Política de Privacidad',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: GSColors.textDisabled,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ]),
+        ),
+      ]),
     );
   }
-}
 
-class _Slide {
-  final IconData icon;
-  final Color color;
-  final String title;
-  final String body;
-  const _Slide({
-    required this.icon,
-    required this.color,
-    required this.title,
-    required this.body,
-  });
+  static Widget _modeIcon(IconData icon, Color color) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, color: color, size: 22),
+    );
+  }
 }
