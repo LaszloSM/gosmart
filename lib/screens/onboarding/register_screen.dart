@@ -5,6 +5,7 @@ import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_text_field.dart';
 import '../../router/app_router.dart';
+import '../../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -36,15 +37,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (!_termsAccepted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please accept the terms to continue')),
+        const SnackBar(content: Text('Debes aceptar los términos para continuar')),
       );
       return;
     }
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 2));
-    if (mounted) {
-      setState(() => _isLoading = false);
-      context.push(AppRoutes.smsVerify, extra: _phoneCtrl.text);
+    try {
+      final response = await authService.signUp(
+        email: _emailCtrl.text.trim(),
+        password: _passCtrl.text,
+        name: _nameCtrl.text.trim(),
+        consentGeo: false,
+        consentAi: false,
+      );
+      if (response.user != null && mounted) {
+        context.go(AppRoutes.home);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -92,8 +111,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 keyboardType: TextInputType.phone,
                 prefixIcon: Icons.phone_rounded,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (v) =>
-                    (v == null || v.length < 8) ? 'Enter a valid number' : null,
+                validator: (v) => null, // opcional en registro con email
               ),
               const SizedBox(height: GSSpacing.s4),
               GSTextField(
