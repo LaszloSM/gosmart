@@ -1,83 +1,137 @@
 // lib/router/app_router.dart
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/supabase_client.dart';
 import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/onboarding/login_screen.dart';
 import '../screens/onboarding/register_screen.dart';
+import '../screens/onboarding/sms_verify_screen.dart';
 import '../screens/home/home_screen.dart';
-import '../screens/route_planner/route_planner_screen.dart';
-import '../screens/route_detail/route_detail_screen.dart';
 import '../screens/wallet/wallet_screen.dart';
 import '../screens/history/history_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../screens/route_planner/route_planner_screen.dart';
+import '../screens/route_detail/route_detail_screen.dart';
 import '../screens/ai_chat/ai_chat_screen.dart';
 import '../screens/payment_validation/payment_validation_screen.dart';
+import '../screens/nfc_simulator/nfc_auth_simulator_screen.dart';
 
+/// Bridges a Stream to a [ChangeNotifier] so GoRouter's [refreshListenable]
+/// can trigger redirect re-evaluation on auth state changes.
+class _StreamChangeNotifier extends ChangeNotifier {
+  _StreamChangeNotifier(Stream<dynamic> stream) {
+    _sub = stream.listen((_) => notifyListeners());
+  }
+  late final StreamSubscription _sub;
+
+  @override
+  void dispose() {
+    _sub.cancel();
+    super.dispose();
+  }
+}
+
+/// Route name constants — use these instead of hard-coded strings
 abstract class AppRoutes {
-  static const onboarding = '/';
-  static const login = '/login';
-  static const register = '/register';
-  static const smsVerification = '/sms-verification';
-  static const home = '/home';
-  static const routePlanner = '/route-planner';
-  static const routeDetail = '/route-detail';
-  static const wallet = '/wallet';
-  static const history = '/history';
-  static const profile = '/profile';
-  static const aiChat = '/ai-chat';
+  static const onboarding       = '/';
+  static const login            = '/login';
+  static const register         = '/register';
+  static const smsVerify        = '/sms-verify';
+  static const home             = '/home';
+  static const wallet           = '/wallet';
+  static const history          = '/history';
+  static const profile          = '/profile';
+  static const routePlanner     = '/routes';
+  static const routeDetail      = '/routes/detail';
+  static const aiChat           = '/ai-chat';
   static const paymentValidation = '/payment-validation';
+  static const nfcSimulator     = '/debug/nfc-simulator';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
+  // refreshListenable bridges the Supabase auth stream to GoRouter so that
+  // redirect() is re-evaluated automatically on login / logout.
+  final notifier = _StreamChangeNotifier(
+    GoSmartSupabase.client.auth.onAuthStateChange,
+  );
+  ref.onDispose(notifier.dispose);
+
   return GoRouter(
     initialLocation: AppRoutes.onboarding,
+    refreshListenable: notifier,
+    redirect: (context, state) {
+      final session = GoSmartSupabase.client.auth.currentSession;
+      final isAuth = session != null;
+      final onAuthPage = state.matchedLocation == AppRoutes.login ||
+          state.matchedLocation == AppRoutes.register ||
+          state.matchedLocation == AppRoutes.onboarding ||
+          state.matchedLocation == AppRoutes.smsVerify; // mid-OTP flow, not yet authenticated
+
+      // If authenticated and on auth page → go to home
+      if (isAuth && onAuthPage) return AppRoutes.home;
+      // If not authenticated and on protected page → go to login
+      if (!isAuth && !onAuthPage) return AppRoutes.login;
+      return null;
+    },
     routes: [
       GoRoute(
         path: AppRoutes.onboarding,
-        builder: (context, state) => const OnboardingScreen(),
+        builder: (_, __) => const OnboardingScreen(),
       ),
       GoRoute(
         path: AppRoutes.login,
-        builder: (context, state) => const LoginScreen(),
+        builder: (_, __) => const LoginScreen(),
       ),
       GoRoute(
         path: AppRoutes.register,
-        builder: (context, state) => const RegisterScreen(),
+        builder: (_, __) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.smsVerify,
+        builder: (_, state) => SmsVerifyScreen(phone: state.extra as String),
       ),
       GoRoute(
         path: AppRoutes.home,
-        builder: (context, state) => const HomeScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.routePlanner,
-        builder: (context, state) => const RoutePlannerScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.routeDetail,
-        builder: (context, state) => const RouteDetailScreen(),
+        builder: (_, __) => const HomeScreen(),
       ),
       GoRoute(
         path: AppRoutes.wallet,
-        builder: (context, state) => const WalletScreen(),
+        builder: (_, __) => const WalletScreen(),
       ),
       GoRoute(
         path: AppRoutes.history,
-        builder: (context, state) => const HistoryScreen(),
+        builder: (_, __) => const HistoryScreen(),
       ),
       GoRoute(
         path: AppRoutes.profile,
-        builder: (context, state) => const ProfileScreen(),
+        builder: (_, __) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.routePlanner,
+        builder: (_, __) => const RoutePlannerScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.routeDetail,
+        builder: (_, __) => const RouteDetailScreen(),
       ),
       GoRoute(
         path: AppRoutes.aiChat,
-        builder: (context, state) => const AiChatScreen(),
+        builder: (_, __) => const AiChatScreen(),
       ),
       GoRoute(
         path: AppRoutes.paymentValidation,
-        builder: (context, state) => const PaymentValidationScreen(),
+        builder: (_, __) => const PaymentValidationScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.nfcSimulator,
+        builder: (_, __) => const NfcAuthSimulatorScreen(),
       ),
     ],
+    errorBuilder: (context, state) => Scaffold(
+      body: Center(child: Text('Page not found: ${state.error}')),
+    ),
   );
 });
