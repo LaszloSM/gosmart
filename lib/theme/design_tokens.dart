@@ -1,45 +1,59 @@
 import 'package:flutter/material.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GoSmart Design Tokens — single source of truth (mirrors design-tokens.json)
+// GoSmart Design Tokens — single source of truth
 // ─────────────────────────────────────────────────────────────────────────────
 
 abstract class GSColors {
-  // Brand
-  static const primary = Color(0xFF2D5BFF);
-  static const primaryHover = Color(0xFF1A45E8);
-  static const primaryLight = Color(0xFFEEF2FF);
+  // ── Brand ──────────────────────────────────────────────────────────────────
+  /// Dark navy — use as background or dark surface color only.
+  static const primary = Color(0xFF1A1A2E);
 
+  /// Teal — primary interactive / CTA color (replaces old blue for foreground use).
+  static const accent = Color(0xFF00D4AA);
+  static const accentHover = Color(0xFF00B894);
+  static const accentLight = Color(0xFFE6FAF6);
+
+  /// Violet — secondary accent, eco points, card gradients.
+  static const accentAlt = Color(0xFF6C63FF);
+  static const accentAltLight = Color(0xFFEEEDFF);
+
+  // ── Eco ────────────────────────────────────────────────────────────────────
   static const eco = Color(0xFF3CB371);
   static const ecoLight = Color(0xFFE8F5EE);
   static const ecoDark = Color(0xFF28865A);
 
-  // Neutral
-  static const bg = Color(0xFFF5F7FB);
+  // ── Neutral ────────────────────────────────────────────────────────────────
+  static const bg = Color(0xFFF5F6FA);
   static const surface = Color(0xFFFFFFFF);
-  static const surface2 = Color(0xFFEFF1F6);
-  static const border = Color(0xFFE2E6F0);
-  static const textPrimary = Color(0xFF0B1226);
-  static const textSecondary = Color(0xFF5A6484);
-  static const textDisabled = Color(0xFFA8B0C8);
+  static const surfaceDark = Color(0xFFF5F6FA);
+  static const border = Color(0xFFE8ECF2);
+  static const textPrimary = Color(0xFF1A1A2E);
+  static const textSecondary = Color(0xFF8F9BB3);
+  static const textDisabled = Color(0xFFC5CCD9);
 
-  // Semantic
-  static const success = Color(0xFF22C55E);
+  // ── Semantic ───────────────────────────────────────────────────────────────
+  static const success = Color(0xFF2ED573);
   static const successLight = Color(0xFFDCFCE7);
-  static const warning = Color(0xFFF59E0B);
+  static const warning = Color(0xFFFFA502);
   static const warningLight = Color(0xFFFEF3C7);
-  static const error = Color(0xFFEF4444);
-  static const errorLight = Color(0xFFFEE2E2);
-  static const info = Color(0xFF3B82F6);
+  static const error = Color(0xFFFF4757);
+  static const errorLight = Color(0xFFFFF0F1);
+  static const info = Color(0xFF3498DB);
   static const infoLight = Color(0xFFDBEAFE);
 
-  // Transport modes
-  static const car = Color(0xFF2D5BFF);
-  static const taxi = Color(0xFFF59E0B);
-  static const bus = Color(0xFF8B5CF6);
+  // ── Transport modes ────────────────────────────────────────────────────────
+  static const car = Color(0xFF00D4AA);
+  static const taxi = Color(0xFFFFA502);
+  static const bus = Color(0xFF6C63FF);
   static const bike = Color(0xFF3CB371);
-  static const walk = Color(0xFF5A6484);
-  static const metro = Color(0xFFEF4444);
+  static const walk = Color(0xFF8F9BB3);
+  static const metro = Color(0xFFFF4757);
+
+  // ── Migration aliases — REMOVE after Task 5 is complete ───────────────────
+  static const primaryLight = accentLight;
+  static const primaryHover = accentHover;
+  static const surface2 = surfaceDark;
 }
 
 abstract class GSSpacing {
@@ -60,10 +74,10 @@ abstract class GSRadius {
   static const double md = 12;
   static const double lg = 16;
   static const double xl = 20;
-  static const double xxl = 24;
+  static const double xxl = 28; // updated from 24 — used for bottom sheets
   static const double full = 9999;
 
-  static BorderRadius get cardRadius => BorderRadius.circular(lg);
+  static BorderRadius get cardRadius => BorderRadius.circular(xl);
   static BorderRadius get buttonRadius => BorderRadius.circular(full);
   static BorderRadius get chipRadius => BorderRadius.circular(full);
   static BorderRadius get sheetRadius =>
@@ -105,13 +119,26 @@ abstract class GSShadow {
         ),
       ];
 
-  static List<BoxShadow> get primary => [
-        BoxShadow(
-          color: GSColors.primary.withOpacity(0.25),
-          blurRadius: 24,
-          offset: const Offset(0, 8),
+  /// Soft floating card shadow — use for cards and sheets.
+  static List<BoxShadow> get card => [
+        const BoxShadow(
+          color: Color(0x14000000), // black @ 8% opacity
+          blurRadius: 20,
+          offset: Offset(0, 4),
         ),
       ];
+
+  /// Accent glow — use for primary CTA buttons.
+  static List<BoxShadow> get accent => [
+        const BoxShadow(
+          color: Color(0x5900D4AA), // accent @ 35% opacity
+          blurRadius: 24,
+          offset: Offset(0, 4),
+        ),
+      ];
+
+  /// Kept as alias for accent shadow (backward compat with button code).
+  static List<BoxShadow> get primary => accent;
 
   static List<BoxShadow> get eco => [
         BoxShadow(
@@ -139,7 +166,7 @@ abstract class GSDuration {
   static const fast = Duration(milliseconds: 150);
   static const normal = Duration(milliseconds: 250);
   static const slow = Duration(milliseconds: 400);
-  static const page = Duration(milliseconds: 350);
+  static const page = Duration(milliseconds: 300);
 }
 
 abstract class GSSize {
