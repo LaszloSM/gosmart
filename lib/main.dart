@@ -1,13 +1,30 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'theme/app_theme.dart';
-import 'router/app_router.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 
-void main() {
+import 'core/env.dart';
+import 'core/supabase_client.dart';
+import 'router/app_router.dart';
+import 'theme/app_theme.dart';
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Lock to portrait by default
-  SystemChrome.setPreferredOrientations([
+  // Load environment variables from .env file
+  await dotenv.load(fileName: '.env');
+
+  // Initialize Supabase
+  await GoSmartSupabase.initialize();
+
+  // Initialize Stripe
+  Stripe.publishableKey = Env.stripePublishableKey;
+  await Stripe.instance.applySettings();
+
+  // Portrait only
+  await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
@@ -18,20 +35,25 @@ void main() {
     statusBarIconBrightness: Brightness.dark,
   ));
 
-  runApp(const GoSmartApp());
+  runApp(
+    // ProviderScope enables Riverpod throughout the app
+    const ProviderScope(
+      child: GoSmartApp(),
+    ),
+  );
 }
 
-class GoSmartApp extends StatelessWidget {
+class GoSmartApp extends ConsumerWidget {
   const GoSmartApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
+    return MaterialApp.router(
       title: 'GoSmart',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      initialRoute: AppRoutes.onboarding,
-      onGenerateRoute: AppRouter.onGenerateRoute,
+      routerConfig: router,
     );
   }
 }

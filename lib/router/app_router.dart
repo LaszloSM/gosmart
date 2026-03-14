@@ -1,4 +1,8 @@
+// lib/router/app_router.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
 import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/onboarding/login_screen.dart';
 import '../screens/onboarding/register_screen.dart';
@@ -26,55 +30,54 @@ abstract class AppRoutes {
   static const paymentValidation = '/payment-validation';
 }
 
-class AppRouter {
-  static Route<dynamic> onGenerateRoute(RouteSettings settings) {
-    Widget page;
-
-    switch (settings.name) {
-      case AppRoutes.onboarding:
-        page = const OnboardingScreen();
-        break;
-      case AppRoutes.login:
-        page = const LoginScreen();
-        break;
-      case AppRoutes.register:
-        page = const RegisterScreen();
-        break;
-      case AppRoutes.smsVerification:
-        final phone = settings.arguments as String? ?? '';
-        page = SmsVerificationScreen(phone: phone);
-        break;
-      case AppRoutes.home:
-        page = const HomeScreen();
-        break;
-      case AppRoutes.routePlanner:
-        page = const RoutePlannerScreen();
-        break;
-      case AppRoutes.routeDetail:
-        page = const RouteDetailScreen();
-        break;
-      case AppRoutes.wallet:
-        page = const WalletScreen();
-        break;
-      case AppRoutes.history:
-        page = const HistoryScreen();
-        break;
-      case AppRoutes.profile:
-        page = const ProfileScreen();
-        break;
-      case AppRoutes.aiChat:
-        page = const AiChatScreen();
-        break;
-      case AppRoutes.paymentValidation:
-        page = const PaymentValidationScreen();
-        break;
-      default:
-        page = const HomeScreen();
-    }
-
-    return MaterialPageRoute(
-      builder: (_) => page,
-      settings: settings,
-    );
-  }
-}
+final appRouterProvider = Provider<GoRouter>((ref) {
+  return GoRouter(
+    initialLocation: AppRoutes.onboarding,
+    routes: [
+      GoRoute(
+        path: AppRoutes.onboarding,
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.login,
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.register,
+        builder: (context, state) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.home,
+        builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.routePlanner,
+        builder: (context, state) => const RoutePlannerScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.routeDetail,
+        builder: (context, state) => const RouteDetailScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.wallet,
+        builder: (context, state) => const WalletScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.history,
+        builder: (context, state) => const HistoryScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.profile,
+        builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.aiChat,
+        builder: (context, state) => const AiChatScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.paymentValidation,
+        builder: (context, state) => const PaymentValidationScreen(),
+      ),
+    ],
+  );
+});
