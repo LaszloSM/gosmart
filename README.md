@@ -1,3 +1,135 @@
+# GoSmart — Setup & Runbook
+
+## Quick Start
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/<your-username>/gosmart.git
+cd gosmart
+flutter pub get
+```
+
+### 2. Create Supabase project
+
+1. Go to [supabase.com](https://supabase.com) → New project
+2. Choose a region close to Colombia (e.g., `us-east-1`)
+3. Save your project URL and anon key
+
+### 3. Apply database migrations
+
+In Supabase Dashboard → SQL Editor, run these files IN ORDER:
+
+```bash
+# Option A: Supabase CLI (recommended)
+supabase db push
+
+# Option B: Manual (copy-paste in SQL Editor)
+# 1. backend/migrations/001_schema.sql
+# 2. backend/migrations/002_rls.sql
+# 3. backend/migrations/003_functions.sql
+```
+
+Verify with `test/sql/integrity_check.sql` in SQL Editor.
+
+### 4. Configure environment variables
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your real values:
+```
+SUPABASE_URL=https://xyzabcdef.supabase.co
+SUPABASE_ANON_KEY=eyJhbGci...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+GOOGLE_MAPS_API_KEY=AIza...
+```
+
+### 5. Configure Supabase Edge Function secrets
+
+In Supabase Dashboard → Edge Functions → Secrets:
+
+```
+GEMINI_API_KEY=your-gemini-key-from-aistudio.google.com
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+```
+
+> ⚠️ These keys NEVER go in `.env` or the repo.
+> Note: `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are automatically injected by
+> Supabase into every Edge Function at runtime — you do NOT need to set them manually.
+
+### 6. Deploy Edge Functions
+
+```bash
+# Install Supabase CLI if needed
+npm install -g supabase
+
+supabase login
+supabase link --project-ref your-project-ref
+
+# Deploy all functions
+supabase functions deploy authorize
+supabase functions deploy ai-chat
+supabase functions deploy stripe-webhook
+supabase functions deploy delete-account
+```
+
+### 7. Configure Stripe webhook
+
+In [Stripe Dashboard](https://dashboard.stripe.com/test/webhooks) → Add endpoint:
+- URL: `https://your-project-ref.supabase.co/functions/v1/stripe-webhook`
+- Events: `payment_intent.succeeded`
+- Copy the webhook signing secret → set as `STRIPE_WEBHOOK_SECRET`
+
+### 8. Run the app
+
+```bash
+flutter run                          # Android emulator / connected device
+flutter run -d "iPhone 15 Pro"       # iOS simulator
+```
+
+### 9. Test the NFC Simulator
+
+1. Register an account in the app
+2. Navigate to the NFC Simulator screen (`/debug/nfc-simulator`)
+3. Select validator and amount → tap "Simular Tap NFC"
+4. Verify balance decreases in Wallet screen
+
+---
+
+## Security checklist
+
+- [ ] `.env` is in `.gitignore` (never committed)
+- [ ] Supabase `service_role` key is ONLY in Edge Function secrets
+- [ ] Stripe secret key is ONLY in Supabase secrets
+- [ ] `GEMINI_API_KEY` is ONLY in Supabase secrets
+- [ ] RLS is enabled on all tables (verify with integrity_check.sql)
+
+## Key rotation
+
+**Supabase keys** (`SUPABASE_URL`, `SUPABASE_ANON_KEY`):
+1. Supabase Dashboard → Settings → API → Reset anon key
+2. Update `.env` locally
+3. Update GitHub secret `SUPABASE_ANON_KEY` in repo Settings → Secrets
+4. Redeploy Edge Functions (`supabase functions deploy`)
+5. Inform all developers to pull `.env.example` and update `.env`
+
+**Stripe keys** (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PUBLISHABLE_KEY`):
+1. Stripe Dashboard → Developers → API keys → Roll key
+2. Update `STRIPE_SECRET_KEY` in Supabase Dashboard → Edge Functions → Secrets
+3. Update `STRIPE_PUBLISHABLE_KEY` in `.env` locally + GitHub secrets
+4. Re-deploy `stripe-webhook` function
+5. Test a Stripe sandbox payment to confirm webhook still works
+
+**Gemini API key** (`GEMINI_API_KEY`):
+1. Google AI Studio → Manage API keys → Revoke old key → Create new key
+2. Update `GEMINI_API_KEY` in Supabase Dashboard → Edge Functions → Secrets
+3. Re-deploy `ai-chat` function
+
+---
+
 # GoSmart — Flutter MVP
 
 Universal transit card app with AI routing, NFC payments and multimodal transport planning.
