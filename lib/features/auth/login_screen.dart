@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_text_field.dart';
 import '../../widgets/gs_toast.dart';
 import '../../router/app_router.dart';
 import '../../services/auth_service.dart';
-import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordCtrl = TextEditingController();
   bool _isLoading = false;
   bool _useSms = true;
+  bool _showPassword = false;
 
   @override
   void dispose() {
@@ -34,6 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
+    final messenger = ScaffoldMessenger.of(context);
     try {
       if (_useSms) {
         await authService.sendOtp(_phoneCtrl.text.trim());
@@ -41,23 +43,19 @@ class _LoginScreenState extends State<LoginScreen> {
           context.push(AppRoutes.smsVerify, extra: _phoneCtrl.text.trim());
         }
       } else {
-        final response = await authService.signInWithEmail(
+        await authService.signInWithEmail(
           email: _emailCtrl.text.trim(),
           password: _passwordCtrl.text,
         );
-        if (response.user != null && mounted) {
-          context.go(AppRoutes.home);
-        }
+        // GoRouter auto-redirects when Supabase auth state changes.
+        // No explicit navigation needed here.
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      GSToast.showWithMessenger(
+        messenger,
+        message: 'Error: ${e.toString()}',
+        type: GSToastType.error,
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -66,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GSColors.bg,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(GSSpacing.s6),
@@ -75,144 +73,238 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: GSSpacing.s10),
-                // Logo
+                const SizedBox(height: GSSpacing.s8),
+
+                // ── Brand mark ─────────────────────────────────────────────
                 Container(
-                  width: 56,
-                  height: 56,
+                  width: 52,
+                  height: 52,
                   decoration: BoxDecoration(
-                    color: GSColors.primary,
+                    color: GSColors.accent,
                     borderRadius: BorderRadius.circular(GSRadius.lg),
-                    boxShadow: GSShadow.primary,
+                    boxShadow: GSShadow.accent,
                   ),
-                  child: const Icon(Icons.directions_transit_rounded,
-                      color: Colors.white, size: 32),
+                  child: const Icon(
+                    Icons.directions_transit_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(height: GSSpacing.s6),
-                Text('Welcome\nback!',
-                    style: Theme.of(context).textTheme.displaySmall),
+
+                // ── Heading ────────────────────────────────────────────────
+                Text(
+                  'Bienvenido\nde nuevo',
+                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                        color: GSColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                        height: 1.15,
+                      ),
+                ),
                 const SizedBox(height: GSSpacing.s2),
                 Text(
-                  'Sign in to your GoSmart account',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyLarge
-                      ?.copyWith(color: GSColors.textSecondary),
+                  'Inicia sesión en tu cuenta GoSmart',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: GSColors.textSecondary,
+                        fontWeight: FontWeight.w400,
+                      ),
                 ),
                 const SizedBox(height: GSSpacing.s8),
 
-                // Toggle SMS / Email
-                _AuthToggle(
-                  useSms: _useSms,
-                  onToggle: (v) => setState(() => _useSms = v),
+                // ── Segmented toggle ───────────────────────────────────────
+                Container(
+                  height: 48,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: GSColors.surfaceDark,
+                    borderRadius: BorderRadius.circular(GSRadius.full),
+                    border: Border.all(color: GSColors.border, width: 1),
+                  ),
+                  child: Row(
+                    children: [
+                      _ToggleTab(
+                        label: 'SMS OTP',
+                        selected: _useSms,
+                        onTap: () {
+                          if (!_useSms) setState(() => _useSms = true);
+                        },
+                      ),
+                      _ToggleTab(
+                        label: 'Correo',
+                        selected: !_useSms,
+                        onTap: () {
+                          if (_useSms) setState(() => _useSms = false);
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: GSSpacing.s5),
+                const SizedBox(height: GSSpacing.s6),
 
+                // ── Fields ─────────────────────────────────────────────────
                 if (_useSms) ...[
                   GSTextField(
-                    label: 'Phone number',
-                    hint: '+1 555 000 0000',
+                    hint: 'Número de teléfono',
+                    label: 'Teléfono',
                     controller: _phoneCtrl,
                     keyboardType: TextInputType.phone,
-                    prefixIcon: Icons.phone_rounded,
+                    prefixIcon: Icons.phone_android_rounded,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     validator: (v) =>
-                        (v == null || v.length < 8) ? 'Enter a valid number' : null,
-                    semanticLabel: 'Phone number input',
+                        (v == null || v.length < 8)
+                            ? 'Ingresa un número válido'
+                            : null,
+                    semanticLabel: 'Campo de número de teléfono',
                   ),
                 ] else ...[
                   GSTextField(
-                    label: 'Email',
-                    hint: 'you@example.com',
+                    hint: 'Correo electrónico',
+                    label: 'Correo',
                     controller: _emailCtrl,
                     keyboardType: TextInputType.emailAddress,
-                    prefixIcon: Icons.email_rounded,
+                    prefixIcon: Icons.email_outlined,
                     validator: (v) =>
-                        (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+                        (v == null || !v.contains('@'))
+                            ? 'Ingresa un correo válido'
+                            : null,
                   ),
-                  const SizedBox(height: GSSpacing.s4),
+                  const SizedBox(height: GSSpacing.s3),
                   GSTextField(
-                    label: 'Password',
                     hint: '••••••••',
+                    label: 'Contraseña',
                     controller: _passwordCtrl,
-                    obscureText: true,
-                    prefixIcon: Icons.lock_rounded,
-                    suffixIcon: const Icon(Icons.visibility_rounded,
-                        size: 20, color: GSColors.textSecondary),
+                    obscureText: !_showPassword,
+                    prefixIcon: Icons.lock_outlined,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _showPassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: GSColors.textSecondary,
+                        size: 20,
+                      ),
+                      onPressed: () =>
+                          setState(() => _showPassword = !_showPassword),
+                    ),
                     validator: (v) =>
-                        (v == null || v.length < 6) ? 'Password too short' : null,
+                        (v == null || v.length < 6)
+                            ? 'Contraseña muy corta'
+                            : null,
                   ),
+                  const SizedBox(height: GSSpacing.s1),
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () {},
-                      child: const Text('Forgot password?'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: GSColors.accent,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 4),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text(
+                        '¿Olvidaste tu contraseña?',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
                   ),
                 ],
 
                 const SizedBox(height: GSSpacing.s6),
 
+                // ── Primary CTA ────────────────────────────────────────────
                 GSButton(
-                  label: _useSms ? 'Send verification code' : 'Sign in',
+                  label: _useSms ? 'Enviar código' : 'Iniciar sesión',
                   onPressed: _submit,
                   isLoading: _isLoading,
-                  leadingIcon: _useSms ? Icons.sms_rounded : Icons.login_rounded,
+                  leadingIcon:
+                      _useSms ? Icons.sms_rounded : Icons.login_rounded,
+                ),
+
+                const SizedBox(height: GSSpacing.s6),
+
+                // ── Divider ────────────────────────────────────────────────
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
+                      child: Text(
+                        'o',
+                        style:
+                            Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: GSColors.textDisabled,
+                                ),
+                      ),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
                 ),
                 const SizedBox(height: GSSpacing.s4),
 
-                // Social
-                Row(children: [
-                  const Expanded(child: Divider()),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('or', style: Theme.of(context).textTheme.bodyMedium),
-                  ),
-                  const Expanded(child: Divider()),
-                ]),
-                const SizedBox(height: GSSpacing.s4),
-                Row(children: [
-                  Expanded(
-                    child: _SocialButton(
-                      label: 'Google',
-                      icon: Icons.g_mobiledata_rounded,
-                      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Google sign-in coming soon')),
+                // ── Social stubs ───────────────────────────────────────────
+                Row(
+                  children: [
+                    Expanded(
+                      child: _SocialButton(
+                        label: 'Google',
+                        icon: Icons.g_mobiledata_rounded,
+                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Próximamente')),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: GSSpacing.s3),
-                  Expanded(
-                    child: _SocialButton(
-                      label: 'Apple',
-                      icon: Icons.apple_rounded,
-                      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Apple sign-in coming soon')),
+                    const SizedBox(width: GSSpacing.s3),
+                    Expanded(
+                      child: _SocialButton(
+                        label: 'Apple',
+                        icon: Icons.apple_rounded,
+                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Próximamente')),
+                        ),
                       ),
                     ),
-                  ),
-                ]),
+                  ],
+                ),
+
                 const SizedBox(height: GSSpacing.s8),
 
+                // ── Sign-up link ───────────────────────────────────────────
                 Center(
-                  child: TextButton(
-                    onPressed: () => context.push(AppRoutes.register),
-                    child: RichText(
-                      text: const TextSpan(
-                        text: "Don't have an account? ",
-                        style: TextStyle(color: GSColors.textSecondary, fontSize: 14),
-                        children: [
-                          TextSpan(
-                            text: 'Sign up',
-                            style: TextStyle(
-                                color: GSColors.primary,
-                                fontWeight: FontWeight.w600),
-                          ),
-                        ],
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '¿No tienes cuenta? ',
+                        style:
+                            Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: GSColors.textSecondary,
+                                ),
                       ),
-                    ),
+                      TextButton(
+                        onPressed: () => context.go(AppRoutes.register),
+                        style: TextButton.styleFrom(
+                          foregroundColor: GSColors.accent,
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text(
+                          'Regístrate',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                const SizedBox(height: GSSpacing.s4),
               ],
             ),
           ),
@@ -222,32 +314,17 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-class _AuthToggle extends StatelessWidget {
-  const _AuthToggle({required this.useSms, required this.onToggle});
-  final bool useSms;
-  final ValueChanged<bool> onToggle;
+// ─────────────────────────────────────────────────────────────────────────────
+// Segmented toggle tab
+// ─────────────────────────────────────────────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 44,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: GSColors.surfaceDark,
-        borderRadius: BorderRadius.circular(GSRadius.full),
-      ),
-      child: Row(
-        children: [
-          _Tab(label: 'Phone', selected: useSms, onTap: () => onToggle(true)),
-          _Tab(label: 'Email', selected: !useSms, onTap: () => onToggle(false)),
-        ],
-      ),
-    );
-  }
-}
+class _ToggleTab extends StatelessWidget {
+  const _ToggleTab({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
-class _Tab extends StatelessWidget {
-  const _Tab({required this.label, required this.selected, required this.onTap});
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -257,22 +334,26 @@ class _Tab extends StatelessWidget {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
+        behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
+          // Spring-like cubic — decelerates into the final position
           duration: GSDuration.normal,
+          curve: Curves.easeOutCubic,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: selected ? GSColors.surface : Colors.transparent,
+            color: selected ? GSColors.accent : Colors.transparent,
             borderRadius: BorderRadius.circular(GSRadius.full),
-            boxShadow: selected ? GSShadow.sm : [],
+            boxShadow: selected ? GSShadow.accent : [],
           ),
-          child: Text(
-            label,
+          child: AnimatedDefaultTextStyle(
+            duration: GSDuration.normal,
+            curve: Curves.easeOutCubic,
             style: TextStyle(
-              
               fontSize: 14,
               fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-              color: selected ? GSColors.textPrimary : GSColors.textSecondary,
+              color: selected ? Colors.white : GSColors.textSecondary,
             ),
+            child: Text(label),
           ),
         ),
       ),
@@ -280,36 +361,62 @@ class _Tab extends StatelessWidget {
   }
 }
 
-class _SocialButton extends StatelessWidget {
+// ─────────────────────────────────────────────────────────────────────────────
+// Social provider button
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SocialButton extends StatefulWidget {
   const _SocialButton({
     required this.label,
     required this.icon,
     required this.onTap,
   });
+
   final String label;
   final IconData icon;
   final VoidCallback onTap;
 
   @override
+  State<_SocialButton> createState() => _SocialButtonState();
+}
+
+class _SocialButtonState extends State<_SocialButton> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 48,
-        decoration: BoxDecoration(
-          color: GSColors.surface,
-          borderRadius: BorderRadius.circular(GSRadius.md),
-          border: Border.all(color: GSColors.border),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 22, color: GSColors.textPrimary),
-            const SizedBox(width: 8),
-            Text(label,
+      onTap: widget.onTap,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        curve: Curves.easeIn,
+        child: Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: GSColors.surface,
+            borderRadius: BorderRadius.circular(GSRadius.full),
+            border: Border.all(color: GSColors.border, width: 1),
+            boxShadow: _pressed ? [] : GSShadow.sm,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(widget.icon, size: 22, color: GSColors.textPrimary),
+              const SizedBox(width: 8),
+              Text(
+                widget.label,
                 style: const TextStyle(
-                    fontWeight: FontWeight.w500, color: GSColors.textPrimary)),
-          ],
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: GSColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
