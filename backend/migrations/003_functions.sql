@@ -106,12 +106,28 @@ BEGIN
   WHERE id = p_card_id;
 
   -- RECORD transaction — store remaining_balance for idempotent replay consistency
-  INSERT INTO public.transactions
-    (card_id, type, amount, currency, status, validator_id, mode, idempotency_key, remaining_balance)
-  VALUES
-    (p_card_id, 'trip', p_amount, v_card.currency, 'completed',
-     p_validator_id, p_mode, p_idempotency_key, v_card.balance - p_amount)
-  RETURNING id INTO v_tx_id;
+  -- Wrap in exception handler: concurrent duplicate idempotency_key will raise
+  -- unique_violation; catch it and return the already-committed result.
+  BEGIN
+    INSERT INTO public.transactions
+      (card_id, type, amount, currency, status, validator_id, mode, idempotency_key, remaining_balance)
+    VALUES
+      (p_card_id, 'trip', p_amount, v_card.currency, 'completed',
+       p_validator_id, p_mode, p_idempotency_key, v_card.balance - p_amount)
+    RETURNING id INTO v_tx_id;
+  EXCEPTION WHEN unique_violation THEN
+    -- Another concurrent call already committed this idempotency_key.
+    -- Re-fetch the stored result and return it as idempotent.
+    SELECT id, remaining_balance INTO v_tx_id, v_stored_balance
+    FROM public.transactions
+    WHERE idempotency_key = p_idempotency_key;
+    RETURN jsonb_build_object(
+      'status',            'authorized',
+      'tx_id',             v_tx_id,
+      'remaining_balance', v_stored_balance,
+      'idempotent',        true
+    );
+  END;
 
   -- INSERT a trip row so the AFTER INSERT trigger awards eco points.
   -- user_id comes from the card row (already fetched above with FOR UPDATE).
@@ -151,6 +167,14 @@ BEGIN
     RETURN jsonb_build_object(
       'status', 'error',
       'code',   'RECHARGE_NOT_FOUND'
+    );
+  END IF;
+
+  -- SECURITY: verify card_id matches to prevent crediting arbitrary cards
+  IF v_recharge.card_id != p_card_id THEN
+    RETURN jsonb_build_object(
+      'status', 'error',
+      'code',   'CARD_MISMATCH'
     );
   END IF;
 

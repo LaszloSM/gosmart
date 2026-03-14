@@ -10,7 +10,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Extends auth.users with app-specific fields
 CREATE TABLE IF NOT EXISTS public.profiles (
   id            UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
-  name          TEXT,
+  name          TEXT CHECK (char_length(name) <= 120),
   eco_points    INTEGER DEFAULT 0 CHECK (eco_points >= 0),
   consent_geo      BOOLEAN DEFAULT false,    -- Ley 1581: explicit location consent
   consent_ai_data  BOOLEAN DEFAULT false,   -- Ley 1581: AI data processing consent
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS public.transactions (
   card_id           UUID REFERENCES public.cards(id) ON DELETE CASCADE NOT NULL,
   type              TEXT NOT NULL CHECK (type IN ('trip','recharge','refund')),
   amount            NUMERIC(12,2) NOT NULL CHECK (amount > 0),
-  currency          TEXT DEFAULT 'cop',
+  currency          TEXT DEFAULT 'cop' CHECK (currency IN ('cop','usd','eur')),
   status            TEXT DEFAULT 'completed'
                       CHECK (status IN ('completed','failed','pending')),
   mode              TEXT,
@@ -114,6 +114,8 @@ CREATE TABLE IF NOT EXISTS public.trips (
   ended_at          TIMESTAMPTZ
 );
 
+CREATE INDEX IF NOT EXISTS trips_user_id_idx ON public.trips(user_id);
+
 -- ── eco_points_log ────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.eco_points_log (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -123,6 +125,8 @@ CREATE TABLE IF NOT EXISTS public.eco_points_log (
   reason     TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+CREATE INDEX IF NOT EXISTS eco_points_log_user_id_idx ON public.eco_points_log(user_id);
 
 -- ── payment_methods ───────────────────────────────────────────────────────────
 -- Stores Stripe tokens only. NEVER card numbers.
@@ -139,10 +143,12 @@ CREATE TABLE IF NOT EXISTS public.payment_methods (
 -- ── recharges ─────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.recharges (
   id                         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  card_id                    UUID REFERENCES public.cards(id) NOT NULL,
+  card_id                    UUID REFERENCES public.cards(id) ON DELETE RESTRICT NOT NULL,
+  -- ON DELETE RESTRICT: intentional — recharge records are financial audit trail.
+  -- Cards must be soft-deleted (status='suspended') rather than hard-deleted.
   stripe_payment_intent_id   TEXT UNIQUE NOT NULL,  -- idempotency key
   amount                     NUMERIC(12,2) NOT NULL CHECK (amount > 0),
-  currency                   TEXT DEFAULT 'cop',
+  currency                   TEXT DEFAULT 'cop' CHECK (currency IN ('cop','usd','eur')),
   status                     TEXT DEFAULT 'pending'
                                CHECK (status IN ('pending','paid','failed')),
   processed_at               TIMESTAMPTZ,
