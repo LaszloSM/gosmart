@@ -23,7 +23,7 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
       price: '\$30/h',
       vehicleName: 'Porsche Taycan',
       waitTime: '25 mins',
-      avatarColor: GSColors.primary,
+      avatarColor: GSColors.accent,
     ),
     _Driver(
       name: 'Lucas Martinez',
@@ -127,7 +127,7 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
                     
                     fontWeight: FontWeight.w700,
                     fontSize: 20,
-                    color: GSColors.primary,
+                    color: GSColors.accent,
                   )),
             ],
           ),
@@ -181,7 +181,7 @@ class _DriverCard extends StatelessWidget {
           color: GSColors.surface,
           borderRadius: BorderRadius.circular(GSRadius.lg),
           border: Border.all(
-            color: isSelected ? GSColors.primary : GSColors.border,
+            color: isSelected ? GSColors.accent : GSColors.border,
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected ? GSShadow.primary : GSShadow.md,
@@ -219,10 +219,10 @@ class _DriverCard extends StatelessWidget {
                 ),
                 Text(driver.price,
                     style: const TextStyle(
-                      
+
                       fontWeight: FontWeight.w700,
                       fontSize: 16,
-                      color: GSColors.primary,
+                      color: GSColors.accent,
                     )),
               ],
             ),

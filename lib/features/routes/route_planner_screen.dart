@@ -24,7 +24,7 @@ class _RoutePlannerScreenState extends State<RoutePlannerScreen> {
       id: 'fastest',
       label: 'Fastest',
       icon: Icons.bolt_rounded,
-      iconColor: GSColors.primary,
+      iconColor: GSColors.accent,
       time: '42 min',
       cost: '\$2.80',
       co2: '0.3 kg',
@@ -142,7 +142,7 @@ class _LocationInputs extends StatelessWidget {
                 width: 12,
                 height: 12,
                 decoration: const BoxDecoration(
-                  color: GSColors.primary,
+                  color: GSColors.accent,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -208,7 +208,7 @@ class _RouteCard extends StatelessWidget {
           color: isSelected ? GSColors.accentLight : GSColors.surface,
           borderRadius: BorderRadius.circular(GSRadius.lg),
           border: Border.all(
-            color: isSelected ? GSColors.primary : GSColors.border,
+            color: isSelected ? GSColors.accent : GSColors.border,
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected ? GSShadow.primary : GSShadow.md,
@@ -309,7 +309,7 @@ class _RouteCard extends StatelessWidget {
 }
 
 class _StatBadge extends StatelessWidget {
-  const _StatBadge(this.icon, this.label, {this.color = GSColors.primary});
+  const _StatBadge(this.icon, this.label, {this.color = GSColors.accent});
   final IconData icon;
   final String label;
   final Color color;

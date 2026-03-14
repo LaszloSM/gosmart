@@ -100,7 +100,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.auto_awesome_rounded,
-                  color: GSColors.primary, size: 18),
+                  color: GSColors.accent, size: 18),
             ),
             const SizedBox(width: GSSpacing.s2),
             const Column(
@@ -188,7 +188,7 @@ class _MessageBubble extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.auto_awesome_rounded,
-                  color: GSColors.primary, size: 16),
+                  color: GSColors.accent, size: 16),
             ),
           ],
           Flexible(
@@ -249,7 +249,7 @@ class _RouteQuickCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(GSRadius.sm),
             ),
             child: const Icon(Icons.route_rounded,
-                color: GSColors.primary, size: 18),
+                color: GSColors.accent, size: 18),
           ),
           const SizedBox(width: GSSpacing.s3),
           const Column(
@@ -259,7 +259,7 @@ class _RouteQuickCard extends StatelessWidget {
                   style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
-                      color: GSColors.primary)),
+                      color: GSColors.accent)),
               Text('Tap to open route',
                   style: TextStyle(
                       fontSize: 11, color: GSColors.textSecondary)),
@@ -307,7 +307,7 @@ class _TypingIndicatorState extends State<_TypingIndicator>
           decoration: BoxDecoration(
               color: GSColors.accentLight, shape: BoxShape.circle),
           child: const Icon(Icons.auto_awesome_rounded,
-              color: GSColors.primary, size: 16),
+              color: GSColors.accent, size: 16),
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -330,7 +330,7 @@ class _TypingIndicatorState extends State<_TypingIndicator>
                     height: 6,
                     decoration: BoxDecoration(
                       color: Color.lerp(
-                          GSColors.border, GSColors.primary, val),
+                          GSColors.border, GSColors.accent, val),
                       shape: BoxShape.circle,
                     ),
                   );
@@ -412,7 +412,7 @@ class _ChatInput extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: GSColors.primary,
+                color: GSColors.accent,
                 shape: BoxShape.circle,
                 boxShadow: GSShadow.primary,
               ),

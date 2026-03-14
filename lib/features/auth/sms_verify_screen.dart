@@ -1,4 +1,4 @@
-// lib/screens/onboarding/sms_verify_screen.dart
+// lib/features/auth/sms_verify_screen.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/auth_service.dart';

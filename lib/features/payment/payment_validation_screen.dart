@@ -215,7 +215,7 @@ class _ProcessingView extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: GSColors.primary
+                      color: GSColors.accent
                           .withOpacity(0.20 * controller.value),
                       blurRadius: 40,
                       spreadRadius: 20,
@@ -223,7 +223,7 @@ class _ProcessingView extends StatelessWidget {
                   ],
                 ),
                 child: const Icon(Icons.contactless_rounded,
-                    size: 72, color: GSColors.primary),
+                    size: 72, color: GSColors.accent),
               ),
             );
           },
@@ -241,7 +241,7 @@ class _ProcessingView extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 14, color: GSColors.textSecondary)),
         const SizedBox(height: GSSpacing.s8),
-        const CircularProgressIndicator(color: GSColors.primary),
+        const CircularProgressIndicator(color: GSColors.accent),
       ],
     );
   }
@@ -341,7 +341,7 @@ class _ResultView extends StatelessWidget {
                   borderRadius: BorderRadius.circular(GSRadius.md),
                 ),
                 child: const Icon(Icons.credit_card_rounded,
-                    color: GSColors.primary, size: 28),
+                    color: GSColors.accent, size: 28),
               ),
             ],
           ),
