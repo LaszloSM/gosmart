@@ -22,7 +22,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passCtrl = TextEditingController();
   bool _isLoading = false;
   bool _termsAccepted = false;
-  int _step = 0; // 0=info, 1=sms verify
 
   @override
   void dispose() {
@@ -106,12 +105,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: GSSpacing.s4),
               GSTextField(
                 label: 'Phone number',
-                hint: '+1 555 000 0000',
+                hint: '+57 300 000 0000',
                 controller: _phoneCtrl,
                 keyboardType: TextInputType.phone,
                 prefixIcon: Icons.phone_rounded,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (v) => null, // opcional en registro con email
+                validator: (v) => null,
               ),
               const SizedBox(height: GSSpacing.s4),
               GSTextField(
@@ -190,159 +189,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-// ─── SMS Verification screen ──────────────────────────────────────────────────
-
-class SmsVerificationScreen extends StatefulWidget {
-  const SmsVerificationScreen({super.key, required this.phone});
-  final String phone;
-
-  @override
-  State<SmsVerificationScreen> createState() => _SmsVerificationScreenState();
-}
-
-class _SmsVerificationScreenState extends State<SmsVerificationScreen> {
-  final List<TextEditingController> _ctrls =
-      List.generate(6, (_) => TextEditingController());
-  bool _isLoading = false;
-  int _resendCountdown = 59;
-
-  @override
-  void initState() {
-    super.initState();
-    _startCountdown();
-  }
-
-  void _startCountdown() async {
-    while (_resendCountdown > 0 && mounted) {
-      await Future.delayed(const Duration(seconds: 1));
-      if (mounted) setState(() => _resendCountdown--);
-    }
-  }
-
-  Future<void> _verify() async {
-    // Prototype: accepts any code
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 800));
-    if (mounted) {
-      setState(() => _isLoading = false);
-      context.go(AppRoutes.home);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: GSColors.bg,
-      appBar: AppBar(backgroundColor: Colors.transparent, leading: const BackButton()),
-      body: Padding(
-        padding: const EdgeInsets.all(GSSpacing.s6),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: GSSpacing.s4),
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: GSColors.primaryLight,
-                borderRadius: BorderRadius.circular(GSRadius.lg),
-              ),
-              child:
-                  const Icon(Icons.sms_rounded, color: GSColors.primary, size: 28),
-            ),
-            const SizedBox(height: GSSpacing.s5),
-            Text('Verify your\nphone',
-                style: Theme.of(context).textTheme.displaySmall),
-            const SizedBox(height: GSSpacing.s2),
-            Text(
-              'We sent a 6-digit code to\n${widget.phone}',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyLarge
-                  ?.copyWith(color: GSColors.textSecondary),
-            ),
-            const SizedBox(height: GSSpacing.s8),
-
-            // OTP boxes
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: List.generate(6, (i) => _OtpBox(controller: _ctrls[i])),
-            ),
-            const SizedBox(height: GSSpacing.s6),
-
-            GSButton(
-              label: 'Verify',
-              onPressed: _verify,
-              isLoading: _isLoading,
-              leadingIcon: Icons.check_circle_rounded,
-            ),
-            const SizedBox(height: GSSpacing.s5),
-
-            Center(
-              child: _resendCountdown > 0
-                  ? Text(
-                      'Resend code in 0:${_resendCountdown.toString().padLeft(2, '0')}',
-                      style: const TextStyle(color: GSColors.textSecondary),
-                    )
-                  : TextButton(
-                      onPressed: () => setState(() {
-                        _resendCountdown = 59;
-                        _startCountdown();
-                      }),
-                      child: const Text('Resend code'),
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _OtpBox extends StatelessWidget {
-  const _OtpBox({required this.controller});
-  final TextEditingController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 48,
-      height: 56,
-      child: TextField(
-        controller: controller,
-        textAlign: TextAlign.center,
-        keyboardType: TextInputType.number,
-        maxLength: 1,
-        style: const TextStyle(
-          
-          fontSize: 22,
-          fontWeight: FontWeight.w700,
-          color: GSColors.textPrimary,
-        ),
-        decoration: InputDecoration(
-          counterText: '',
-          filled: true,
-          fillColor: GSColors.surface,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(GSRadius.md),
-            borderSide: const BorderSide(color: GSColors.border),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(GSRadius.md),
-            borderSide: const BorderSide(color: GSColors.primary, width: 2),
-          ),
-        ),
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        onChanged: (v) {
-          if (v.isNotEmpty) {
-            FocusScope.of(context).nextFocus();
-          }
-        },
       ),
     );
   }

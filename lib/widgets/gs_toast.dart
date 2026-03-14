@@ -51,6 +51,46 @@ class GSToast {
     );
   }
 
+  /// Use this variant inside async callbacks to avoid BuildContext-across-gap
+  /// lint warnings. Capture `ScaffoldMessenger.of(context)` before the await,
+  /// then call this method afterward.
+  static void showWithMessenger(
+    ScaffoldMessengerState messenger, {
+    required String message,
+    GSToastType type = GSToastType.info,
+    Duration duration = const Duration(seconds: 3),
+  }) {
+    final colors = _typeColors(type);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(colors.icon, color: colors.iconColor, size: 20),
+            const SizedBox(width: GSSpacing.s3),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: GSColors.textPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: colors.bg,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(GSRadius.md),
+          side: BorderSide(color: colors.border, width: 1),
+        ),
+        margin: const EdgeInsets.all(GSSpacing.s4),
+        duration: duration,
+      ),
+    );
+  }
+
   static _ToastColors _typeColors(GSToastType type) {
     switch (type) {
       case GSToastType.success:

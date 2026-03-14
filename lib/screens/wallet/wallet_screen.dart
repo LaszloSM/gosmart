@@ -129,13 +129,25 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
             Text('Payment methods',
                 style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: GSSpacing.s3),
-            ..._paymentMethods.map((m) => _PaymentMethodTile(method: m)),
-            const SizedBox(height: GSSpacing.s3),
-            GSButton(
-              label: 'Add payment method',
-              onPressed: () {},
-              variant: GSButtonVariant.secondary,
-              leadingIcon: Icons.add_rounded,
+            GSCard(
+              padding: const EdgeInsets.all(GSSpacing.s5),
+              child: Column(
+                children: [
+                  const Icon(Icons.credit_card_off_rounded,
+                      size: 36, color: GSColors.textDisabled),
+                  const SizedBox(height: GSSpacing.s2),
+                  const Text('No payment methods added yet',
+                      style: TextStyle(
+                          fontSize: 13, color: GSColors.textSecondary)),
+                  const SizedBox(height: GSSpacing.s4),
+                  GSButton(
+                    label: 'Add payment method',
+                    onPressed: () {},
+                    variant: GSButtonVariant.secondary,
+                    leadingIcon: Icons.add_rounded,
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: GSSpacing.s5),
 
@@ -239,10 +251,6 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
     );
   }
 
-  static const _paymentMethods = [
-    _PaymentMethod('Visa •••• 4242', 'Expires 03/26', Icons.credit_card_rounded, GSColors.primary),
-    _PaymentMethod('Apple Pay', 'Default', Icons.apple_rounded, GSColors.textPrimary),
-  ];
 }
 
 // ─── Smart Card widget ────────────────────────────────────────────────────────
@@ -533,49 +541,6 @@ class _ModeBtn extends StatelessWidget {
   }
 }
 
-class _PaymentMethodTile extends StatelessWidget {
-  const _PaymentMethodTile({required this.method});
-  final _PaymentMethod method;
-
-  @override
-  Widget build(BuildContext context) {
-    return GSCard(
-      margin: const EdgeInsets.only(bottom: GSSpacing.s3),
-      padding: const EdgeInsets.all(GSSpacing.s4),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: method.color.withOpacity(0.10),
-              borderRadius: BorderRadius.circular(GSRadius.sm),
-            ),
-            child: Icon(method.icon, color: method.color, size: 22),
-          ),
-          const SizedBox(width: GSSpacing.s3),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(method.label,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: GSColors.textPrimary)),
-                Text(method.sublabel,
-                    style: const TextStyle(
-                        fontSize: 12, color: GSColors.textSecondary)),
-              ],
-            ),
-          ),
-          const Icon(Icons.arrow_forward_ios_rounded,
-              size: 14, color: GSColors.textDisabled),
-        ],
-      ),
-    );
-  }
-}
 
 class _ControlRow extends StatelessWidget {
   const _ControlRow({
@@ -634,10 +599,3 @@ class _ControlRow extends StatelessWidget {
   }
 }
 
-class _PaymentMethod {
-  final String label;
-  final String sublabel;
-  final IconData icon;
-  final Color color;
-  const _PaymentMethod(this.label, this.sublabel, this.icon, this.color);
-}

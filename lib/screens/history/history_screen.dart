@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_card.dart';
+import '../../providers/transaction_provider.dart';
+import '../../providers/profile_provider.dart';
+import '../../models/transaction_model.dart';
 
-class HistoryScreen extends StatefulWidget {
+class HistoryScreen extends ConsumerStatefulWidget {
   const HistoryScreen({super.key});
 
   @override
-  State<HistoryScreen> createState() => _HistoryScreenState();
+  ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-class _HistoryScreenState extends State<HistoryScreen>
+class _HistoryScreenState extends ConsumerState<HistoryScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tab;
-  String _filter = 'All';
 
   @override
   void initState() {
@@ -25,64 +29,6 @@ class _HistoryScreenState extends State<HistoryScreen>
     _tab.dispose();
     super.dispose();
   }
-
-  static const _trips = [
-    _Trip(
-      origin: 'PITX',
-      destination: 'Cubao',
-      date: 'Today, 9:30 AM',
-      amount: '\$2.80',
-      mode: 'Bus',
-      modeIcon: Icons.directions_bus_rounded,
-      modeColor: GSColors.bus,
-      status: 'completed',
-      co2: '0.3 kg',
-    ),
-    _Trip(
-      origin: 'Makati CBD',
-      destination: 'BGC',
-      date: 'Yesterday, 6:15 PM',
-      amount: '\$1.50',
-      mode: 'Metro',
-      modeIcon: Icons.subway_rounded,
-      modeColor: GSColors.metro,
-      status: 'completed',
-      co2: '0.1 kg',
-    ),
-    _Trip(
-      origin: 'Ortigas',
-      destination: 'Mandaluyong',
-      date: 'Mar 11, 2:00 PM',
-      amount: '\$0.80',
-      mode: 'Bike',
-      modeIcon: Icons.pedal_bike_rounded,
-      modeColor: GSColors.bike,
-      status: 'completed',
-      co2: '0 kg',
-    ),
-    _Trip(
-      origin: 'Airport T3',
-      destination: 'Makati',
-      date: 'Mar 10, 8:45 AM',
-      amount: '\$18.00',
-      mode: 'Taxi',
-      modeIcon: Icons.local_taxi_rounded,
-      modeColor: GSColors.taxi,
-      status: 'completed',
-      co2: '2.1 kg',
-    ),
-    _Trip(
-      origin: 'SM North',
-      destination: 'Quezon Ave',
-      date: 'Mar 9, 11:30 AM',
-      amount: '\$1.20',
-      mode: 'Bus',
-      modeIcon: Icons.directions_bus_rounded,
-      modeColor: GSColors.bus,
-      status: 'failed',
-      co2: '—',
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -107,17 +53,12 @@ class _HistoryScreenState extends State<HistoryScreen>
       body: TabBarView(
         controller: _tab,
         children: [
-          // Trips tab
-          _TripsTab(trips: _trips),
-
-          // Tickets tab (placeholder)
+          _TripsTab(ref: ref),
           const _EmptyState(
             icon: Icons.confirmation_number_rounded,
             title: 'No active tickets',
             body: 'Your purchased tickets will appear here.',
           ),
-
-          // Receipts tab (placeholder)
           const _EmptyState(
             icon: Icons.receipt_long_rounded,
             title: 'No receipts yet',
@@ -129,74 +70,148 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 }
 
+// ─── Trips tab ────────────────────────────────────────────────────────────────
+
 class _TripsTab extends StatelessWidget {
-  const _TripsTab({required this.trips});
-  final List<_Trip> trips;
+  const _TripsTab({required this.ref});
+  final WidgetRef ref;
 
   @override
   Widget build(BuildContext context) {
-    // Monthly spend summary card
-    return ListView(
-      padding: const EdgeInsets.all(GSSpacing.s5),
-      children: [
-        // Summary
-        GSCard(
-          padding: const EdgeInsets.all(GSSpacing.s5),
-          shadow: GSShadow.md,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    final txState = ref.watch(transactionListProvider);
+    final ecoPoints = ref.watch(profileProvider).valueOrNull?.formattedEcoPoints ?? '0';
+
+    return txState.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline_rounded,
+                size: 48, color: GSColors.error),
+            const SizedBox(height: 12),
+            Text('Error loading trips',
+                style: TextStyle(color: GSColors.textSecondary)),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () =>
+                  ref.read(transactionListProvider.notifier).load(refresh: true),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+      data: (transactions) {
+        final trips =
+            transactions.where((t) => t.isTrip).toList();
+
+        // Monthly summary
+        final now = DateTime.now();
+        final monthTrips = trips
+            .where((t) =>
+                t.createdAt.year == now.year &&
+                t.createdAt.month == now.month)
+            .toList();
+        final monthSpend =
+            monthTrips.fold<double>(0, (sum, t) => sum + t.amount);
+        final monthCo2 = monthTrips.fold<double>(
+            0, (sum, t) => sum + (t.co2Kg ?? 0));
+
+        return NotificationListener<ScrollNotification>(
+          onNotification: (n) {
+            if (n is ScrollEndNotification &&
+                n.metrics.pixels >= n.metrics.maxScrollExtent - 200) {
+              ref.read(transactionListProvider.notifier).loadMore();
+            }
+            return false;
+          },
+          child: ListView(
+            padding: const EdgeInsets.all(GSSpacing.s5),
             children: [
-              const Text('This month',
-                  style: TextStyle(
-                      fontSize: 13, color: GSColors.textSecondary)),
-              const SizedBox(height: 4),
-              const Text('\$24.30',
-                  style: TextStyle(
-                      
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      color: GSColors.textPrimary)),
-              const SizedBox(height: GSSpacing.s4),
-              Row(
-                children: [
-                  _MiniStat(
-                      icon: Icons.directions_bus_rounded,
-                      label: '8 trips',
-                      color: GSColors.bus),
-                  const SizedBox(width: GSSpacing.s4),
-                  _MiniStat(
-                      icon: Icons.eco_rounded,
-                      label: '1.2 kg CO₂ saved',
-                      color: GSColors.eco),
-                  const SizedBox(width: GSSpacing.s4),
-                  _MiniStat(
-                      icon: Icons.star_rounded,
-                      label: '240 pts',
-                      color: GSColors.warning),
-                ],
+              // Monthly summary
+              GSCard(
+                padding: const EdgeInsets.all(GSSpacing.s5),
+                shadow: GSShadow.md,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('This month',
+                        style: TextStyle(
+                            fontSize: 13, color: GSColors.textSecondary)),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatAmount(monthSpend),
+                      style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          color: GSColors.textPrimary),
+                    ),
+                    const SizedBox(height: GSSpacing.s4),
+                    Row(
+                      children: [
+                        _MiniStat(
+                            icon: Icons.directions_bus_rounded,
+                            label: '${monthTrips.length} trips',
+                            color: GSColors.bus),
+                        const SizedBox(width: GSSpacing.s4),
+                        _MiniStat(
+                            icon: Icons.eco_rounded,
+                            label: '${monthCo2.toStringAsFixed(1)} kg CO₂',
+                            color: GSColors.eco),
+                        const SizedBox(width: GSSpacing.s4),
+                        _MiniStat(
+                            icon: Icons.star_rounded,
+                            label: '$ecoPoints pts',
+                            color: GSColors.warning),
+                      ],
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(height: GSSpacing.s5),
+
+              Text('Recent trips',
+                  style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: GSSpacing.s3),
+
+              if (trips.isEmpty)
+                const _EmptyState(
+                  icon: Icons.directions_bus_rounded,
+                  title: 'No trips yet',
+                  body: 'Your travel history will appear here after your first trip.',
+                )
+              else
+                ...trips.map((t) => _TripTile(tx: t)),
             ],
           ),
-        ),
-        const SizedBox(height: GSSpacing.s5),
-
-        Text('Recent trips',
-            style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: GSSpacing.s3),
-
-        ...trips.map((t) => _TripTile(trip: t)),
-      ],
+        );
+      },
     );
+  }
+
+  static String _formatAmount(double amount) {
+    return NumberFormat.currency(
+      locale: 'es_CO',
+      symbol: '\$',
+      decimalDigits: 0,
+    ).format(amount);
   }
 }
 
+// ─── Trip tile ────────────────────────────────────────────────────────────────
+
 class _TripTile extends StatelessWidget {
-  const _TripTile({required this.trip});
-  final _Trip trip;
+  const _TripTile({required this.tx});
+  final TransactionModel tx;
 
   @override
   Widget build(BuildContext context) {
-    final failed = trip.status == 'failed';
+    final failed = tx.status == 'failed';
+    final modeIcon = _modeIcon(tx.mode);
+    final modeColor = _modeColor(tx.mode);
+    final originLabel = tx.origin ?? tx.type;
+    final destLabel = tx.destination ?? '—';
+
     return GSCard(
       margin: const EdgeInsets.only(bottom: GSSpacing.s3),
       padding: const EdgeInsets.all(GSSpacing.s4),
@@ -206,10 +221,10 @@ class _TripTile extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: trip.modeColor.withOpacity(0.10),
+              color: modeColor.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(GSRadius.md),
             ),
-            child: Icon(trip.modeIcon, color: trip.modeColor, size: 22),
+            child: Icon(modeIcon, color: modeColor, size: 22),
           ),
           const SizedBox(width: GSSpacing.s3),
           Expanded(
@@ -218,41 +233,44 @@ class _TripTile extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(trip.origin,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                            color: GSColors.textPrimary)),
+                    Flexible(
+                      child: Text(originLabel,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: GSColors.textPrimary)),
+                    ),
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 6),
                       child: Icon(Icons.arrow_forward_rounded,
                           size: 14, color: GSColors.textDisabled),
                     ),
-                    Text(trip.destination,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                            color: GSColors.textPrimary)),
+                    Flexible(
+                      child: Text(destLabel,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: GSColors.textPrimary)),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Text(trip.date,
+                    Text(_relativeDate(tx.createdAt),
                         style: const TextStyle(
                             fontSize: 12, color: GSColors.textSecondary)),
-                    const SizedBox(width: GSSpacing.s3),
-                    if (!failed)
-                      Row(
-                        children: [
-                          const Icon(Icons.eco_rounded,
-                              size: 12, color: GSColors.eco),
-                          const SizedBox(width: 2),
-                          Text(trip.co2,
-                              style: const TextStyle(
-                                  fontSize: 11, color: GSColors.eco)),
-                        ],
-                      ),
+                    if (!failed && tx.co2Kg != null) ...[
+                      const SizedBox(width: GSSpacing.s3),
+                      const Icon(Icons.eco_rounded,
+                          size: 12, color: GSColors.eco),
+                      const SizedBox(width: 2),
+                      Text('${tx.co2Kg!.toStringAsFixed(1)} kg',
+                          style: const TextStyle(
+                              fontSize: 11, color: GSColors.eco)),
+                    ],
                   ],
                 ),
               ],
@@ -262,9 +280,14 @@ class _TripTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                failed ? 'Failed' : trip.amount,
+                failed
+                    ? 'Failed'
+                    : NumberFormat.currency(
+                        locale: 'es_CO',
+                        symbol: '\$',
+                        decimalDigits: 0,
+                      ).format(tx.amount),
                 style: TextStyle(
-                  
                   fontWeight: FontWeight.w700,
                   fontSize: 15,
                   color: failed ? GSColors.error : GSColors.textPrimary,
@@ -293,7 +316,48 @@ class _TripTile extends StatelessWidget {
       ),
     );
   }
+
+  static String _relativeDate(DateTime dt) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final date = DateTime(dt.year, dt.month, dt.day);
+    final diff = today.difference(date).inDays;
+    final time = DateFormat.jm().format(dt);
+    if (diff == 0) return 'Today, $time';
+    if (diff == 1) return 'Yesterday, $time';
+    return '${DateFormat('MMM d').format(dt)}, $time';
+  }
+
+  static IconData _modeIcon(String? mode) {
+    switch (mode) {
+      case 'metro':
+        return Icons.subway_rounded;
+      case 'taxi':
+        return Icons.local_taxi_rounded;
+      case 'bike':
+        return Icons.pedal_bike_rounded;
+      case 'walk':
+        return Icons.directions_walk_rounded;
+      default:
+        return Icons.directions_bus_rounded;
+    }
+  }
+
+  static Color _modeColor(String? mode) {
+    switch (mode) {
+      case 'metro':
+        return GSColors.metro;
+      case 'taxi':
+        return GSColors.taxi;
+      case 'bike':
+        return GSColors.bike;
+      default:
+        return GSColors.bus;
+    }
+  }
 }
+
+// ─── Shared widgets ───────────────────────────────────────────────────────────
 
 class _MiniStat extends StatelessWidget {
   const _MiniStat(
@@ -309,8 +373,8 @@ class _MiniStat extends StatelessWidget {
         Icon(icon, size: 14, color: color),
         const SizedBox(width: 4),
         Text(label,
-            style: TextStyle(fontSize: 11, color: color,
-                fontWeight: FontWeight.w500)),
+            style: TextStyle(
+                fontSize: 11, color: color, fontWeight: FontWeight.w500)),
       ],
     );
   }
@@ -346,7 +410,6 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: GSSpacing.s5),
             Text(title,
                 style: const TextStyle(
-                    
                     fontWeight: FontWeight.w700,
                     fontSize: 18,
                     color: GSColors.textPrimary)),
@@ -360,27 +423,4 @@ class _EmptyState extends StatelessWidget {
       ),
     );
   }
-}
-
-class _Trip {
-  final String origin;
-  final String destination;
-  final String date;
-  final String amount;
-  final String mode;
-  final IconData modeIcon;
-  final Color modeColor;
-  final String status;
-  final String co2;
-  const _Trip({
-    required this.origin,
-    required this.destination,
-    required this.date,
-    required this.amount,
-    required this.mode,
-    required this.modeIcon,
-    required this.modeColor,
-    required this.status,
-    required this.co2,
-  });
 }

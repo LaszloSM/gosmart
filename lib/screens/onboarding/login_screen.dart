@@ -161,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: GSSpacing.s4),
 
-                // Demo shortcut
+                // Social
                 Row(children: [
                   const Expanded(child: Divider()),
                   Padding(
@@ -171,52 +171,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   const Expanded(child: Divider()),
                 ]),
                 const SizedBox(height: GSSpacing.s4),
-
-                // ── Try Demo banner ───────────────────────────────────────
-                GestureDetector(
-                  onTap: () => context.go(AppRoutes.home),
-                  child: Container(
-                    padding: const EdgeInsets.all(GSSpacing.s4),
-                    decoration: BoxDecoration(
-                      color: GSColors.primaryLight,
-                      borderRadius: BorderRadius.circular(GSRadius.lg),
-                      border: Border.all(color: GSColors.primary.withOpacity(0.3)),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.rocket_launch_rounded,
-                            color: GSColors.primary, size: 22),
-                        SizedBox(width: GSSpacing.s3),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Try Demo',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 14,
-                                      color: GSColors.primary)),
-                              Text('Skip login — explore all screens',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: GSColors.textSecondary)),
-                            ],
-                          ),
-                        ),
-                        Icon(Icons.arrow_forward_ios_rounded,
-                            size: 14, color: GSColors.primary),
-                      ],
-                    ),
-                  ),
-                ),
-                // Social
-                const SizedBox(height: GSSpacing.s4),
                 Row(children: [
                   Expanded(
                     child: _SocialButton(
                       label: 'Google',
                       icon: Icons.g_mobiledata_rounded,
-                      onTap: () => context.go(AppRoutes.home),
+                      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Google sign-in coming soon')),
+                      ),
                     ),
                   ),
                   const SizedBox(width: GSSpacing.s3),
@@ -224,7 +186,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: _SocialButton(
                       label: 'Apple',
                       icon: Icons.apple_rounded,
-                      onTap: () => context.go(AppRoutes.home),
+                      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Apple sign-in coming soon')),
+                      ),
                     ),
                   ),
                 ]),

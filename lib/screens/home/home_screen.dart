@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
@@ -7,15 +8,17 @@ import '../../widgets/gs_card.dart';
 import '../../widgets/gs_text_field.dart';
 import '../../widgets/gs_toast.dart';
 import '../../router/app_router.dart';
+import '../../providers/profile_provider.dart';
+import '../../providers/card_provider.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _navIndex = 0;
   String _selectedMode = 'Car';
   bool _showNotification = true;
@@ -84,7 +87,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
 
                     // Header
-                    _HomeHeader(),
+                    _HomeHeader(
+                      name: ref.watch(profileProvider).valueOrNull?.name ?? '',
+                    ),
                     const SizedBox(height: GSSpacing.s4),
 
                     // Search
@@ -166,19 +171,24 @@ class _HomeScreenState extends State<HomeScreen> {
                         Expanded(
                           child: GSInfoCard(
                             title: 'Balance',
-                            value: '\$100.00',
+                            value: ref.watch(activeCardProvider).valueOrNull
+                                    ?.formattedBalance ??
+                                '—',
                             icon: Icons.account_balance_wallet_rounded,
                             iconBgColor: GSColors.primary,
                             subtitle: 'Top up credit',
-                            onTap: () =>
-                                context.push(AppRoutes.wallet),
+                            onTap: () => context.push(AppRoutes.wallet),
                           ),
                         ),
                         const SizedBox(width: GSSpacing.s3),
                         Expanded(
                           child: GSInfoCard(
                             title: 'Eco Points',
-                            value: '1,240',
+                            value: ref
+                                    .watch(profileProvider)
+                                    .valueOrNull
+                                    ?.formattedEcoPoints ??
+                                '0',
                             icon: Icons.eco_rounded,
                             iconBgColor: GSColors.eco,
                             subtitle: 'CO₂ saved',
@@ -260,8 +270,12 @@ class _HomeScreenState extends State<HomeScreen> {
 // ─── Subwidgets ───────────────────────────────────────────────────────────────
 
 class _HomeHeader extends StatelessWidget {
+  const _HomeHeader({required this.name});
+  final String name;
+
   @override
   Widget build(BuildContext context) {
+    final displayName = name.isEmpty ? 'there' : name.split(' ').first;
     return Row(
       children: [
         const CircleAvatar(
@@ -275,17 +289,16 @@ class _HomeHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               RichText(
-                text: const TextSpan(
+                text: TextSpan(
                   text: 'Hello ',
-                  style: TextStyle(
-                      
+                  style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: GSColors.textPrimary),
                   children: [
                     TextSpan(
-                      text: 'Muhammad,',
-                      style: TextStyle(color: GSColors.primary),
+                      text: '$displayName,',
+                      style: const TextStyle(color: GSColors.primary),
                     ),
                   ],
                 ),
