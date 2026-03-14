@@ -38,8 +38,9 @@ dependencies:
   # UUID for idempotency keys
   uuid: ^4.3.3
 
-  # Maps
-  google_maps_flutter: ^2.5.3
+  # Maps — google_maps_flutter removed (requires paid API key)
+  # The home screen uses a custom-painted visual map placeholder for the prototype.
+  # Add google_maps_flutter + configure API key when ready for production maps.
 
   # Utilities
   intl: ^0.19.0

@@ -120,4 +120,4 @@ BEGIN
   RAISE NOTICE 'OK: PostGIS extension installed';
 END $$;
 
-RAISE NOTICE '=== All integrity checks passed ===';
+DO $$ BEGIN RAISE NOTICE '=== All integrity checks passed ==='; END $$;
