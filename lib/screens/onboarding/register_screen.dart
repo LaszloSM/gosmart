@@ -43,7 +43,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     await Future.delayed(const Duration(seconds: 2));
     if (mounted) {
       setState(() => _isLoading = false);
-      Navigator.pushNamed(context, AppRoutes.smsVerification,
+      Navigator.pushNamed(context, AppRoutes.smsVerify,
           arguments: _phoneCtrl.text);
     }
   }
