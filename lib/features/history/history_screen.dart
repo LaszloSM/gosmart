@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-import '../../theme/design_tokens.dart';
-import '../../widgets/gs_card.dart';
-import '../../providers/transaction_provider.dart';
-import '../../providers/profile_provider.dart';
+import 'package:go_router/go_router.dart';
+
 import '../../models/transaction_model.dart';
+import '../../providers/transaction_provider.dart';
+import '../../router/app_router.dart';
+import '../../theme/design_tokens.dart';
+import '../../widgets/gs_bottom_nav.dart';
+import '../../widgets/gs_card.dart';
+import '../../widgets/gs_empty_state.dart';
+import '../../widgets/gs_skeleton_loader.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
   const HistoryScreen({super.key});
@@ -14,108 +18,152 @@ class HistoryScreen extends ConsumerStatefulWidget {
   ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-class _HistoryScreenState extends ConsumerState<HistoryScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tab;
-
-  @override
-  void initState() {
-    super.initState();
-    _tab = TabController(length: 3, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tab.dispose();
-    super.dispose();
-  }
+class _HistoryScreenState extends ConsumerState<HistoryScreen> {
+  int _tabIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GSColors.bg,
       appBar: AppBar(
-        title: const Text('Trips & Receipts'),
-        leading: const BackButton(),
-        bottom: TabBar(
-          controller: _tab,
-          labelColor: GSColors.primary,
-          unselectedLabelColor: GSColors.textSecondary,
-          indicatorColor: GSColors.primary,
-          indicatorSize: TabBarIndicatorSize.label,
-          tabs: const [
-            Tab(text: 'Trips'),
-            Tab(text: 'Tickets'),
-            Tab(text: 'Receipts'),
-          ],
-        ),
+        title: const Text('Mis Viajes'),
+        automaticallyImplyLeading: false,
       ),
-      body: TabBarView(
-        controller: _tab,
+      body: Column(
         children: [
-          _TripsTab(ref: ref),
-          const _EmptyState(
-            icon: Icons.confirmation_number_rounded,
-            title: 'No active tickets',
-            body: 'Your purchased tickets will appear here.',
-          ),
-          const _EmptyState(
-            icon: Icons.receipt_long_rounded,
-            title: 'No receipts yet',
-            body: 'Detailed receipts for every trip are saved here.',
-          ),
+          _buildPillTabBar(),
+          Expanded(child: _buildBody()),
+        ],
+      ),
+      bottomNavigationBar: GSBottomNav(
+        currentIndex: 1,
+        onTap: _onNavTap,
+      ),
+    );
+  }
+
+  void _onNavTap(int i) {
+    switch (i) {
+      case 0:
+        context.go(AppRoutes.home);
+        break;
+      case 1:
+        context.go(AppRoutes.history);
+        break;
+      case 2:
+        context.go(AppRoutes.wallet);
+        break;
+      case 3:
+        context.go(AppRoutes.profile);
+        break;
+    }
+  }
+
+  Widget _buildPillTabBar() {
+    return Padding(
+      padding: const EdgeInsets.all(GSSpacing.s4),
+      child: Row(
+        children: [
+          _tabPill('Viajes', 0),
+          const SizedBox(width: GSSpacing.s2),
+          _tabPill('Tickets', 1),
+          const SizedBox(width: GSSpacing.s2),
+          _tabPill('Recibos', 2),
         ],
       ),
     );
   }
-}
 
-// ─── Trips tab ────────────────────────────────────────────────────────────────
+  Widget _tabPill(String label, int index) {
+    final isActive = _tabIndex == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _tabIndex = index),
+        child: AnimatedContainer(
+          duration: GSDuration.normal,
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isActive ? GSColors.accent : GSColors.surfaceDark,
+            borderRadius: BorderRadius.circular(GSRadius.full),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: isActive ? Colors.white : GSColors.textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-class _TripsTab extends StatelessWidget {
-  const _TripsTab({required this.ref});
-  final WidgetRef ref;
+  Widget _buildBody() {
+    switch (_tabIndex) {
+      case 1:
+        return GSEmptyState(
+          icon: Icons.confirmation_number_rounded,
+          title: 'Sin tickets',
+          subtitle: 'Tus tickets de transporte aparecerán aquí',
+        );
+      case 2:
+        return GSEmptyState(
+          icon: Icons.receipt_long_rounded,
+          title: 'Sin recibos',
+          subtitle: 'Los recibos detallados de cada viaje se guardan aquí',
+        );
+      default:
+        return _buildViajasTab();
+    }
+  }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildViajasTab() {
     final txState = ref.watch(transactionListProvider);
-    final ecoPoints = ref.watch(profileProvider).valueOrNull?.formattedEcoPoints ?? '0';
 
     return txState.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(
+      loading: () => SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline_rounded,
-                size: 48, color: GSColors.error),
-            const SizedBox(height: 12),
-            Text('Error loading trips',
-                style: TextStyle(color: GSColors.textSecondary)),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () =>
-                  ref.read(transactionListProvider.notifier).load(refresh: true),
-              child: const Text('Retry'),
+            const GSSkeletonLoader(
+              width: double.infinity,
+              height: 72,
+              radius: 20,
+            ),
+            const SizedBox(height: GSSpacing.s4),
+            ...List.generate(
+              5,
+              (_) => const Padding(
+                padding: EdgeInsets.only(bottom: GSSpacing.s2),
+                child: GSTransactionSkeleton(),
+              ),
             ),
           ],
         ),
       ),
-      data: (transactions) {
-        final trips =
-            transactions.where((t) => t.isTrip).toList();
-
-        // Monthly summary
+      error: (error, _) => Padding(
+        padding: const EdgeInsets.all(GSSpacing.s4),
+        child: GSErrorCard(
+          message: error.toString(),
+          onRetry: () =>
+              ref.read(transactionListProvider.notifier).load(refresh: true),
+        ),
+      ),
+      data: (list) {
         final now = DateTime.now();
-        final monthTrips = trips
-            .where((t) =>
-                t.createdAt.year == now.year &&
-                t.createdAt.month == now.month)
+        final thisMonth = list
+            .where(
+              (t) =>
+                  t.createdAt.year == now.year &&
+                  t.createdAt.month == now.month,
+            )
             .toList();
-        final monthSpend =
-            monthTrips.fold<double>(0, (sum, t) => sum + t.amount);
-        final monthCo2 = monthTrips.fold<double>(
-            0, (sum, t) => sum + (t.co2Kg ?? 0));
+        final totalSpent =
+            thisMonth.fold<double>(0, (s, t) => s + t.amount);
+        final totalTrips = thisMonth.length;
 
         return NotificationListener<ScrollNotification>(
           onNotification: (n) {
@@ -125,153 +173,159 @@ class _TripsTab extends StatelessWidget {
             }
             return false;
           },
-          child: ListView(
-            padding: const EdgeInsets.all(GSSpacing.s5),
-            children: [
-              // Monthly summary
-              GSCard(
-                padding: const EdgeInsets.all(GSSpacing.s5),
-                shadow: GSShadow.md,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('This month',
-                        style: TextStyle(
-                            fontSize: 13, color: GSColors.textSecondary)),
-                    const SizedBox(height: 4),
-                    Text(
-                      _formatAmount(monthSpend),
-                      style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          color: GSColors.textPrimary),
-                    ),
-                    const SizedBox(height: GSSpacing.s4),
-                    Row(
-                      children: [
-                        _MiniStat(
-                            icon: Icons.directions_bus_rounded,
-                            label: '${monthTrips.length} trips',
-                            color: GSColors.bus),
-                        const SizedBox(width: GSSpacing.s4),
-                        _MiniStat(
-                            icon: Icons.eco_rounded,
-                            label: '${monthCo2.toStringAsFixed(1)} kg CO₂',
-                            color: GSColors.eco),
-                        const SizedBox(width: GSSpacing.s4),
-                        _MiniStat(
-                            icon: Icons.star_rounded,
-                            label: '$ecoPoints pts',
-                            color: GSColors.warning),
-                      ],
-                    ),
-                  ],
+          child: SingleChildScrollView(
+            padding:
+                const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
+            child: Column(
+              children: [
+                // Monthly summary card
+                GSCard(
+                  padding: const EdgeInsets.all(GSSpacing.s4),
+                  child: Row(
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Total este mes',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: GSColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _formatCOP(totalSpent),
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: GSColors.accent,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            totalTrips.toString(),
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: GSColors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            'viajes',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: GSColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: GSSpacing.s5),
-
-              Text('Recent trips',
-                  style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: GSSpacing.s3),
-
-              if (trips.isEmpty)
-                const _EmptyState(
-                  icon: Icons.directions_bus_rounded,
-                  title: 'No trips yet',
-                  body: 'Your travel history will appear here after your first trip.',
-                )
-              else
-                ...trips.map((t) => _TripTile(tx: t)),
-            ],
+                const SizedBox(height: GSSpacing.s4),
+                // Trip list or empty state
+                if (list.isEmpty)
+                  GSEmptyState(
+                    icon: Icons.directions_bus_rounded,
+                    title: 'No tienes viajes aún',
+                    subtitle: 'Empieza tu primer viaje',
+                    actionLabel: 'Planificar viaje',
+                    onAction: () => context.go(AppRoutes.routePlanner),
+                  )
+                else
+                  Column(
+                    children: [
+                      ...list.map(
+                        (t) => Padding(
+                          padding:
+                              const EdgeInsets.only(bottom: GSSpacing.s2),
+                          child: _buildTripCard(t),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: GSSpacing.s2),
+                        child: TextButton(
+                          onPressed: () => ref
+                              .read(transactionListProvider.notifier)
+                              .loadMore(),
+                          child: const Text(
+                            'Cargar más →',
+                            style: TextStyle(
+                              color: GSColors.accent,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: GSSpacing.s4),
+                    ],
+                  ),
+              ],
+            ),
           ),
         );
       },
     );
   }
 
-  static String _formatAmount(double amount) {
-    return NumberFormat.currency(
-      locale: 'es_CO',
-      symbol: '\$',
-      decimalDigits: 0,
-    ).format(amount);
-  }
-}
-
-// ─── Trip tile ────────────────────────────────────────────────────────────────
-
-class _TripTile extends StatelessWidget {
-  const _TripTile({required this.tx});
-  final TransactionModel tx;
-
-  @override
-  Widget build(BuildContext context) {
-    final failed = tx.status == 'failed';
-    final modeIcon = _modeIcon(tx.mode);
-    final modeColor = _modeColor(tx.mode);
-    final originLabel = tx.origin ?? tx.type;
-    final destLabel = tx.destination ?? '—';
+  Widget _buildTripCard(TransactionModel t) {
+    final modeColor = _modeColor(t.mode);
+    final modeIcon = _modeIcon(t.mode);
+    final status = t.status;
+    final statusColor = status == 'completed'
+        ? GSColors.success
+        : status == 'failed'
+            ? GSColors.error
+            : GSColors.warning;
+    final statusLabel = status == 'completed'
+        ? 'Completado'
+        : status == 'failed'
+            ? 'Fallido'
+            : 'Pendiente';
+    final statusBg = status == 'completed'
+        ? GSColors.successLight
+        : status == 'failed'
+            ? GSColors.errorLight
+            : GSColors.warningLight;
 
     return GSCard(
-      margin: const EdgeInsets.only(bottom: GSSpacing.s3),
-      padding: const EdgeInsets.all(GSSpacing.s4),
+      padding: const EdgeInsets.all(GSSpacing.s3),
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: modeColor.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(GSRadius.md),
-            ),
-            child: Icon(modeIcon, color: modeColor, size: 22),
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: modeColor.withValues(alpha: 0.15),
+            child: Icon(modeIcon, color: modeColor, size: 20),
           ),
           const SizedBox(width: GSSpacing.s3),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(originLabel,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: GSColors.textPrimary)),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 6),
-                      child: Icon(Icons.arrow_forward_rounded,
-                          size: 14, color: GSColors.textDisabled),
-                    ),
-                    Flexible(
-                      child: Text(destLabel,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: GSColors.textPrimary)),
-                    ),
-                  ],
+                Text(
+                  t.destination ?? t.origin ?? _typeLabel(t.type),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: GSColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(_relativeDate(tx.createdAt),
-                        style: const TextStyle(
-                            fontSize: 12, color: GSColors.textSecondary)),
-                    if (!failed && tx.co2Kg != null) ...[
-                      const SizedBox(width: GSSpacing.s3),
-                      const Icon(Icons.eco_rounded,
-                          size: 12, color: GSColors.eco),
-                      const SizedBox(width: 2),
-                      Text('${tx.co2Kg!.toStringAsFixed(1)} kg',
-                          style: const TextStyle(
-                              fontSize: 11, color: GSColors.eco)),
-                    ],
-                  ],
+                const SizedBox(height: 2),
+                Text(
+                  _formatDate(t.createdAt),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: GSColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -280,33 +334,27 @@ class _TripTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                failed
-                    ? 'Failed'
-                    : NumberFormat.currency(
-                        locale: 'es_CO',
-                        symbol: '\$',
-                        decimalDigits: 0,
-                      ).format(tx.amount),
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
+                _formatCOP(t.amount),
+                style: const TextStyle(
                   fontSize: 15,
-                  color: failed ? GSColors.error : GSColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                  color: GSColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 4),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: GSSpacing.s2, vertical: 3),
                 decoration: BoxDecoration(
-                  color: failed ? GSColors.errorLight : GSColors.successLight,
+                  color: statusBg,
                   borderRadius: BorderRadius.circular(GSRadius.full),
                 ),
                 child: Text(
-                  failed ? 'Failed' : 'Done',
+                  statusLabel,
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: failed ? GSColors.error : GSColors.success,
+                    color: statusColor,
                   ),
                 ),
               ),
@@ -317,110 +365,77 @@ class _TripTile extends StatelessWidget {
     );
   }
 
-  static String _relativeDate(DateTime dt) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final date = DateTime(dt.year, dt.month, dt.day);
-    final diff = today.difference(date).inDays;
-    final time = DateFormat.jm().format(dt);
-    if (diff == 0) return 'Today, $time';
-    if (diff == 1) return 'Yesterday, $time';
-    return '${DateFormat('MMM d').format(dt)}, $time';
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+
+  Color _modeColor(String? mode) {
+    switch (mode) {
+      case 'car':
+        return GSColors.car;
+      case 'taxi':
+        return GSColors.taxi;
+      case 'bus':
+        return GSColors.bus;
+      case 'bike':
+        return GSColors.bike;
+      case 'walk':
+        return GSColors.walk;
+      case 'metro':
+        return GSColors.metro;
+      default:
+        return GSColors.accent;
+    }
   }
 
-  static IconData _modeIcon(String? mode) {
+  IconData _modeIcon(String? mode) {
     switch (mode) {
-      case 'metro':
-        return Icons.subway_rounded;
+      case 'car':
+        return Icons.directions_car_rounded;
       case 'taxi':
         return Icons.local_taxi_rounded;
+      case 'bus':
+        return Icons.directions_bus_rounded;
       case 'bike':
         return Icons.pedal_bike_rounded;
       case 'walk':
         return Icons.directions_walk_rounded;
-      default:
-        return Icons.directions_bus_rounded;
-    }
-  }
-
-  static Color _modeColor(String? mode) {
-    switch (mode) {
       case 'metro':
-        return GSColors.metro;
-      case 'taxi':
-        return GSColors.taxi;
-      case 'bike':
-        return GSColors.bike;
+        return Icons.subway_rounded;
       default:
-        return GSColors.bus;
+        return Icons.commute_rounded;
     }
   }
-}
 
-// ─── Shared widgets ───────────────────────────────────────────────────────────
-
-class _MiniStat extends StatelessWidget {
-  const _MiniStat(
-      {required this.icon, required this.label, required this.color});
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: 4),
-        Text(label,
-            style: TextStyle(
-                fontSize: 11, color: color, fontWeight: FontWeight.w500)),
-      ],
-    );
+  String _typeLabel(String type) {
+    switch (type) {
+      case 'trip':
+        return 'Viaje';
+      case 'recharge':
+        return 'Recarga';
+      case 'refund':
+        return 'Reembolso';
+      default:
+        return 'Movimiento';
+    }
   }
-}
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({
-    required this.icon,
-    required this.title,
-    required this.body,
-  });
-  final IconData icon;
-  final String title;
-  final String body;
+  String _formatDate(DateTime dt) {
+    final local = dt.toLocal();
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final txDate = DateTime(local.year, local.month, local.day);
+    final diff = todayDate.difference(txDate).inDays;
+    if (diff == 0) return 'Hoy';
+    if (diff == 1) return 'Ayer';
+    return '${local.day}/${local.month}/${local.year}';
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(GSSpacing.s10),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: GSColors.surfaceDark,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 40, color: GSColors.textDisabled),
-            ),
-            const SizedBox(height: GSSpacing.s5),
-            Text(title,
-                style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
-                    color: GSColors.textPrimary)),
-            const SizedBox(height: GSSpacing.s2),
-            Text(body,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                    fontSize: 14, color: GSColors.textSecondary)),
-          ],
-        ),
-      ),
-    );
+  String _formatCOP(double amount) {
+    final formatted = amount
+        .toStringAsFixed(0)
+        .replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (m) => '${m[1]}.',
+        );
+    return '\$$formatted COP';
   }
 }
