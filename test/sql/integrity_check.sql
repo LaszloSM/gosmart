@@ -38,8 +38,10 @@ DECLARE
   v_key TEXT := 'test-idempotency-' || gen_random_uuid()::TEXT;
   v_card_id UUID;
 BEGIN
-  -- Insert a scratch card to satisfy FK (no real auth.users FK check needed here
-  -- because we use a service-role connection in Supabase SQL Editor)
+  -- Bypass FK triggers for this transaction so we can insert a card with a
+  -- fake user_id without needing a real auth.users row.
+  SET LOCAL session_replication_role = replica;
+
   INSERT INTO public.cards (id, user_id, balance, currency)
   VALUES (
     gen_random_uuid(),
