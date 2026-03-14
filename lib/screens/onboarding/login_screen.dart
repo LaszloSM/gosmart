@@ -5,6 +5,8 @@ import '../../widgets/gs_button.dart';
 import '../../widgets/gs_text_field.dart';
 import '../../widgets/gs_toast.dart';
 import '../../router/app_router.dart';
+import '../../services/auth_service.dart';
+import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,23 +18,48 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phoneCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
   bool _isLoading = false;
   bool _useSms = true;
 
   @override
   void dispose() {
     _phoneCtrl.dispose();
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 2)); // mock
-    if (mounted) {
-      setState(() => _isLoading = false);
-      Navigator.pushNamed(context, AppRoutes.smsVerification,
-          arguments: _phoneCtrl.text);
+    try {
+      if (_useSms) {
+        await authService.sendOtp(_phoneCtrl.text.trim());
+        if (mounted) {
+          context.push(AppRoutes.smsVerify, extra: _phoneCtrl.text.trim());
+        }
+      } else {
+        final response = await authService.signInWithEmail(
+          email: _emailCtrl.text.trim(),
+          password: _passwordCtrl.text,
+        );
+        if (response.user != null && mounted) {
+          context.go(AppRoutes.home);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -97,6 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   GSTextField(
                     label: 'Email',
                     hint: 'you@example.com',
+                    controller: _emailCtrl,
                     keyboardType: TextInputType.emailAddress,
                     prefixIcon: Icons.email_rounded,
                     validator: (v) =>
@@ -106,6 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   GSTextField(
                     label: 'Password',
                     hint: '••••••••',
+                    controller: _passwordCtrl,
                     obscureText: true,
                     prefixIcon: Icons.lock_rounded,
                     suffixIcon: const Icon(Icons.visibility_rounded,
@@ -145,8 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // ── Try Demo banner ───────────────────────────────────────
                 GestureDetector(
-                  onTap: () => Navigator.pushNamedAndRemoveUntil(
-                      context, AppRoutes.home, (_) => false),
+                  onTap: () => context.go(AppRoutes.home),
                   child: Container(
                     padding: const EdgeInsets.all(GSSpacing.s4),
                     decoration: BoxDecoration(
@@ -188,8 +216,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: _SocialButton(
                       label: 'Google',
                       icon: Icons.g_mobiledata_rounded,
-                      onTap: () => Navigator.pushNamedAndRemoveUntil(
-                          context, AppRoutes.home, (_) => false),
+                      onTap: () => context.go(AppRoutes.home),
                     ),
                   ),
                   const SizedBox(width: GSSpacing.s3),
@@ -197,8 +224,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: _SocialButton(
                       label: 'Apple',
                       icon: Icons.apple_rounded,
-                      onTap: () => Navigator.pushNamedAndRemoveUntil(
-                          context, AppRoutes.home, (_) => false),
+                      onTap: () => context.go(AppRoutes.home),
                     ),
                   ),
                 ]),
@@ -206,8 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 Center(
                   child: TextButton(
-                    onPressed: () =>
-                        Navigator.pushNamed(context, AppRoutes.register),
+                    onPressed: () => context.push(AppRoutes.register),
                     child: RichText(
                       text: const TextSpan(
                         text: "Don't have an account? ",
