@@ -86,11 +86,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   String _formatDate(DateTime dt) {
-    final now = DateTime.now();
-    final diff = now.difference(dt);
-    if (diff.inDays == 0) return 'Hoy';
-    if (diff.inDays == 1) return 'Ayer';
-    return '${dt.day}/${dt.month}/${dt.year}';
+    final local = dt.toLocal();
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final txDate = DateTime(local.year, local.month, local.day);
+    final diff = todayDate.difference(txDate).inDays;
+    if (diff == 0) return 'Hoy';
+    if (diff == 1) return 'Ayer';
+    return '${local.day}/${local.month}/${local.year}';
   }
 
   String _formatAmount(TransactionModel t) {
@@ -155,6 +158,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final profileAsync = ref.watch(profileProvider);
     return Scaffold(
       extendBody: true,
       backgroundColor: GSColors.bg,
@@ -214,7 +218,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 .bodySmall
                                 ?.copyWith(color: GSColors.textSecondary),
                           ),
-                          ref.watch(profileProvider).when(
+                          profileAsync.when(
                                 data: (p) => Text(
                                   p.name.isEmpty
                                       ? 'Bienvenido'
@@ -242,31 +246,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ],
                       ),
                       const Spacer(),
-                      const Stack(
-                        children: [
-                          IconButton(
-                            icon: Icon(
-                              Icons.notifications_rounded,
-                              color: GSColors.textSecondary,
-                              size: 24,
-                            ),
-                            onPressed: null,
-                          ),
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: SizedBox(
-                              width: 8,
-                              height: 8,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: GSColors.error,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                      const IconButton(
+                        icon: Icon(
+                          Icons.notifications_rounded,
+                          color: GSColors.textSecondary,
+                          size: 24,
+                        ),
+                        onPressed: null,
                       ),
                     ],
                   ),
@@ -382,7 +368,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: ref.watch(profileProvider).when(
+                          child: profileAsync.when(
                                 data: (p) => GSInfoCard(
                                   icon: Icons.eco_rounded,
                                   iconBgColor: GSColors.eco,
@@ -480,8 +466,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(height: GSSpacing.s4),
 
                     // AI promo card
-                    GestureDetector(
+                    InkWell(
                       onTap: () => context.push(AppRoutes.aiChat),
+                      borderRadius: BorderRadius.circular(GSRadius.xl),
                       child: Container(
                         padding: const EdgeInsets.all(GSSpacing.s4),
                         decoration: BoxDecoration(
@@ -494,37 +481,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                         child: Row(
                           children: [
-                            Column(
+                            const Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   'IA Asistente',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelSmall
-                                      ?.copyWith(color: Colors.white70),
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                                 Text(
                                   'Planifica con IA',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.white,
-                                      ),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ],
                             ),
                             const Spacer(),
-                            ElevatedButton(
-                              onPressed: () =>
-                                  context.push(AppRoutes.aiChat),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: GSColors.accent,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius:
+                                    BorderRadius.circular(GSRadius.full),
                               ),
-                              child: const Text('Chatear'),
+                              child: const Text(
+                                'Chatear',
+                                style: TextStyle(
+                                  color: GSColors.accent,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -749,7 +743,7 @@ class _MapPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_) => false;
+  bool shouldRepaint(_MapPainter oldDelegate) => false;
 }
 
 // ─── Data class ───────────────────────────────────────────────────────────────
