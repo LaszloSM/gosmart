@@ -1,9 +1,11 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_text_field.dart';
+import '../../widgets/gs_toast.dart';
 import '../../router/app_router.dart';
 import '../../services/auth_service.dart';
 
@@ -22,6 +24,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passCtrl = TextEditingController();
   bool _isLoading = false;
   bool _termsAccepted = false;
+  bool _showPassword = false;
+
+  late final TapGestureRecognizer _termsTap;
+  late final TapGestureRecognizer _privacyTap;
+
+  @override
+  void initState() {
+    super.initState();
+    _termsTap = TapGestureRecognizer()
+      ..onTap = () => ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Próximamente')));
+    _privacyTap = TapGestureRecognizer()
+      ..onTap = () => ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Próximamente')));
+  }
 
   @override
   void dispose() {
@@ -29,6 +46,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _phoneCtrl.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
+    _termsTap.dispose();
+    _privacyTap.dispose();
     super.dispose();
   }
 
@@ -36,31 +55,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (!_termsAccepted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Debes aceptar los términos para continuar')),
+        const SnackBar(
+            content: Text('Debes aceptar los términos para continuar')),
       );
       return;
     }
     setState(() => _isLoading = true);
+    final messenger = ScaffoldMessenger.of(context);
     try {
-      final response = await authService.signUp(
+      await authService.signUp(
         email: _emailCtrl.text.trim(),
         password: _passCtrl.text,
         name: _nameCtrl.text.trim(),
         consentGeo: false,
         consentAi: false,
       );
-      if (response.user != null && mounted) {
-        context.go(AppRoutes.home);
-      }
+      // GoRouter auto-redirects after successful signup via auth stream
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      GSToast.showWithMessenger(messenger,
+          message: 'Error: ${e.toString()}', type: GSToastType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -68,125 +81,229 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+
     return Scaffold(
-      backgroundColor: GSColors.bg,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        leading: const BackButton(),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(
-            horizontal: GSSpacing.s6, vertical: GSSpacing.s2),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Create your\naccount',
-                  style: Theme.of(context).textTheme.displaySmall),
-              const SizedBox(height: GSSpacing.s2),
-              Text('Join millions using GoSmart',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyLarge
-                      ?.copyWith(color: GSColors.textSecondary)),
-              const SizedBox(height: GSSpacing.s8),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(GSSpacing.s6),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Back button ──────────────────────────────────────────
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_rounded,
+                          color: GSColors.textPrimary),
+                      onPressed: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.go(AppRoutes.login);
+                        }
+                      },
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: GSSize.touchTarget,
+                        minHeight: GSSize.touchTarget,
+                      ),
+                    ),
+                  ],
+                ),
 
-              GSTextField(
-                label: 'Full name',
-                hint: 'Muhammad Ali',
-                controller: _nameCtrl,
-                keyboardType: TextInputType.name,
-                prefixIcon: Icons.person_rounded,
-                textCapitalization: TextCapitalization.words,
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Name is required' : null,
-              ),
-              const SizedBox(height: GSSpacing.s4),
-              GSTextField(
-                label: 'Phone number',
-                hint: '+57 300 000 0000',
-                controller: _phoneCtrl,
-                keyboardType: TextInputType.phone,
-                prefixIcon: Icons.phone_rounded,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (v) => null,
-              ),
-              const SizedBox(height: GSSpacing.s4),
-              GSTextField(
-                label: 'Email',
-                hint: 'you@example.com',
-                controller: _emailCtrl,
-                keyboardType: TextInputType.emailAddress,
-                prefixIcon: Icons.email_rounded,
-                validator: (v) =>
-                    (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
-              ),
-              const SizedBox(height: GSSpacing.s4),
-              GSTextField(
-                label: 'Password',
-                hint: '••••••••',
-                controller: _passCtrl,
-                obscureText: true,
-                prefixIcon: Icons.lock_rounded,
-                validator: (v) =>
-                    (v == null || v.length < 8)
-                        ? 'Minimum 8 characters'
-                        : null,
-              ),
-              const SizedBox(height: GSSpacing.s5),
+                const SizedBox(height: GSSpacing.s4),
 
-              // Terms
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Checkbox(
-                    value: _termsAccepted,
-                    onChanged: (v) =>
-                        setState(() => _termsAccepted = v ?? false),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4)),
-                    activeColor: GSColors.primary,
+                // ── Heading ──────────────────────────────────────────────
+                Text(
+                  'Crear cuenta',
+                  style: tt.displayMedium?.copyWith(
+                    color: GSColors.textPrimary,
+                    fontWeight: FontWeight.w700,
                   ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 12),
+                ),
+                const SizedBox(height: GSSpacing.s2),
+                Text(
+                  'Únete a GoSmart hoy',
+                  style: tt.bodyLarge?.copyWith(
+                    color: GSColors.textSecondary,
+                  ),
+                ),
+
+                const SizedBox(height: GSSpacing.s8),
+
+                // ── Fields ───────────────────────────────────────────────
+                GSTextField(
+                  hint: 'Nombre completo',
+                  label: 'Nombre',
+                  controller: _nameCtrl,
+                  keyboardType: TextInputType.name,
+                  prefixIcon: Icons.person_outline_rounded,
+                  textCapitalization: TextCapitalization.words,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty)
+                          ? 'Nombre es requerido'
+                          : null,
+                ),
+
+                const SizedBox(height: GSSpacing.s3),
+
+                GSTextField(
+                  hint: '+57 300 000 0000',
+                  label: 'Teléfono',
+                  controller: _phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  prefixIcon: Icons.phone_android_rounded,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                ),
+
+                const SizedBox(height: GSSpacing.s3),
+
+                GSTextField(
+                  hint: 'correo@ejemplo.com',
+                  label: 'Correo',
+                  controller: _emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  prefixIcon: Icons.email_outlined,
+                  validator: (v) =>
+                      (v == null || !v.contains('@'))
+                          ? 'Correo inválido'
+                          : null,
+                ),
+
+                const SizedBox(height: GSSpacing.s3),
+
+                GSTextField(
+                  hint: '••••••••',
+                  label: 'Contraseña',
+                  controller: _passCtrl,
+                  obscureText: !_showPassword,
+                  prefixIcon: Icons.lock_outline_rounded,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _showPassword
+                          ? Icons.visibility_off_rounded
+                          : Icons.visibility_rounded,
+                      color: GSColors.textSecondary,
+                      size: 20,
+                    ),
+                    onPressed: () =>
+                        setState(() => _showPassword = !_showPassword),
+                  ),
+                  validator: (v) =>
+                      (v == null || v.length < 8)
+                          ? 'Mínimo 8 caracteres'
+                          : null,
+                ),
+
+                const SizedBox(height: GSSpacing.s4),
+
+                // ── Terms checkbox ───────────────────────────────────────
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: Checkbox(
+                        value: _termsAccepted,
+                        onChanged: (v) =>
+                            setState(() => _termsAccepted = v ?? false),
+                        activeColor: GSColors.accent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        materialTapTargetSize:
+                            MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                    const SizedBox(width: GSSpacing.s3),
+                    Expanded(
                       child: RichText(
-                        text: const TextSpan(
-                          text: 'I agree to the ',
-                          style: TextStyle(
-                              color: GSColors.textSecondary, fontSize: 13),
+                        text: TextSpan(
+                          style: const TextStyle(
+                            color: GSColors.textSecondary,
+                            fontSize: 13,
+                            height: 1.4,
+                          ),
                           children: [
+                            const TextSpan(text: 'Acepto los '),
                             TextSpan(
-                              text: 'Terms of Service',
-                              style: TextStyle(
-                                  color: GSColors.primary,
-                                  fontWeight: FontWeight.w600),
+                              text: 'Términos',
+                              style: const TextStyle(
+                                color: GSColors.accent,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                                decorationColor: GSColors.accent,
+                              ),
+                              recognizer: _termsTap,
                             ),
-                            TextSpan(text: ' and '),
+                            const TextSpan(text: ' y la '),
                             TextSpan(
-                              text: 'Privacy Policy',
-                              style: TextStyle(
-                                  color: GSColors.primary,
-                                  fontWeight: FontWeight.w600),
+                              text: 'Política de Privacidad',
+                              style: const TextStyle(
+                                color: GSColors.accent,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                                decorationColor: GSColors.accent,
+                              ),
+                              recognizer: _privacyTap,
                             ),
                           ],
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: GSSpacing.s6),
+                  ],
+                ),
 
-              GSButton(
-                label: 'Create account',
-                onPressed: _submit,
-                isLoading: _isLoading,
-                leadingIcon: Icons.person_add_rounded,
-              ),
-              const SizedBox(height: GSSpacing.s8),
-            ],
+                const SizedBox(height: GSSpacing.s6),
+
+                // ── Submit button ────────────────────────────────────────
+                GSButton(
+                  label: 'Crear cuenta',
+                  onPressed: _termsAccepted ? _submit : null,
+                  isLoading: _isLoading,
+                  leadingIcon: Icons.person_add_rounded,
+                ),
+
+                const SizedBox(height: GSSpacing.s6),
+
+                // ── Sign in link ─────────────────────────────────────────
+                Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '¿Ya tienes cuenta? ',
+                        style: tt.bodyMedium?.copyWith(
+                          color: GSColors.textSecondary,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => context.go(AppRoutes.login),
+                        style: TextButton.styleFrom(
+                          foregroundColor: GSColors.accent,
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          textStyle: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        child: const Text('Inicia sesión'),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: GSSpacing.s4),
+              ],
+            ),
           ),
         ),
       ),
