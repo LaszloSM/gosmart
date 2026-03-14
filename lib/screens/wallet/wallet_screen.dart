@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_card.dart';
 import '../../widgets/gs_bottom_sheet.dart';
 import '../../widgets/gs_toast.dart';
+import '../../providers/card_provider.dart';
+import '../../services/card_service.dart';
 
-class WalletScreen extends StatefulWidget {
+class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
 
   @override
-  State<WalletScreen> createState() => _WalletScreenState();
+  ConsumerState<WalletScreen> createState() => _WalletScreenState();
 }
 
-class _WalletScreenState extends State<WalletScreen>
+class _WalletScreenState extends ConsumerState<WalletScreen>
     with SingleTickerProviderStateMixin {
-  bool _cardLocked = false;
   bool _showNumber = false;
   bool _useNfc = true;
   late final TabController _tabCtrl;
@@ -34,6 +36,7 @@ class _WalletScreenState extends State<WalletScreen>
 
   @override
   Widget build(BuildContext context) {
+    final cardAsync = ref.watch(activeCardProvider);
     return Scaffold(
       backgroundColor: GSColors.bg,
       appBar: AppBar(
@@ -42,19 +45,27 @@ class _WalletScreenState extends State<WalletScreen>
         actions: [
           IconButton(
             icon: Icon(
-              _cardLocked ? Icons.lock_rounded : Icons.lock_open_rounded,
-              color: _cardLocked ? GSColors.error : GSColors.textSecondary,
+              cardAsync.valueOrNull?.isLocked ?? false
+                  ? Icons.lock_rounded
+                  : Icons.lock_open_rounded,
+              color: cardAsync.valueOrNull?.isLocked ?? false
+                  ? GSColors.error
+                  : GSColors.textSecondary,
             ),
-            tooltip: _cardLocked ? 'Unlock card' : 'Lock card',
-            onPressed: () {
-              setState(() => _cardLocked = !_cardLocked);
-              GSToast.show(
-                context,
-                message: _cardLocked
-                    ? 'Card locked successfully'
-                    : 'Card unlocked',
-                type: _cardLocked ? GSToastType.warning : GSToastType.success,
-              );
+            tooltip: cardAsync.valueOrNull?.isLocked ?? false ? 'Unlock card' : 'Lock card',
+            onPressed: () async {
+              final card = ref.read(activeCardProvider).valueOrNull;
+              if (card == null) return;
+              final newLocked = !card.isLocked;
+              await cardService.setLocked(card.id, newLocked);
+              ref.read(activeCardProvider.notifier).refresh();
+              if (mounted) {
+                GSToast.show(
+                  context,
+                  message: newLocked ? 'Tarjeta bloqueada' : 'Tarjeta desbloqueada',
+                  type: newLocked ? GSToastType.warning : GSToastType.success,
+                );
+              }
             },
           ),
         ],
@@ -65,10 +76,20 @@ class _WalletScreenState extends State<WalletScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Physical / NFC card ─────────────────────────────────────────
-            _SmartCard(
-              locked: _cardLocked,
-              showNumber: _showNumber,
-              onToggleNumber: () => setState(() => _showNumber = !_showNumber),
+            cardAsync.when(
+              loading: () => const AspectRatio(
+                aspectRatio: 1.586,
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (e, _) => Text('Error: $e'),
+              data: (card) => _SmartCard(
+                locked: card?.isLocked ?? false,
+                balance: card?.formattedBalance ?? '\$0 COP',
+                cardNumber: card?.numberMasked ?? '•••• •••• •••• 0000',
+                expiresAt: card?.expiresAt ?? '--/--',
+                showNumber: _showNumber,
+                onToggleNumber: () => setState(() => _showNumber = !_showNumber),
+              ),
             ),
             const SizedBox(height: GSSpacing.s5),
 
@@ -132,9 +153,14 @@ class _WalletScreenState extends State<WalletScreen>
                     sublabel: 'Temporarily disable card',
                     iconColor: GSColors.error,
                     trailing: Switch(
-                      value: _cardLocked,
+                      value: cardAsync.valueOrNull?.isLocked ?? false,
                       activeColor: GSColors.error,
-                      onChanged: (v) => setState(() => _cardLocked = v),
+                      onChanged: (v) async {
+                        final card = ref.read(activeCardProvider).valueOrNull;
+                        if (card == null) return;
+                        await cardService.setLocked(card.id, v);
+                        ref.read(activeCardProvider.notifier).refresh();
+                      },
                     ),
                   ),
                   const Divider(height: 1),
@@ -224,10 +250,16 @@ class _WalletScreenState extends State<WalletScreen>
 class _SmartCard extends StatelessWidget {
   const _SmartCard({
     required this.locked,
+    required this.balance,
+    required this.cardNumber,
+    required this.expiresAt,
     required this.showNumber,
     required this.onToggleNumber,
   });
   final bool locked;
+  final String balance;
+  final String cardNumber;
+  final String expiresAt;
   final bool showNumber;
   final VoidCallback onToggleNumber;
 
@@ -311,9 +343,7 @@ class _SmartCard extends StatelessWidget {
               child: Row(
                 children: [
                   Text(
-                    showNumber
-                        ? '4242  4242  4242  4242'
-                        : '••••  ••••  ••••  4242',
+                    cardNumber,
                     style: const TextStyle(
                       
                       color: Colors.white,
@@ -336,14 +366,13 @@ class _SmartCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Balance',
+                    const Text('Balance',
                         style: TextStyle(color: Colors.white60, fontSize: 11)),
-                    Text('\$100.00',
-                        style: TextStyle(
-                            
+                    Text(balance,
+                        style: const TextStyle(
                             color: Colors.white,
                             fontSize: 22,
                             fontWeight: FontWeight.w700)),
@@ -355,8 +384,8 @@ class _SmartCard extends StatelessWidget {
                     const Text('Valid thru',
                         style: TextStyle(
                             color: Colors.white60, fontSize: 11)),
-                    const Text('12/28',
-                        style: TextStyle(
+                    Text(expiresAt,
+                        style: const TextStyle(
                             color: Colors.white,
                             fontSize: 14,
                             fontWeight: FontWeight.w600)),
