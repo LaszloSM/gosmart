@@ -3,13 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
-import '../../widgets/gs_button.dart';
 import '../../widgets/gs_card.dart';
 import '../../widgets/gs_text_field.dart';
-import '../../widgets/gs_toast.dart';
+import '../../widgets/gs_skeleton_loader.dart';
 import '../../router/app_router.dart';
 import '../../providers/profile_provider.dart';
 import '../../providers/card_provider.dart';
+import '../../providers/transaction_provider.dart';
+import '../../models/transaction_model.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -19,441 +20,533 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  int _navIndex = 0;
-  String _selectedMode = 'Car';
-  bool _showNotification = true;
+  String _selectedMode = 'Auto';
 
   static const _modes = [
-    _Mode('Car', Icons.directions_car_rounded, GSColors.car),
+    _Mode('Auto', Icons.directions_car_rounded, GSColors.car),
     _Mode('Taxi', Icons.local_taxi_rounded, GSColors.taxi),
     _Mode('Bus', Icons.directions_bus_rounded, GSColors.bus),
-    _Mode('Bike', Icons.pedal_bike_rounded, GSColors.bike),
+    _Mode('Bici', Icons.pedal_bike_rounded, GSColors.bike),
+    _Mode('Metro', Icons.subway_rounded, GSColors.metro),
   ];
+
+  void _onNavTap(int index) {
+    switch (index) {
+      case 0:
+        context.go(AppRoutes.home);
+        break;
+      case 1:
+        context.go(AppRoutes.history);
+        break;
+      case 2:
+        context.go(AppRoutes.wallet);
+        break;
+      case 3:
+        context.go(AppRoutes.profile);
+        break;
+    }
+  }
+
+  Color _modeColor(String? mode) {
+    switch (mode) {
+      case 'car':
+        return GSColors.car;
+      case 'taxi':
+        return GSColors.taxi;
+      case 'bus':
+        return GSColors.bus;
+      case 'bike':
+        return GSColors.bike;
+      case 'walk':
+        return GSColors.walk;
+      case 'metro':
+        return GSColors.metro;
+      default:
+        return GSColors.accent;
+    }
+  }
+
+  IconData _modeIcon(String? mode) {
+    switch (mode) {
+      case 'car':
+        return Icons.directions_car_rounded;
+      case 'taxi':
+        return Icons.local_taxi_rounded;
+      case 'bus':
+        return Icons.directions_bus_rounded;
+      case 'bike':
+        return Icons.pedal_bike_rounded;
+      case 'walk':
+        return Icons.directions_walk_rounded;
+      case 'metro':
+        return Icons.subway_rounded;
+      default:
+        return Icons.commute_rounded;
+    }
+  }
+
+  String _formatDate(DateTime dt) {
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inDays == 0) return 'Hoy';
+    if (diff.inDays == 1) return 'Ayer';
+    return '${dt.day}/${dt.month}/${dt.year}';
+  }
+
+  String _formatAmount(TransactionModel t) {
+    if (t.currency == 'COP') {
+      final formatted = t.amount
+          .toStringAsFixed(0)
+          .replaceAllMapped(
+            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (m) => '${m[1]}.',
+          );
+      return '\$$formatted COP';
+    }
+    return t.amount.toStringAsFixed(2);
+  }
+
+  Widget _buildTripItem(TransactionModel t) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: _modeColor(t.mode).withValues(alpha: 0.15),
+            child: Icon(
+              _modeIcon(t.mode),
+              color: _modeColor(t.mode),
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  t.destination ?? t.origin ?? 'Viaje',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  _formatDate(t.createdAt),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: GSColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            _formatAmount(t),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: GSColors.textPrimary,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       backgroundColor: GSColors.bg,
       body: Stack(
         children: [
-          // ── Map layer (mock) ──────────────────────────────────────────────
+          // ── Layer 1: Full-screen map ────────────────────────────────────────
           Positioned.fill(
             child: _MockMap(),
           ),
-
-          // ── Notification banner ──────────────────────────────────────────
-          if (_showNotification)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 8,
-              left: 0,
-              right: 0,
-              child: GSNotificationBanner(
-                title: 'Route update',
-                body: 'Your route changes due to congestion on Line 3',
-                icon: Icons.warning_amber_rounded,
-                onDismiss: () => setState(() => _showNotification = false),
-                onTap: () => context.push(AppRoutes.routePlanner),
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Color(0xCC1A1A2E)],
+                  stops: [0.4, 1.0],
+                ),
               ),
             ),
+          ),
 
-          // ── Bottom panel ─────────────────────────────────────────────────
+          // ── Layer 2: Top bar ────────────────────────────────────────────────
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xEEFFFFFF),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: GSShadow.card,
+                  ),
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      const CircleAvatar(
+                        radius: 22,
+                        backgroundColor: GSColors.accentLight,
+                        child: Icon(
+                          Icons.person_rounded,
+                          color: GSColors.accent,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hola 👋',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: GSColors.textSecondary),
+                          ),
+                          ref.watch(profileProvider).when(
+                                data: (p) => Text(
+                                  p.name.isEmpty
+                                      ? 'Bienvenido'
+                                      : p.name.split(' ').first,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: GSColors.textPrimary,
+                                      ),
+                                ),
+                                loading: () => const GSSkeletonLoader(
+                                  width: 80,
+                                  height: 16,
+                                  radius: 8,
+                                ),
+                                error: (_, __) => Text(
+                                  'Usuario',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall,
+                                ),
+                              ),
+                        ],
+                      ),
+                      const Spacer(),
+                      const Stack(
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              Icons.notifications_rounded,
+                              color: GSColors.textSecondary,
+                              size: 24,
+                            ),
+                            onPressed: null,
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: SizedBox(
+                              width: 8,
+                              height: 8,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: GSColors.error,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // ── Layer 3: DraggableScrollableSheet ──────────────────────────────
           DraggableScrollableSheet(
-            initialChildSize: 0.42,
+            initialChildSize: 0.48,
             minChildSize: 0.12,
-            maxChildSize: 0.85,
-            builder: (_, ctrl) {
+            maxChildSize: 0.90,
+            snap: true,
+            builder: (context, scrollController) {
               return Container(
                 decoration: BoxDecoration(
-                  color: GSColors.bg,
-                  borderRadius: GSRadius.sheetRadius,
+                  color: GSColors.surface,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(GSRadius.xxl),
+                  ),
                   boxShadow: GSShadow.lg,
                 ),
                 child: ListView(
-                  controller: ctrl,
+                  controller: scrollController,
                   padding: const EdgeInsets.symmetric(
-                      horizontal: GSSpacing.s5, vertical: GSSpacing.s3),
+                    horizontal: GSSpacing.s4,
+                    vertical: 0,
+                  ),
                   children: [
-                    // drag handle
+                    // Drag handle
                     Center(
                       child: Container(
                         width: 40,
                         height: 4,
-                        margin: const EdgeInsets.only(bottom: GSSpacing.s4),
+                        margin: const EdgeInsets.only(
+                          top: 12,
+                          bottom: 16,
+                        ),
                         decoration: BoxDecoration(
-                          color: GSColors.border,
-                          borderRadius: BorderRadius.circular(GSRadius.full),
+                          color: GSColors.accent.withValues(alpha: 0.4),
+                          borderRadius:
+                              BorderRadius.circular(GSRadius.full),
                         ),
                       ),
                     ),
 
-                    // Header
-                    _HomeHeader(
-                      name: ref.watch(profileProvider).valueOrNull?.name ?? '',
-                    ),
-                    const SizedBox(height: GSSpacing.s4),
-
-                    // Search
+                    // Search bar
                     GSSearchBar(
-                      hint: 'Enter destination',
+                      hint: '¿A dónde vas?',
                       readOnly: true,
-                      onTap: () =>
-                          context.push(AppRoutes.routePlanner),
-                      trailing: Container(
-                        margin: const EdgeInsets.only(right: 4),
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: GSColors.primary,
-                          borderRadius: BorderRadius.circular(GSRadius.sm),
-                        ),
-                        child: const Icon(Icons.map_rounded,
-                            color: Colors.white, size: 18),
+                      onTap: () => context.push(AppRoutes.routePlanner),
+                    ),
+
+                    const SizedBox(height: GSSpacing.s4),
+
+                    // Mode chips
+                    Text(
+                      'Modo de viaje',
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelSmall
+                          ?.copyWith(color: GSColors.textSecondary),
+                    ),
+                    const SizedBox(height: GSSpacing.s2),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: _modes.map((m) {
+                          final isLast = m == _modes.last;
+                          return Padding(
+                            padding: EdgeInsets.only(right: isLast ? 0 : 8),
+                            child: GSModeChip(
+                              label: m.label,
+                              icon: m.icon,
+                              color: m.color,
+                              isSelected: _selectedMode == m.label,
+                              onTap: () =>
+                                  setState(() => _selectedMode = m.label),
+                            ),
+                          );
+                        }).toList(),
                       ),
                     ),
+
                     const SizedBox(height: GSSpacing.s4),
 
-                    // Mode selector
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: _modes
-                          .map((m) => GSModeChip(
-                                label: m.label,
-                                icon: m.icon,
-                                color: m.color,
-                                isSelected: _selectedMode == m.label,
-                                onTap: () =>
-                                    setState(() => _selectedMode = m.label),
-                              ))
-                          .toList(),
-                    ),
-                    const SizedBox(height: GSSpacing.s5),
-
-                    // From / To
-                    _LocationRow(),
-                    const SizedBox(height: GSSpacing.s4),
-
-                    // Date + Passengers
+                    // Info cards row
                     Row(
                       children: [
                         Expanded(
-                          child: _FieldTile(
-                            label: 'Departing on',
-                            value: 'Select Date',
-                            icon: Icons.calendar_today_rounded,
-                          ),
+                          child: ref.watch(activeCardProvider).when(
+                                data: (card) => GSInfoCard(
+                                  icon: Icons.account_balance_wallet_rounded,
+                                  iconBgColor: GSColors.accent,
+                                  title: 'Saldo',
+                                  value: card?.formattedBalance ?? '\$0 COP',
+                                  onTap: () =>
+                                      context.go(AppRoutes.wallet),
+                                ),
+                                loading: () => const GSSkeletonLoader(
+                                  width: double.infinity,
+                                  height: 72,
+                                  radius: 16,
+                                ),
+                                error: (_, __) => const GSInfoCard(
+                                  icon: Icons.account_balance_wallet_rounded,
+                                  iconBgColor: GSColors.accent,
+                                  title: 'Saldo',
+                                  value: '—',
+                                ),
+                              ),
                         ),
-                        const SizedBox(width: GSSpacing.s3),
+                        const SizedBox(width: 12),
                         Expanded(
-                          child: _FieldTile(
-                            label: 'Passengers',
-                            value: '1 Passenger',
-                            icon: Icons.people_rounded,
-                          ),
+                          child: ref.watch(profileProvider).when(
+                                data: (p) => GSInfoCard(
+                                  icon: Icons.eco_rounded,
+                                  iconBgColor: GSColors.eco,
+                                  title: 'Eco Points',
+                                  value: '${p.formattedEcoPoints} pts',
+                                ),
+                                loading: () => const GSSkeletonLoader(
+                                  width: double.infinity,
+                                  height: 72,
+                                  radius: 16,
+                                ),
+                                error: (_, __) => const GSInfoCard(
+                                  icon: Icons.eco_rounded,
+                                  iconBgColor: GSColors.eco,
+                                  title: 'Eco Points',
+                                  value: '0 pts',
+                                ),
+                              ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: GSSpacing.s5),
 
-                    // Search button
-                    GSButton(
-                      label: 'Search',
-                      onPressed: () =>
-                          context.push(AppRoutes.routeDetail),
-                      leadingIcon: Icons.search_rounded,
-                    ),
-                    const SizedBox(height: GSSpacing.s5),
+                    const SizedBox(height: GSSpacing.s4),
 
-                    // Cards row
-                    Text('Quick stats',
-                        style: Theme.of(context).textTheme.headlineSmall),
-                    const SizedBox(height: GSSpacing.s3),
+                    // Recent trips header
                     Row(
                       children: [
-                        Expanded(
-                          child: GSInfoCard(
-                            title: 'Balance',
-                            value: ref.watch(activeCardProvider).valueOrNull
-                                    ?.formattedBalance ??
-                                '—',
-                            icon: Icons.account_balance_wallet_rounded,
-                            iconBgColor: GSColors.primary,
-                            subtitle: 'Top up credit',
-                            onTap: () => context.push(AppRoutes.wallet),
-                          ),
+                        Text(
+                          'Viajes recientes',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
-                        const SizedBox(width: GSSpacing.s3),
-                        Expanded(
-                          child: GSInfoCard(
-                            title: 'Eco Points',
-                            value: ref
-                                    .watch(profileProvider)
-                                    .valueOrNull
-                                    ?.formattedEcoPoints ??
-                                '0',
-                            icon: Icons.eco_rounded,
-                            iconBgColor: GSColors.eco,
-                            subtitle: 'CO₂ saved',
+                        const Spacer(),
+                        TextButton(
+                          onPressed: () => context.go(AppRoutes.history),
+                          style: TextButton.styleFrom(
+                            foregroundColor: GSColors.accent,
                           ),
+                          child: const Text('Ver todos'),
                         ),
                       ],
                     ),
-                    const SizedBox(height: GSSpacing.s5),
 
-                    // AI quick access
-                    GSCard(
-                      onTap: () => context.push(AppRoutes.aiChat),
-                      padding: const EdgeInsets.all(GSSpacing.s4),
-                      shadow: GSShadow.primary,
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: GSColors.accentLight,
-                              borderRadius: BorderRadius.circular(GSRadius.md),
+                    // Recent trips list
+                    ref.watch(transactionListProvider).when(
+                          loading: () => const Column(
+                            children: [
+                              GSTransactionSkeleton(),
+                              SizedBox(height: 8),
+                              GSTransactionSkeleton(),
+                              SizedBox(height: 8),
+                              GSTransactionSkeleton(),
+                            ],
+                          ),
+                          error: (_, __) => Padding(
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                              'Error al cargar viajes',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                      color: GSColors.textSecondary),
+                              textAlign: TextAlign.center,
                             ),
-                            child: const Icon(Icons.auto_awesome_rounded,
-                                color: GSColors.primary, size: 24),
                           ),
-                          const SizedBox(width: GSSpacing.s3),
-                          const Expanded(
-                            child: Column(
+                          data: (list) {
+                            if (list.isEmpty) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 8),
+                                child: Text(
+                                  'Sin viajes recientes',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                          color: GSColors.textSecondary),
+                                  textAlign: TextAlign.center,
+                                ),
+                              );
+                            }
+                            return Column(
+                              children: list
+                                  .take(3)
+                                  .map(_buildTripItem)
+                                  .toList(),
+                            );
+                          },
+                        ),
+
+                    const SizedBox(height: GSSpacing.s4),
+
+                    // AI promo card
+                    GestureDetector(
+                      onTap: () => context.push(AppRoutes.aiChat),
+                      child: Container(
+                        padding: const EdgeInsets.all(GSSpacing.s4),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [GSColors.accent, GSColors.accentAlt],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(GSRadius.xl),
+                        ),
+                        child: Row(
+                          children: [
+                            Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Ask GoSmart AI',
-                                    style: TextStyle(
-                                        
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
-                                        color: GSColors.textPrimary)),
-                                Text('Plan a route in natural language',
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: GSColors.textSecondary)),
+                                Text(
+                                  'IA Asistente',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(color: Colors.white70),
+                                ),
+                                Text(
+                                  'Planifica con IA',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                ),
                               ],
                             ),
-                          ),
-                          const Icon(Icons.arrow_forward_ios_rounded,
-                              size: 14, color: GSColors.textSecondary),
-                        ],
+                            const Spacer(),
+                            ElevatedButton(
+                              onPressed: () =>
+                                  context.push(AppRoutes.aiChat),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: GSColors.accent,
+                              ),
+                              child: const Text('Chatear'),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: GSSpacing.s10),
+
+                    // Bottom padding so content clears nav bar
+                    const SizedBox(height: 80 + GSSpacing.s6),
                   ],
                 ),
               );
             },
           ),
-        ],
-      ),
-      bottomNavigationBar: GSBottomNav(
-        currentIndex: _navIndex,
-        onTap: (i) {
-          setState(() => _navIndex = i);
-          switch (i) {
-            case 1:
-              context.push(AppRoutes.history);
-              break;
-            case 2:
-              context.push(AppRoutes.wallet);
-              break;
-            case 3:
-              context.push(AppRoutes.profile);
-              break;
-          }
-        },
-      ),
-    );
-  }
-}
 
-// ─── Subwidgets ───────────────────────────────────────────────────────────────
-
-class _HomeHeader extends StatelessWidget {
-  const _HomeHeader({required this.name});
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    final displayName = name.isEmpty ? 'there' : name.split(' ').first;
-    return Row(
-      children: [
-        const CircleAvatar(
-          radius: 22,
-          backgroundColor: GSColors.accentLight,
-          child: Icon(Icons.person_rounded, color: GSColors.primary),
-        ),
-        const SizedBox(width: GSSpacing.s3),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              RichText(
-                text: TextSpan(
-                  text: 'Hello ',
-                  style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: GSColors.textPrimary),
-                  children: [
-                    TextSpan(
-                      text: '$displayName,',
-                      style: const TextStyle(color: GSColors.primary),
-                    ),
-                  ],
-                ),
-              ),
-              const Text('Where to go?',
-                  style: TextStyle(
-                      
-                      fontSize: 14,
-                      color: GSColors.textSecondary)),
-            ],
-          ),
-        ),
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: GSColors.surface,
-            shape: BoxShape.circle,
-            boxShadow: GSShadow.sm,
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              const Icon(Icons.notifications_rounded,
-                  color: GSColors.textSecondary, size: 22),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: GSColors.error,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _LocationRow extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return GSCard(
-      padding: const EdgeInsets.all(GSSpacing.s4),
-      child: Column(
-        children: [
-          _LocField(
-              label: 'From',
-              value: 'PITX\nParañaque City',
-              icon: Icons.radio_button_checked_rounded,
-              iconColor: GSColors.primary),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Divider(height: 1, color: GSColors.border),
-          ),
-          _LocField(
-            label: 'To',
-            value: 'Cubao\nQuezon City',
-            icon: Icons.location_on_rounded,
-            iconColor: GSColors.error,
-            trailing: const Icon(Icons.edit_rounded,
-                size: 16, color: GSColors.textDisabled),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LocField extends StatelessWidget {
-  const _LocField({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.iconColor,
-    this.trailing,
-  });
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color iconColor;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: GSSpacing.s2),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: iconColor),
-          const SizedBox(width: GSSpacing.s3),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label,
-                    style: const TextStyle(
-                        fontSize: 11, color: GSColors.textDisabled)),
-                Text(value.split('\n')[0],
-                    style: const TextStyle(
-                        
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                        color: GSColors.textPrimary)),
-                Text(value.split('\n')[1],
-                    style: const TextStyle(
-                        fontSize: 11, color: GSColors.textSecondary)),
-              ],
-            ),
-          ),
-          if (trailing != null) trailing!,
-        ],
-      ),
-    );
-  }
-}
-
-class _FieldTile extends StatelessWidget {
-  const _FieldTile({
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
-  final String label;
-  final String value;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return GSCard(
-      padding: const EdgeInsets.all(GSSpacing.s3),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: GSColors.primary),
-          const SizedBox(width: GSSpacing.s2),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label,
-                    style: const TextStyle(
-                        fontSize: 10, color: GSColors.textDisabled)),
-                Text(value,
-                    style: const TextStyle(
-                        
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                        color: GSColors.textPrimary)),
-              ],
+          // ── Layer 4: Bottom nav ─────────────────────────────────────────────
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: GSBottomNav(
+              currentIndex: 0,
+              onTap: _onNavTap,
             ),
           ),
         ],
@@ -461,6 +554,8 @@ class _FieldTile extends StatelessWidget {
     );
   }
 }
+
+// ─── Mock Map ─────────────────────────────────────────────────────────────────
 
 class _MockMap extends StatelessWidget {
   @override
@@ -471,7 +566,6 @@ class _MockMap extends StatelessWidget {
         painter: _MapPainter(),
         child: Stack(
           children: [
-            // Moving location marker (mock)
             Positioned(
               top: MediaQuery.of(context).size.height * 0.28,
               left: MediaQuery.of(context).size.width * 0.42,
@@ -498,8 +592,9 @@ class _LocationMarkerState extends State<_LocationMarker>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(seconds: 2))
-      ..repeat();
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat();
     _pulse = Tween<double>(begin: 0.8, end: 1.4).animate(
       CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
     );
@@ -525,7 +620,7 @@ class _LocationMarkerState extends State<_LocationMarker>
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: GSColors.primary.withOpacity(0.15),
+                color: GSColors.accent.withValues(alpha: 0.20),
                 shape: BoxShape.circle,
               ),
             ),
@@ -534,10 +629,10 @@ class _LocationMarkerState extends State<_LocationMarker>
             width: 20,
             height: 20,
             decoration: BoxDecoration(
-              color: GSColors.primary,
+              color: GSColors.accent,
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 3),
-              boxShadow: GSShadow.primary,
+              boxShadow: GSShadow.accent,
             ),
           ),
         ],
@@ -549,60 +644,115 @@ class _LocationMarkerState extends State<_LocationMarker>
 class _MapPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+    // Road paint
+    final roadPaint = Paint()
       ..color = const Color(0xFFD0DAE8)
-      ..strokeWidth = 12
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
 
-    // Draw mock roads
-    final roads = [
-      Offset(0, size.height * 0.3),
+    // Main horizontal road
+    roadPaint.strokeWidth = 14;
+    canvas.drawLine(
+      Offset(0, size.height * 0.30),
       Offset(size.width, size.height * 0.35),
-    ];
-    canvas.drawLine(roads[0], roads[1], paint);
+      roadPaint,
+    );
 
-    paint.strokeWidth = 20;
+    // Main vertical road
+    roadPaint.strokeWidth = 20;
     canvas.drawLine(
-      Offset(size.width * 0.3, 0),
+      Offset(size.width * 0.30, 0),
       Offset(size.width * 0.35, size.height),
-      paint,
+      roadPaint,
     );
 
-    paint.strokeWidth = 8;
+    // Secondary road
+    roadPaint.strokeWidth = 8;
     canvas.drawLine(
-      Offset(0, size.height * 0.6),
-      Offset(size.width * 0.6, size.height * 0.5),
-      paint,
+      Offset(0, size.height * 0.60),
+      Offset(size.width * 0.60, size.height * 0.50),
+      roadPaint,
     );
 
-    // Grid blocks
+    // Diagonal road
+    roadPaint.strokeWidth = 6;
+    canvas.drawLine(
+      Offset(size.width * 0.60, 0),
+      Offset(size.width, size.height * 0.45),
+      roadPaint,
+    );
+
+    // Small cross street
+    roadPaint.strokeWidth = 6;
+    canvas.drawLine(
+      Offset(0, size.height * 0.15),
+      Offset(size.width * 0.28, size.height * 0.15),
+      roadPaint,
+    );
+
+    // City blocks
     final blockPaint = Paint()
       ..color = const Color(0xFFDDE5EE)
       ..style = PaintingStyle.fill;
 
     final blocks = [
-      Rect.fromLTWH(size.width * 0.05, size.height * 0.05,
-          size.width * 0.22, size.height * 0.2),
-      Rect.fromLTWH(size.width * 0.4, size.height * 0.05,
-          size.width * 0.18, size.height * 0.22),
-      Rect.fromLTWH(size.width * 0.65, size.height * 0.08,
-          size.width * 0.28, size.height * 0.18),
-      Rect.fromLTWH(size.width * 0.05, size.height * 0.42,
-          size.width * 0.2, size.height * 0.25),
-      Rect.fromLTWH(size.width * 0.42, size.height * 0.45,
-          size.width * 0.5, size.height * 0.3),
+      Rect.fromLTWH(
+        size.width * 0.05,
+        size.height * 0.05,
+        size.width * 0.22,
+        size.height * 0.20,
+      ),
+      Rect.fromLTWH(
+        size.width * 0.40,
+        size.height * 0.05,
+        size.width * 0.18,
+        size.height * 0.22,
+      ),
+      Rect.fromLTWH(
+        size.width * 0.65,
+        size.height * 0.08,
+        size.width * 0.28,
+        size.height * 0.18,
+      ),
+      Rect.fromLTWH(
+        size.width * 0.05,
+        size.height * 0.42,
+        size.width * 0.20,
+        size.height * 0.25,
+      ),
+      Rect.fromLTWH(
+        size.width * 0.42,
+        size.height * 0.45,
+        size.width * 0.50,
+        size.height * 0.30,
+      ),
+      Rect.fromLTWH(
+        size.width * 0.05,
+        size.height * 0.72,
+        size.width * 0.22,
+        size.height * 0.22,
+      ),
+      Rect.fromLTWH(
+        size.width * 0.65,
+        size.height * 0.30,
+        size.width * 0.15,
+        size.height * 0.12,
+      ),
     ];
 
     for (final r in blocks) {
       canvas.drawRRect(
-          RRect.fromRectAndRadius(r, const Radius.circular(4)), blockPaint);
+        RRect.fromRectAndRadius(r, const Radius.circular(4)),
+        blockPaint,
+      );
     }
   }
 
   @override
   bool shouldRepaint(_) => false;
 }
+
+// ─── Data class ───────────────────────────────────────────────────────────────
 
 class _Mode {
   final String label;
