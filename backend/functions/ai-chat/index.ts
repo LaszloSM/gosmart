@@ -132,6 +132,8 @@ serve(async (req: Request) => {
 
   if (geminiKey) {
     try {
+      // context is always user-supplied additional context (e.g. "I am in Chapinero"),
+      // not a prior assistant response, so role: "user" is correct here.
       const contents = [
         ...(context
           ? [{ role: "user", parts: [{ text: context }] }]

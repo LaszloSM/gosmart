@@ -58,14 +58,14 @@ serve(async (req: Request) => {
   const { card_id, validator_id, amount, idempotency_key, mode = "bus" } =
     body;
 
-  if (!card_id || !validator_id || !amount || !idempotency_key) {
+  if (!card_id || !validator_id || !idempotency_key) {
     return json(
-      {
-        error:
-          "Missing required fields: card_id, validator_id, amount, idempotency_key",
-      },
+      { error: "Missing required fields: card_id, validator_id, amount, idempotency_key" },
       400,
     );
+  }
+  if (typeof amount !== "number" || amount <= 0) {
+    return json({ error: "amount must be a positive number" }, 400);
   }
 
   // Verify card ownership via RLS (if card doesn't belong to user, returns empty)

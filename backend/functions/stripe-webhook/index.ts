@@ -7,6 +7,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno&deno-std=0.208.0";
 
 serve(async (req: Request) => {
+  // No CORS OPTIONS handler: Stripe webhooks are server-to-server only.
+  // No browser preflight will reach this endpoint.
   const signature = req.headers.get("stripe-signature");
   const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
   const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
