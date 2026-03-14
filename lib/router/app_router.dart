@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/supabase_client.dart';
+import '../theme/design_tokens.dart';
 import '../features/auth/onboarding_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/register_screen.dart';
@@ -18,6 +19,24 @@ import '../features/routes/route_detail_screen.dart';
 import '../features/ai_chat/ai_chat_screen.dart';
 import '../features/payment/payment_validation_screen.dart';
 import '../features/nfc_simulator/nfc_auth_simulator_screen.dart';
+
+Widget _slideAndFade(
+  BuildContext context,
+  Animation<double> animation,
+  Animation<double> secondaryAnimation,
+  Widget child,
+) {
+  return FadeTransition(
+    opacity: CurvedAnimation(parent: animation, curve: Curves.easeInOut),
+    child: SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0.04, 0),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeInOut)),
+      child: child,
+    ),
+  );
+}
 
 /// Bridges a Stream to a [ChangeNotifier] so GoRouter's [refreshListenable]
 /// can trigger redirect re-evaluation on auth state changes.
@@ -79,55 +98,120 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: AppRoutes.onboarding,
-        builder: (_, __) => const OnboardingScreen(),
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const OnboardingScreen(),
+          transitionDuration: GSDuration.page,
+          transitionsBuilder: _slideAndFade,
+        ),
       ),
       GoRoute(
         path: AppRoutes.login,
-        builder: (_, __) => const LoginScreen(),
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const LoginScreen(),
+          transitionDuration: GSDuration.page,
+          transitionsBuilder: _slideAndFade,
+        ),
       ),
       GoRoute(
         path: AppRoutes.register,
-        builder: (_, __) => const RegisterScreen(),
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const RegisterScreen(),
+          transitionDuration: GSDuration.page,
+          transitionsBuilder: _slideAndFade,
+        ),
       ),
       GoRoute(
         path: AppRoutes.smsVerify,
-        builder: (_, state) => SmsVerifyScreen(phone: state.extra as String),
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: SmsVerifyScreen(phone: state.extra as String),
+          transitionDuration: GSDuration.page,
+          transitionsBuilder: _slideAndFade,
+        ),
       ),
       GoRoute(
         path: AppRoutes.home,
-        builder: (_, __) => const HomeScreen(),
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const HomeScreen(),
+          transitionDuration: GSDuration.page,
+          transitionsBuilder: _slideAndFade,
+        ),
       ),
       GoRoute(
         path: AppRoutes.wallet,
-        builder: (_, __) => const WalletScreen(),
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const WalletScreen(),
+          transitionDuration: GSDuration.page,
+          transitionsBuilder: _slideAndFade,
+        ),
       ),
       GoRoute(
         path: AppRoutes.history,
-        builder: (_, __) => const HistoryScreen(),
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const HistoryScreen(),
+          transitionDuration: GSDuration.page,
+          transitionsBuilder: _slideAndFade,
+        ),
       ),
       GoRoute(
         path: AppRoutes.profile,
-        builder: (_, __) => const ProfileScreen(),
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const ProfileScreen(),
+          transitionDuration: GSDuration.page,
+          transitionsBuilder: _slideAndFade,
+        ),
       ),
       GoRoute(
         path: AppRoutes.routePlanner,
-        builder: (_, __) => const RoutePlannerScreen(),
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const RoutePlannerScreen(),
+          transitionDuration: GSDuration.page,
+          transitionsBuilder: _slideAndFade,
+        ),
       ),
       GoRoute(
         path: AppRoutes.routeDetail,
-        builder: (_, __) => const RouteDetailScreen(),
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const RouteDetailScreen(),
+          transitionDuration: GSDuration.page,
+          transitionsBuilder: _slideAndFade,
+        ),
       ),
       GoRoute(
         path: AppRoutes.aiChat,
-        builder: (_, __) => const AiChatScreen(),
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const AiChatScreen(),
+          transitionDuration: GSDuration.page,
+          transitionsBuilder: _slideAndFade,
+        ),
       ),
       GoRoute(
         path: AppRoutes.paymentValidation,
-        builder: (_, __) => const PaymentValidationScreen(),
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const PaymentValidationScreen(),
+          transitionDuration: GSDuration.page,
+          transitionsBuilder: _slideAndFade,
+        ),
       ),
       GoRoute(
         path: AppRoutes.nfcSimulator,
-        builder: (_, __) => const NfcAuthSimulatorScreen(),
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const NfcAuthSimulatorScreen(),
+          transitionDuration: GSDuration.page,
+          transitionsBuilder: _slideAndFade,
+        ),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
