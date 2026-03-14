@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gosmart/screens/wallet/wallet_screen.dart';
+import 'package:gosmart/features/wallet/wallet_screen.dart';
 import 'package:gosmart/providers/card_provider.dart';
 import 'package:gosmart/models/card_model.dart';
 import 'package:gosmart/theme/app_theme.dart';

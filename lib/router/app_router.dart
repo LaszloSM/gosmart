@@ -5,19 +5,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/supabase_client.dart';
-import '../screens/onboarding/onboarding_screen.dart';
-import '../screens/onboarding/login_screen.dart';
-import '../screens/onboarding/register_screen.dart';
-import '../screens/onboarding/sms_verify_screen.dart';
-import '../screens/home/home_screen.dart';
-import '../screens/wallet/wallet_screen.dart';
-import '../screens/history/history_screen.dart';
-import '../screens/profile/profile_screen.dart';
-import '../screens/route_planner/route_planner_screen.dart';
-import '../screens/route_detail/route_detail_screen.dart';
-import '../screens/ai_chat/ai_chat_screen.dart';
-import '../screens/payment_validation/payment_validation_screen.dart';
-import '../screens/nfc_simulator/nfc_auth_simulator_screen.dart';
+import '../features/auth/onboarding_screen.dart';
+import '../features/auth/login_screen.dart';
+import '../features/auth/register_screen.dart';
+import '../features/auth/sms_verify_screen.dart';
+import '../features/home/home_screen.dart';
+import '../features/wallet/wallet_screen.dart';
+import '../features/history/history_screen.dart';
+import '../features/profile/profile_screen.dart';
+import '../features/routes/route_planner_screen.dart';
+import '../features/routes/route_detail_screen.dart';
+import '../features/ai_chat/ai_chat_screen.dart';
+import '../features/payment/payment_validation_screen.dart';
+import '../features/nfc_simulator/nfc_auth_simulator_screen.dart';
 
 /// Bridges a Stream to a [ChangeNotifier] so GoRouter's [refreshListenable]
 /// can trigger redirect re-evaluation on auth state changes.
