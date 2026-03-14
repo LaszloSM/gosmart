@@ -205,7 +205,7 @@ class _RouteCard extends StatelessWidget {
         duration: GSDuration.normal,
         padding: const EdgeInsets.all(GSSpacing.s4),
         decoration: BoxDecoration(
-          color: isSelected ? GSColors.primaryLight : GSColors.surface,
+          color: isSelected ? GSColors.accentLight : GSColors.surface,
           borderRadius: BorderRadius.circular(GSRadius.lg),
           border: Border.all(
             color: isSelected ? GSColors.primary : GSColors.border,

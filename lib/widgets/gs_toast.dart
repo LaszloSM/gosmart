@@ -173,7 +173,7 @@ class GSNotificationBanner extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: GSColors.primaryLight,
+                color: GSColors.accentLight,
                 borderRadius: BorderRadius.circular(GSRadius.sm),
               ),
               child: Icon(icon, color: GSColors.primary, size: 20),

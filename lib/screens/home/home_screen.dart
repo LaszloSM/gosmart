@@ -209,7 +209,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: GSColors.primaryLight,
+                              color: GSColors.accentLight,
                               borderRadius: BorderRadius.circular(GSRadius.md),
                             ),
                             child: const Icon(Icons.auto_awesome_rounded,
@@ -280,7 +280,7 @@ class _HomeHeader extends StatelessWidget {
       children: [
         const CircleAvatar(
           radius: 22,
-          backgroundColor: GSColors.primaryLight,
+          backgroundColor: GSColors.accentLight,
           child: Icon(Icons.person_rounded, color: GSColors.primary),
         ),
         const SizedBox(width: GSSpacing.s3),

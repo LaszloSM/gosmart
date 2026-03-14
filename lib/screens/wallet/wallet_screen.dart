@@ -224,8 +224,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen>
                         fontWeight: FontWeight.w600, fontSize: 15)),
                 selected: false,
                 onSelected: (_) {},
-                selectedColor: GSColors.primaryLight,
-                backgroundColor: GSColors.surface2,
+                selectedColor: GSColors.accentLight,
+                backgroundColor: GSColors.surfaceDark,
                 padding: const EdgeInsets.symmetric(
                     horizontal: GSSpacing.s4, vertical: GSSpacing.s2),
               );
@@ -448,7 +448,7 @@ class _PaymentModeToggle extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(GSSpacing.s4),
               decoration: BoxDecoration(
-                color: GSColors.primaryLight,
+                color: GSColors.accentLight,
                 borderRadius: BorderRadius.circular(GSRadius.lg),
               ),
               child: const Row(
@@ -472,7 +472,7 @@ class _PaymentModeToggle extends StatelessWidget {
               width: 160,
               height: 160,
               decoration: BoxDecoration(
-                color: GSColors.surface2,
+                color: GSColors.surfaceDark,
                 borderRadius: BorderRadius.circular(GSRadius.lg),
               ),
               child: const Icon(Icons.qr_code_2_rounded,
@@ -513,7 +513,7 @@ class _ModeBtn extends StatelessWidget {
           padding: const EdgeInsets.symmetric(
               horizontal: GSSpacing.s3, vertical: GSSpacing.s3),
           decoration: BoxDecoration(
-            color: selected ? color.withOpacity(0.10) : GSColors.surface2,
+            color: selected ? color.withOpacity(0.10) : GSColors.surfaceDark,
             borderRadius: BorderRadius.circular(GSRadius.md),
             border: Border.all(
               color: selected ? color : Colors.transparent,

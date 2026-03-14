@@ -96,7 +96,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: GSColors.primaryLight,
+                color: GSColors.accentLight,
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.auto_awesome_rounded,
@@ -184,7 +184,7 @@ class _MessageBubble extends StatelessWidget {
               height: 30,
               margin: const EdgeInsets.only(right: GSSpacing.s2),
               decoration: BoxDecoration(
-                color: GSColors.primaryLight,
+                color: GSColors.accentLight,
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.auto_awesome_rounded,
@@ -245,7 +245,7 @@ class _RouteQuickCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: GSColors.primaryLight,
+              color: GSColors.accentLight,
               borderRadius: BorderRadius.circular(GSRadius.sm),
             ),
             child: const Icon(Icons.route_rounded,
@@ -305,7 +305,7 @@ class _TypingIndicatorState extends State<_TypingIndicator>
           height: 30,
           margin: const EdgeInsets.only(right: 8),
           decoration: BoxDecoration(
-              color: GSColors.primaryLight, shape: BoxShape.circle),
+              color: GSColors.accentLight, shape: BoxShape.circle),
           child: const Icon(Icons.auto_awesome_rounded,
               color: GSColors.primary, size: 16),
         ),

@@ -84,7 +84,7 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen>
       case PaymentValidationState.error:
         return GSColors.errorLight;
       case PaymentValidationState.offline:
-        return GSColors.surface2;
+        return GSColors.surfaceDark;
       default:
         return GSColors.bg;
     }
@@ -211,7 +211,7 @@ class _ProcessingView extends StatelessWidget {
                 width: 140,
                 height: 140,
                 decoration: BoxDecoration(
-                  color: GSColors.primaryLight,
+                  color: GSColors.accentLight,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
@@ -337,7 +337,7 @@ class _ResultView extends StatelessWidget {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: GSColors.primaryLight,
+                  color: GSColors.accentLight,
                   borderRadius: BorderRadius.circular(GSRadius.md),
                 ),
                 child: const Icon(Icons.credit_card_rounded,
@@ -363,7 +363,7 @@ class _OfflineView extends StatelessWidget {
           width: 120,
           height: 120,
           decoration: BoxDecoration(
-            color: GSColors.surface2,
+            color: GSColors.surfaceDark,
             shape: BoxShape.circle,
           ),
           child: const Icon(Icons.wifi_off_rounded,
@@ -446,7 +446,7 @@ class _DemoChip extends StatelessWidget {
         margin: const EdgeInsets.only(left: 6),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: GSColors.surface2,
+          color: GSColors.surfaceDark,
           borderRadius: BorderRadius.circular(GSRadius.full),
         ),
         child: Text(label,

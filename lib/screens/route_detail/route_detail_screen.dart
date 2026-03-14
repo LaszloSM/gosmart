@@ -233,7 +233,7 @@ class _DriverCard extends StatelessWidget {
               height: 140,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: GSColors.surface2,
+                color: GSColors.surfaceDark,
                 borderRadius: BorderRadius.circular(GSRadius.md),
                 gradient: LinearGradient(
                   colors: [

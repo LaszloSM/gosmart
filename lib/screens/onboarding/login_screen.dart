@@ -233,7 +233,7 @@ class _AuthToggle extends StatelessWidget {
       height: 44,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: GSColors.surface2,
+        color: GSColors.surfaceDark,
         borderRadius: BorderRadius.circular(GSRadius.full),
       ),
       child: Row(

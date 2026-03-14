@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/design_tokens.dart';
 
-/// Base card with neumorphic-light effect and configurable padding/radius.
+/// Base card with soft floating shadow and configurable padding/radius.
 class GSCard extends StatelessWidget {
   const GSCard({
     super.key,
@@ -28,32 +28,27 @@ class GSCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = radius ?? GSRadius.lg;
+    final r = radius ?? GSRadius.xl; // default 20px
     final content = Container(
       margin: margin,
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(r),
-        boxShadow: shadow ?? GSShadow.neumorphic,
+        boxShadow: shadow ?? GSShadow.card,
         border: border,
       ),
       clipBehavior: clip,
-      child: padding != null
-          ? Padding(padding: padding!, child: child)
-          : child,
+      child: padding != null ? Padding(padding: padding!, child: child) : child,
     );
 
     if (onTap != null) {
-      return GestureDetector(
-        onTap: onTap,
-        child: content,
-      );
+      return GestureDetector(onTap: onTap, child: content);
     }
     return content;
   }
 }
 
-// ─── Transport mode chip card ─────────────────────────────────────────────────
+// ─── Transport mode chip ──────────────────────────────────────────────────────
 
 class GSModeChip extends StatelessWidget {
   const GSModeChip({
@@ -82,7 +77,7 @@ class GSModeChip extends StatelessWidget {
           vertical: GSSpacing.s2,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? color : GSColors.surface2,
+          color: isSelected ? color : GSColors.surfaceDark,
           borderRadius: BorderRadius.circular(GSRadius.full),
           boxShadow: isSelected
               ? [
@@ -106,7 +101,6 @@ class GSModeChip extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: isSelected ? Colors.white : GSColors.textSecondary,
@@ -119,7 +113,7 @@ class GSModeChip extends StatelessWidget {
   }
 }
 
-// ─── Balance / info card  ─────────────────────────────────────────────────────
+// ─── Balance / info card ──────────────────────────────────────────────────────
 
 class GSInfoCard extends StatelessWidget {
   const GSInfoCard({
@@ -171,7 +165,6 @@ class GSInfoCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(value,
                     style: const TextStyle(
-                      
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
                       color: GSColors.textPrimary,
@@ -219,21 +212,20 @@ class GSOptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GSCard(
-      shadow: isSelected ? GSShadow.primary : GSShadow.md,
+      shadow: isSelected ? GSShadow.accent : GSShadow.card,
       border: isSelected
-          ? Border.all(color: GSColors.primary, width: 2)
+          ? Border.all(color: GSColors.accent, width: 2)
           : Border.all(color: GSColors.border, width: 1),
       padding: const EdgeInsets.all(GSSpacing.s3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
             children: [
               CircleAvatar(
                 radius: 20,
                 backgroundImage: NetworkImage(avatarUrl),
-                backgroundColor: GSColors.surface2,
+                backgroundColor: GSColors.surfaceDark,
               ),
               const SizedBox(width: GSSpacing.s3),
               Expanded(
@@ -256,15 +248,13 @@ class GSOptionCard extends StatelessWidget {
               ),
               Text(price,
                   style: const TextStyle(
-                    
                     fontWeight: FontWeight.w700,
                     fontSize: 16,
-                    color: GSColors.primary,
+                    color: GSColors.accent,
                   )),
             ],
           ),
           const SizedBox(height: GSSpacing.s3),
-          // Vehicle image
           ClipRRect(
             borderRadius: BorderRadius.circular(GSRadius.md),
             child: Image.network(
@@ -274,14 +264,13 @@ class GSOptionCard extends StatelessWidget {
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => Container(
                 height: 120,
-                color: GSColors.surface2,
+                color: GSColors.surfaceDark,
                 child: const Icon(Icons.directions_car,
                     size: 48, color: GSColors.textDisabled),
               ),
             ),
           ),
           const SizedBox(height: GSSpacing.s3),
-          // Footer
           Row(
             children: [
               const Icon(Icons.access_time,
@@ -301,9 +290,8 @@ class GSOptionCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(GSRadius.full),
                     ),
                   ),
-                  child: const Text('Book Now',
-                      style:
-                          TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  child: const Text('Reservar',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                 ),
             ],
           ),

@@ -402,7 +402,7 @@ class _EmptyState extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: GSColors.surface2,
+                color: GSColors.surfaceDark,
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, size: 40, color: GSColors.textDisabled),

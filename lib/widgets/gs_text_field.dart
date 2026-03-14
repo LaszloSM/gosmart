@@ -60,7 +60,6 @@ class GSTextField extends StatelessWidget {
         autofocus: autofocus,
         textCapitalization: textCapitalization,
         style: const TextStyle(
-          
           fontSize: 15,
           color: GSColors.textPrimary,
           fontWeight: FontWeight.w400,
@@ -104,18 +103,18 @@ class GSSearchBar extends StatelessWidget {
     return GestureDetector(
       onTap: readOnly ? onTap : null,
       child: Container(
-        height: 52,
+        height: 56,
         padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
         decoration: BoxDecoration(
           color: GSColors.surface,
           borderRadius: BorderRadius.circular(GSRadius.full),
-          boxShadow: GSShadow.md,
+          boxShadow: GSShadow.card,
           border: Border.all(color: GSColors.border, width: 1),
         ),
         child: Row(
           children: [
             const Icon(Icons.search_rounded,
-                size: 22, color: GSColors.textSecondary),
+                size: 22, color: GSColors.accent),
             const SizedBox(width: GSSpacing.s3),
             Expanded(
               child: readOnly
@@ -135,9 +134,7 @@ class GSSearchBar extends StatelessWidget {
                         isDense: true,
                       ),
                       style: const TextStyle(
-                          
-                          fontSize: 15,
-                          color: GSColors.textPrimary),
+                          fontSize: 15, color: GSColors.textPrimary),
                     ),
             ),
             if (trailing != null) trailing!,

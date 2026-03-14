@@ -58,7 +58,7 @@ class ProfileScreen extends ConsumerWidget {
                     children: [
                       CircleAvatar(
                         radius: 48,
-                        backgroundColor: GSColors.primaryLight,
+                        backgroundColor: GSColors.accentLight,
                         backgroundImage: profile.avatarUrl != null
                             ? NetworkImage(profile.avatarUrl!)
                             : null,

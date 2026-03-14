@@ -50,10 +50,6 @@ abstract class GSColors {
   static const walk = Color(0xFF8F9BB3);
   static const metro = Color(0xFFFF4757);
 
-  // ── Migration aliases — REMOVE after Task 5 is complete ───────────────────
-  static const primaryLight = accentLight;
-  static const primaryHover = accentHover;
-  static const surface2 = surfaceDark;
 }
 
 abstract class GSSpacing {
