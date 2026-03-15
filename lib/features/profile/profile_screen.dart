@@ -422,8 +422,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   // ── Stats row ──────────────────────────────────────────────────────────────
 
   Widget _buildStatsRow() {
-    final tripCount = ref.watch(transactionListProvider).when(
-          data: (l) => l.length,
+    final tripCount = ref.watch(tripCountProvider).when(
+          data: (n) => n,
           loading: () => 0,
           error: (_, __) => 0,
         );

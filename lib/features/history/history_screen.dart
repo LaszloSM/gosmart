@@ -104,16 +104,20 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   Widget _buildBody() {
     switch (_tabIndex) {
       case 1:
-        return const GSEmptyState(
+        return GSEmptyState(
           icon: Icons.confirmation_number_rounded,
           title: 'Sin tickets',
           subtitle: 'Tus tickets de transporte aparecerán aquí',
+          actionLabel: 'Planificar viaje',
+          onAction: () => context.go(AppRoutes.routePlanner),
         );
       case 2:
-        return const GSEmptyState(
+        return GSEmptyState(
           icon: Icons.receipt_long_rounded,
           title: 'Sin recibos',
           subtitle: 'Los recibos detallados de cada viaje se guardan aquí',
+          actionLabel: 'Ver viajes',
+          onAction: () => context.go(AppRoutes.history),
         );
       default:
         return _buildViajasTab();

@@ -47,6 +47,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Buenos días';
+    if (hour < 18) return 'Buenas tardes';
+    return 'Buenas noches';
+  }
+
   Color _modeColor(String? mode) {
     switch (mode) {
       case 'car':
@@ -198,21 +205,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   padding: const EdgeInsets.all(12),
                   child: Row(
                     children: [
-                      const CircleAvatar(
+                      CircleAvatar(
                         radius: 22,
                         backgroundColor: GSColors.accentLight,
-                        child: Icon(
-                          Icons.person_rounded,
-                          color: GSColors.accent,
-                          size: 22,
-                        ),
+                        backgroundImage: profileAsync.valueOrNull?.avatarUrl != null
+                            ? NetworkImage(profileAsync.valueOrNull!.avatarUrl!)
+                            : null,
+                        child: profileAsync.valueOrNull?.avatarUrl == null
+                            ? const Icon(
+                                Icons.person_rounded,
+                                color: GSColors.accent,
+                                size: 22,
+                              )
+                            : null,
                       ),
                       const SizedBox(width: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Hola 👋',
+                            _greeting(),
                             style: Theme.of(context)
                                 .textTheme
                                 .bodySmall

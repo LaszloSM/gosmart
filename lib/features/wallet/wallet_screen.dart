@@ -9,6 +9,8 @@ import '../../providers/transaction_provider.dart';
 import '../../router/app_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
+import '../../widgets/gs_bottom_sheet.dart';
+import '../../widgets/gs_button.dart';
 import '../../widgets/gs_card.dart';
 import '../../widgets/gs_empty_state.dart';
 import '../../widgets/gs_skeleton_loader.dart';
@@ -58,12 +60,22 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     }
   }
 
-  // ── Recharge snackbar ───────────────────────────────────────────────────────
-  void _showRechargeSnackbar() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Función de recarga próximamente'),
-        duration: Duration(seconds: 2),
+  // ── Recharge sheet ──────────────────────────────────────────────────────────
+  void _showRechargeSheet() {
+    GSBottomSheet.show(
+      context: context,
+      title: 'Recargar tarjeta',
+      initialChildSize: 0.55,
+      child: _RechargeSheetContent(
+        onConfirm: (amount) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Recarga de \$${amount.toStringAsFixed(0)} COP próximamente'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        },
       ),
     );
   }
@@ -353,7 +365,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           icon: Icons.add_circle_rounded,
           label: 'Recargar',
           color: GSColors.accent,
-          onTap: _showRechargeSnackbar,
+          onTap: _showRechargeSheet,
         ),
         const SizedBox(width: 8),
         _QuickAction(
@@ -582,6 +594,86 @@ class _QuickAction extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ─── Recharge sheet content ───────────────────────────────────────────────────
+
+class _RechargeSheetContent extends StatefulWidget {
+  const _RechargeSheetContent({required this.onConfirm});
+  final ValueChanged<double> onConfirm;
+
+  @override
+  State<_RechargeSheetContent> createState() => _RechargeSheetContentState();
+}
+
+class _RechargeSheetContentState extends State<_RechargeSheetContent> {
+  double _selected = 10000;
+
+  static const _amounts = [5000.0, 10000.0, 20000.0, 50000.0, 100000.0];
+
+  String _fmt(double v) {
+    final s = v.toStringAsFixed(0).replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (m) => '${m[1]}.',
+    );
+    return '\$$s COP';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Selecciona un monto',
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: GSColors.textSecondary)),
+        const SizedBox(height: GSSpacing.s4),
+        Wrap(
+          spacing: GSSpacing.s2,
+          runSpacing: GSSpacing.s2,
+          children: _amounts.map((a) {
+            final isSelected = _selected == a;
+            return GestureDetector(
+              onTap: () => setState(() => _selected = a),
+              child: AnimatedContainer(
+                duration: GSDuration.normal,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: GSSpacing.s4, vertical: GSSpacing.s3),
+                decoration: BoxDecoration(
+                  color: isSelected ? GSColors.accent : GSColors.surfaceDark,
+                  borderRadius: BorderRadius.circular(GSRadius.lg),
+                  border: Border.all(
+                    color: isSelected ? GSColors.accent : GSColors.border,
+                  ),
+                ),
+                child: Text(
+                  _fmt(a),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: isSelected ? Colors.white : GSColors.textPrimary,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: GSSpacing.s6),
+        GSButton(
+          label: 'Continuar con ${_fmt(_selected)}',
+          onPressed: () => widget.onConfirm(_selected),
+          leadingIcon: Icons.add_rounded,
+        ),
+        const SizedBox(height: GSSpacing.s3),
+        const Text(
+          'Integración con Stripe disponible próximamente',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 11, color: GSColors.textDisabled),
+        ),
+      ],
     );
   }
 }

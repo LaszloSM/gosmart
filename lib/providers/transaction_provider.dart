@@ -1,5 +1,6 @@
 // lib/providers/transaction_provider.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/supabase_client.dart';
 import '../models/transaction_model.dart';
 
@@ -54,3 +55,11 @@ class TransactionListNotifier
     await load();
   }
 }
+
+/// Returns the total number of transactions for the current user.
+/// Uses a COUNT query so it's accurate regardless of pagination.
+final tripCountProvider = FutureProvider<int>((ref) async {
+  return GoSmartSupabase.client
+      .from('transactions')
+      .count(CountOption.exact);
+});
