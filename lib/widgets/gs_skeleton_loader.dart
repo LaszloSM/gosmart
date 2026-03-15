@@ -115,3 +115,74 @@ class GSCardSkeleton extends StatelessWidget {
     );
   }
 }
+
+/// Renders [itemCount] skeleton items with a staggered fade-in entrance.
+/// Each item fades in [GSAnimDuration.skeletonStagger]ms after the previous.
+///
+/// Usage:
+/// ```dart
+/// StaggeredSkeletonList(
+///   itemCount: 5,
+///   itemBuilder: (_) => const GSTransactionSkeleton(),
+/// )
+/// ```
+class StaggeredSkeletonList extends StatefulWidget {
+  const StaggeredSkeletonList({
+    super.key,
+    required this.itemCount,
+    required this.itemBuilder,
+  });
+
+  final int itemCount;
+  final Widget Function(int index) itemBuilder;
+
+  @override
+  State<StaggeredSkeletonList> createState() => _StaggeredSkeletonListState();
+}
+
+class _StaggeredSkeletonListState extends State<StaggeredSkeletonList>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    final totalMs =
+        400 + widget.itemCount * GSAnimDuration.skeletonStagger;
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: totalMs),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final totalMs =
+        400 + widget.itemCount * GSAnimDuration.skeletonStagger;
+    return Column(
+      children: List.generate(widget.itemCount, (i) {
+        final startFraction =
+            (i * GSAnimDuration.skeletonStagger) / totalMs;
+        final endFraction =
+            ((i * GSAnimDuration.skeletonStagger) + 400) / totalMs;
+        return FadeTransition(
+          opacity: CurvedAnimation(
+            parent: _controller,
+            curve: Interval(
+              startFraction.clamp(0.0, 1.0),
+              endFraction.clamp(0.0, 1.0),
+              curve: Curves.easeOut,
+            ),
+          ),
+          child: widget.itemBuilder(i),
+        );
+      }),
+    );
+  }
+}
