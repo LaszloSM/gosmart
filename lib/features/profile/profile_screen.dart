@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -236,21 +237,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ],
                 ),
 
-                const _SettingsSection(
+                _SettingsSection(
                   'Soporte',
                   [
-                    _SettingsTile(
+                    const _SettingsTile(
                       Icons.help_outline_rounded,
                       'Centro de ayuda',
                     ),
-                    _SettingsTile(
+                    const _SettingsTile(
                       Icons.chat_bubble_outline_rounded,
                       'Chat en vivo',
                     ),
-                    _SettingsTile(
+                    const _SettingsTile(
                       Icons.star_outline_rounded,
                       'Calificar la app',
                     ),
+                    if (kDebugMode)
+                      _SettingsTile(
+                        Icons.nfc_rounded,
+                        'Simulador NFC (Debug)',
+                        iconColor: Colors.orange,
+                        onTap: () => context.push(AppRoutes.nfcSimulator),
+                      ),
                   ],
                 ),
 

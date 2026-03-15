@@ -1,22 +1,34 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../models/authorize_result.dart';
+import '../../providers/card_provider.dart';
+import '../../services/card_service.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_card.dart';
 
 enum PaymentValidationState { processing, authorized, insufficient, error, offline }
 
-class PaymentValidationScreen extends StatefulWidget {
+class PaymentValidationScreen extends ConsumerStatefulWidget {
   const PaymentValidationScreen({super.key});
 
   @override
-  State<PaymentValidationScreen> createState() =>
+  ConsumerState<PaymentValidationScreen> createState() =>
       _PaymentValidationScreenState();
 }
 
-class _PaymentValidationScreenState extends State<PaymentValidationScreen>
+class _PaymentValidationScreenState
+    extends ConsumerState<PaymentValidationScreen>
     with SingleTickerProviderStateMixin {
   PaymentValidationState _state = PaymentValidationState.processing;
   late final AnimationController _pulseCtrl;
+  String _idempotencyKey = cardService.newIdempotencyKey();
+
+  // Populated after authorize response
+  String _resultAmount = '—';
+  String _resultDetail = 'Tarjeta GoSmart';
 
   @override
   void initState() {
@@ -24,7 +36,7 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen>
     _pulseCtrl = AnimationController(
         vsync: this, duration: const Duration(seconds: 2))
       ..repeat(reverse: true);
-    _simulateValidation();
+    _runAuthorize();
   }
 
   @override
@@ -33,12 +45,82 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen>
     super.dispose();
   }
 
-  Future<void> _simulateValidation() async {
-    await Future.delayed(const Duration(seconds: 3));
-    if (mounted) {
-      setState(() => _state = PaymentValidationState.authorized);
-      _pulseCtrl.stop();
+  Future<void> _runAuthorize() async {
+    setState(() => _state = PaymentValidationState.processing);
+    if (!_pulseCtrl.isAnimating) _pulseCtrl.repeat(reverse: true);
+
+    final card = ref.read(activeCardProvider).valueOrNull;
+    if (card == null) {
+      if (mounted) {
+        setState(() {
+          _state = PaymentValidationState.error;
+          _resultDetail = 'No hay tarjeta activa';
+        });
+      }
+      return;
     }
+
+    try {
+      final result = await cardService.authorize(
+        cardId: card.id,
+        validatorId: 'VLD-BOG-001',
+        amount: 2900,
+        idempotencyKey: _idempotencyKey,
+        mode: 'bus',
+      );
+
+      if (!mounted) return;
+      _pulseCtrl.stop();
+
+      final remaining = result.remainingBalance;
+
+      if (result.isAuthorized) {
+        setState(() {
+          _state = PaymentValidationState.authorized;
+          _resultAmount = '\$2.900 COP';
+          _resultDetail = remaining != null
+              ? 'Saldo restante: \$${remaining.toStringAsFixed(0)} COP'
+              : card.numberMasked;
+        });
+        // Refresh card balance shown in Wallet / Home
+        ref.read(activeCardProvider.notifier).refresh();
+      } else {
+        switch (result.status) {
+          case AuthorizeStatus.insufficientBalance:
+            setState(() {
+              _state = PaymentValidationState.insufficient;
+              _resultAmount =
+                  '\$${remaining?.toStringAsFixed(0) ?? '0'} COP';
+              _resultDetail = 'Saldo insuficiente para \$2.900 COP';
+            });
+          case AuthorizeStatus.cardLocked:
+            setState(() {
+              _state = PaymentValidationState.error;
+              _resultAmount = '—';
+              _resultDetail = 'Tarjeta bloqueada';
+            });
+          default:
+            setState(() {
+              _state = PaymentValidationState.error;
+              _resultAmount = '—';
+              _resultDetail = result.errorCode ?? 'Error desconocido';
+            });
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _pulseCtrl.stop();
+      setState(() {
+        _state = PaymentValidationState.error;
+        _resultAmount = '—';
+        _resultDetail = e.toString();
+      });
+    }
+  }
+
+  void _retry() {
+    _idempotencyKey = cardService.newIdempotencyKey();
+    _runAuthorize();
   }
 
   void _setDemo(PaymentValidationState s) => setState(() => _state = s);
@@ -50,8 +132,8 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen>
       body: SafeArea(
         child: Column(
           children: [
-            // Demo state switcher (dev tool)
-            if (true) _DemoSwitcher(onSelect: _setDemo),
+            // Debug-only state switcher — hidden in release builds
+            if (kDebugMode) _DemoSwitcher(onSelect: _setDemo),
 
             Expanded(
               child: Center(
@@ -62,7 +144,7 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen>
               ),
             ),
 
-            // CTA
+            // CTA — hidden while processing
             if (_state != PaymentValidationState.processing)
               Padding(
                 padding: const EdgeInsets.fromLTRB(
@@ -95,35 +177,35 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen>
       case PaymentValidationState.processing:
         return _ProcessingView(controller: _pulseCtrl);
       case PaymentValidationState.authorized:
-        return const _ResultView(
+        return _ResultView(
           icon: Icons.check_circle_rounded,
           iconColor: GSColors.success,
-          title: 'Payment Authorized',
-          subtitle: 'Have a great trip!',
-          amount: '\$2.80',
-          detail: 'GoSmart Card ••••4242',
-          badgeLabel: 'AUTHORIZED',
+          title: 'Pago Autorizado',
+          subtitle: '¡Que tengas un buen viaje!',
+          amount: _resultAmount,
+          detail: _resultDetail,
+          badgeLabel: 'AUTORIZADO',
           badgeColor: GSColors.success,
         );
       case PaymentValidationState.insufficient:
-        return const _ResultView(
+        return _ResultView(
           icon: Icons.account_balance_wallet_rounded,
           iconColor: GSColors.warning,
-          title: 'Insufficient Balance',
-          subtitle: 'Top up your card to continue',
-          amount: '\$0.45',
-          detail: 'Remaining balance',
-          badgeLabel: 'DECLINED',
+          title: 'Saldo Insuficiente',
+          subtitle: 'Recarga tu tarjeta para continuar',
+          amount: _resultAmount,
+          detail: _resultDetail,
+          badgeLabel: 'RECHAZADO',
           badgeColor: GSColors.warning,
         );
       case PaymentValidationState.error:
-        return const _ResultView(
+        return _ResultView(
           icon: Icons.error_rounded,
           iconColor: GSColors.error,
-          title: 'Payment Failed',
-          subtitle: 'Please try again or use QR',
+          title: 'Pago Fallido',
+          subtitle: 'Por favor intenta de nuevo',
           amount: '—',
-          detail: 'Validator error #E401',
+          detail: _resultDetail,
           badgeLabel: 'ERROR',
           badgeColor: GSColors.error,
         );
@@ -136,7 +218,7 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen>
     switch (_state) {
       case PaymentValidationState.authorized:
         return GSButton(
-          label: 'Done',
+          label: 'Listo',
           onPressed: () => Navigator.pop(context),
           leadingIcon: Icons.home_rounded,
         );
@@ -144,13 +226,13 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen>
         return Column(
           children: [
             GSButton(
-              label: 'Top up now',
+              label: 'Recargar ahora',
               onPressed: () => Navigator.pop(context),
               leadingIcon: Icons.add_rounded,
             ),
             const SizedBox(height: GSSpacing.s3),
             GSButton(
-              label: 'Use QR code instead',
+              label: 'Usar código QR',
               onPressed: () {},
               variant: GSButtonVariant.outline,
               leadingIcon: Icons.qr_code_rounded,
@@ -161,26 +243,22 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen>
         return Column(
           children: [
             GSButton(
-              label: 'Use QR code',
-              onPressed: () {},
-              leadingIcon: Icons.qr_code_rounded,
+              label: 'Intentar de nuevo',
+              onPressed: _retry,
+              leadingIcon: Icons.refresh_rounded,
             ),
             const SizedBox(height: GSSpacing.s3),
             GSButton(
-              label: 'Try again',
-              onPressed: () {
-                setState(() => _state = PaymentValidationState.processing);
-                _pulseCtrl.repeat(reverse: true);
-                _simulateValidation();
-              },
+              label: 'Usar código QR',
+              onPressed: () {},
               variant: GSButtonVariant.outline,
-              leadingIcon: Icons.refresh_rounded,
+              leadingIcon: Icons.qr_code_rounded,
             ),
           ],
         );
       case PaymentValidationState.offline:
         return GSButton(
-          label: 'Generate offline QR',
+          label: 'Generar QR sin conexión',
           onPressed: () {},
           leadingIcon: Icons.qr_code_rounded,
         );
@@ -229,15 +307,14 @@ class _ProcessingView extends StatelessWidget {
           },
         ),
         const SizedBox(height: GSSpacing.s8),
-        const Text('Processing payment...',
+        const Text('Procesando pago...',
             style: TextStyle(
-              
               fontSize: 20,
               fontWeight: FontWeight.w700,
               color: GSColors.textPrimary,
             )),
         const SizedBox(height: GSSpacing.s3),
-        const Text('Hold your phone near the validator',
+        const Text('Acerca tu teléfono al validador',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 14, color: GSColors.textSecondary)),
         const SizedBox(height: GSSpacing.s8),
@@ -292,7 +369,6 @@ class _ResultView extends StatelessWidget {
           child: Text(badgeLabel,
               style: const TextStyle(
                   color: Colors.white,
-                  
                   fontWeight: FontWeight.w800,
                   fontSize: 13,
                   letterSpacing: 1.5)),
@@ -300,7 +376,6 @@ class _ResultView extends StatelessWidget {
         const SizedBox(height: GSSpacing.s5),
         Text(title,
             style: const TextStyle(
-              
               fontSize: 24,
               fontWeight: FontWeight.w800,
               color: GSColors.textPrimary,
@@ -319,12 +394,11 @@ class _ResultView extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Amount',
+                  const Text('Monto',
                       style: TextStyle(
                           fontSize: 12, color: GSColors.textSecondary)),
                   Text(amount,
                       style: const TextStyle(
-                          
                           fontSize: 28,
                           fontWeight: FontWeight.w800,
                           color: GSColors.textPrimary)),
@@ -336,9 +410,9 @@ class _ResultView extends StatelessWidget {
               Container(
                 width: 56,
                 height: 56,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: GSColors.accentLight,
-                  borderRadius: BorderRadius.circular(GSRadius.md),
+                  borderRadius: BorderRadius.all(Radius.circular(GSRadius.md)),
                 ),
                 child: const Icon(Icons.credit_card_rounded,
                     color: GSColors.accent, size: 28),
@@ -370,21 +444,19 @@ class _OfflineView extends StatelessWidget {
               size: 64, color: GSColors.textSecondary),
         ),
         const SizedBox(height: GSSpacing.s5),
-        const Text('No connection',
+        const Text('Sin conexión',
             style: TextStyle(
-              
               fontSize: 24,
               fontWeight: FontWeight.w800,
               color: GSColors.textPrimary,
             )),
         const SizedBox(height: GSSpacing.s3),
         const Text(
-          'NFC payment is unavailable offline.\nYou can use a temporary QR code instead.',
+          'El pago NFC no está disponible sin internet.\nPuedes usar un código QR temporal.',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 14, color: GSColors.textSecondary),
         ),
         const SizedBox(height: GSSpacing.s6),
-        // QR Placeholder
         Container(
           width: 180,
           height: 180,
@@ -398,7 +470,7 @@ class _OfflineView extends StatelessWidget {
             children: [
               Icon(Icons.qr_code_2_rounded,
                   size: 120, color: GSColors.textPrimary),
-              Text('Expires in 5:00',
+              Text('Expira en 5:00',
                   style: TextStyle(
                       fontSize: 11, color: GSColors.textSecondary)),
             ],
@@ -408,6 +480,8 @@ class _OfflineView extends StatelessWidget {
     );
   }
 }
+
+// ─── Debug-only state switcher ────────────────────────────────────────────────
 
 class _DemoSwitcher extends StatelessWidget {
   const _DemoSwitcher({required this.onSelect});
@@ -424,8 +498,8 @@ class _DemoSwitcher extends StatelessWidget {
           const Text('Demo: ',
               style: TextStyle(fontSize: 11, color: GSColors.textDisabled)),
           _DemoChip('✓ OK', () => onSelect(PaymentValidationState.authorized)),
-          _DemoChip('\$ Low', () => onSelect(PaymentValidationState.insufficient)),
-          _DemoChip('✗ Err', () => onSelect(PaymentValidationState.error)),
+          _DemoChip('\$ Bajo', () => onSelect(PaymentValidationState.insufficient)),
+          _DemoChip('✗ Error', () => onSelect(PaymentValidationState.error)),
           _DemoChip('Offline', () => onSelect(PaymentValidationState.offline)),
         ],
       ),

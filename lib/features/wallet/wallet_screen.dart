@@ -360,7 +360,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           icon: Icons.qr_code_scanner_rounded,
           label: 'Pagar',
           color: GSColors.accentAlt,
-          onTap: () {},
+          onTap: () => context.push(AppRoutes.paymentValidation),
         ),
         const SizedBox(width: 8),
         Builder(

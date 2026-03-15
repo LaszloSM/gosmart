@@ -26,7 +26,7 @@ class ActiveCardNotifier extends StateNotifier<AsyncValue<CardModel?>> {
       final data = await GoSmartSupabase.client
           .from('cards')
           .select()
-          .eq('status', 'active')
+          .neq('status', 'cancelled')
           .order('created_at')
           .limit(1)
           .maybeSingle();
