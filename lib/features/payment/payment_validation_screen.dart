@@ -27,6 +27,7 @@ class _PaymentValidationScreenState
   PaymentValidationState _state = PaymentValidationState.processing;
   late final AnimationController _pulseCtrl;
   late final AnimationController _successCtrl;
+  late final CurvedAnimation _rippleCurved;
   String _idempotencyKey = cardService.newIdempotencyKey();
 
   // Populated after authorize response
@@ -43,11 +44,16 @@ class _PaymentValidationScreenState
       vsync: this,
       duration: GSAnimDuration.particleBurst,
     );
+    _rippleCurved = CurvedAnimation(
+      parent: _successCtrl,
+      curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+    );
     _runAuthorize();
   }
 
   @override
   void dispose() {
+    _rippleCurved.dispose();
     _pulseCtrl.dispose();
     _successCtrl.dispose();
     super.dispose();
@@ -132,7 +138,12 @@ class _PaymentValidationScreenState
     _runAuthorize();
   }
 
-  void _setDemo(PaymentValidationState s) => setState(() => _state = s);
+  void _setDemo(PaymentValidationState s) {
+    setState(() => _state = s);
+    if (s == PaymentValidationState.authorized) {
+      _successCtrl.forward(from: 0);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -226,12 +237,9 @@ class _PaymentValidationScreenState
             children: [
               // Ripple background
               AnimatedBuilder(
-                animation: _successCtrl,
+                animation: _rippleCurved,
                 builder: (_, __) {
-                  final t = CurvedAnimation(
-                    parent: _successCtrl,
-                    curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-                  ).value;
+                  final t = _rippleCurved.value;
                   return Container(
                     width: 60 + 100 * t,
                     height: 60 + 100 * t,
@@ -636,7 +644,7 @@ class _DemoChip extends StatelessWidget {
 
 // ─── Payment success animation widgets ───────────────────────────────────────
 
-class _AnimatedCheckmark extends StatelessWidget {
+class _AnimatedCheckmark extends StatefulWidget {
   const _AnimatedCheckmark({
     required this.controller,
     required this.color,
@@ -646,17 +654,36 @@ class _AnimatedCheckmark extends StatelessWidget {
   final Color color;
 
   @override
+  State<_AnimatedCheckmark> createState() => _AnimatedCheckmarkState();
+}
+
+class _AnimatedCheckmarkState extends State<_AnimatedCheckmark> {
+  late final CurvedAnimation _curved;
+
+  @override
+  void initState() {
+    super.initState();
+    _curved = CurvedAnimation(
+      parent: widget.controller,
+      curve: const Interval(0.1, 0.7, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _curved.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: controller,
+      animation: _curved,
       builder: (_, __) => CustomPaint(
         size: const Size(64, 64),
         painter: _CheckmarkPainter(
-          progress: CurvedAnimation(
-            parent: controller,
-            curve: const Interval(0.1, 0.7, curve: Curves.easeOut),
-          ).value,
-          color: color,
+          progress: _curved.value,
+          color: widget.color,
         ),
       ),
     );
@@ -694,7 +721,7 @@ class _CheckmarkPainter extends CustomPainter {
   bool shouldRepaint(_CheckmarkPainter old) => old.progress != progress;
 }
 
-class _AnimatedParticleBurst extends StatelessWidget {
+class _AnimatedParticleBurst extends StatefulWidget {
   const _AnimatedParticleBurst({
     required this.controller,
   });
@@ -702,17 +729,34 @@ class _AnimatedParticleBurst extends StatelessWidget {
   final AnimationController controller;
 
   @override
+  State<_AnimatedParticleBurst> createState() => _AnimatedParticleBurstState();
+}
+
+class _AnimatedParticleBurstState extends State<_AnimatedParticleBurst> {
+  late final CurvedAnimation _curved;
+
+  @override
+  void initState() {
+    super.initState();
+    _curved = CurvedAnimation(
+      parent: widget.controller,
+      curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _curved.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: controller,
+      animation: _curved,
       builder: (_, __) => CustomPaint(
         size: const Size(200, 200),
-        painter: _ParticleBurstPainter(
-          progress: CurvedAnimation(
-            parent: controller,
-            curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
-          ).value,
-        ),
+        painter: _ParticleBurstPainter(progress: _curved.value),
       ),
     );
   }

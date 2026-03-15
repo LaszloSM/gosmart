@@ -143,15 +143,15 @@ class StaggeredSkeletonList extends StatefulWidget {
 class _StaggeredSkeletonListState extends State<StaggeredSkeletonList>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
+  late final int _totalMs;
 
   @override
   void initState() {
     super.initState();
-    final totalMs =
-        400 + widget.itemCount * GSAnimDuration.skeletonStagger;
+    _totalMs = 400 + widget.itemCount * GSAnimDuration.skeletonStagger;
     _controller = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: totalMs),
+      duration: Duration(milliseconds: _totalMs),
     )..forward();
   }
 
@@ -163,14 +163,12 @@ class _StaggeredSkeletonListState extends State<StaggeredSkeletonList>
 
   @override
   Widget build(BuildContext context) {
-    final totalMs =
-        400 + widget.itemCount * GSAnimDuration.skeletonStagger;
     return Column(
       children: List.generate(widget.itemCount, (i) {
         final startFraction =
-            (i * GSAnimDuration.skeletonStagger) / totalMs;
+            (i * GSAnimDuration.skeletonStagger) / _totalMs;
         final endFraction =
-            ((i * GSAnimDuration.skeletonStagger) + 400) / totalMs;
+            ((i * GSAnimDuration.skeletonStagger) + 400) / _totalMs;
         return FadeTransition(
           opacity: CurvedAnimation(
             parent: _controller,
