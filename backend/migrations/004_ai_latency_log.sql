@@ -3,11 +3,11 @@
 create table if not exists ai_latency_log (
   id          bigserial primary key,
   user_id     uuid references auth.users not null default auth.uid(),
-  created_at  timestamptz default now(),
+  created_at  timestamptz not null default now(),
   total_ms    int not null,
   backend_ms  int,
-  source      text check (source in ('gemini', 'heuristic', 'cache')),
-  intent      text check (intent in ('route_query', 'balance_query', 'general'))
+  source      text not null check (source in ('gemini', 'heuristic', 'cache')),
+  intent      text not null check (intent in ('route_query', 'balance_query', 'general'))
 );
 
 alter table ai_latency_log enable row level security;
