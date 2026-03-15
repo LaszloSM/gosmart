@@ -1,9 +1,12 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+
 import '../theme/design_tokens.dart';
 
-/// Pill-style bottom navigation bar.
-/// Active tab: icon + label inside an accent-tinted pill.
-/// Inactive tabs: icon only, muted color.
+/// Glass bottom navigation bar.
+/// Active tab: gradient pill (teal→violet) with icon + label.
+/// Inactive tabs: icon + label (9sp, muted).
 class GSBottomNav extends StatelessWidget {
   const GSBottomNav({
     super.key,
@@ -23,28 +26,35 @@ class GSBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: GSSize.bottomNav + MediaQuery.of(context).padding.bottom,
-      decoration: BoxDecoration(
-        color: GSColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: GSGlass.blur,
+          sigmaY: GSGlass.blur,
+        ),
+        child: Container(
+          height: GSSize.bottomNav + MediaQuery.of(context).padding.bottom,
+          decoration: BoxDecoration(
+            color: GSColors.surface.withValues(alpha: GSGlass.backgroundOpacity),
+            border: Border(
+              top: BorderSide(
+                color: Colors.white.withValues(alpha: GSGlass.borderOpacity),
+                width: GSGlass.borderWidth,
+              ),
+            ),
           ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: List.generate(
-            _items.length,
-            (index) => Expanded(
-              child: _NavTile(
-                item: _items[index],
-                isActive: currentIndex == index,
-                onTap: () => onTap(index),
+          child: SafeArea(
+            top: false,
+            child: Row(
+              children: List.generate(
+                _items.length,
+                (index) => Expanded(
+                  child: _NavTile(
+                    item: _items[index],
+                    isActive: currentIndex == index,
+                    onTap: () => onTap(index),
+                  ),
+                ),
               ),
             ),
           ),
@@ -74,38 +84,54 @@ class _NavTile extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           AnimatedContainer(
-            duration: GSDuration.normal,
+            duration: GSAnimDuration.pillSlide,
             curve: Curves.easeInOut,
             padding: EdgeInsets.symmetric(
               horizontal: isActive ? GSSpacing.s3 : GSSpacing.s2,
               vertical: GSSpacing.s1,
             ),
-            decoration: BoxDecoration(
-              color: isActive ? GSColors.accentLight : Colors.transparent,
-              borderRadius: BorderRadius.circular(GSRadius.full),
-            ),
+            decoration: isActive
+                ? BoxDecoration(
+                    borderRadius: BorderRadius.circular(GSRadius.full),
+                    gradient: LinearGradient(
+                      colors: GSGradient.accentPill,
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                  )
+                : const BoxDecoration(),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   item.icon,
                   size: GSSize.iconLg,
-                  color: isActive ? GSColors.accent : GSColors.textDisabled,
+                  color: isActive ? Colors.white : GSColors.textDisabled,
                 ),
                 if (isActive) ...[
                   const SizedBox(width: GSSpacing.s1),
                   Text(
                     item.label,
                     style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: GSColors.accent,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
                     ),
                   ),
                 ],
               ],
             ),
           ),
+          const SizedBox(height: 2),
+          if (!isActive)
+            Text(
+              item.label,
+              style: const TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w400,
+                color: GSColors.textDisabled,
+              ),
+            ),
         ],
       ),
     );
