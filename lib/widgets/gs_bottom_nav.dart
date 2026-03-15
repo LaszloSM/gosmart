@@ -77,62 +77,67 @@ class _NavTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AnimatedContainer(
-            duration: GSAnimDuration.pillSlide,
-            curve: Curves.easeInOut,
-            padding: EdgeInsets.symmetric(
-              horizontal: isActive ? GSSpacing.s3 : GSSpacing.s2,
-              vertical: GSSpacing.s1,
-            ),
-            decoration: isActive
-                ? BoxDecoration(
-                    borderRadius: BorderRadius.circular(GSRadius.full),
-                    gradient: LinearGradient(
-                      colors: GSGradient.accentPill,
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                  )
-                : const BoxDecoration(),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  item.icon,
-                  size: GSSize.iconLg,
-                  color: isActive ? Colors.white : GSColors.textDisabled,
-                ),
-                if (isActive) ...[
-                  const SizedBox(width: GSSpacing.s1),
-                  Text(
-                    item.label,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(GSRadius.full),
+        splashColor: GSColors.accent.withValues(alpha: 0.12),
+        highlightColor: Colors.transparent,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedContainer(
+              duration: GSAnimDuration.pillSlide,
+              curve: Curves.easeInOut,
+              padding: EdgeInsets.symmetric(
+                horizontal: isActive ? GSSpacing.s3 : GSSpacing.s2,
+                vertical: GSSpacing.s1,
+              ),
+              decoration: isActive
+                  ? BoxDecoration(
+                      borderRadius: BorderRadius.circular(GSRadius.full),
+                      gradient: LinearGradient(
+                        colors: GSGradient.accentPill,
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                    )
+                  : const BoxDecoration(),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    item.icon,
+                    size: GSSize.iconLg,
+                    color: isActive ? Colors.white : GSColors.textDisabled,
                   ),
+                  if (isActive) ...[
+                    const SizedBox(width: GSSpacing.s1),
+                    Text(
+                      item.label,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 2),
-          if (!isActive)
-            Text(
-              item.label,
-              style: const TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w400,
-                color: GSColors.textDisabled,
               ),
             ),
-        ],
+            const SizedBox(height: 2),
+            if (!isActive)
+              Text(
+                item.label,
+                style: const TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w400,
+                  color: GSColors.textDisabled,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
