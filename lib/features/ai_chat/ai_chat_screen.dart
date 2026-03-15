@@ -95,7 +95,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
             Container(
               width: 32,
               height: 32,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: GSColors.accentLight,
                 shape: BoxShape.circle,
               ),
@@ -183,7 +183,7 @@ class _MessageBubble extends StatelessWidget {
               width: 30,
               height: 30,
               margin: const EdgeInsets.only(right: GSSpacing.s2),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: GSColors.accentLight,
                 shape: BoxShape.circle,
               ),
@@ -304,7 +304,7 @@ class _TypingIndicatorState extends State<_TypingIndicator>
           width: 30,
           height: 30,
           margin: const EdgeInsets.only(right: 8),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
               color: GSColors.accentLight, shape: BoxShape.circle),
           child: const Icon(Icons.auto_awesome_rounded,
               color: GSColors.accent, size: 16),

@@ -113,7 +113,7 @@ class _GSButtonState extends State<GSButton> {
         if (widget.leadingIcon != null) ...[
           Icon(widget.leadingIcon, size: dims.iconSize,
               color: isDisabled ? Colors.white : colors.fg),
-          SizedBox(width: GSSpacing.s2),
+          const SizedBox(width: GSSpacing.s2),
         ],
         Text(
           widget.label,
@@ -124,7 +124,7 @@ class _GSButtonState extends State<GSButton> {
           ),
         ),
         if (widget.trailingIcon != null) ...[
-          SizedBox(width: GSSpacing.s2),
+          const SizedBox(width: GSSpacing.s2),
           Icon(widget.trailingIcon, size: dims.iconSize,
               color: isDisabled ? Colors.white : colors.fg),
         ],
@@ -135,28 +135,28 @@ class _GSButtonState extends State<GSButton> {
   _VariantColors get _variantColors {
     switch (widget.variant) {
       case GSButtonVariant.primary:
-        return _VariantColors(GSColors.accent, Colors.white);
+        return const _VariantColors(GSColors.accent, Colors.white);
       case GSButtonVariant.secondary:
-        return _VariantColors(GSColors.accentLight, GSColors.accent);
+        return const _VariantColors(GSColors.accentLight, GSColors.accent);
       case GSButtonVariant.outline:
-        return _VariantColors(Colors.transparent, GSColors.accent);
+        return const _VariantColors(Colors.transparent, GSColors.accent);
       case GSButtonVariant.ghost:
-        return _VariantColors(Colors.transparent, GSColors.textSecondary);
+        return const _VariantColors(Colors.transparent, GSColors.textSecondary);
       case GSButtonVariant.eco:
-        return _VariantColors(GSColors.eco, Colors.white);
+        return const _VariantColors(GSColors.eco, Colors.white);
       case GSButtonVariant.danger:
-        return _VariantColors(Colors.transparent, GSColors.error);
+        return const _VariantColors(Colors.transparent, GSColors.error);
     }
   }
 
   _SizeDims get _sizeDims {
     switch (widget.size) {
       case GSButtonSize.sm:
-        return _SizeDims(height: 36, hPad: 16, fontSize: 13, iconSize: 16);
+        return const _SizeDims(height: 36, hPad: 16, fontSize: 13, iconSize: 16);
       case GSButtonSize.md:
-        return _SizeDims(height: 52, hPad: 24, fontSize: 15, iconSize: 20);
+        return const _SizeDims(height: 52, hPad: 24, fontSize: 15, iconSize: 20);
       case GSButtonSize.lg:
-        return _SizeDims(height: 60, hPad: 32, fontSize: 17, iconSize: 22);
+        return const _SizeDims(height: 60, hPad: 32, fontSize: 17, iconSize: 22);
     }
   }
 }

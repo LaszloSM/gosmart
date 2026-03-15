@@ -94,28 +94,28 @@ class GSToast {
   static _ToastColors _typeColors(GSToastType type) {
     switch (type) {
       case GSToastType.success:
-        return _ToastColors(
+        return const _ToastColors(
           bg: GSColors.successLight,
           border: GSColors.success,
           iconColor: GSColors.success,
           icon: Icons.check_circle_rounded,
         );
       case GSToastType.error:
-        return _ToastColors(
+        return const _ToastColors(
           bg: GSColors.errorLight,
           border: GSColors.error,
           iconColor: GSColors.error,
           icon: Icons.error_rounded,
         );
       case GSToastType.warning:
-        return _ToastColors(
+        return const _ToastColors(
           bg: GSColors.warningLight,
           border: GSColors.warning,
           iconColor: GSColors.warning,
           icon: Icons.warning_rounded,
         );
       case GSToastType.info:
-        return _ToastColors(
+        return const _ToastColors(
           bg: GSColors.infoLight,
           border: GSColors.info,
           iconColor: GSColors.info,
@@ -192,7 +192,7 @@ class GSNotificationBanner extends StatelessWidget {
                       )),
                   Text(body,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withValues(alpha: 0.7),
                         fontSize: 12,
                       )),
                 ],
@@ -202,7 +202,7 @@ class GSNotificationBanner extends StatelessWidget {
               GestureDetector(
                 onTap: onDismiss,
                 child: Icon(Icons.close,
-                    color: Colors.white.withOpacity(0.5), size: 18),
+                    color: Colors.white.withValues(alpha: 0.5), size: 18),
               ),
           ],
         ),

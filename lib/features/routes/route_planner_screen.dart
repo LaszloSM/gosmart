@@ -17,7 +17,6 @@ class _RoutePlannerScreenState extends State<RoutePlannerScreen> {
   final _originCtrl = TextEditingController(text: 'PITX, Parañaque City');
   final _destCtrl = TextEditingController(text: 'Cubao, Quezon City');
   String _selected = 'fastest';
-  bool _isLoading = false;
 
   static const _options = [
     _RouteOption(
@@ -222,7 +221,7 @@ class _RouteCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: option.iconColor.withOpacity(0.12),
+                    color: option.iconColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(GSRadius.sm),
                   ),
                   child: Icon(option.icon, color: option.iconColor, size: 20),
@@ -258,7 +257,7 @@ class _RouteCard extends StatelessWidget {
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: s.color.withOpacity(0.12),
+                              color: s.color.withValues(alpha: 0.12),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(s.icon, size: 16, color: s.color),
@@ -319,7 +318,7 @@ class _StatBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(GSRadius.full),
       ),
       child: Row(

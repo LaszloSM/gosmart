@@ -216,7 +216,7 @@ class _ProcessingView extends StatelessWidget {
                   boxShadow: [
                     BoxShadow(
                       color: GSColors.accent
-                          .withOpacity(0.20 * controller.value),
+                          .withValues(alpha: 0.20 * controller.value),
                       blurRadius: 40,
                       spreadRadius: 20,
                     ),
@@ -277,7 +277,7 @@ class _ResultView extends StatelessWidget {
           width: 120,
           height: 120,
           decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.12),
+            color: iconColor.withValues(alpha: 0.12),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, size: 64, color: iconColor),
@@ -362,7 +362,7 @@ class _OfflineView extends StatelessWidget {
         Container(
           width: 120,
           height: 120,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: GSColors.surfaceDark,
             shape: BoxShape.circle,
           ),
@@ -393,12 +393,12 @@ class _OfflineView extends StatelessWidget {
             borderRadius: BorderRadius.circular(GSRadius.lg),
             boxShadow: GSShadow.md,
           ),
-          child: Column(
+          child: const Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.qr_code_2_rounded,
+              Icon(Icons.qr_code_2_rounded,
                   size: 120, color: GSColors.textPrimary),
-              const Text('Expires in 5:00',
+              Text('Expires in 5:00',
                   style: TextStyle(
                       fontSize: 11, color: GSColors.textSecondary)),
             ],

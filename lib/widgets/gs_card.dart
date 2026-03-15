@@ -82,7 +82,7 @@ class GSModeChip extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: color.withOpacity(0.30),
+                    color: color.withValues(alpha: 0.30),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   )
@@ -146,7 +146,7 @@ class GSInfoCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: iconBgColor.withOpacity(0.12),
+              color: iconBgColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(GSRadius.md),
             ),
             child: Icon(icon, color: iconBgColor, size: GSSize.iconLg),

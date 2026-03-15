@@ -83,7 +83,7 @@ abstract class GSRadius {
 abstract class GSShadow {
   static List<BoxShadow> get sm => [
         BoxShadow(
-          color: GSColors.textPrimary.withOpacity(0.06),
+          color: GSColors.textPrimary.withValues(alpha: 0.06),
           blurRadius: 3,
           offset: const Offset(0, 1),
         ),
@@ -91,12 +91,12 @@ abstract class GSShadow {
 
   static List<BoxShadow> get md => [
         BoxShadow(
-          color: GSColors.textPrimary.withOpacity(0.08),
+          color: GSColors.textPrimary.withValues(alpha: 0.08),
           blurRadius: 12,
           offset: const Offset(0, 4),
         ),
         BoxShadow(
-          color: GSColors.textPrimary.withOpacity(0.04),
+          color: GSColors.textPrimary.withValues(alpha: 0.04),
           blurRadius: 4,
           offset: const Offset(0, 2),
         ),
@@ -104,12 +104,12 @@ abstract class GSShadow {
 
   static List<BoxShadow> get lg => [
         BoxShadow(
-          color: GSColors.textPrimary.withOpacity(0.10),
+          color: GSColors.textPrimary.withValues(alpha: 0.10),
           blurRadius: 24,
           offset: const Offset(0, 8),
         ),
         BoxShadow(
-          color: GSColors.textPrimary.withOpacity(0.06),
+          color: GSColors.textPrimary.withValues(alpha: 0.06),
           blurRadius: 8,
           offset: const Offset(0, 4),
         ),
@@ -138,7 +138,7 @@ abstract class GSShadow {
 
   static List<BoxShadow> get eco => [
         BoxShadow(
-          color: GSColors.eco.withOpacity(0.22),
+          color: GSColors.eco.withValues(alpha: 0.22),
           blurRadius: 20,
           offset: const Offset(0, 8),
         ),
@@ -146,12 +146,12 @@ abstract class GSShadow {
 
   static List<BoxShadow> get neumorphic => [
         BoxShadow(
-          color: GSColors.textPrimary.withOpacity(0.07),
+          color: GSColors.textPrimary.withValues(alpha: 0.07),
           blurRadius: 14,
           offset: const Offset(6, 6),
         ),
         BoxShadow(
-          color: Colors.white.withOpacity(0.9),
+          color: Colors.white.withValues(alpha: 0.9),
           blurRadius: 10,
           offset: const Offset(-4, -4),
         ),

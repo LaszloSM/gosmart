@@ -74,27 +74,27 @@ class GSTransactionSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
+    return const Padding(
+      padding: EdgeInsets.symmetric(
         horizontal: GSSpacing.s4,
         vertical: GSSpacing.s3,
       ),
       child: Row(
         children: [
-          const GSSkeletonLoader(width: 44, height: 44, radius: 22),
-          const SizedBox(width: GSSpacing.s3),
+          GSSkeletonLoader(width: 44, height: 44, radius: 22),
+          SizedBox(width: GSSpacing.s3),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 GSSkeletonLoader(width: double.infinity, height: 14, radius: 4),
                 SizedBox(height: GSSpacing.s2),
                 GSSkeletonLoader(width: 100, height: 11, radius: 4),
               ],
             ),
           ),
-          const SizedBox(width: GSSpacing.s3),
-          const GSSkeletonLoader(width: 60, height: 14, radius: 4),
+          SizedBox(width: GSSpacing.s3),
+          GSSkeletonLoader(width: 60, height: 14, radius: 4),
         ],
       ),
     );

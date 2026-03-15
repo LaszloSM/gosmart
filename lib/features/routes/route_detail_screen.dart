@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
-import '../../widgets/gs_card.dart';
 import '../../widgets/gs_bottom_sheet.dart';
 import '../../router/app_router.dart';
 
@@ -96,7 +95,7 @@ class _RouteDetailScreenState extends State<RouteDetailScreen> {
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: driver.avatarColor.withOpacity(0.12),
+                backgroundColor: driver.avatarColor.withValues(alpha: 0.12),
                 child: Icon(Icons.person_rounded,
                     color: driver.avatarColor, size: 30),
               ),
@@ -194,7 +193,7 @@ class _DriverCard extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 22,
-                  backgroundColor: driver.avatarColor.withOpacity(0.12),
+                  backgroundColor: driver.avatarColor.withValues(alpha: 0.12),
                   child: Icon(Icons.person_rounded,
                       color: driver.avatarColor, size: 24),
                 ),
@@ -237,8 +236,8 @@ class _DriverCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(GSRadius.md),
                 gradient: LinearGradient(
                   colors: [
-                    driver.avatarColor.withOpacity(0.05),
-                    driver.avatarColor.withOpacity(0.15),
+                    driver.avatarColor.withValues(alpha: 0.05),
+                    driver.avatarColor.withValues(alpha: 0.15),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -248,7 +247,7 @@ class _DriverCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.directions_car_rounded,
-                      size: 64, color: driver.avatarColor.withOpacity(0.5)),
+                      size: 64, color: driver.avatarColor.withValues(alpha: 0.5)),
                   const SizedBox(height: 4),
                   Text(driver.vehicleName,
                       style: TextStyle(

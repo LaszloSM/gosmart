@@ -73,7 +73,7 @@ class GSBottomSheet extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: GSColors.accent.withOpacity(0.4),
+                    color: GSColors.accent.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(GSRadius.full),
                   ),
                 ),
