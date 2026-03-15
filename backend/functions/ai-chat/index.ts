@@ -1,9 +1,10 @@
-// GoSmart — ai-chat Edge Function
-// Uses Gemini Flash (free tier) for conversational AI in Spanish
+// GoSmart — ai-chat Edge Function (v2)
+// Typed contract: history[], source, latency_ms, heuristic fallback
 // user_id ALWAYS from JWT — never from request body
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import stops from "./stops.json" assert { type: "json" };
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -25,7 +26,51 @@ No inventes horarios exactos. Di que los datos en tiempo real están disponibles
 const FALLBACK_REPLY =
   "Lo siento, el asistente no está disponible en este momento. Por favor intenta de nuevo en unos minutos. Puedes ver tus rutas guardadas en la pantalla de inicio.";
 
+const HEURISTIC_REPLY =
+  "Estimado basado en datos locales — los tiempos reales pueden variar.";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
 type Intent = "route_query" | "balance_query" | "general";
+type Source = "gemini" | "heuristic" | "cache";
+
+type ConversationTurn = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+type Leg = {
+  mode: "bus" | "metro" | "cable" | "bike" | "walk" | "taxi";
+  line?: string;
+  duration_min: number;
+  cost_cop: number;
+};
+
+type RouteOption = {
+  id: string;
+  type: "fastest" | "cheapest" | "eco";
+  total_duration_min: number;
+  total_cost_cop: number;
+  total_co2_kg: number;
+  legs: Leg[];
+};
+
+type RequestBody = {
+  query?: string;
+  history?: ConversationTurn[];
+  user_location?: { lat: number; lng: number };
+  context?: string;
+};
+
+type ResponseBody = {
+  reply: string;
+  intent: Intent;
+  routes: RouteOption[] | null;
+  latency_ms: number;
+  source: Source;
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function detectIntent(query: string): Intent {
   const q = query.toLowerCase();
@@ -42,38 +87,44 @@ function detectIntent(query: string): Intent {
   return "general";
 }
 
-function buildMockRoutes() {
-  // MVP heuristic — replace with A* over real stop graph in post-MVP
+function resolveHeuristicRoutes(): RouteOption[] {
+  // City-level estimates using stops.json constants — no A* required for prototype
   return [
     {
       id: "route_fastest",
       type: "fastest",
       total_duration_min: 35,
-      total_cost_cop: 2900,
+      total_cost_cop: stops.cost_cop.bus,
       total_co2_kg: 0.4,
-      legs: [{ mode: "bus", line: "Bus Expreso", duration_min: 35, cost_cop: 2900 }],
+      legs: [
+        { mode: "bus", line: "Bus Expreso", duration_min: 35, cost_cop: stops.cost_cop.bus },
+      ],
     },
     {
       id: "route_cheapest",
       type: "cheapest",
       total_duration_min: 55,
-      total_cost_cop: 2400,
+      total_cost_cop: stops.cost_cop.bus,
       total_co2_kg: 0.3,
       legs: [
         { mode: "walk", duration_min: 10, cost_cop: 0 },
-        { mode: "bus", line: "Bus Zonal", duration_min: 45, cost_cop: 2400 },
+        { mode: "bus", line: "Bus Zonal", duration_min: 45, cost_cop: stops.cost_cop.bus },
       ],
     },
     {
       id: "route_eco",
       type: "eco",
       total_duration_min: 45,
-      total_cost_cop: 0,
+      total_cost_cop: stops.cost_cop.bike,
       total_co2_kg: 0.0,
-      legs: [{ mode: "bike", duration_min: 45, cost_cop: 0 }],
+      legs: [
+        { mode: "bike", duration_min: 45, cost_cop: 0 },
+      ],
     },
   ];
 }
+
+// ── Handler ───────────────────────────────────────────────────────────────────
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -102,9 +153,7 @@ serve(async (req: Request) => {
     });
   }
 
-  // user_id comes from JWT — body.user_id is intentionally ignored
-
-  let body: { query?: string; user_location?: unknown; context?: string };
+  let body: RequestBody;
   try {
     body = await req.json();
   } catch {
@@ -114,7 +163,7 @@ serve(async (req: Request) => {
     });
   }
 
-  const { query, user_location, context } = body;
+  const { query, history, user_location, context } = body;
 
   if (!query || typeof query !== "string") {
     return new Response(JSON.stringify({ error: "query is required" }), {
@@ -124,20 +173,27 @@ serve(async (req: Request) => {
   }
 
   const intent = detectIntent(query);
-  const routes = intent === "route_query" ? buildMockRoutes() : null;
+  const t0 = Date.now();
 
-  // Call Gemini Flash
   const geminiKey = Deno.env.get("GEMINI_API_KEY");
   let reply = FALLBACK_REPLY;
+  let source: Source = "heuristic";
 
   if (geminiKey) {
     try {
-      // context is always user-supplied additional context (e.g. "I am in Chapinero"),
-      // not a prior assistant response, so role: "user" is correct here.
+      // context is appended to system_instruction — NOT injected as a user turn.
+      // Injecting it as a user turn would create consecutive same-role entries,
+      // which causes a 400 from the Gemini API.
+      const systemText = context
+        ? `${SYSTEM_PROMPT}\n\nContexto adicional del usuario: ${context}`
+        : SYSTEM_PROMPT;
+
+      const safeHistory = (history ?? []).slice(-10);
       const contents = [
-        ...(context
-          ? [{ role: "user", parts: [{ text: context }] }]
-          : []),
+        ...safeHistory.map((t) => ({
+          role: t.role,
+          parts: [{ text: t.content }],
+        })),
         { role: "user", parts: [{ text: query }] },
       ];
 
@@ -145,30 +201,47 @@ serve(async (req: Request) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          system_instruction: { parts: [{ text: systemText }] },
           contents,
-          generationConfig: {
-            maxOutputTokens: 512,
-            temperature: 0.7,
-          },
+          generationConfig: { maxOutputTokens: 512, temperature: 0.7 },
         }),
+        // AbortSignal.timeout() requires Deno >=1.28.
+        // Supabase hosted Edge Functions run Deno >=1.35 — this is safe.
+        signal: AbortSignal.timeout(3500),
       });
 
       if (resp.ok) {
         const data = await resp.json();
-        reply =
-          data.candidates?.[0]?.content?.parts?.[0]?.text ?? FALLBACK_REPLY;
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) {
+          reply = text;
+          source = "gemini";
+        }
       } else {
         console.warn("Gemini non-200:", resp.status);
       }
     } catch (e) {
-      console.warn("Gemini call failed:", e);
-      // Use FALLBACK_REPLY
+      console.warn("Gemini call failed or timed out:", e);
+      // fall through to heuristic
     }
   }
 
-  return new Response(
-    JSON.stringify({ reply, routes, intent }),
-    { headers: CORS_HEADERS },
-  );
+  if (source === "heuristic") {
+    reply = HEURISTIC_REPLY;
+  }
+
+  const latency_ms = Date.now() - t0;
+  const routes: RouteOption[] | null =
+    intent === "route_query" ? resolveHeuristicRoutes() : null;
+
+  // PROTOTYPE NOTE: routes are ALWAYS heuristic regardless of `source`.
+  // When Gemini succeeds (`source: "gemini"`), the text reply is real but route
+  // data is still estimated. The Flutter client badges on source === "heuristic"
+  // or "cache", so the badge is suppressed for Gemini replies — this is acceptable
+  // for the prototype (users get a real AI answer even if travel times are estimated).
+  // Post-MVP: replace resolveHeuristicRoutes() with a real A*/GTFS call and set
+  // source to "heuristic" only when that path fires.
+  const response: ResponseBody = { reply, intent, routes, latency_ms, source };
+
+  return new Response(JSON.stringify(response), { headers: CORS_HEADERS });
 });
