@@ -384,36 +384,92 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 
   // ── Section 2 ───────────────────────────────────────────────────────────────
   Widget _buildQuickActions() {
-    return Row(
-      children: [
-        _QuickAction(
-          icon: Icons.add_circle_rounded,
-          label: 'Recargar',
-          color: GSColors.accent,
-          onTap: _showRechargeSheet,
+    final card = ref.watch(activeCardProvider).valueOrNull;
+    final isLocked = card?.isLocked ?? false;
+
+    final actions = [
+      _QuickAction(
+        icon: Icons.add_circle_outline_rounded,
+        label: 'Recargar',
+        color: GSColors.accent,
+        onTap: _showRechargeSheet,
+      ),
+      _QuickAction(
+        icon: Icons.qr_code_rounded,
+        label: 'Pagar',
+        color: GSColors.accentAlt,
+        onTap: () => context.push(AppRoutes.paymentValidation),
+      ),
+      _QuickAction(
+        icon: isLocked ? Icons.lock_open_rounded : Icons.lock_rounded,
+        label: isLocked ? 'Desbloquear' : 'Bloquear',
+        color: isLocked ? GSColors.success : GSColors.error,
+        onTap: _toggleLock,
+      ),
+    ];
+
+    return GSCard(
+      padding: EdgeInsets.zero,
+      child: IntrinsicHeight(
+        child: Row(
+          children: List.generate(
+            actions.length * 2 - 1,
+            (i) {
+              if (i.isOdd) {
+                return const VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  indent: 12,
+                  endIndent: 12,
+                );
+              }
+              final action = actions[i ~/ 2];
+              return Expanded(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: action.onTap,
+                    splashColor: action.color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(GSRadius.md),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: GSSpacing.s4,
+                        horizontal: GSSpacing.s2,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: action.color.withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              action.icon,
+                              color: action.color,
+                              size: GSSize.iconLg,
+                            ),
+                          ),
+                          const SizedBox(height: GSSpacing.s1),
+                          Text(
+                            action.label,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: GSColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
         ),
-        const SizedBox(width: 8),
-        _QuickAction(
-          icon: Icons.qr_code_scanner_rounded,
-          label: 'Pagar',
-          color: GSColors.accentAlt,
-          onTap: () => context.push(AppRoutes.paymentValidation),
-        ),
-        const SizedBox(width: 8),
-        Builder(
-          builder: (context) {
-            final card = ref.watch(activeCardProvider).valueOrNull;
-            return _QuickAction(
-              icon: card?.isLocked ?? false
-                  ? Icons.lock_open_rounded
-                  : Icons.lock_rounded,
-              label: card?.isLocked ?? false ? 'Desbloquear' : 'Bloquear',
-              color: card?.isLocked ?? false ? GSColors.success : GSColors.error,
-              onTap: _toggleLock,
-            );
-          },
-        ),
-      ],
+      ),
     );
   }
 
@@ -574,53 +630,19 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   }
 }
 
-// ─── Quick Action tile ────────────────────────────────────────────────────────
+// ─── Quick Action data class ──────────────────────────────────────────────────
 
-class _QuickAction extends StatelessWidget {
+class _QuickAction {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
   const _QuickAction({
     required this.icon,
     required this.label,
     required this.color,
     required this.onTap,
   });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: GSColors.surface,
-            borderRadius: BorderRadius.circular(GSRadius.xl),
-            boxShadow: GSShadow.card,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: color, size: 28),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: GSColors.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // ─── Recharge sheet content ───────────────────────────────────────────────────
