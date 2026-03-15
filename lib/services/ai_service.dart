@@ -4,24 +4,6 @@ import 'package:flutter/foundation.dart';
 import '../core/supabase_client.dart';
 import '../models/ai_models.dart';
 
-class AiMessage {
-  final String role; // 'user' | 'assistant'
-  final String content;
-  final DateTime timestamp;
-  final List<RouteOption>? routes;
-  final int? latencyMs;
-  final String? source; // 'gemini' | 'heuristic' | 'cache'
-
-  const AiMessage({
-    required this.role,
-    required this.content,
-    required this.timestamp,
-    this.routes,
-    this.latencyMs,
-    this.source,
-  });
-}
-
 class AiService {
   final _client = GoSmartSupabase.client;
 
