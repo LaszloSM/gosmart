@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
 import '../../widgets/gs_card.dart';
@@ -172,8 +174,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: Stack(
         children: [
           // ── Layer 1: Full-screen map ────────────────────────────────────────
-          Positioned.fill(
-            child: _MockMap(),
+          const Positioned.fill(
+            child: _AppMap(),
           ),
           Positioned.fill(
             child: Container(
@@ -561,201 +563,110 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-// ─── Mock Map ─────────────────────────────────────────────────────────────────
+// ─── Real Map (OpenStreetMap via flutter_map) ─────────────────────────────────
 
-class _MockMap extends StatelessWidget {
+class _AppMap extends StatefulWidget {
+  const _AppMap();
+
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFE8EEF4),
-      child: CustomPaint(
-        painter: _MapPainter(),
-        child: Stack(
-          children: [
-            Positioned(
-              top: MediaQuery.of(context).size.height * 0.28,
-              left: MediaQuery.of(context).size.width * 0.42,
-              child: _LocationMarker(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  State<_AppMap> createState() => _AppMapState();
 }
 
-class _LocationMarker extends StatefulWidget {
-  @override
-  State<_LocationMarker> createState() => _LocationMarkerState();
-}
+class _AppMapState extends State<_AppMap> with SingleTickerProviderStateMixin {
+  // Bogotá, Colombia — target city for GoSmart
+  static const LatLng _bogota = LatLng(4.7110, -74.0721);
 
-class _LocationMarkerState extends State<_LocationMarker>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
+  late final AnimationController _pulseCtrl;
   late final Animation<double> _pulse;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
+    _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
-    )..repeat();
+    )..repeat(reverse: true);
     _pulse = Tween<double>(begin: 0.8, end: 1.4).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
     );
   }
 
   @override
   void dispose() {
-    _ctrl.dispose();
+    _pulseCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 60,
-      height: 60,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          ScaleTransition(
-            scale: _pulse,
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: GSColors.accent.withValues(alpha: 0.20),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          Container(
-            width: 20,
-            height: 20,
-            decoration: BoxDecoration(
-              color: GSColors.accent,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
-              boxShadow: GSShadow.accent,
-            ),
-          ),
-        ],
+    return FlutterMap(
+      options: const MapOptions(
+        initialCenter: _bogota,
+        initialZoom: 14,
+        interactionOptions: InteractionOptions(
+          flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+        ),
       ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.gosmart.app',
+          maxNativeZoom: 19,
+        ),
+        MarkerLayer(
+          markers: [
+            Marker(
+              point: _bogota,
+              width: 60,
+              height: 60,
+              child: _PulsingMarker(pulse: _pulse),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
 
-class _MapPainter extends CustomPainter {
+class _PulsingMarker extends StatelessWidget {
+  const _PulsingMarker({required this.pulse});
+  final Animation<double> pulse;
+
   @override
-  void paint(Canvas canvas, Size size) {
-    // Road paint
-    final roadPaint = Paint()
-      ..color = const Color(0xFFD0DAE8)
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    // Main horizontal road
-    roadPaint.strokeWidth = 14;
-    canvas.drawLine(
-      Offset(0, size.height * 0.30),
-      Offset(size.width, size.height * 0.35),
-      roadPaint,
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        ScaleTransition(
+          scale: pulse,
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: GSColors.accent.withValues(alpha: 0.20),
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+        Container(
+          width: 20,
+          height: 20,
+          decoration: BoxDecoration(
+            color: GSColors.accent,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 3),
+            boxShadow: [
+              BoxShadow(
+                color: GSColors.accent.withValues(alpha: 0.40),
+                blurRadius: 8,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
-
-    // Main vertical road
-    roadPaint.strokeWidth = 20;
-    canvas.drawLine(
-      Offset(size.width * 0.30, 0),
-      Offset(size.width * 0.35, size.height),
-      roadPaint,
-    );
-
-    // Secondary road
-    roadPaint.strokeWidth = 8;
-    canvas.drawLine(
-      Offset(0, size.height * 0.60),
-      Offset(size.width * 0.60, size.height * 0.50),
-      roadPaint,
-    );
-
-    // Diagonal road
-    roadPaint.strokeWidth = 6;
-    canvas.drawLine(
-      Offset(size.width * 0.60, 0),
-      Offset(size.width, size.height * 0.45),
-      roadPaint,
-    );
-
-    // Small cross street
-    roadPaint.strokeWidth = 6;
-    canvas.drawLine(
-      Offset(0, size.height * 0.15),
-      Offset(size.width * 0.28, size.height * 0.15),
-      roadPaint,
-    );
-
-    // City blocks
-    final blockPaint = Paint()
-      ..color = const Color(0xFFDDE5EE)
-      ..style = PaintingStyle.fill;
-
-    final blocks = [
-      Rect.fromLTWH(
-        size.width * 0.05,
-        size.height * 0.05,
-        size.width * 0.22,
-        size.height * 0.20,
-      ),
-      Rect.fromLTWH(
-        size.width * 0.40,
-        size.height * 0.05,
-        size.width * 0.18,
-        size.height * 0.22,
-      ),
-      Rect.fromLTWH(
-        size.width * 0.65,
-        size.height * 0.08,
-        size.width * 0.28,
-        size.height * 0.18,
-      ),
-      Rect.fromLTWH(
-        size.width * 0.05,
-        size.height * 0.42,
-        size.width * 0.20,
-        size.height * 0.25,
-      ),
-      Rect.fromLTWH(
-        size.width * 0.42,
-        size.height * 0.45,
-        size.width * 0.50,
-        size.height * 0.30,
-      ),
-      Rect.fromLTWH(
-        size.width * 0.05,
-        size.height * 0.72,
-        size.width * 0.22,
-        size.height * 0.22,
-      ),
-      Rect.fromLTWH(
-        size.width * 0.65,
-        size.height * 0.30,
-        size.width * 0.15,
-        size.height * 0.12,
-      ),
-    ];
-
-    for (final r in blocks) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(r, const Radius.circular(4)),
-        blockPaint,
-      );
-    }
   }
-
-  @override
-  bool shouldRepaint(_MapPainter oldDelegate) => false;
 }
 
 // ─── Data class ───────────────────────────────────────────────────────────────
