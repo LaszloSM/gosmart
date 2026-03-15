@@ -212,146 +212,170 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       data: (card) {
         final isLocked = card?.isLocked ?? false;
         return Container(
-          width: double.infinity,
-          height: 200,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isLocked
-                  ? const [Color(0xFF6B7280), Color(0xFF374151)]
-                  : const [Color(0xFF1A1A2E), Color(0xFF6C63FF)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: isLocked
-                ? [
-                    BoxShadow(
-                      color: Colors.grey.withValues(alpha: 0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ]
-                : const [
-                    BoxShadow(
-                      color: Color(0x406C63FF),
-                      blurRadius: 32,
-                      offset: Offset(0, 16),
-                    ),
-                  ],
+          margin: const EdgeInsets.symmetric(
+            horizontal: GSSpacing.s4,
+            vertical: GSSpacing.s3,
           ),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Top row
-              Row(
-                children: [
-                  const Icon(
-                    Icons.credit_card_rounded,
-                    color: Color(0xFFFFD700),
-                    size: 32,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(GSRadius.xl),
+            boxShadow: [
+              BoxShadow(
+                color: GSColors.accentAlt.withValues(alpha: 0.24),
+                blurRadius: 32,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(GSRadius.xl),
+            child: Stack(
+              children: [
+                // Layer 1: card content
+                Container(
+                  width: double.infinity,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isLocked
+                          ? const [Color(0xFF6B7280), Color(0xFF374151)]
+                          : const [Color(0xFF1A1A2E), Color(0xFF6C63FF)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(GSRadius.xl),
                   ),
-                  const Spacer(),
-                  if (isLocked)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: GSColors.error.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(GSRadius.full),
-                        border: Border.all(color: GSColors.error),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Top row
+                      Row(
                         children: [
-                          Icon(
-                            Icons.lock_rounded,
-                            size: 12,
-                            color: Colors.white,
+                          const _ChipWidget(),
+                          const SizedBox(width: 10),
+                          const Icon(
+                            Icons.credit_card_rounded,
+                            color: Color(0xFFFFD700),
+                            size: 32,
                           ),
-                          SizedBox(width: 4),
-                          Text(
-                            'BLOQUEADA',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
+                          const Spacer(),
+                          if (isLocked)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: GSColors.error.withValues(alpha: 0.2),
+                                borderRadius:
+                                    BorderRadius.circular(GSRadius.full),
+                                border: Border.all(color: GSColors.error),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.lock_rounded,
+                                    size: 12,
+                                    color: Colors.white,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'BLOQUEADA',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
+                            const Text(
+                              'GoSmart',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                        ],
+                      ),
+
+                      // Card number
+                      Text(
+                        card?.numberMasked ?? '•••• •••• •••• 0000',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          letterSpacing: 3,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+
+                      // Bottom row — balance + status badge
+                      Row(
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Saldo disponible',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 11,
+                                ),
+                              ),
+                              _AnimatedBalance(
+                                key: ValueKey(card?.balance),
+                                amount: card?.balance ?? 0,
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  isLocked ? GSColors.error : GSColors.success,
+                              borderRadius:
+                                  BorderRadius.circular(GSRadius.full),
+                            ),
+                            child: Text(
+                              isLocked ? 'Bloqueada' : 'Activa',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    )
-                  else
-                    const Text(
-                      'GoSmart',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                ],
-              ),
-
-              // Card number
-              Text(
-                card?.numberMasked ?? '•••• •••• •••• 0000',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  letterSpacing: 3,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-
-              // Bottom row — balance + status badge
-              Row(
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Saldo disponible',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 11,
-                        ),
-                      ),
-                      Text(
-                        card?.formattedBalance ?? '\$0 COP',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 26,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
                     ],
                   ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
+                ),
+
+                // Layer 2: gloss overlay
+                Positioned.fill(
+                  child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: isLocked ? GSColors.error : GSColors.success,
-                      borderRadius: BorderRadius.circular(GSRadius.full),
-                    ),
-                    child: Text(
-                      isLocked ? 'Bloqueada' : 'Activa',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: GSGradient.cardGloss,
+                        stops: const [0.0, 0.6],
                       ),
                     ),
                   ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -675,6 +699,60 @@ class _RechargeSheetContentState extends State<_RechargeSheetContent> {
           style: TextStyle(fontSize: 11, color: GSColors.textDisabled),
         ),
       ],
+    );
+  }
+}
+
+// ─── Chip widget ──────────────────────────────────────────────────────────────
+
+/// Decorative chip on the wallet card.
+class _ChipWidget extends StatelessWidget {
+  const _ChipWidget();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 38,
+      height: 28,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(GSRadius.sm),
+        border: Border.all(color: GSColors.cardGold, width: 1),
+        gradient: LinearGradient(
+          colors: [
+            GSColors.cardGold.withValues(alpha: 0.6),
+            GSColors.cardGold.withValues(alpha: 0.2),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Animated balance ─────────────────────────────────────────────────────────
+
+/// Balance with count-up animation from 0 to [amount].
+class _AnimatedBalance extends StatelessWidget {
+  const _AnimatedBalance({super.key, required this.amount});
+
+  final double amount;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: amount),
+      duration: GSAnimDuration.countUp,
+      curve: Curves.easeOut,
+      builder: (_, value, __) => Text(
+        '\$${value.toStringAsFixed(0)} COP',
+        style: const TextStyle(
+          fontSize: 32,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+          letterSpacing: -0.5,
+        ),
+      ),
     );
   }
 }
