@@ -50,6 +50,9 @@ abstract class GSColors {
   static const walk = Color(0xFF8F9BB3);
   static const metro = Color(0xFFFF4757);
 
+  // ── Card ───────────────────────────────────────────────────────────────────
+  static const cardGold = Color(0xFFC9A84C);
+
 }
 
 abstract class GSSpacing {
@@ -176,4 +179,26 @@ abstract class GSSize {
   static const double avatarLg = 64;
   static const double bottomNav = 72;
   static const double topBar = 56;
+}
+
+abstract class GSGlass {
+  static const double blur = 20;
+  static const double backgroundOpacity = 0.72;
+  static const double borderOpacity = 0.18;
+  static const double borderWidth = 1.0;
+}
+
+abstract class GSGradient {
+  static List<Color> get accentPill => [GSColors.accent, GSColors.accentAlt];
+  static List<Color> get cardGloss =>
+      [Colors.white.withValues(alpha: 0.08), Colors.transparent];
+  static List<Color> get avatarRing => [GSColors.accent, GSColors.accentAlt];
+}
+
+abstract class GSAnimDuration {
+  static const countUp = Duration(milliseconds: 800);
+  static const checkmarkStroke = Duration(milliseconds: 600);
+  static const particleBurst = Duration(milliseconds: 700);
+  static const int skeletonStagger = 80; // ms per item
+  static const pillSlide = Duration(milliseconds: 200);
 }
