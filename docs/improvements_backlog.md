@@ -87,7 +87,7 @@
 **Descripción:** `l.length` cuenta los items en memoria del `transactionListProvider`, no el total real en DB. Si el usuario tiene >20 viajes, el contador es incorrecto.
 **Criterio de aceptación:** Consulta `count` directo a Supabase (`select('count')`) para obtener el total real.
 
-### #11 🟡 Mapa mock no muestra ubicación real ni Mapbox/GMaps
+### #11 🟡 Mapa mock no muestra ubicación real ni Mapbox/GMaps ✅ APLICADO
 **Agente:** architecture-transformer
 **Archivo:** `lib/features/home/home_screen.dart:554`
 **Descripción:** `_MockMap` con `CustomPainter` nunca llama a la API de mapas aunque `GOOGLE_MAPS_API_KEY` está configurada en `.env`. Para la entrega el mapa debería ser real o al menos integrar `google_maps_flutter`.
