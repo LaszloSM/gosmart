@@ -1,0 +1,18 @@
+{
+  "cities": ["Bogotá", "Medellín", "Cali", "Barranquilla", "Cartagena"],
+  "modes": ["bus", "metro", "cable", "bike", "walk"],
+  "cost_cop": {
+    "bus": 2900,
+    "metro": 3100,
+    "cable": 2100,
+    "bike": 0,
+    "walk": 0
+  },
+  "avg_speed_kmh": {
+    "bus": 18,
+    "metro": 40,
+    "cable": 12,
+    "bike": 15,
+    "walk": 5
+  }
+}
