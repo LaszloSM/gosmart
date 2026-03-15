@@ -200,11 +200,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   // ── Section 1 ───────────────────────────────────────────────────────────────
   Widget _buildCardSection() {
     return ref.watch(activeCardProvider).when(
-      loading: () => const GSSkeletonLoader(
-        width: double.infinity,
-        height: 200,
-        radius: 20,
-      ),
+      loading: () => const GSCardSkeleton(height: 200),
       error: (e, _) => GSErrorCard(
         message: 'No se pudo cargar la tarjeta',
         onRetry: () => ref.read(activeCardProvider.notifier).refresh(),
@@ -495,14 +491,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         ),
         const SizedBox(height: 8),
         ref.watch(transactionListProvider).when(
-          loading: () => Column(
-            children: List.generate(
-              5,
-              (_) => const Padding(
-                padding: EdgeInsets.only(bottom: 8),
-                child: GSTransactionSkeleton(),
-              ),
-            ),
+          loading: () => StaggeredSkeletonList(
+            itemCount: 5,
+            itemBuilder: (_) => const GSTransactionSkeleton(),
           ),
           error: (e, _) => GSErrorCard(
             message: e.toString(),
