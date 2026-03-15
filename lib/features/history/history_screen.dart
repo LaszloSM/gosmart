@@ -24,6 +24,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       backgroundColor: GSColors.bg,
       appBar: AppBar(
         title: const Text('Mis Viajes'),

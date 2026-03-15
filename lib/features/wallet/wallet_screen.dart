@@ -159,6 +159,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      extendBody: true,
       backgroundColor: GSColors.bg,
       appBar: AppBar(
         automaticallyImplyLeading: false,

@@ -153,6 +153,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       backgroundColor: GSColors.bg,
       body: CustomScrollView(
         slivers: [
