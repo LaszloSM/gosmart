@@ -1,4 +1,4 @@
-// lib/screens/nfc_simulator/nfc_auth_simulator_screen.dart
+// lib/features/nfc_simulator/nfc_auth_simulator_screen.dart
 // Debug screen to simulate an NFC tap at a validator
 // Tests the authorize Edge Function end-to-end
 
