@@ -199,7 +199,7 @@ components:
           type: string
     AiRecommendResponse:
       type: object
-      required: [reply, intent, latency_ms, source]
+      required: [reply, intent, latency_ms, source, routes]
       properties:
         reply:
           type: string
@@ -207,8 +207,7 @@ components:
           type: string
           enum: [route_query, balance_query, general]
         routes:
-          type: array
-          nullable: true
+          type: ["array", "null"]   # OAS 3.1 — null when intent ≠ route_query
           items:
             $ref: "#/components/schemas/RouteOption"
         latency_ms:
@@ -252,8 +251,13 @@ components:
 `history` is injected into Gemini's `contents` array immediately before the current `query`. If `history.length > 10`, the function slices to the last 10 turns before building `contents`.
 
 ```typescript
+// context is appended to system_instruction, NOT injected as a user turn,
+// to avoid consecutive same-role turns which cause a 400 from the Gemini API.
+const systemText = context
+  ? `${SYSTEM_PROMPT}\n\nContexto adicional del usuario: ${context}`
+  : SYSTEM_PROMPT;
+
 const contents = [
-  ...(context ? [{ role: "user", parts: [{ text: context }] }] : []),
   ...(history ?? []).slice(-10).map(t => ({
     role: t.role,
     parts: [{ text: t.content }],
@@ -282,6 +286,8 @@ On each successful assistant reply:
 2. Trim `history` to last 10 entries.
 3. If `routes != null`, replace `recentRoutes`.
 
+The notifier reads `state.history` and passes it as the `history` argument to `aiService.sendMessage(query: msg, history: state.history)` — the screen never constructs or passes history directly.
+
 History resets only on explicit "New conversation" action — not on screen pop.
 
 ---
@@ -290,18 +296,25 @@ History resets only on explicit "New conversation" action — not on screen pop.
 
 ### Fallback chain
 
+**Ownership:** steps 1–2 execute inside the Edge Function (server-side). Layer 2 executes in Flutter's `AiService.sendMessage()` only when the function itself is unreachable (network-level exception — the function never returns Layer 2 in its response body).
+
 ```
-request
-  → Gemini (timeout: 3.5 s)
-  → retry once after 1 s
-  → Layer 1: heuristic resolver (bundled stops.json)
-  → Layer 2: Riverpod recentRoutes cache
-  → static fallback message
+[Edge Function]
+  request
+    → Gemini (timeout: 3.5 s)
+    → on timeout/error → Layer 1: heuristic resolver (bundled stops.json)
+      → returns { source: "heuristic", routes: [...] }
+
+[Flutter — AiService.sendMessage()]
+  → on network exception (function unreachable)
+    → Layer 2: Riverpod recentRoutes cache
+      → returns synthetic { source: "cache", routes: [...] }
+    → if recentRoutes empty → static fallback message
 ```
 
-Worst-case user-visible latency before Layer 1 content: 3.5 s (within SLA). Total worst case (both retries fail): 7 s, but Layer 1 fires at 3.5 s so the user sees content before that.
+With no retry, the worst-case user-visible wait is 3.5 s before Layer 1 content appears — within the ≤ 4 s P95 SLA. A retry was removed because it would push the wait to up to 8 s (3.5 s + 1 s delay + 3.5 s) before the heuristic fires.
 
-### Layer 1 — Bundled heuristic (`assets/data/stops.json`)
+### Layer 1 — Bundled heuristic (`backend/functions/ai-chat/stops.json`)
 
 ```json
 {
@@ -316,7 +329,7 @@ Worst-case user-visible latency before Layer 1 content: 3.5 s (within SLA). Tota
 }
 ```
 
-`buildMockRoutes()` is replaced by a resolver that uses these constants to produce plausible `RouteOption[]`. Routes are city-level (not stop-level — no A* required for prototype). Response sets `source: "heuristic"` and `reply: "Estimado basado en datos locales — los tiempos reales pueden variar."`.
+`buildMockRoutes()` is replaced by a resolver that imports `stops.json` via `import stops from "./stops.json" assert { type: "json" }` and uses these constants to produce plausible `RouteOption[]`. Routes are city-level (not stop-level — no A* required for prototype). Response sets `source: "heuristic"` and `reply: "Estimado basado en datos locales — los tiempos reales pueden variar."`.
 
 ### Layer 2 — Riverpod cache (Flutter-side only)
 
@@ -370,7 +383,9 @@ create policy "insert own" on ai_latency_log
   for insert with check (user_id = auth.uid());
 ```
 
-Flutter insert is `unawaited` — never blocks UI. Gated by `kDebugMode || kProfileMode` so release builds skip it entirely.
+Flutter reads `response.latency_ms` from the response body and writes it to the `backend_ms` column. The insert fires from `AiService.sendMessage()` immediately after receiving a response, is `unawaited` — never blocks UI — and is gated by `kDebugMode || kProfileMode` (from `package:flutter/foundation.dart`) so release builds skip it entirely.
+
+The `ai_latency_log` RLS policy allows only `INSERT` from the app. The SLA dashboard query (`SELECT`) must be run with a **service-role key** in the Supabase SQL Editor — no additional SELECT RLS policy should be added to the table.
 
 ### SLA dashboard query
 
@@ -395,12 +410,13 @@ If `p95_ms > 4000` for `source = 'gemini'` across ≥ 20 samples → investigate
 
 | file | change |
 |---|---|
-| `backend/functions/ai-chat/index.ts` | Add `history[]` to request, `latency_ms` + `source` to response, replace `buildMockRoutes()` with heuristic resolver, add history injection into Gemini `contents` |
-| `lib/services/ai_service.dart` | Add `history`, `latency_ms`, `source` to `AiMessage`; add `ConversationTurn` model; fire-and-forget latency log insert |
+| `backend/functions/ai-chat/index.ts` | Add `history[]` to request; add `latency_ms` + `source` to response; fix `context` injection (move from `contents` user turn to `system_instruction` concatenation); replace `buildMockRoutes()` with heuristic resolver using `stops.json`; add history injection into Gemini `contents` |
+| `lib/models/ai_models.dart` | New file — define `ConversationTurn`, `RouteOption`, and `Leg` Dart classes (typed equivalents of the TypeScript contract) |
+| `lib/services/ai_service.dart` | Add `latency_ms` and `source` fields to `AiMessage`; change `routes` type from `List<Map<String, dynamic>>?` to `List<RouteOption>?`; add `history: List<ConversationTurn>` parameter to `sendMessage()`; fire-and-forget latency log insert (import `package:flutter/foundation.dart` for `kDebugMode`/`kProfileMode`) |
 | `lib/providers/ai_conversation_provider.dart` | New `AiConversationNotifier` with history + recentRoutes state |
 | `lib/features/ai_chat/ai_chat_screen.dart` | Consume `AiConversationNotifier` via Riverpod instead of local widget state |
-| `assets/data/stops.json` | New bundled heuristic dataset |
-| `pubspec.yaml` | Register `assets/data/stops.json` |
+| `backend/functions/ai-chat/stops.json` | New heuristic dataset co-located with the Edge Function — imported via `import stops from "./stops.json" assert { type: "json" }` in Deno. **Not** a Flutter asset; Flutter does not need this file. |
+| `assets/data/` | Not needed — `stops.json` lives in the Edge Function directory, not Flutter assets. Remove this entry if previously added. |
 | `backend/migrations/004_ai_latency_log.sql` | New table + RLS policy |
 
 ---
