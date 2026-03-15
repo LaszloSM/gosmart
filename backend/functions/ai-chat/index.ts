@@ -163,7 +163,7 @@ serve(async (req: Request) => {
     });
   }
 
-  const { query, history, user_location, context } = body;
+  const { query, history, context } = body;
 
   if (!query || typeof query !== "string") {
     return new Response(JSON.stringify({ error: "query is required" }), {
@@ -172,8 +172,8 @@ serve(async (req: Request) => {
     });
   }
 
-  const intent = detectIntent(query);
   const t0 = Date.now();
+  const intent = detectIntent(query);
 
   const geminiKey = Deno.env.get("GEMINI_API_KEY");
   let reply = FALLBACK_REPLY;
@@ -191,7 +191,7 @@ serve(async (req: Request) => {
       const safeHistory = (history ?? []).slice(-10);
       const contents = [
         ...safeHistory.map((t) => ({
-          role: t.role,
+          role: t.role === "assistant" ? "model" : "user",
           parts: [{ text: t.content }],
         })),
         { role: "user", parts: [{ text: query }] },
@@ -226,7 +226,9 @@ serve(async (req: Request) => {
     }
   }
 
-  if (source === "heuristic") {
+  // Only show "estimated" copy when Gemini key exists but call failed/timed out.
+  // When no key is set at all, keep the "unavailable" fallback message.
+  if (source === "heuristic" && geminiKey) {
     reply = HEURISTIC_REPLY;
   }
 
