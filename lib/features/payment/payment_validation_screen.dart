@@ -639,12 +639,10 @@ class _DemoChip extends StatelessWidget {
 class _AnimatedCheckmark extends StatelessWidget {
   const _AnimatedCheckmark({
     required this.controller,
-    this.size = 64,
     required this.color,
   });
 
   final AnimationController controller;
-  final double size;
   final Color color;
 
   @override
@@ -652,7 +650,7 @@ class _AnimatedCheckmark extends StatelessWidget {
     return AnimatedBuilder(
       animation: controller,
       builder: (_, __) => CustomPaint(
-        size: Size(size, size),
+        size: const Size(64, 64),
         painter: _CheckmarkPainter(
           progress: CurvedAnimation(
             parent: controller,
@@ -699,18 +697,16 @@ class _CheckmarkPainter extends CustomPainter {
 class _AnimatedParticleBurst extends StatelessWidget {
   const _AnimatedParticleBurst({
     required this.controller,
-    this.size = 200,
   });
 
   final AnimationController controller;
-  final double size;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: controller,
       builder: (_, __) => CustomPaint(
-        size: Size(size, size),
+        size: const Size(200, 200),
         painter: _ParticleBurstPainter(
           progress: CurvedAnimation(
             parent: controller,
