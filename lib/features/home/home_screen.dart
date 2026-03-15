@@ -51,9 +51,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   String _greeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Buenos días';
-    if (hour < 18) return 'Buenas tardes';
+    if (hour >= 6 && hour < 12) return 'Buenos días';
+    if (hour >= 12 && hour < 19) return 'Buenas tardes';
     return 'Buenas noches';
+  }
+
+  String _initials(String? fullName) {
+    if (fullName == null || fullName.isEmpty) return '?';
+    final parts = fullName.trim().split(' ');
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
   }
 
   Color _modeColor(String? mode) {
@@ -207,19 +214,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   padding: const EdgeInsets.all(12),
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 22,
-                        backgroundColor: GSColors.accentLight,
-                        backgroundImage: profileAsync.valueOrNull?.avatarUrl != null
-                            ? NetworkImage(profileAsync.valueOrNull!.avatarUrl!)
-                            : null,
-                        child: profileAsync.valueOrNull?.avatarUrl == null
-                            ? const Icon(
-                                Icons.person_rounded,
-                                color: GSColors.accent,
-                                size: 22,
-                              )
-                            : null,
+                      Container(
+                        padding: const EdgeInsets.all(2.5),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: GSGradient.avatarRing,
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: CircleAvatar(
+                          radius: (GSSize.avatarMd / 2) - 2.5,
+                          backgroundColor: GSColors.accentLight,
+                          backgroundImage: profileAsync.valueOrNull?.avatarUrl != null
+                              ? NetworkImage(profileAsync.valueOrNull!.avatarUrl!)
+                              : null,
+                          child: profileAsync.valueOrNull?.avatarUrl == null
+                              ? Text(
+                                  _initials(profileAsync.valueOrNull?.name),
+                                  style: const TextStyle(
+                                    color: GSColors.accentAlt,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                )
+                              : null,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Column(
