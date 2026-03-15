@@ -1,3 +1,5 @@
+import 'dart:math' show cos, sin, pi;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,9 +23,10 @@ class PaymentValidationScreen extends ConsumerStatefulWidget {
 
 class _PaymentValidationScreenState
     extends ConsumerState<PaymentValidationScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   PaymentValidationState _state = PaymentValidationState.processing;
   late final AnimationController _pulseCtrl;
+  late final AnimationController _successCtrl;
   String _idempotencyKey = cardService.newIdempotencyKey();
 
   // Populated after authorize response
@@ -36,12 +39,17 @@ class _PaymentValidationScreenState
     _pulseCtrl = AnimationController(
         vsync: this, duration: const Duration(seconds: 2))
       ..repeat(reverse: true);
+    _successCtrl = AnimationController(
+      vsync: this,
+      duration: GSAnimDuration.particleBurst,
+    );
     _runAuthorize();
   }
 
   @override
   void dispose() {
     _pulseCtrl.dispose();
+    _successCtrl.dispose();
     super.dispose();
   }
 
@@ -82,6 +90,7 @@ class _PaymentValidationScreenState
               ? 'Saldo restante: \$${remaining.toStringAsFixed(0)} COP'
               : card.numberMasked;
         });
+        _successCtrl.forward(from: 0);
         // Refresh card balance shown in Wallet / Home
         ref.read(activeCardProvider.notifier).refresh();
       } else {
@@ -177,16 +186,7 @@ class _PaymentValidationScreenState
       case PaymentValidationState.processing:
         return _ProcessingView(controller: _pulseCtrl);
       case PaymentValidationState.authorized:
-        return _ResultView(
-          icon: Icons.check_circle_rounded,
-          iconColor: GSColors.success,
-          title: 'Pago Autorizado',
-          subtitle: '¡Que tengas un buen viaje!',
-          amount: _resultAmount,
-          detail: _resultDetail,
-          badgeLabel: 'AUTORIZADO',
-          badgeColor: GSColors.success,
-        );
+        return _buildAuthorizedState();
       case PaymentValidationState.insufficient:
         return _ResultView(
           icon: Icons.account_balance_wallet_rounded,
@@ -212,6 +212,109 @@ class _PaymentValidationScreenState
       case PaymentValidationState.offline:
         return const _OfflineView();
     }
+  }
+
+  Widget _buildAuthorizedState() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 200,
+          height: 200,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Ripple background
+              AnimatedBuilder(
+                animation: _successCtrl,
+                builder: (_, __) {
+                  final t = CurvedAnimation(
+                    parent: _successCtrl,
+                    curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+                  ).value;
+                  return Container(
+                    width: 60 + 100 * t,
+                    height: 60 + 100 * t,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: GSColors.success.withValues(alpha: 0.12 * (1 - t)),
+                    ),
+                  );
+                },
+              ),
+              // Particles
+              _AnimatedParticleBurst(controller: _successCtrl),
+              // Checkmark
+              _AnimatedCheckmark(
+                controller: _successCtrl,
+                color: GSColors.success,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: GSSpacing.s5),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          decoration: BoxDecoration(
+            color: GSColors.success,
+            borderRadius: BorderRadius.circular(GSRadius.full),
+          ),
+          child: const Text('AUTORIZADO',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                  letterSpacing: 1.5)),
+        ),
+        const SizedBox(height: GSSpacing.s5),
+        const Text('Pago Autorizado',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: GSColors.textPrimary,
+            )),
+        const SizedBox(height: GSSpacing.s2),
+        const Text('¡Que tengas un buen viaje!',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 15, color: GSColors.textSecondary)),
+        const SizedBox(height: GSSpacing.s6),
+        GSCard(
+          padding: const EdgeInsets.all(GSSpacing.s5),
+          shadow: GSShadow.md,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Monto',
+                      style: TextStyle(
+                          fontSize: 12, color: GSColors.textSecondary)),
+                  Text(_resultAmount,
+                      style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          color: GSColors.textPrimary)),
+                  Text(_resultDetail,
+                      style: const TextStyle(
+                          fontSize: 12, color: GSColors.textSecondary)),
+                ],
+              ),
+              Container(
+                width: 56,
+                height: 56,
+                decoration: const BoxDecoration(
+                  color: GSColors.accentLight,
+                  borderRadius: BorderRadius.all(Radius.circular(GSRadius.md)),
+                ),
+                child: const Icon(Icons.credit_card_rounded,
+                    color: GSColors.accent, size: 28),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildCta(BuildContext context) {
@@ -529,4 +632,129 @@ class _DemoChip extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─── Payment success animation widgets ───────────────────────────────────────
+
+class _AnimatedCheckmark extends StatelessWidget {
+  const _AnimatedCheckmark({
+    required this.controller,
+    this.size = 64,
+    required this.color,
+  });
+
+  final AnimationController controller;
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (_, __) => CustomPaint(
+        size: Size(size, size),
+        painter: _CheckmarkPainter(
+          progress: CurvedAnimation(
+            parent: controller,
+            curve: const Interval(0.1, 0.7, curve: Curves.easeOut),
+          ).value,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _CheckmarkPainter extends CustomPainter {
+  const _CheckmarkPainter({required this.progress, required this.color});
+
+  final double progress;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..moveTo(size.width * 0.2, size.height * 0.5)
+      ..lineTo(size.width * 0.42, size.height * 0.72)
+      ..lineTo(size.width * 0.78, size.height * 0.3);
+
+    final metrics = path.computeMetrics().first;
+    final drawn = metrics.extractPath(0, metrics.length * progress);
+
+    canvas.drawPath(
+      drawn,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_CheckmarkPainter old) => old.progress != progress;
+}
+
+class _AnimatedParticleBurst extends StatelessWidget {
+  const _AnimatedParticleBurst({
+    required this.controller,
+    this.size = 200,
+  });
+
+  final AnimationController controller;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (_, __) => CustomPaint(
+        size: Size(size, size),
+        painter: _ParticleBurstPainter(
+          progress: CurvedAnimation(
+            parent: controller,
+            curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
+          ).value,
+        ),
+      ),
+    );
+  }
+}
+
+class _ParticleBurstPainter extends CustomPainter {
+  const _ParticleBurstPainter({required this.progress});
+
+  final double progress;
+  static const _count = 12;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final distance = 60 * Curves.easeOut.transform(progress);
+    final opacity = (1 - progress).clamp(0.0, 1.0);
+
+    for (var i = 0; i < _count; i++) {
+      final angle = (i / _count) * 2 * pi;
+      final color = i.isEven ? GSColors.success : GSColors.accent;
+
+      canvas.save();
+      canvas.translate(
+        center.dx + cos(angle) * distance,
+        center.dy + sin(angle) * distance,
+      );
+      canvas.rotate(angle);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: Offset.zero, width: 4, height: 12),
+          const Radius.circular(2),
+        ),
+        Paint()..color = color.withValues(alpha: opacity),
+      );
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ParticleBurstPainter old) => old.progress != progress;
 }
