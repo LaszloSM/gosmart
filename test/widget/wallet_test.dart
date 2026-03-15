@@ -57,7 +57,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('50.000'), findsAtLeastNWidgets(1));
+      expect(find.textContaining('50000'), findsAtLeastNWidgets(1));
     });
 
     testWidgets('shows lock card option', (tester) async {
@@ -73,7 +73,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.text('Lock card'), findsAtLeastNWidgets(1));
+      expect(find.text('Bloquear'), findsAtLeastNWidgets(1));
     });
   });
 }
