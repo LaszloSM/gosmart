@@ -1,0 +1,38 @@
+{
+  "colors": {
+    "accent": "#00D4AA",
+    "accentAlt": "#6C63FF",
+    "accentLight": "#E6FAF6",
+    "accentAltLight": "#EEEDFF",
+    "success": "#2ED573",
+    "cardGold": "#C9A84C",
+    "surface": "#FFFFFF",
+    "bg": "#F5F6FA",
+    "border": "#E8ECF2",
+    "textPrimary": "#1A1A2E",
+    "textSecondary": "#8F9BB3",
+    "textDisabled": "#C5CCD9"
+  },
+  "glass": {
+    "blur": 20,
+    "backgroundOpacity": 0.72,
+    "borderOpacity": 0.18,
+    "borderWidth": 1.0
+  },
+  "gradient": {
+    "accentPill": ["#00D4AA", "#6C63FF"],
+    "cardGloss": ["rgba(255,255,255,0.08)", "rgba(255,255,255,0.00)"],
+    "avatarRing": ["#00D4AA", "#6C63FF"]
+  },
+  "animDuration": {
+    "countUp": 800,
+    "checkmarkStroke": 600,
+    "particleBurst": 700,
+    "skeletonStaggerPerItem": 80,
+    "pillSlide": 200
+  },
+  "shadow": {
+    "glassNav": "0 -4px 24px rgba(0,212,170,0.08)",
+    "cardGlow": "0 8px 32px rgba(108,99,255,0.24)"
+  }
+}
