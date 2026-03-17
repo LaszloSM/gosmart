@@ -119,7 +119,9 @@ lib/
 │   ├── ai_service.dart           # Groq REST API calls
 │   ├── auth_service.dart
 │   ├── card_service.dart
-│   └── profile_service.dart
+│   ├── profile_service.dart
+│   ├── location_service.dart     # GPS via geolocator — returns LatLng? (null if unavailable)
+│   └── directions_service.dart   # Mapbox Directions API v5 — walking/driving/cycling polylines
 ├── theme/
 │   ├── app_theme.dart            # MaterialApp ThemeData
 │   └── design_tokens.dart        # GSColors, GSSpacing, GSRadius, GSShadow, GSSize, etc.
@@ -139,6 +141,8 @@ All providers in `lib/providers/`. Pattern: `StateNotifierProvider<Notifier, Asy
 | `transactionListProvider` | `AsyncValue<List<TransactionModel>>` | paginated (20/page), `loadMore()` |
 | `profileProvider` | `AsyncValue<ProfileModel>` | load(), updateProfile(), updatePassword() |
 | `aiConversationProvider` | conversation history | |
+| `locationProvider` | `FutureProvider<LatLng?>` | One-shot GPS position for initial map center |
+| `activeRouteProvider` | `StateProvider<RouteResult?>` | Route currently drawn on home map |
 
 **Critical state pattern** — `updateProfile()` preserves previous state on error:
 ```dart
@@ -346,6 +350,7 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 | `qr_flutter` | ^4.1.0 | QR code rendering |
 | `google_fonts` | ^6.2.1 | Typography |
 | `flutter_map` | ^7.0.2 | Map tiles — Mapbox dark-v11 (with `MAPBOX_PUBLIC_TOKEN`) or OSM fallback |
+| `geolocator` | ^13.0.0 | Device GPS location (Android + Web) |
 | `http` | ^1.2.0 | Direct REST calls (Groq AI) |
 | `intl` | ^0.20.2 | Date formatting, localization |
 | `flutter_localizations` | sdk | Spanish date picker support |
