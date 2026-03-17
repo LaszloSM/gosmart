@@ -52,6 +52,9 @@ Optional:
 
 ```
 MAP_PROVIDER=google            # 'google' (default) or 'osm' for OpenStreetMap
+MAPBOX_PUBLIC_TOKEN=pk.eyJ... # Mapbox public token — free, 50k loads/month
+                               # Get from https://account.mapbox.com → Tokens
+                               # If empty, map falls back to OpenStreetMap
 ```
 
 > **Gemini is NOT used.** The AI uses Groq `llama-3.3-70b-versatile` directly from Flutter —
@@ -342,7 +345,7 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 | `flutter_nfc_kit` | ^3.4.0 | NFC hardware access |
 | `qr_flutter` | ^4.1.0 | QR code rendering |
 | `google_fonts` | ^6.2.1 | Typography |
-| `flutter_map` | ^7.0.2 | OpenStreetMap (no API key) |
+| `flutter_map` | ^7.0.2 | Map tiles — Mapbox dark-v11 (with `MAPBOX_PUBLIC_TOKEN`) or OSM fallback |
 | `http` | ^1.2.0 | Direct REST calls (Groq AI) |
 | `intl` | ^0.20.2 | Date formatting, localization |
 | `flutter_localizations` | sdk | Spanish date picker support |

@@ -16,4 +16,6 @@ class Env {
   static String get geminiApiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
 
   static String get groqApiKey => dotenv.env['GROQ_API_KEY'] ?? '';
+
+  static String get mapboxToken => dotenv.env['MAPBOX_PUBLIC_TOKEN'] ?? '';
 }

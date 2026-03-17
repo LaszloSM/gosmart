@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import '../../core/env.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
@@ -630,7 +631,12 @@ class _AppMapState extends State<_AppMap> with SingleTickerProviderStateMixin {
       ),
       children: [
         TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          urlTemplate: Env.mapboxToken.isNotEmpty
+              ? 'https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/{z}/{x}/{y}@2x'
+                  '?access_token=${Env.mapboxToken}'
+              : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          tileSize: Env.mapboxToken.isNotEmpty ? 512 : 256,
+          zoomOffset: Env.mapboxToken.isNotEmpty ? -1 : 0,
           userAgentPackageName: 'com.gosmart.app',
           maxNativeZoom: 19,
         ),
