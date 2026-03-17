@@ -14,6 +14,9 @@ import '../../providers/profile_provider.dart';
 import '../../providers/card_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../models/transaction_model.dart';
+import '../../models/route_result.dart';
+import '../../providers/active_route_provider.dart';
+import '../../services/location_service.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -585,25 +588,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-// ─── Real Map (OpenStreetMap via flutter_map) ─────────────────────────────────
+// ─── Real Map with GPS + Mapbox tiles + route polylines ───────────────────────
 
-class _AppMap extends StatefulWidget {
+class _AppMap extends ConsumerStatefulWidget {
   const _AppMap();
 
   @override
-  State<_AppMap> createState() => _AppMapState();
+  ConsumerState<_AppMap> createState() => _AppMapState();
 }
 
-class _AppMapState extends State<_AppMap> with SingleTickerProviderStateMixin {
-  // Bogotá, Colombia — target city for GoSmart
-  static const LatLng _bogota = LatLng(4.7110, -74.0721);
+class _AppMapState extends ConsumerState<_AppMap>
+    with SingleTickerProviderStateMixin {
+  static const _bogota = LatLng(4.7110, -74.0721);
 
+  late final MapController _mapController;
   late final AnimationController _pulseCtrl;
   late final Animation<double> _pulse;
+
+  LatLng _userPosition = _bogota;
 
   @override
   void initState() {
     super.initState();
+    _mapController = MapController();
     _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -611,6 +618,15 @@ class _AppMapState extends State<_AppMap> with SingleTickerProviderStateMixin {
     _pulse = Tween<double>(begin: 0.8, end: 1.4).animate(
       CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
     );
+
+    // Resolve GPS after first frame (avoids calling async in initState).
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final pos = await locationService.getCurrentPosition();
+      if (pos != null && mounted) {
+        setState(() => _userPosition = pos);
+        _mapController.move(pos, 14);
+      }
+    });
   }
 
   @override
@@ -619,45 +635,149 @@ class _AppMapState extends State<_AppMap> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
+  Future<void> _recenter() async {
+    final pos = await locationService.getCurrentPosition();
+    if (pos != null && mounted) {
+      setState(() => _userPosition = pos);
+      _mapController.move(pos, 14);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FlutterMap(
-      options: const MapOptions(
-        initialCenter: _bogota,
-        initialZoom: 14,
-        interactionOptions: InteractionOptions(
-          flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
-        ),
-      ),
+    final activeRoute = ref.watch(activeRouteProvider);
+
+    return Stack(
       children: [
-        TileLayer(
-          urlTemplate: Env.mapboxToken.isNotEmpty
-              ? 'https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/{z}/{x}/{y}@2x'
-                  '?access_token=${Env.mapboxToken}'
-              : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          tileSize: Env.mapboxToken.isNotEmpty ? 512 : 256,
-          zoomOffset: Env.mapboxToken.isNotEmpty ? -1 : 0,
-          userAgentPackageName: 'com.gosmart.app',
-          maxNativeZoom: 19,
-        ),
-        MarkerLayer(
-          markers: [
-            Marker(
-              point: _bogota,
-              width: 60,
-              height: 60,
-              child: _PulsingMarker(pulse: _pulse),
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: _userPosition,
+            initialZoom: 14,
+            interactionOptions: const InteractionOptions(
+              flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+            ),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: Env.mapboxToken.isNotEmpty
+                  ? 'https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/{z}/{x}/{y}@2x'
+                      '?access_token=${Env.mapboxToken}'
+                  : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              tileSize: Env.mapboxToken.isNotEmpty ? 512 : 256,
+              zoomOffset: Env.mapboxToken.isNotEmpty ? -1 : 0,
+              userAgentPackageName: 'com.gosmart.app',
+              maxNativeZoom: 19,
+            ),
+            // Route polylines (shown when a route is active)
+            if (activeRoute != null)
+              PolylineLayer(
+                polylines: activeRoute.legs
+                    .map((leg) => Polyline(
+                          points: leg.points,
+                          strokeWidth: 5.0,
+                          color: leg.color,
+                        ))
+                    .toList(),
+              ),
+            // Destination pin (shown when a route is active)
+            if (activeRoute != null && activeRoute.legs.isNotEmpty)
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: activeRoute.legs.last.points.last,
+                    width: 32,
+                    height: 32,
+                    child: const Icon(
+                      Icons.location_pin,
+                      color: Colors.red,
+                      size: 32,
+                    ),
+                  ),
+                ],
+              ),
+            // User location marker (blue pulsing dot)
+            MarkerLayer(
+              markers: [
+                Marker(
+                  point: _userPosition,
+                  width: 60,
+                  height: 60,
+                  child: _PulsingMarker(pulse: _pulse, color: Colors.blue),
+                ),
+              ],
             ),
           ],
         ),
+
+        // FAB — re-center on user position
+        Positioned(
+          right: GSSpacing.s4,
+          bottom: GSSpacing.s4,
+          child: FloatingActionButton.small(
+            heroTag: 'recenter',
+            backgroundColor: GSColors.primary,
+            onPressed: _recenter,
+            child: const Icon(Icons.my_location, color: Colors.white, size: 20),
+          ),
+        ),
+
+        // Active route banner
+        if (activeRoute != null)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: _RouteBanner(route: activeRoute),
+          ),
       ],
     );
   }
 }
 
+class _RouteBanner extends ConsumerWidget {
+  const _RouteBanner({required this.route});
+  final RouteResult route;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: GSSpacing.s5, vertical: GSSpacing.s3),
+      decoration: const BoxDecoration(
+        color: GSColors.primary,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(GSRadius.lg)),
+      ),
+      child: Row(
+        children: [
+          Icon(RouteProfile.iconFor(route.profile),
+              color: RouteProfile.colorFor(route.profile), size: 20),
+          const SizedBox(width: GSSpacing.s3),
+          Text(
+            '${route.durationMin} min · ${route.distanceKm.toStringAsFixed(1)} km',
+            style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 14),
+          ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.close, color: Colors.white, size: 20),
+            onPressed: () =>
+                ref.read(activeRouteProvider.notifier).state = null,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PulsingMarker extends StatelessWidget {
-  const _PulsingMarker({required this.pulse});
+  const _PulsingMarker({required this.pulse, this.color = GSColors.accent});
   final Animation<double> pulse;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -670,7 +790,7 @@ class _PulsingMarker extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: GSColors.accent.withValues(alpha: 0.20),
+              color: color.withValues(alpha: 0.20),
               shape: BoxShape.circle,
             ),
           ),
@@ -679,12 +799,12 @@ class _PulsingMarker extends StatelessWidget {
           width: 20,
           height: 20,
           decoration: BoxDecoration(
-            color: GSColors.accent,
+            color: color,
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 3),
             boxShadow: [
               BoxShadow(
-                color: GSColors.accent.withValues(alpha: 0.40),
+                color: color.withValues(alpha: 0.40),
                 blurRadius: 8,
                 spreadRadius: 2,
               ),
