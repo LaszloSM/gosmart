@@ -11,4 +11,9 @@ class Env {
   static String get googleMapsApiKey =>
       dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
   static String get mapProvider => dotenv.env['MAP_PROVIDER'] ?? 'google';
+
+  /// Gemini API key — kept for reference but no longer used by AiService.
+  static String get geminiApiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
+
+  static String get groqApiKey => dotenv.env['GROQ_API_KEY'] ?? '';
 }

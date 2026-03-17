@@ -1,0 +1,100 @@
+{"query": "Como llego a Mosquera", "city": null, "expected_entities": ["Mosquera"], "intent": "route"}
+{"query": "Como llego a Fusagasuga", "city": null, "expected_entities": ["Fusagasuga"], "intent": "route"}
+{"query": "Quiero ir al departamento de Quindio", "city": null, "expected_entities": ["Quindio"], "intent": "general"}
+{"query": "Como llego a Buenaventura", "city": null, "expected_entities": ["Buenaventura"], "intent": "route"}
+{"query": "Barrio Urbanización Villa Adriana en La Tebaida", "city": "La Tebaida", "expected_entities": ["Urbanización Villa Adriana"], "intent": "neighborhood"}
+{"query": "Quiero ir al departamento de Magdalena", "city": null, "expected_entities": ["Magdalena"], "intent": "general"}
+{"query": "Barrio Urbanización Santa María en La Tebaida", "city": "La Tebaida", "expected_entities": ["Urbanización Santa María"], "intent": "neighborhood"}
+{"query": "Quiero ir al departamento de Cundinamarca", "city": null, "expected_entities": ["Cundinamarca"], "intent": "general"}
+{"query": "Barrio Urbanización Centenario en Armenia", "city": "Armenia", "expected_entities": ["Urbanización Centenario"], "intent": "neighborhood"}
+{"query": "Barrio Lleras en Manizales", "city": "Manizales", "expected_entities": ["Lleras"], "intent": "neighborhood"}
+{"query": "Quiero ir al departamento de Casanare", "city": null, "expected_entities": ["Casanare"], "intent": "general"}
+{"query": "Como llego a Monteria", "city": null, "expected_entities": ["Monteria"], "intent": "route"}
+{"query": "Como llego a Espinal", "city": null, "expected_entities": ["Espinal"], "intent": "route"}
+{"query": "Quiero ir al departamento de Antioquia", "city": null, "expected_entities": ["Antioquia"], "intent": "general"}
+{"query": "Donde queda Villapilar", "city": "Manizales", "expected_entities": ["Villapilar"], "intent": "station"}
+{"query": "Quiero ir al departamento de Amazonas", "city": null, "expected_entities": ["Amazonas"], "intent": "general"}
+{"query": "Donde queda Urbanización Castilla Grande", "city": "Armenia", "expected_entities": ["Urbanización Castilla Grande"], "intent": "station"}
+{"query": "Como llego a Giron", "city": null, "expected_entities": ["Giron"], "intent": "route"}
+{"query": "Como llego a Acacias", "city": null, "expected_entities": ["Acacias"], "intent": "route"}
+{"query": "Como llego a Medellin", "city": null, "expected_entities": ["Medellin"], "intent": "route"}
+{"query": "Quiero ir al departamento de Tolima", "city": null, "expected_entities": ["Tolima"], "intent": "general"}
+{"query": "Donde queda Los Colores", "city": null, "expected_entities": ["Los Colores"], "intent": "station"}
+{"query": "Barrio Caracolí en Bogotá", "city": "Bogotá", "expected_entities": ["Caracolí"], "intent": "neighborhood"}
+{"query": "Barrio Alfonso López Pumarejo en Armenia", "city": "Armenia", "expected_entities": ["Alfonso López Pumarejo"], "intent": "neighborhood"}
+{"query": "Barrio San Blas en Bogotá", "city": "Bogotá", "expected_entities": ["San Blas"], "intent": "neighborhood"}
+{"query": "Barrio Las Guacamayas en Bogotá", "city": "Bogotá", "expected_entities": ["Las Guacamayas"], "intent": "neighborhood"}
+{"query": "Como llego a Mocoa", "city": null, "expected_entities": ["Mocoa"], "intent": "route"}
+{"query": "Como llego a Riohacha", "city": null, "expected_entities": ["Riohacha"], "intent": "route"}
+{"query": "Quiero ir al departamento de Norte De Santander", "city": null, "expected_entities": ["Norte De Santander"], "intent": "general"}
+{"query": "Barrio Comuna Bosque - Molinos en Floridablanca", "city": "Floridablanca", "expected_entities": ["Comuna Bosque - Molinos"], "intent": "neighborhood"}
+{"query": "Como llego a Tuluá", "city": null, "expected_entities": ["Tuluá"], "intent": "route"}
+{"query": "Barrio Fátima en Manizales", "city": "Manizales", "expected_entities": ["Fátima"], "intent": "neighborhood"}
+{"query": "Como llego a Barrancabermeja", "city": null, "expected_entities": ["Barrancabermeja"], "intent": "route"}
+{"query": "Barrio Aloha en Bogotá", "city": "Bogotá", "expected_entities": ["Aloha"], "intent": "neighborhood"}
+{"query": "Como llego a Malambo", "city": null, "expected_entities": ["Malambo"], "intent": "route"}
+{"query": "Donde queda Pablo VI", "city": "Bogotá", "expected_entities": ["Pablo VI"], "intent": "station"}
+{"query": "Barrio Tibabita en Bogotá", "city": "Bogotá", "expected_entities": ["Tibabita"], "intent": "neighborhood"}
+{"query": "Barrio Urbanización Fondo Obrero en La Tebaida", "city": "La Tebaida", "expected_entities": ["Urbanización Fondo Obrero"], "intent": "neighborhood"}
+{"query": "Quiero ir al departamento de La Guajira", "city": null, "expected_entities": ["La Guajira"], "intent": "general"}
+{"query": "Barrio Argelia en Bogotá", "city": "Bogotá", "expected_entities": ["Argelia"], "intent": "neighborhood"}
+{"query": "Barrio Peralonso en Manizales", "city": "Manizales", "expected_entities": ["Peralonso"], "intent": "neighborhood"}
+{"query": "Como llego a Barranquilla", "city": null, "expected_entities": ["Barranquilla"], "intent": "route"}
+{"query": "Como llego a Zipaquira", "city": null, "expected_entities": ["Zipaquira"], "intent": "route"}
+{"query": "Como llego a Bello", "city": null, "expected_entities": ["Bello"], "intent": "route"}
+{"query": "Barrio Las Brisas en Bogotá", "city": "Bogotá", "expected_entities": ["Las Brisas"], "intent": "neighborhood"}
+{"query": "Barrio Pío XII en Manizales", "city": "Manizales", "expected_entities": ["Pío XII"], "intent": "neighborhood"}
+{"query": "Como llego a Melgar", "city": null, "expected_entities": ["Melgar"], "intent": "route"}
+{"query": "Quiero ir al departamento de Vaupes", "city": null, "expected_entities": ["Vaupes"], "intent": "general"}
+{"query": "Barrio Eucalipto en Manizales", "city": "Manizales", "expected_entities": ["Eucalipto"], "intent": "neighborhood"}
+{"query": "Barrio Tuna Baja en Bogotá", "city": "Bogotá", "expected_entities": ["Tuna Baja"], "intent": "neighborhood"}
+{"query": "Quiero ir al departamento de Caqueta", "city": null, "expected_entities": ["Caqueta"], "intent": "general"}
+{"query": "Como llego a Calarca", "city": null, "expected_entities": ["Calarca"], "intent": "route"}
+{"query": "Quiero ir al departamento de San Andres", "city": null, "expected_entities": ["San Andres"], "intent": "general"}
+{"query": "Barrio La Estación en La Tebaida", "city": "La Tebaida", "expected_entities": ["La Estación"], "intent": "neighborhood"}
+{"query": "Barrio La Esperanza Sur en Bogotá", "city": "Bogotá", "expected_entities": ["La Esperanza Sur"], "intent": "neighborhood"}
+{"query": "Donde queda Ladrilleras", "city": null, "expected_entities": ["Ladrilleras"], "intent": "station"}
+{"query": "Donde queda Lisboa", "city": "Bogotá", "expected_entities": ["Lisboa"], "intent": "station"}
+{"query": "Como llego a Uribia", "city": null, "expected_entities": ["Uribia"], "intent": "route"}
+{"query": "Barrio Urbanización Ciudadela Simón Bolívar en Armenia", "city": "Armenia", "expected_entities": ["Urbanización Ciudadela Simón Bolívar"], "intent": "neighborhood"}
+{"query": "Como llego a Sabaneta", "city": null, "expected_entities": ["Sabaneta"], "intent": "route"}
+{"query": "Barrio Villa Norte en Barranquilla", "city": "Barranquilla", "expected_entities": ["Villa Norte"], "intent": "neighborhood"}
+{"query": "Como llego a Dosquebradas", "city": null, "expected_entities": ["Dosquebradas"], "intent": "route"}
+{"query": "Barrio Aranjuez en Manizales", "city": "Manizales", "expected_entities": ["Aranjuez"], "intent": "neighborhood"}
+{"query": "Como llego a Ocana", "city": null, "expected_entities": ["Ocana"], "intent": "route"}
+{"query": "Quiero ir al departamento de Valle Del Cauca", "city": null, "expected_entities": ["Valle Del Cauca"], "intent": "general"}
+{"query": "Quiero ir al departamento de Vichada", "city": null, "expected_entities": ["Vichada"], "intent": "general"}
+{"query": "Quiero ir al departamento de Bolivar", "city": null, "expected_entities": ["Bolivar"], "intent": "general"}
+{"query": "Quiero ir al departamento de Arauca", "city": null, "expected_entities": ["Arauca"], "intent": "general"}
+{"query": "Barrio Marbella en Cartagena de Indias", "city": "Cartagena de Indias", "expected_entities": ["Marbella"], "intent": "neighborhood"}
+{"query": "Barrio El Libertador en Bogotá", "city": "Bogotá", "expected_entities": ["El Libertador"], "intent": "neighborhood"}
+{"query": "Barrio La Alhambra en Bogotá", "city": "Bogotá", "expected_entities": ["La Alhambra"], "intent": "neighborhood"}
+{"query": "Como llego a Armenia", "city": null, "expected_entities": ["Armenia"], "intent": "route"}
+{"query": "Como llego a Piedecuesta", "city": null, "expected_entities": ["Piedecuesta"], "intent": "route"}
+{"query": "Barrio Sierra Morena en Manizales", "city": "Manizales", "expected_entities": ["Sierra Morena"], "intent": "neighborhood"}
+{"query": "Barrio Galán en Manizales", "city": "Manizales", "expected_entities": ["Galán"], "intent": "neighborhood"}
+{"query": "Donde queda Gonzales", "city": null, "expected_entities": ["Gonzales"], "intent": "station"}
+{"query": "Barrio Jorge Eliécer Gaitán en Bogotá", "city": "Bogotá", "expected_entities": ["Jorge Eliécer Gaitán"], "intent": "neighborhood"}
+{"query": "Barrio Urbanización Villa Teresa en Córdoba", "city": "Córdoba", "expected_entities": ["Urbanización Villa Teresa"], "intent": "neighborhood"}
+{"query": "Barrio Urbanización Quintas de Villa Liliana en Armenia", "city": "Armenia", "expected_entities": ["Urbanización Quintas de Villa Liliana"], "intent": "neighborhood"}
+{"query": "Barrio Antigua en Bogotá", "city": "Bogotá", "expected_entities": ["Antigua"], "intent": "neighborhood"}
+{"query": "Como llego a Corozal", "city": null, "expected_entities": ["Corozal"], "intent": "route"}
+{"query": "Quiero ir al departamento de Caldas", "city": null, "expected_entities": ["Caldas"], "intent": "general"}
+{"query": "Como llego a Bogota", "city": null, "expected_entities": ["Bogota"], "intent": "route"}
+{"query": "Quiero ir al departamento de Risaralda", "city": null, "expected_entities": ["Risaralda"], "intent": "general"}
+{"query": "Donde queda Manuela Beltrán", "city": null, "expected_entities": ["Manuela Beltrán"], "intent": "station"}
+{"query": "Barrio Popular en Armenia", "city": "Armenia", "expected_entities": ["Popular"], "intent": "neighborhood"}
+{"query": "Donde queda Urbanización El Dorado", "city": null, "expected_entities": ["Urbanización El Dorado"], "intent": "station"}
+{"query": "Barrio Monarcas en Bogotá", "city": "Bogotá", "expected_entities": ["Monarcas"], "intent": "neighborhood"}
+{"query": "Barrio La Castellana en Bogotá", "city": "Bogotá", "expected_entities": ["La Castellana"], "intent": "neighborhood"}
+{"query": "Barrio Mirador de Molinos en Bogotá", "city": "Bogotá", "expected_entities": ["Mirador de Molinos"], "intent": "neighborhood"}
+{"query": "Barrio El Emperador en Armenia", "city": "Armenia", "expected_entities": ["El Emperador"], "intent": "neighborhood"}
+{"query": "Barrio Urbanización Ciudadela La Nueva Tebaida 2 Etapa en La Tebaida", "city": "La Tebaida", "expected_entities": ["Urbanización Ciudadela La Nueva Tebaida 2 Etapa"], "intent": "neighborhood"}
+{"query": "Barrio Floralia en Bogotá", "city": "Bogotá", "expected_entities": ["Floralia"], "intent": "neighborhood"}
+{"query": "Como llego a Santa Marta", "city": null, "expected_entities": ["Santa Marta"], "intent": "route"}
+{"query": "Quiero ir al departamento de Atlantico", "city": null, "expected_entities": ["Atlantico"], "intent": "general"}
+{"query": "Como llego a La Estrella", "city": null, "expected_entities": ["La Estrella"], "intent": "route"}
+{"query": "Donde queda Alto de la Taza", "city": null, "expected_entities": ["Alto de la Taza"], "intent": "station"}
+{"query": "Como llego a Villavicencio", "city": null, "expected_entities": ["Villavicencio"], "intent": "route"}
+{"query": "Quiero ir al departamento de Bogota D.C.", "city": null, "expected_entities": ["Bogota D.C."], "intent": "general"}
+{"query": "Como llego a Cartago", "city": null, "expected_entities": ["Cartago"], "intent": "route"}
