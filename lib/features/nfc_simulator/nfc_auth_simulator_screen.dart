@@ -1,12 +1,13 @@
 // lib/features/nfc_simulator/nfc_auth_simulator_screen.dart
-// Debug screen to simulate an NFC tap at a validator
-// Tests the authorize Edge Function end-to-end
+// Debug screen: simulates an NFC tap locally (no backend call).
+// Useful for testing the UI flow without a deployed Edge Function.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
+
 import '../../theme/design_tokens.dart';
 import '../../providers/card_provider.dart';
-import '../../services/card_service.dart';
 import '../../models/authorize_result.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_toast.dart';
@@ -21,17 +22,22 @@ class NfcAuthSimulatorScreen extends ConsumerStatefulWidget {
 
 class _NfcAuthSimulatorScreenState
     extends ConsumerState<NfcAuthSimulatorScreen> {
+  static const _uuid = Uuid();
+
   String _selectedValidator = 'VLD-BOG-001';
   double _amount = 2900;
   bool _isLoading = false;
   AuthorizeResult? _lastResult;
-  // One idempotency key per tap session — regenerated only when the user
-  // selects a new tap (not on retries). This ensures NFC double-tap safety.
-  String _idempotencyKey = cardService.newIdempotencyKey();
+  String _sessionKey = _uuid.v4();
 
   final _validators = ['VLD-BOG-001', 'VLD-MED-001'];
   final _amounts = [2400.0, 2900.0, 4500.0, 5000.0];
 
+  /// Simulates the authorization locally without calling the backend.
+  /// Logic mirrors the real authorize Edge Function:
+  ///   - card locked → CARD_LOCKED
+  ///   - balance < amount → INSUFFICIENT_BALANCE
+  ///   - otherwise → authorized
   Future<void> _simulateTap() async {
     final card = ref.read(activeCardProvider).valueOrNull;
     if (card == null) {
@@ -41,38 +47,49 @@ class _NfcAuthSimulatorScreenState
     }
 
     setState(() => _isLoading = true);
-    try {
-      final result = await cardService.authorize(
-        cardId: card.id,
-        validatorId: _selectedValidator,
-        amount: _amount,
-        idempotencyKey: _idempotencyKey,
+
+    // Simulate network latency
+    await Future.delayed(const Duration(milliseconds: 700));
+
+    if (!mounted) return;
+
+    final AuthorizeResult result;
+
+    if (card.isLocked) {
+      result = const AuthorizeResult(
+        status: AuthorizeStatus.cardLocked,
+        errorCode: 'CARD_LOCKED',
       );
+    } else if (card.balance < _amount) {
+      result = AuthorizeResult(
+        status: AuthorizeStatus.insufficientBalance,
+        remainingBalance: card.balance,
+        errorCode: 'INSUFFICIENT_BALANCE',
+      );
+    } else {
+      final txId = 'sim-${_sessionKey.substring(0, 8)}';
+      result = AuthorizeResult(
+        status: AuthorizeStatus.authorized,
+        txId: txId,
+        remainingBalance: card.balance - _amount,
+      );
+    }
 
-      setState(() {
-        _lastResult = result;
-        // Generate a fresh key for the next tap session
-        if (result.isAuthorized) _idempotencyKey = cardService.newIdempotencyKey();
-      });
-      ref.read(activeCardProvider.notifier).refresh();
+    setState(() {
+      _isLoading = false;
+      _lastResult = result;
+      // New session key for the next tap (mirrors idempotency key rotation)
+      if (result.isAuthorized) _sessionKey = _uuid.v4();
+    });
 
-      if (mounted) {
-        GSToast.show(
-          context,
-          message: result.isAuthorized
-              ? '✓ Autorizado — Saldo: \$${result.remainingBalance?.toStringAsFixed(0)} COP'
-              : '✗ ${_errorMessage(result)}',
-          type:
-              result.isAuthorized ? GSToastType.success : GSToastType.error,
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        GSToast.show(context,
-            message: 'Error: $e', type: GSToastType.error);
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    if (mounted) {
+      GSToast.show(
+        context,
+        message: result.isAuthorized
+            ? '✓ Autorizado (simulado) — Saldo: \$${result.remainingBalance!.toStringAsFixed(0)} COP'
+            : '✗ ${_errorMessage(result)}',
+        type: result.isAuthorized ? GSToastType.success : GSToastType.error,
+      );
     }
   }
 
@@ -96,13 +113,14 @@ class _NfcAuthSimulatorScreenState
       appBar: AppBar(
         title: const Text('Simulador NFC (Debug)'),
         backgroundColor: Colors.orange,
+        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(GSSpacing.s5),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Warning banner
+            // Debug info banner
             Container(
               padding: const EdgeInsets.all(GSSpacing.s4),
               decoration: BoxDecoration(
@@ -111,13 +129,26 @@ class _NfcAuthSimulatorScreenState
                 borderRadius: BorderRadius.circular(GSRadius.md),
               ),
               child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(Icons.bug_report, color: Colors.orange),
                   SizedBox(width: 8),
                   Expanded(
-                    child: Text(
-                      'Pantalla de prueba — simula un tap en validador físico',
-                      style: TextStyle(fontSize: 13),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Pantalla de prueba — simula un tap en validador físico',
+                          style: TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Simulación local · No afecta el saldo real',
+                          style: TextStyle(
+                              fontSize: 12, color: GSColors.textSecondary),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -130,14 +161,28 @@ class _NfcAuthSimulatorScreenState
               loading: () => const CircularProgressIndicator(),
               error: (e, _) => Text('Error: $e'),
               data: (card) => card != null
-                  ? _InfoRow('Tarjeta', card.numberMasked)
-                  : const Text('No hay tarjeta'),
-            ),
-            cardAsync.maybeWhen(
-              data: (card) => card != null
-                  ? _InfoRow('Saldo actual', card.formattedBalance)
-                  : const SizedBox(),
-              orElse: () => const SizedBox(),
+                  ? Column(
+                      children: [
+                        _InfoRow('Tarjeta', card.numberMasked),
+                        _InfoRow('Saldo actual', card.formattedBalance),
+                        if (card.isLocked)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 4),
+                            child: Row(
+                              children: [
+                                Icon(Icons.lock, size: 14, color: GSColors.error),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Tarjeta bloqueada',
+                                  style: TextStyle(
+                                      color: GSColors.error, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    )
+                  : const Text('No hay tarjeta activa'),
             ),
             const SizedBox(height: GSSpacing.s5),
 
@@ -150,6 +195,7 @@ class _NfcAuthSimulatorScreenState
                   .map((v) => ChoiceChip(
                         label: Text(v),
                         selected: _selectedValidator == v,
+                        selectedColor: GSColors.accentLight,
                         onSelected: (_) =>
                             setState(() => _selectedValidator = v),
                       ))
@@ -167,6 +213,7 @@ class _NfcAuthSimulatorScreenState
                   .map((a) => ChoiceChip(
                         label: Text('\$${a.toStringAsFixed(0)}'),
                         selected: _amount == a,
+                        selectedColor: GSColors.accentLight,
                         onSelected: (_) => setState(() => _amount = a),
                       ))
                   .toList(),
@@ -234,19 +281,44 @@ class _ResultCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            result.isAuthorized ? '✓ AUTORIZADO' : '✗ RECHAZADO',
+            result.isAuthorized
+                ? '✓ AUTORIZADO (simulado)'
+                : '✗ RECHAZADO',
             style: TextStyle(
                 fontWeight: FontWeight.w800, color: color, fontSize: 16),
           ),
-          if (result.txId != null)
+          if (result.txId != null) ...[
+            const SizedBox(height: 4),
             Text('TX: ${result.txId}',
                 style: const TextStyle(fontSize: 12, color: Colors.grey)),
-          if (result.remainingBalance != null)
+          ],
+          if (result.remainingBalance != null) ...[
+            const SizedBox(height: 4),
             Text(
-                'Saldo restante: \$${result.remainingBalance!.toStringAsFixed(0)} COP'),
-          if (result.errorCode != null) Text('Código: ${result.errorCode}'),
+              'Saldo estimado: \$${result.remainingBalance!.toStringAsFixed(0)} COP',
+              style: const TextStyle(fontSize: 13),
+            ),
+          ],
+          if (result.errorCode != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              _codeLabel(result.errorCode!),
+              style: TextStyle(fontSize: 13, color: color),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  String _codeLabel(String code) {
+    switch (code) {
+      case 'INSUFFICIENT_BALANCE':
+        return 'Motivo: Saldo insuficiente';
+      case 'CARD_LOCKED':
+        return 'Motivo: Tarjeta bloqueada';
+      default:
+        return 'Código: $code';
+    }
   }
 }

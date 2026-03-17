@@ -19,14 +19,31 @@ class ProfileService {
     return ProfileModel.fromMap(data, email: user.email ?? '');
   }
 
-  /// Updates name and/or phone on the profiles table.
-  Future<void> updateProfile({String? name, String? phone}) async {
+  /// Updates profile fields on the profiles table.
+  Future<void> updateProfile({
+    String? name,
+    String? phone,
+    String? cedula,
+    String? city,
+    String? birthDate,
+  }) async {
     final user = _client.auth.currentUser;
     if (user == null) throw Exception('Not authenticated');
 
     final updates = <String, dynamic>{};
     if (name != null) updates['name'] = name.trim();
-    if (phone != null) updates['phone'] = phone.trim().isEmpty ? null : phone.trim();
+    if (phone != null) {
+      updates['phone'] = phone.trim().isEmpty ? null : phone.trim();
+    }
+    if (cedula != null) {
+      updates['cedula'] = cedula.trim().isEmpty ? null : cedula.trim();
+    }
+    if (city != null) {
+      updates['city'] = city.trim().isEmpty ? null : city.trim();
+    }
+    if (birthDate != null) {
+      updates['birth_date'] = birthDate;
+    }
 
     if (updates.isEmpty) return;
 

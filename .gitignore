@@ -44,6 +44,26 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Environment variables
+# Environment variables — NEVER commit real keys
 .env
-*.env.local
+.env.*
+!.env.example
+*.local
+google-services.json
+GoogleService-Info.plist
+*.keystore
+*.jks
+*.p12
+*.pem
+*.key
+
+# Pipeline — datos generados (grandes, no van al repo)
+pipeline/data/
+pipeline/__pycache__/
+pipeline/*.pyc
+
+# Supabase CLI deploy copy (generado desde backend/functions/)
+supabase/functions/
+
+# Claude Code settings
+.claude/settings.local.json

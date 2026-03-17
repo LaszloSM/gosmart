@@ -290,24 +290,28 @@ class _PaymentValidationScreenState
           padding: const EdgeInsets.all(GSSpacing.s5),
           shadow: GSShadow.md,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Monto',
-                      style: TextStyle(
-                          fontSize: 12, color: GSColors.textSecondary)),
-                  Text(_resultAmount,
-                      style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          color: GSColors.textPrimary)),
-                  Text(_resultDetail,
-                      style: const TextStyle(
-                          fontSize: 12, color: GSColors.textSecondary)),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Monto',
+                        style: TextStyle(
+                            fontSize: 12, color: GSColors.textSecondary)),
+                    Text(_resultAmount,
+                        style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                            color: GSColors.textPrimary)),
+                    Text(_resultDetail,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 12, color: GSColors.textSecondary)),
+                  ],
+                ),
               ),
+              const SizedBox(width: GSSpacing.s3),
               Container(
                 width: 56,
                 height: 56,
@@ -500,24 +504,28 @@ class _ResultView extends StatelessWidget {
           padding: const EdgeInsets.all(GSSpacing.s5),
           shadow: GSShadow.md,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Monto',
-                      style: TextStyle(
-                          fontSize: 12, color: GSColors.textSecondary)),
-                  Text(amount,
-                      style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          color: GSColors.textPrimary)),
-                  Text(detail,
-                      style: const TextStyle(
-                          fontSize: 12, color: GSColors.textSecondary)),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Monto',
+                        style: TextStyle(
+                            fontSize: 12, color: GSColors.textSecondary)),
+                    Text(amount,
+                        style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                            color: GSColors.textPrimary)),
+                    Text(detail,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 12, color: GSColors.textSecondary)),
+                  ],
+                ),
               ),
+              const SizedBox(width: GSSpacing.s3),
               Container(
                 width: 56,
                 height: 56,

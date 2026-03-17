@@ -17,14 +17,30 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel>> {
     }
   }
 
-  /// Updates name and/or phone, then refreshes state.
-  Future<void> updateProfile({String? name, String? phone}) async {
+  /// Updates profile fields, then refreshes state.
+  /// If the reload fails after a successful update, the previous state is
+  /// preserved so the UI never shows a stale error banner.
+  Future<void> updateProfile({
+    String? name,
+    String? phone,
+    String? cedula,
+    String? city,
+    String? birthDate,
+  }) async {
+    final previous = state;
     try {
-      await profileService.updateProfile(name: name, phone: phone);
+      await profileService.updateProfile(
+        name: name,
+        phone: phone,
+        cedula: cedula,
+        city: city,
+        birthDate: birthDate,
+      );
       await load();
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
-      rethrow;
+      // Restore previous data so the header never shows "Error"
+      state = previous;
+      Error.throwWithStackTrace(e, st);
     }
   }
 

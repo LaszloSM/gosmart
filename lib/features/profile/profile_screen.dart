@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../router/app_router.dart';
 import '../../services/auth_service.dart';
@@ -30,14 +31,21 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   late TextEditingController _nameCtrl;
   late TextEditingController _phoneCtrl;
+  late TextEditingController _cedulaCtrl;
+  late TextEditingController _cityCtrl;
   late TextEditingController _newPassCtrl;
   late TextEditingController _confirmPassCtrl;
+
+  // birth_date is managed via DatePicker, stored as ISO string
+  DateTime? _selectedBirthDate;
 
   @override
   void initState() {
     super.initState();
     _nameCtrl = TextEditingController();
     _phoneCtrl = TextEditingController();
+    _cedulaCtrl = TextEditingController();
+    _cityCtrl = TextEditingController();
     _newPassCtrl = TextEditingController();
     _confirmPassCtrl = TextEditingController();
   }
@@ -46,6 +54,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void dispose() {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
+    _cedulaCtrl.dispose();
+    _cityCtrl.dispose();
     _newPassCtrl.dispose();
     _confirmPassCtrl.dispose();
     super.dispose();
@@ -74,20 +84,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final profile = ref.read(profileProvider).valueOrNull;
     _nameCtrl.text = profile?.name ?? '';
     _phoneCtrl.text = profile?.phone ?? '';
+    _cedulaCtrl.text = profile?.cedula ?? '';
+    _cityCtrl.text = profile?.city ?? '';
+    _selectedBirthDate = profile?.birthDate;
+
+    // cedula is immutable once set — only pass it on first registration
+    final isCedulaLocked =
+        (profile?.cedula ?? '').isNotEmpty;
 
     GSBottomSheet.show(
       context: context,
       title: 'Información personal',
-      initialChildSize: 0.6,
+      initialChildSize: 0.88,
       child: _EditPersonalInfoContent(
         nameCtrl: _nameCtrl,
         phoneCtrl: _phoneCtrl,
+        cedulaCtrl: _cedulaCtrl,
+        cityCtrl: _cityCtrl,
+        isCedulaLocked: isCedulaLocked,
+        initialBirthDate: _selectedBirthDate,
+        onBirthDateChanged: (date) => _selectedBirthDate = date,
         onSave: () async {
           final messenger = ScaffoldMessenger.of(context);
           try {
             await ref.read(profileProvider.notifier).updateProfile(
                   name: _nameCtrl.text.trim(),
                   phone: _phoneCtrl.text.trim(),
+                  // Only send cedula if it hasn't been set yet
+                  cedula: isCedulaLocked ? null : _cedulaCtrl.text.trim(),
+                  city: _cityCtrl.text.trim(),
+                  birthDate: _selectedBirthDate != null
+                      ? DateFormat('yyyy-MM-dd').format(_selectedBirthDate!)
+                      : null,
                 );
             if (!mounted) return;
             Navigator.pop(context);
@@ -299,7 +327,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: GSSpacing.s6),
+
+                // Extra bottom padding so content clears the floating nav bar
+                SizedBox(
+                  height: GSSize.bottomNav +
+                      MediaQuery.of(context).padding.bottom +
+                      GSSpacing.s4,
+                ),
               ],
             ),
           ),
@@ -368,7 +402,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Error',
+                      'Usuario',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -471,11 +505,22 @@ class _EditPersonalInfoContent extends StatefulWidget {
   const _EditPersonalInfoContent({
     required this.nameCtrl,
     required this.phoneCtrl,
+    required this.cedulaCtrl,
+    required this.cityCtrl,
     required this.onSave,
+    required this.isCedulaLocked,
+    this.initialBirthDate,
+    this.onBirthDateChanged,
   });
 
   final TextEditingController nameCtrl;
   final TextEditingController phoneCtrl;
+  final TextEditingController cedulaCtrl;
+  final TextEditingController cityCtrl;
+  /// True when cedula is already stored — field becomes read-only.
+  final bool isCedulaLocked;
+  final DateTime? initialBirthDate;
+  final ValueChanged<DateTime?>? onBirthDateChanged;
   final Future<void> Function() onSave;
 
   @override
@@ -486,16 +531,44 @@ class _EditPersonalInfoContent extends StatefulWidget {
 class _EditPersonalInfoContentState extends State<_EditPersonalInfoContent> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
+  DateTime? _birthDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _birthDate = widget.initialBirthDate;
+  }
+
+  Future<void> _pickBirthDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _birthDate ?? DateTime(1990),
+      firstDate: DateTime(1920),
+      lastDate: DateTime.now(),
+      locale: const Locale('es', 'CO'),
+      helpText: 'Fecha de nacimiento',
+      cancelText: 'Cancelar',
+      confirmText: 'Aceptar',
+    );
+    if (picked != null) {
+      setState(() => _birthDate = picked);
+      widget.onBirthDateChanged?.call(picked);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final birthDateLabel = _birthDate != null
+        ? DateFormat('dd/MM/yyyy').format(_birthDate!)
+        : 'Seleccionar fecha';
+
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           GSTextField(
-            label: 'Nombre',
+            label: 'Nombre completo',
             hint: 'Tu nombre completo',
             controller: widget.nameCtrl,
             prefixIcon: Icons.person_outline_rounded,
@@ -511,6 +584,122 @@ class _EditPersonalInfoContentState extends State<_EditPersonalInfoContent> {
             controller: widget.phoneCtrl,
             prefixIcon: Icons.phone_outlined,
             keyboardType: TextInputType.phone,
+          ),
+          const SizedBox(height: GSSpacing.s3),
+          if (widget.isCedulaLocked)
+            // Read-only display when cedula is already registered
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Cédula de ciudadanía',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: GSColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: GSSpacing.s1),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: GSSpacing.s4,
+                    vertical: GSSpacing.s3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: GSColors.bg,
+                    border: Border.all(color: GSColors.border),
+                    borderRadius: BorderRadius.circular(GSRadius.md),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.lock_outline_rounded,
+                          size: 18, color: GSColors.textDisabled),
+                      const SizedBox(width: GSSpacing.s2),
+                      Text(
+                        widget.cedulaCtrl.text,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: GSColors.textSecondary,
+                        ),
+                      ),
+                      const Spacer(),
+                      const Text(
+                        'No editable',
+                        style: TextStyle(
+                            fontSize: 11, color: GSColors.textDisabled),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            )
+          else
+            GSTextField(
+              label: 'Cédula de ciudadanía',
+              hint: '1234567890',
+              controller: widget.cedulaCtrl,
+              prefixIcon: Icons.badge_outlined,
+              keyboardType: TextInputType.number,
+            ),
+          const SizedBox(height: GSSpacing.s3),
+          GSTextField(
+            label: 'Ciudad de residencia',
+            hint: 'Bogotá, Medellín...',
+            controller: widget.cityCtrl,
+            prefixIcon: Icons.location_city_outlined,
+            keyboardType: TextInputType.text,
+            textCapitalization: TextCapitalization.words,
+          ),
+          const SizedBox(height: GSSpacing.s3),
+          // Date picker field
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Fecha de nacimiento',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: GSColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: GSSpacing.s1),
+              GestureDetector(
+                onTap: _pickBirthDate,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: GSSpacing.s4,
+                    vertical: GSSpacing.s3,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: GSColors.border),
+                    borderRadius: BorderRadius.circular(GSRadius.md),
+                    color: GSColors.surface,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_today_outlined,
+                        size: 20,
+                        color: GSColors.textSecondary,
+                      ),
+                      const SizedBox(width: GSSpacing.s3),
+                      Text(
+                        birthDateLabel,
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: _birthDate != null
+                              ? GSColors.textPrimary
+                              : GSColors.textDisabled,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: GSSpacing.s5),
           GSButton(

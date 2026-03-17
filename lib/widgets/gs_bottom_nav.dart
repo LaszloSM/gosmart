@@ -90,8 +90,8 @@ class _NavTile extends StatelessWidget {
             AnimatedContainer(
               duration: GSAnimDuration.pillSlide,
               curve: Curves.easeInOut,
-              padding: EdgeInsets.symmetric(
-                horizontal: isActive ? GSSpacing.s3 : GSSpacing.s2,
+              padding: const EdgeInsets.symmetric(
+                horizontal: GSSpacing.s2,
                 vertical: GSSpacing.s1,
               ),
               decoration: isActive
