@@ -53,7 +53,7 @@ class AiConversationNotifier extends StateNotifier<AiConversationState> {
   /// Send a user message and receive an assistant reply.
   /// The notifier reads state.history and passes it to sendMessage() —
   /// the screen never constructs or passes history directly.
-  Future<void> send(String query) async {
+  Future<void> send(String query, {String? selectedMode}) async {
     final trimmed = query.trim();
     if (trimmed.isEmpty) return;
 
@@ -69,6 +69,7 @@ class AiConversationNotifier extends StateNotifier<AiConversationState> {
       final reply = await aiService.sendMessage(
         query: trimmed,
         history: state.history,
+        selectedMode: selectedMode,
       );
 
       // Build updated history and trim to last 10 turns
