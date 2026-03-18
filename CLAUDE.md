@@ -106,7 +106,8 @@ lib/
 │   ├── authorize_result.dart     # NFC authorization result
 │   ├── card_model.dart           # CardModel
 │   ├── profile_model.dart        # ProfileModel (includes cedula, city, birthDate)
-│   └── transaction_model.dart    # TransactionModel
+│   ├── transaction_model.dart    # TransactionModel
+│   └── geocode_suggestion.dart   # Address suggestion from Mapbox Geocoding: placeName, fullAddress, latLng
 ├── providers/                    # Riverpod StateNotifierProviders
 │   ├── ai_conversation_provider.dart
 │   ├── auth_provider.dart
@@ -121,7 +122,8 @@ lib/
 │   ├── card_service.dart
 │   ├── profile_service.dart
 │   ├── location_service.dart     # GPS via geolocator — returns LatLng? (null if unavailable)
-│   └── directions_service.dart   # Mapbox Directions API v5 — walking/driving/cycling polylines
+│   ├── directions_service.dart   # Mapbox Directions API v5 — walking/driving/cycling polylines
+│   └── geocoding_service.dart    # Mapbox Geocoding API v5 — address search for Colombia (returns GeocodeSuggestion)
 ├── theme/
 │   ├── app_theme.dart            # MaterialApp ThemeData
 │   └── design_tokens.dart        # GSColors, GSSpacing, GSRadius, GSShadow, GSSize, etc.
@@ -143,6 +145,7 @@ All providers in `lib/providers/`. Pattern: `StateNotifierProvider<Notifier, Asy
 | `aiConversationProvider` | conversation history | |
 | `locationProvider` | `FutureProvider<LatLng?>` | One-shot GPS position for initial map center |
 | `activeRouteProvider` | `StateProvider<RouteResult?>` | Route currently drawn on home map |
+| `selectedModeProvider` | `StateProvider<String>` | Travel mode selected on home ('Auto' default) |
 
 **Critical state pattern** — `updateProfile()` preserves previous state on error:
 ```dart
