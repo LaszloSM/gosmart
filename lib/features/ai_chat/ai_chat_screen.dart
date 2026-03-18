@@ -1,10 +1,15 @@
 // lib/features/ai_chat/ai_chat_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_card.dart';
 import '../../providers/ai_conversation_provider.dart';
 import '../../models/ai_models.dart';
+import '../../providers/active_route_provider.dart';
+import '../../providers/selected_mode_provider.dart';
+import '../../router/app_router.dart';
+import '../../widgets/gs_button.dart';
 
 class AiChatScreen extends ConsumerStatefulWidget {
   const AiChatScreen({super.key});
@@ -37,7 +42,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     _ctrl.clear();
     // Scroll immediately so the user's own message is visible before the reply.
     _scrollToBottom();
-    await ref.read(aiConversationProvider.notifier).send(msg);
+    await ref.read(aiConversationProvider.notifier).send(
+      msg,
+      selectedMode: ref.read(selectedModeProvider),
+    );
     // Scroll again once the assistant reply is appended.
     _scrollToBottom();
   }
@@ -139,12 +147,22 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
 // ── Message bubble ────────────────────────────────────────────────────────────
 
-class _MessageBubble extends StatelessWidget {
+class _MessageBubble extends ConsumerStatefulWidget {
   const _MessageBubble({required this.message});
   final AiMessage message;
 
   @override
+  ConsumerState<_MessageBubble> createState() => _MessageBubbleState();
+}
+
+class _MessageBubbleState extends ConsumerState<_MessageBubble> {
+  /// Index into message.routeResults: 0=walking, 1=driving, 2=cycling.
+  /// Defaults to 1 (driving/bus) as the most common urban mode.
+  int _selectedRouteIdx = 1;
+
+  @override
   Widget build(BuildContext context) {
+    final message = widget.message;
     final isUser = message.role == 'user';
     final isEstimated = message.source == 'heuristic' ||
         message.source == 'cache';
@@ -244,6 +262,47 @@ class _MessageBubble extends StatelessWidget {
                   _RouteQuickCard(
                       routes: message.routes!,
                       isEstimated: isEstimated),
+                ],
+                // Real route chips + "Ver en mapa" button
+                if (message.routeResults != null) ...[
+                  const SizedBox(height: GSSpacing.s3),
+                  Wrap(
+                    spacing: GSSpacing.s2,
+                    runSpacing: GSSpacing.s2,
+                    children: List.generate(3, (i) {
+                      final r = message.routeResults![i];
+                      const labels = ['Caminando', 'Auto/Bus', 'Bici'];
+                      const icons = [
+                        Icons.directions_walk_rounded,
+                        Icons.directions_bus_rounded,
+                        Icons.pedal_bike_rounded,
+                      ];
+                      final label = r != null
+                          ? '${labels[i]} · ${r.durationMin} min'
+                          : '${labels[i]} · N/D';
+                      return ChoiceChip(
+                        avatar: Icon(icons[i], size: 14),
+                        label: Text(label,
+                            style: const TextStyle(fontSize: 12)),
+                        selected: _selectedRouteIdx == i,
+                        onSelected: r != null
+                            ? (_) => setState(() => _selectedRouteIdx = i)
+                            : null,
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: GSSpacing.s2),
+                  GSButton(
+                    label: 'Ver en mapa',
+                    leadingIcon: Icons.map_rounded,
+                    onPressed: message.routeResults![_selectedRouteIdx] != null
+                        ? () {
+                            ref.read(activeRouteProvider.notifier).state =
+                                message.routeResults![_selectedRouteIdx];
+                            context.go(AppRoutes.home);
+                          }
+                        : null,
+                  ),
                 ],
               ],
             ),
