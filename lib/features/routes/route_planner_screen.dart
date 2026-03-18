@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,10 +9,12 @@ import '../../widgets/gs_card.dart';
 import '../../widgets/gs_text_field.dart';
 import '../../widgets/gs_toast.dart';
 import '../../router/app_router.dart';
-import '../../models/route_result.dart';
+import '../../models/geocode_suggestion.dart';
 import '../../providers/active_route_provider.dart';
 import '../../services/location_service.dart';
 import '../../services/directions_service.dart';
+import '../../services/geocoding_service.dart';
+import '../../providers/selected_mode_provider.dart';
 
 class RoutePlannerScreen extends ConsumerStatefulWidget {
   const RoutePlannerScreen({super.key});
@@ -25,14 +28,16 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   final _destCtrl   = TextEditingController();
 
   LatLng? _originLatLng;
-  List<RouteResult?> _results = [null, null, null]; // walking, driving, cycling
+  LatLng? _destLatLng;
+  List<GeocodeSuggestion> _suggestions = [];
+  Timer? _debounce;
   bool _loading = false;
-  String _selected = RouteProfile.walking;
 
   @override
   void initState() {
     super.initState();
     _resolveOrigin();
+    _destCtrl.addListener(_onDestChanged);
   }
 
   Future<void> _resolveOrigin() async {
@@ -45,57 +50,65 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     }
   }
 
-  /// Parses a "lat,lng" string. Returns null if invalid.
-  LatLng? _parseDestination(String text) {
-    final parts = text.trim().split(',');
-    if (parts.length != 2) return null;
-    final lat = double.tryParse(parts[0].trim());
-    final lng = double.tryParse(parts[1].trim());
-    if (lat == null || lng == null) return null;
-    return LatLng(lat, lng);
+  void _onDestChanged() {
+    final text = _destCtrl.text.trim();
+    // Clear stored LatLng whenever user edits the field manually
+    if (_destLatLng != null) {
+      setState(() => _destLatLng = null);
+    }
+    if (text.length < 3) {
+      setState(() => _suggestions = []);
+      return;
+    }
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () async {
+      final results = await geocodingService.search(
+          text, proximity: _originLatLng);
+      if (mounted) setState(() => _suggestions = results);
+    });
   }
 
   Future<void> _search() async {
+    final messenger = ScaffoldMessenger.of(context);
     if (_originLatLng == null) {
-      final messenger = ScaffoldMessenger.of(context);
       GSToast.showWithMessenger(messenger,
           message: 'Obteniendo ubicación, espera un momento...');
       return;
     }
 
-    final destLatLng = _parseDestination(_destCtrl.text);
+    LatLng? destLatLng = _destLatLng;
     if (destLatLng == null) {
-      final messenger = ScaffoldMessenger.of(context);
-      GSToast.showWithMessenger(messenger,
-          message: 'Formato inválido. Usa: lat,lng  (ej: 4.6097,-74.0817)');
-      return;
+      final suggestion = await geocodingService.geocodeFirst(
+          _destCtrl.text.trim(), proximity: _originLatLng);
+      if (!mounted) return;
+      if (suggestion == null) {
+        GSToast.showWithMessenger(messenger,
+            message: 'Destino no encontrado. Selecciona una sugerencia.');
+        return;
+      }
+      destLatLng = suggestion.latLng;
+      setState(() => _destLatLng = destLatLng);
     }
 
     setState(() => _loading = true);
-
-    final results = await Future.wait([
-      directionsService.getRoute(
-          origin: _originLatLng!, destination: destLatLng, profile: RouteProfile.walking),
-      directionsService.getRoute(
-          origin: _originLatLng!, destination: destLatLng, profile: RouteProfile.driving),
-      directionsService.getRoute(
-          origin: _originLatLng!, destination: destLatLng, profile: RouteProfile.cycling),
-    ]);
-
-    if (mounted) setState(() { _results = results; _loading = false; });
-  }
-
-  void _selectRoute(String profile, int index) {
-    setState(() => _selected = profile);
-    final route = _results[index];
-    if (route != null) {
-      ref.read(activeRouteProvider.notifier).state = route;
+    final profile = routeProfileFor(ref.read(selectedModeProvider));
+    final result = await directionsService.getRoute(
+        origin: _originLatLng!, destination: destLatLng, profile: profile);
+    if (!mounted) return;
+    setState(() => _loading = false);
+    if (result != null) {
+      ref.read(activeRouteProvider.notifier).state = result;
       context.pop();
+    } else {
+      GSToast.showWithMessenger(messenger,
+          message: 'No se pudo calcular la ruta.');
     }
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
+    _destCtrl.removeListener(_onDestChanged);
     _originCtrl.dispose();
     _destCtrl.dispose();
     super.dispose();
@@ -119,6 +132,72 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       body: Column(
         children: [
           _LocationInputs(originCtrl: _originCtrl, destCtrl: _destCtrl),
+          // Autocomplete suggestions
+          if (_suggestions.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.fromLTRB(
+                  GSSpacing.s5, 0, GSSpacing.s5, GSSpacing.s3),
+              decoration: BoxDecoration(
+                color: GSColors.surface,
+                borderRadius: BorderRadius.circular(GSRadius.md),
+                border: Border.all(color: GSColors.border),
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _suggestions.length,
+                separatorBuilder: (_, __) =>
+                    const Divider(height: 1, color: GSColors.border),
+                itemBuilder: (_, i) {
+                  final s = _suggestions[i];
+                  return ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.location_on_outlined,
+                        size: 18, color: GSColors.accent),
+                    title: Text(s.placeName,
+                        style: const TextStyle(
+                            fontSize: 14,
+                            color: GSColors.textPrimary,
+                            fontWeight: FontWeight.w600)),
+                    subtitle: Text(s.fullAddress,
+                        style: const TextStyle(
+                            fontSize: 12, color: GSColors.textSecondary)),
+                    onTap: () {
+                      _destCtrl.removeListener(_onDestChanged);
+                      _destCtrl.text = s.placeName;
+                      _destCtrl.addListener(_onDestChanged);
+                      setState(() {
+                        _destLatLng = s.latLng;
+                        _suggestions = [];
+                      });
+                    },
+                  );
+                },
+              ),
+            ),
+          // Mode indicator
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                GSSpacing.s5, 0, GSSpacing.s5, GSSpacing.s3),
+            child: Row(
+              children: [
+                Icon(
+                  modeIconFor(ref.watch(selectedModeProvider)),
+                  size: 16,
+                  color: GSColors.accent,
+                ),
+                const SizedBox(width: GSSpacing.s2),
+                Text(
+                  'Modo: ${ref.watch(selectedModeProvider)}',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: GSColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s5),
             child: GSButton(
@@ -128,52 +207,8 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
             ),
           ),
           const SizedBox(height: GSSpacing.s4),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: GSSpacing.s5, vertical: GSSpacing.s2),
-              children: [
-                _buildCard(RouteProfile.walking, 0,
-                    icon: Icons.directions_walk_rounded,
-                    iconColor: GSColors.accent),
-                const SizedBox(height: GSSpacing.s3),
-                _buildCard(RouteProfile.driving, 1,
-                    icon: Icons.directions_bus_rounded,
-                    iconColor: const Color(0xFFFF8C00)),
-                const SizedBox(height: GSSpacing.s3),
-                _buildCard(RouteProfile.cycling, 2,
-                    icon: Icons.pedal_bike_rounded,
-                    iconColor: GSColors.eco),
-                const SizedBox(height: GSSpacing.s6),
-              ],
-            ),
-          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildCard(String profile, int index,
-      {required IconData icon, required Color iconColor}) {
-    final result = _results[index];
-    final timeStr = result != null ? '${result.durationMin} min' : '—';
-    final distStr = result != null
-        ? '${result.distanceKm.toStringAsFixed(1)} km'
-        : '—';
-
-    return _RouteCard(
-      option: _RouteOption(
-        id: profile,
-        label: RouteProfile.labelFor(profile),
-        icon: icon,
-        iconColor: iconColor,
-        time: timeStr,
-        cost: distStr,
-        co2: '',
-        steps: const [],
-      ),
-      isSelected: _selected == profile,
-      onTap: () => _selectRoute(profile, index),
     );
   }
 }
@@ -240,211 +275,6 @@ class _LocationInputs extends StatelessWidget {
               destCtrl.text = tmp;
             },
           ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Route option data class
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _RouteOption {
-  final String id;
-  final String label;
-  final IconData icon;
-  final Color iconColor;
-  final String time;
-  final String cost;
-  final String co2;
-  final List<_Step> steps;
-
-  const _RouteOption({
-    required this.id,
-    required this.label,
-    required this.icon,
-    required this.iconColor,
-    required this.time,
-    required this.cost,
-    required this.co2,
-    required this.steps,
-  });
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Step data class
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _Step {
-  final String label;
-  final IconData icon;
-  final Color color;
-
-  const _Step({
-    required this.label,
-    required this.icon,
-    required this.color,
-  });
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Route card
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _RouteCard extends StatelessWidget {
-  const _RouteCard({
-    required this.option,
-    required this.isSelected,
-    required this.onTap,
-  });
-  final _RouteOption option;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: GSDuration.normal,
-        padding: const EdgeInsets.all(GSSpacing.s4),
-        decoration: BoxDecoration(
-          color: isSelected ? GSColors.accentLight : GSColors.surface,
-          borderRadius: BorderRadius.circular(GSRadius.lg),
-          border: Border.all(
-            color: isSelected ? GSColors.accent : GSColors.border,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected ? GSShadow.primary : GSShadow.md,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header: icon + label + stats
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: option.iconColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(GSRadius.sm),
-                  ),
-                  child: Icon(option.icon, color: option.iconColor, size: 20),
-                ),
-                const SizedBox(width: GSSpacing.s3),
-                Expanded(
-                  child: Text(
-                    option.label,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                      color: GSColors.textPrimary,
-                    ),
-                  ),
-                ),
-                _StatBadge(Icons.access_time_rounded, option.time),
-                const SizedBox(width: GSSpacing.s2),
-                _StatBadge(
-                  Icons.straighten_rounded,
-                  option.cost,
-                  color: GSColors.eco,
-                ),
-              ],
-            ),
-            if (option.steps.isNotEmpty) ...[
-              const SizedBox(height: GSSpacing.s4),
-              // Timeline
-              Row(
-                children: option.steps.map((s) {
-                  final isLast = s == option.steps.last;
-                  return Expanded(
-                    child: Row(
-                      children: [
-                        Column(
-                          children: [
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: s.color.withValues(alpha: 0.12),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(s.icon, size: 16, color: s.color),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(s.label,
-                                style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: GSColors.textPrimary)),
-                          ],
-                        ),
-                        if (!isLast)
-                          Expanded(
-                            child: Container(
-                              height: 2,
-                              margin: const EdgeInsets.only(bottom: 16),
-                              color: GSColors.border,
-                            ),
-                          ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
-            if (option.co2.isNotEmpty) ...[
-              const SizedBox(height: GSSpacing.s3),
-              Row(
-                children: [
-                  const Icon(Icons.eco_rounded, size: 14, color: GSColors.eco),
-                  const SizedBox(width: 4),
-                  Text(
-                    option.co2,
-                    style: const TextStyle(
-                        fontSize: 12,
-                        color: GSColors.eco,
-                        fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Stat badge
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _StatBadge extends StatelessWidget {
-  const _StatBadge(this.icon, this.label, {this.color = GSColors.accent});
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(GSRadius.full),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(label,
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: color)),
         ],
       ),
     );
