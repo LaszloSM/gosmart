@@ -12,21 +12,27 @@ import '../models/geocode_suggestion.dart';
 class GeocodingService {
   static const _base = 'https://api.mapbox.com/geocoding/v5/mapbox.places';
 
-  /// Returns up to 5 address suggestions for [query].
+  /// Returns up to 8 address suggestions for [query].
   ///
   /// [proximity]: optional LatLng to bias results toward user location.
-  /// Returns [] if token is empty, query has fewer than 3 chars, or any error.
+  /// Returns [] if token is empty, query has fewer than 2 chars, or any error.
   Future<List<GeocodeSuggestion>> search(
     String query, {
     LatLng? proximity,
   }) async {
     final token = Env.mapboxToken;
-    if (token.isEmpty || query.trim().length < 3) return [];
+    if (token.isEmpty || query.trim().length < 2) return [];
 
     try {
       final encoded = Uri.encodeComponent(query.trim());
-      var url =
-          '$_base/$encoded.json?access_token=$token&country=co&language=es&limit=5';
+      var url = '$_base/$encoded.json'
+          '?access_token=$token'
+          '&country=co'
+          '&language=es'
+          '&limit=8'
+          '&autocomplete=true'
+          '&types=address,poi,neighborhood,locality,place'
+          '&bbox=-81.7,1.0,-66.8,13.4';
       if (proximity != null) {
         url += '&proximity=${proximity.longitude},${proximity.latitude}';
       }
@@ -45,6 +51,9 @@ class GeocodingService {
 
       return features.map((f) {
         final coords = f['geometry']['coordinates'] as List;
+        final placeTypes = f['place_type'] as List? ?? [];
+        final featureType =
+            placeTypes.isNotEmpty ? placeTypes[0] as String : 'place';
         return GeocodeSuggestion(
           placeName: f['text'] as String? ?? '',
           fullAddress: f['place_name'] as String? ?? '',
@@ -52,6 +61,7 @@ class GeocodingService {
             (coords[1] as num).toDouble(),
             (coords[0] as num).toDouble(),
           ),
+          featureType: featureType,
         );
       }).toList();
     } catch (e) {

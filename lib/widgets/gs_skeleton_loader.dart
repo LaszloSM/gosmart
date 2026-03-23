@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import '../theme/design_tokens.dart';
 
-/// Animated shimmer skeleton for loading states.
+/// Animated shimmer skeleton for loading states — dark edition.
 class GSSkeletonLoader extends StatefulWidget {
   const GSSkeletonLoader({
     super.key,
@@ -29,7 +29,7 @@ class _GSSkeletonLoaderState extends State<GSSkeletonLoader>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1400),
     )..repeat();
     _animation = Tween<double>(begin: -2, end: 2).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
@@ -56,9 +56,9 @@ class _GSSkeletonLoaderState extends State<GSSkeletonLoader>
               begin: Alignment(_animation.value - 1, 0),
               end: Alignment(_animation.value + 1, 0),
               colors: const [
-                Color(0xFFE8ECF2),
-                Color(0xFFF5F6FA),
-                Color(0xFFE8ECF2),
+                Color(0xFF141928), // surface
+                Color(0xFF202537), // surfaceContainerHighest
+                Color(0xFF141928), // surface
               ],
             ),
           ),
@@ -117,15 +117,6 @@ class GSCardSkeleton extends StatelessWidget {
 }
 
 /// Renders [itemCount] skeleton items with a staggered fade-in entrance.
-/// Each item fades in [GSAnimDuration.skeletonStagger]ms after the previous.
-///
-/// Usage:
-/// ```dart
-/// StaggeredSkeletonList(
-///   itemCount: 5,
-///   itemBuilder: (_) => const GSTransactionSkeleton(),
-/// )
-/// ```
 class StaggeredSkeletonList extends StatefulWidget {
   const StaggeredSkeletonList({
     super.key,

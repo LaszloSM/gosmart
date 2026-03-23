@@ -5,6 +5,7 @@ enum GSButtonVariant { primary, secondary, outline, ghost, eco, danger }
 enum GSButtonSize { sm, md, lg }
 
 /// GoSmart reusable button with AnimatedScale press feedback.
+/// Primary variant uses a kinetic green → cyan gradient.
 class GSButton extends StatefulWidget {
   const GSButton({
     super.key,
@@ -45,6 +46,8 @@ class _GSButtonState extends State<GSButton> {
     final colors = _variantColors;
     final dims = _sizeDims;
     final isDisabled = widget.isLoading || widget.onPressed == null;
+    final isPrimary = widget.variant == GSButtonVariant.primary;
+    final isEco = widget.variant == GSButtonVariant.eco;
 
     return Semantics(
       label: widget.semanticLabel ?? widget.label,
@@ -66,9 +69,9 @@ class _GSButtonState extends State<GSButton> {
                 borderRadius: BorderRadius.circular(GSRadius.full),
                 boxShadow: isDisabled
                     ? []
-                    : widget.variant == GSButtonVariant.primary
+                    : isPrimary
                         ? GSShadow.accent
-                        : widget.variant == GSButtonVariant.eco
+                        : isEco
                             ? GSShadow.eco
                             : [],
               ),
@@ -76,10 +79,25 @@ class _GSButtonState extends State<GSButton> {
                 height: dims.height,
                 padding: EdgeInsets.symmetric(horizontal: dims.hPad),
                 decoration: BoxDecoration(
-                  color: isDisabled ? GSColors.textDisabled : colors.bg,
+                  // Gradient for primary & eco; solid color for others
+                  gradient: !isDisabled && (isPrimary || isEco)
+                      ? LinearGradient(
+                          colors: isPrimary
+                              ? GSGradient.primaryButton
+                              : [GSColors.eco, GSColors.ecoDark],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        )
+                      : null,
+                  color: isDisabled
+                      ? GSColors.surfaceContainerHigh
+                      : (!isPrimary && !isEco) ? colors.bg : null,
                   borderRadius: BorderRadius.circular(GSRadius.full),
                   border: widget.variant == GSButtonVariant.outline
-                      ? Border.all(color: GSColors.accent, width: 1.5)
+                      ? Border.all(
+                          color: GSColors.accent.withValues(alpha: 0.40),
+                          width: 1.5,
+                        )
                       : widget.variant == GSButtonVariant.danger
                           ? Border.all(color: GSColors.error, width: 1.5)
                           : null,
@@ -94,6 +112,13 @@ class _GSButtonState extends State<GSButton> {
   }
 
   Widget _buildChild(_SizeDims dims, _VariantColors colors, bool isDisabled) {
+    final effectiveFg = isDisabled
+        ? GSColors.textDisabled
+        : (widget.variant == GSButtonVariant.primary ||
+                widget.variant == GSButtonVariant.eco)
+            ? GSColors.primary  // dark text on bright gradient
+            : colors.fg;
+
     if (widget.isLoading) {
       return Center(
         child: SizedBox(
@@ -101,7 +126,7 @@ class _GSButtonState extends State<GSButton> {
           height: dims.iconSize,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            color: isDisabled ? Colors.white : colors.fg,
+            color: effectiveFg,
           ),
         ),
       );
@@ -111,22 +136,21 @@ class _GSButtonState extends State<GSButton> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (widget.leadingIcon != null) ...[
-          Icon(widget.leadingIcon, size: dims.iconSize,
-              color: isDisabled ? Colors.white : colors.fg),
+          Icon(widget.leadingIcon, size: dims.iconSize, color: effectiveFg),
           const SizedBox(width: GSSpacing.s2),
         ],
         Text(
           widget.label,
           style: TextStyle(
             fontSize: dims.fontSize,
-            fontWeight: FontWeight.w600,
-            color: isDisabled ? Colors.white : colors.fg,
+            fontWeight: FontWeight.w700,
+            color: effectiveFg,
+            letterSpacing: 0.2,
           ),
         ),
         if (widget.trailingIcon != null) ...[
           const SizedBox(width: GSSpacing.s2),
-          Icon(widget.trailingIcon, size: dims.iconSize,
-              color: isDisabled ? Colors.white : colors.fg),
+          Icon(widget.trailingIcon, size: dims.iconSize, color: effectiveFg),
         ],
       ],
     );
@@ -135,7 +159,7 @@ class _GSButtonState extends State<GSButton> {
   _VariantColors get _variantColors {
     switch (widget.variant) {
       case GSButtonVariant.primary:
-        return const _VariantColors(GSColors.accent, Colors.white);
+        return const _VariantColors(GSColors.accent, GSColors.primary);
       case GSButtonVariant.secondary:
         return const _VariantColors(GSColors.accentLight, GSColors.accent);
       case GSButtonVariant.outline:
@@ -143,7 +167,7 @@ class _GSButtonState extends State<GSButton> {
       case GSButtonVariant.ghost:
         return const _VariantColors(Colors.transparent, GSColors.textSecondary);
       case GSButtonVariant.eco:
-        return const _VariantColors(GSColors.eco, Colors.white);
+        return const _VariantColors(GSColors.eco, GSColors.primary);
       case GSButtonVariant.danger:
         return const _VariantColors(Colors.transparent, GSColors.error);
     }

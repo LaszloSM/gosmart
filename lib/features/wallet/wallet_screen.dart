@@ -233,8 +233,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: isLocked
-                          ? const [Color(0xFF6B7280), Color(0xFF374151)]
-                          : const [Color(0xFF1A1A2E), Color(0xFF6C63FF)],
+                          ? const [Color(0xFF1A1F2F), Color(0xFF252B3F)]
+                          : [GSColors.primary, GSColors.accent],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -289,12 +289,13 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                               ),
                             )
                           else
-                            const Text(
+                            Text(
                               'GoSmart',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: GSColors.primary.withValues(alpha: 0.85),
                                 fontSize: 18,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.5,
                               ),
                             ),
                         ],
@@ -303,8 +304,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                       // Card number
                       Text(
                         card?.numberMasked ?? '•••• •••• •••• 0000',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: GSColors.primary.withValues(alpha: 0.75),
                           fontSize: 16,
                           letterSpacing: 3,
                           fontWeight: FontWeight.w500,
@@ -317,11 +318,12 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'Saldo disponible',
                                 style: TextStyle(
-                                  color: Colors.white70,
+                                  color: GSColors.primary.withValues(alpha: 0.65),
                                   fontSize: 11,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                               _AnimatedBalance(
@@ -761,8 +763,8 @@ class _AnimatedBalance extends StatelessWidget {
         '\$${value.toStringAsFixed(0)} COP',
         style: const TextStyle(
           fontSize: 32,
-          fontWeight: FontWeight.w700,
-          color: Colors.white,
+          fontWeight: FontWeight.w800,
+          color: GSColors.primary,
           letterSpacing: -0.5,
         ),
       ),

@@ -1,58 +1,85 @@
 import 'package:flutter/material.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GoSmart Design Tokens — single source of truth
+// GoSmart Design Tokens — "Kinetic Flow" dark edition
 // ─────────────────────────────────────────────────────────────────────────────
 
 abstract class GSColors {
-  // ── Brand ──────────────────────────────────────────────────────────────────
-  /// Dark navy — use as background or dark surface color only.
-  static const primary = Color(0xFF1A1A2E);
+  // ── Base surface hierarchy (dark layering system) ──────────────────────────
+  /// Deepest base — use as scaffold/page background.
+  static const primary = Color(0xFF0A0E1A);
 
-  /// Teal — primary interactive / CTA color (replaces old blue for foreground use).
-  static const accent = Color(0xFF00D4AA);
-  static const accentHover = Color(0xFF00B894);
-  static const accentLight = Color(0xFFE6FAF6);
+  /// Sectioning layer — separates background from cards.
+  static const surfaceContainerLow = Color(0xFF0E1320);
 
-  /// Violet — secondary accent, eco points, card gradients.
-  static const accentAlt = Color(0xFF6C63FF);
-  static const accentAltLight = Color(0xFFEEEDFF);
+  /// Default card surface.
+  static const surface = Color(0xFF141928);
+
+  /// Elevated card / prominent element.
+  static const surfaceContainerHigh = Color(0xFF1A1F2F);
+
+  /// Modals, sheets, overlays.
+  static const surfaceContainerHighest = Color(0xFF202537);
+
+  /// Active / highlighted states (e.g. focused input ring).
+  static const surfaceBright = Color(0xFF252B3F);
+
+  // ── Kinetic Green — primary interactive / CTA ──────────────────────────────
+  static const accent = Color(0xFF5CFD80);
+  static const accentHover = Color(0xFF4BEE74);
+
+  /// Used as gradient endpoint on primary buttons.
+  static const accentContainer = Color(0xFF02C953);
+
+  /// Dark container for accent-tinted backgrounds.
+  static const accentLight = Color(0xFF003711);
+
+  // ── Cyan — secondary accent ────────────────────────────────────────────────
+  static const accentAlt = Color(0xFF45FEC9);
+  static const accentAltLight = Color(0xFF006C52);
+
+  // ── Sky Blue — tertiary ────────────────────────────────────────────────────
+  static const tertiary = Color(0xFF57BCFF);
+  static const tertiaryLight = Color(0xFF003552);
 
   // ── Eco ────────────────────────────────────────────────────────────────────
-  static const eco = Color(0xFF3CB371);
-  static const ecoLight = Color(0xFFE8F5EE);
-  static const ecoDark = Color(0xFF28865A);
+  static const eco = Color(0xFF5CFD80);
+  static const ecoLight = Color(0xFF003711);
+  static const ecoDark = Color(0xFF4BEE74);
 
   // ── Neutral ────────────────────────────────────────────────────────────────
-  static const bg = Color(0xFFF5F6FA);
-  static const surface = Color(0xFFFFFFFF);
-  static const surfaceDark = Color(0xFFF5F6FA);
-  static const border = Color(0xFFE8ECF2);
-  static const textPrimary = Color(0xFF1A1A2E);
-  static const textSecondary = Color(0xFF8F9BB3);
-  static const textDisabled = Color(0xFFC5CCD9);
+  static const bg = Color(0xFF0A0E1A);
+
+  /// Alias kept for legacy uses — equals surfaceContainerLow.
+  static const surfaceDark = Color(0xFF0E1320);
+
+  /// Subtle outline — replaces hard 1px borders (use at 15–40% opacity).
+  static const border = Color(0xFF444756);
+
+  static const textPrimary = Color(0xFFE2E4F6);
+  static const textSecondary = Color(0xFFA7AABB);
+  static const textDisabled = Color(0xFF717584);
 
   // ── Semantic ───────────────────────────────────────────────────────────────
-  static const success = Color(0xFF2ED573);
-  static const successLight = Color(0xFFDCFCE7);
+  static const success = Color(0xFF5CFD80);
+  static const successLight = Color(0xFF003711);
   static const warning = Color(0xFFFFA502);
-  static const warningLight = Color(0xFFFEF3C7);
-  static const error = Color(0xFFFF4757);
-  static const errorLight = Color(0xFFFFF0F1);
-  static const info = Color(0xFF3498DB);
-  static const infoLight = Color(0xFFDBEAFE);
+  static const warningLight = Color(0xFF3D2600);
+  static const error = Color(0xFFFF7351);
+  static const errorLight = Color(0xFF3D1500);
+  static const info = Color(0xFF57BCFF);
+  static const infoLight = Color(0xFF003552);
 
   // ── Transport modes ────────────────────────────────────────────────────────
-  static const car = Color(0xFF00D4AA);
-  static const taxi = Color(0xFFFFA502);
-  static const bus = Color(0xFF6C63FF);
-  static const bike = Color(0xFF3CB371);
-  static const walk = Color(0xFF8F9BB3);
-  static const metro = Color(0xFFFF4757);
+  static const car = Color(0xFF5CFD80);    // kinetic green
+  static const taxi = Color(0xFFFFA502);   // amber
+  static const bus = Color(0xFF6C63FF);    // violet (kept for visual distinction)
+  static const bike = Color(0xFF45FEC9);   // cyan
+  static const walk = Color(0xFFA7AABB);   // muted
+  static const metro = Color(0xFFFF7351);  // coral red
 
   // ── Card ───────────────────────────────────────────────────────────────────
   static const cardGold = Color(0xFFC9A84C);
-
 }
 
 abstract class GSSpacing {
@@ -73,7 +100,7 @@ abstract class GSRadius {
   static const double md = 12;
   static const double lg = 16;
   static const double xl = 20;
-  static const double xxl = 28; // updated from 24 — used for bottom sheets
+  static const double xxl = 28;
   static const double full = 9999;
 
   static BorderRadius get cardRadius => BorderRadius.circular(xl);
@@ -86,75 +113,80 @@ abstract class GSRadius {
 abstract class GSShadow {
   static List<BoxShadow> get sm => [
         BoxShadow(
-          color: GSColors.textPrimary.withValues(alpha: 0.06),
-          blurRadius: 3,
-          offset: const Offset(0, 1),
+          color: Colors.black.withValues(alpha: 0.18),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
         ),
       ];
 
   static List<BoxShadow> get md => [
         BoxShadow(
-          color: GSColors.textPrimary.withValues(alpha: 0.08),
-          blurRadius: 12,
+          color: Colors.black.withValues(alpha: 0.28),
+          blurRadius: 20,
           offset: const Offset(0, 4),
         ),
         BoxShadow(
-          color: GSColors.textPrimary.withValues(alpha: 0.04),
-          blurRadius: 4,
-          offset: const Offset(0, 2),
+          color: const Color(0xFF5CFD80).withValues(alpha: 0.04),
+          blurRadius: 20,
+          offset: const Offset(0, 0),
         ),
       ];
 
   static List<BoxShadow> get lg => [
         BoxShadow(
-          color: GSColors.textPrimary.withValues(alpha: 0.10),
-          blurRadius: 24,
+          color: Colors.black.withValues(alpha: 0.32),
+          blurRadius: 40,
           offset: const Offset(0, 8),
         ),
         BoxShadow(
-          color: GSColors.textPrimary.withValues(alpha: 0.06),
-          blurRadius: 8,
+          color: const Color(0xFF5CFD80).withValues(alpha: 0.06),
+          blurRadius: 40,
+          offset: const Offset(0, 0),
+        ),
+      ];
+
+  /// Ambient floating card shadow — tinted with kinetic green.
+  static List<BoxShadow> get card => [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.24),
+          blurRadius: 32,
+          offset: const Offset(0, 4),
+        ),
+        BoxShadow(
+          color: const Color(0xFF5CFD80).withValues(alpha: 0.04),
+          blurRadius: 32,
+          offset: const Offset(0, 0),
+        ),
+      ];
+
+  /// Kinetic green glow — use for primary CTA buttons.
+  static List<BoxShadow> get accent => [
+        BoxShadow(
+          color: const Color(0xFF5CFD80).withValues(alpha: 0.28),
+          blurRadius: 24,
           offset: const Offset(0, 4),
         ),
       ];
 
-  /// Soft floating card shadow — use for cards and sheets.
-  static List<BoxShadow> get card => [
-        const BoxShadow(
-          color: Color(0x14000000), // black @ 8% opacity
-          blurRadius: 20,
-          offset: Offset(0, 4),
-        ),
-      ];
-
-  /// Accent glow — use for primary CTA buttons.
-  static List<BoxShadow> get accent => [
-        const BoxShadow(
-          color: Color(0x5900D4AA), // accent @ 35% opacity
-          blurRadius: 24,
-          offset: Offset(0, 4),
-        ),
-      ];
-
-  /// Kept as alias for accent shadow (backward compat with button code).
+  /// Alias kept for backward compat.
   static List<BoxShadow> get primary => accent;
 
   static List<BoxShadow> get eco => [
         BoxShadow(
-          color: GSColors.eco.withValues(alpha: 0.22),
+          color: GSColors.eco.withValues(alpha: 0.24),
           blurRadius: 20,
-          offset: const Offset(0, 8),
+          offset: const Offset(0, 6),
         ),
       ];
 
   static List<BoxShadow> get neumorphic => [
         BoxShadow(
-          color: GSColors.textPrimary.withValues(alpha: 0.07),
+          color: Colors.black.withValues(alpha: 0.40),
           blurRadius: 14,
           offset: const Offset(6, 6),
         ),
         BoxShadow(
-          color: Colors.white.withValues(alpha: 0.9),
+          color: GSColors.surfaceBright.withValues(alpha: 0.6),
           blurRadius: 10,
           offset: const Offset(-4, -4),
         ),
@@ -182,23 +214,35 @@ abstract class GSSize {
 }
 
 abstract class GSGlass {
-  static const double blur = 20;
-  static const double backgroundOpacity = 0.72;
-  static const double borderOpacity = 0.18;
+  static const double blur = 24;
+  static const double backgroundOpacity = 0.88;
+  static const double borderOpacity = 0.10;
   static const double borderWidth = 1.0;
 }
 
 abstract class GSGradient {
+  /// Primary CTA gradient — kinetic green → cyan.
   static List<Color> get accentPill => [GSColors.accent, GSColors.accentAlt];
+
+  /// Subtle gloss highlight for cards.
   static List<Color> get cardGloss =>
-      [Colors.white.withValues(alpha: 0.08), Colors.transparent];
+      [Colors.white.withValues(alpha: 0.05), Colors.transparent];
+
+  /// Avatar ring gradient.
   static List<Color> get avatarRing => [GSColors.accent, GSColors.accentAlt];
+
+  /// Primary button gradient.
+  static List<Color> get primaryButton => [GSColors.accent, GSColors.accentAlt];
+
+  /// Smart card gradient — deep navy → kinetic green.
+  static List<Color> get smartCard =>
+      [const Color(0xFF0A0E1A), GSColors.accent];
 }
 
 abstract class GSAnimDuration {
   static const countUp = Duration(milliseconds: 800);
   static const checkmarkStroke = Duration(milliseconds: 600);
   static const particleBurst = Duration(milliseconds: 700);
-  static const int skeletonStagger = 80; // ms per item
+  static const int skeletonStagger = 80;
   static const pillSlide = Duration(milliseconds: 200);
 }

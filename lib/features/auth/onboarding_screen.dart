@@ -67,13 +67,13 @@ class OnboardingScreen extends StatelessWidget {
                 ),
               ),
             ),
-            // Bottom card (flex:4) — white rounded top
+            // Bottom card (flex:4) — dark rounded top
             Expanded(
               flex: 4,
               child: Container(
                 width: double.infinity,
                 decoration: const BoxDecoration(
-                  color: Colors.white,
+                  color: GSColors.surface,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
                 ),
                 padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
@@ -85,10 +85,10 @@ class OnboardingScreen extends StatelessWidget {
                     const Text(
                       'GoSmart',
                       style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 36,
+                        fontWeight: FontWeight.w800,
                         color: GSColors.accent,
-                        letterSpacing: -0.5,
+                        letterSpacing: -1.0,
                       ),
                     ),
                     const SizedBox(height: 8),

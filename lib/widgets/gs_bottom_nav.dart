@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../theme/design_tokens.dart';
 
-/// Glass bottom navigation bar.
-/// Active tab: gradient pill (teal→violet) with icon + label.
+/// Glass bottom navigation bar — dark edition.
+/// Active tab: kinetic green → cyan gradient pill with icon + label.
 /// Inactive tabs: icon + label (9sp, muted).
 class GSBottomNav extends StatelessWidget {
   const GSBottomNav({
@@ -35,10 +35,10 @@ class GSBottomNav extends StatelessWidget {
         child: Container(
           height: GSSize.bottomNav + MediaQuery.of(context).padding.bottom,
           decoration: BoxDecoration(
-            color: GSColors.surface.withValues(alpha: GSGlass.backgroundOpacity),
+            color: GSColors.primary.withValues(alpha: GSGlass.backgroundOpacity),
             border: Border(
               top: BorderSide(
-                color: Colors.white.withValues(alpha: GSGlass.borderOpacity),
+                color: GSColors.accent.withValues(alpha: GSGlass.borderOpacity),
                 width: GSGlass.borderWidth,
               ),
             ),
@@ -82,7 +82,7 @@ class _NavTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(GSRadius.full),
-        splashColor: GSColors.accent.withValues(alpha: 0.12),
+        splashColor: GSColors.accent.withValues(alpha: 0.10),
         highlightColor: Colors.transparent,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -91,7 +91,7 @@ class _NavTile extends StatelessWidget {
               duration: GSAnimDuration.pillSlide,
               curve: Curves.easeInOut,
               padding: const EdgeInsets.symmetric(
-                horizontal: GSSpacing.s2,
+                horizontal: GSSpacing.s3,
                 vertical: GSSpacing.s1,
               ),
               decoration: isActive
@@ -102,6 +102,13 @@ class _NavTile extends StatelessWidget {
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: GSColors.accent.withValues(alpha: 0.20),
+                          blurRadius: 12,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     )
                   : const BoxDecoration(),
               child: Row(
@@ -110,7 +117,7 @@ class _NavTile extends StatelessWidget {
                   Icon(
                     item.icon,
                     size: GSSize.iconLg,
-                    color: isActive ? Colors.white : GSColors.textDisabled,
+                    color: isActive ? GSColors.primary : GSColors.textDisabled,
                   ),
                   if (isActive) ...[
                     const SizedBox(width: GSSpacing.s1),
@@ -118,8 +125,8 @@ class _NavTile extends StatelessWidget {
                       item.label,
                       style: const TextStyle(
                         fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        color: GSColors.primary,
                       ),
                     ),
                   ],

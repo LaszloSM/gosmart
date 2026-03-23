@@ -17,6 +17,7 @@ import '../../models/transaction_model.dart';
 import '../../models/route_result.dart';
 import '../../providers/active_route_provider.dart';
 import '../../services/location_service.dart';
+import '../../providers/selected_mode_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -27,6 +28,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _selectedMode = 'Auto';
+  final _sheetCtrl = DraggableScrollableController();
 
   static const _modes = [
     _Mode('Auto', Icons.directions_car_rounded, GSColors.car),
@@ -35,6 +37,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _Mode('Bici', Icons.pedal_bike_rounded, GSColors.bike),
     _Mode('Metro', Icons.subway_rounded, GSColors.metro),
   ];
+
+  @override
+  void dispose() {
+    _sheetCtrl.dispose();
+    super.dispose();
+  }
 
   void _onNavTap(int index) {
     switch (index) {
@@ -179,6 +187,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider);
+
+    ref.listen<RouteResult?>(activeRouteProvider, (prev, next) {
+      if (!_sheetCtrl.isAttached) return;
+      if (next != null && prev == null) {
+        _sheetCtrl.animateTo(
+          0.12,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOut,
+        );
+      } else if (next == null && prev != null) {
+        _sheetCtrl.animateTo(
+          0.28,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+
     return Scaffold(
       extendBody: true,
       backgroundColor: GSColors.bg,
@@ -194,7 +220,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Color(0xCC1A1A2E)],
+                  colors: [Colors.transparent, Color(0xEE0A0E1A)],
                   stops: [0.4, 1.0],
                 ),
               ),
@@ -211,9 +237,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xEEFFFFFF),
+                    color: GSColors.surfaceContainerHighest.withValues(alpha: 0.92),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: GSShadow.card,
+                    border: Border.all(
+                      color: GSColors.accent.withValues(alpha: 0.08),
+                      width: 1,
+                    ),
                   ),
                   padding: const EdgeInsets.all(12),
                   child: Row(
@@ -302,18 +332,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
           // ── Layer 3: DraggableScrollableSheet ──────────────────────────────
           DraggableScrollableSheet(
-            initialChildSize: 0.48,
+            controller: _sheetCtrl,
+            initialChildSize: 0.28,
             minChildSize: 0.12,
             maxChildSize: 0.90,
             snap: true,
+            snapSizes: const [0.12, 0.28, 0.80],
             builder: (context, scrollController) {
               return Container(
                 decoration: BoxDecoration(
-                  color: GSColors.surface,
+                  color: GSColors.surfaceContainerHigh,
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(GSRadius.xxl),
                   ),
                   boxShadow: GSShadow.lg,
+                  border: Border(
+                    top: BorderSide(
+                      color: GSColors.accent.withValues(alpha: 0.08),
+                      width: 1,
+                    ),
+                  ),
                 ),
                 child: ListView(
                   controller: scrollController,
@@ -369,8 +407,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               icon: m.icon,
                               color: m.color,
                               isSelected: _selectedMode == m.label,
-                              onTap: () =>
-                                  setState(() => _selectedMode = m.label),
+                              onTap: () {
+                                setState(() => _selectedMode = m.label);
+                                ref.read(selectedModeProvider.notifier).state = m.label;
+                              },
                             ),
                           );
                         }).toList(),
@@ -572,7 +612,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             },
           ),
 
-          // ── Layer 4: Bottom nav ─────────────────────────────────────────────
+          // ── Layer 4b: Route banner (above bottom nav) ──────────────────────
+          Consumer(
+            builder: (ctx, ref, _) {
+              final route = ref.watch(activeRouteProvider);
+              if (route == null) return const SizedBox.shrink();
+              return Positioned(
+                bottom: GSSize.bottomNav,
+                left: 0,
+                right: 0,
+                child: _RouteBanner(route: route),
+              );
+            },
+          ),
+
+          // ── Layer 5: Bottom nav ─────────────────────────────────────────────
           Positioned(
             bottom: 0,
             left: 0,
@@ -606,6 +660,7 @@ class _AppMapState extends ConsumerState<_AppMap>
   late final Animation<double> _pulse;
 
   LatLng _userPosition = _bogota;
+  LatLng? _longPressPoint;
 
   @override
   void initState() {
@@ -647,6 +702,24 @@ class _AppMapState extends ConsumerState<_AppMap>
   Widget build(BuildContext context) {
     final activeRoute = ref.watch(activeRouteProvider);
 
+    // Auto-fit camera to route when a new route becomes active
+    ref.listen<RouteResult?>(activeRouteProvider, (prev, next) {
+      if (next != null && next.legs.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          final allPoints = next.legs.expand((l) => l.points).toList();
+          if (allPoints.length > 1) {
+            _mapController.fitCamera(
+              CameraFit.bounds(
+                bounds: LatLngBounds.fromPoints(allPoints),
+                padding: const EdgeInsets.fromLTRB(40, 120, 40, 200),
+              ),
+            );
+          }
+        });
+      }
+    });
+
     return Stack(
       children: [
         FlutterMap(
@@ -654,9 +727,14 @@ class _AppMapState extends ConsumerState<_AppMap>
           options: MapOptions(
             initialCenter: _userPosition,
             initialZoom: 14,
+            minZoom: 5.0,
+            maxZoom: 19.0,
             interactionOptions: const InteractionOptions(
-              flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+              flags: InteractiveFlag.all,
             ),
+            onLongPress: (tapPosition, point) {
+              setState(() => _longPressPoint = point);
+            },
           ),
           children: [
             TileLayer(
@@ -677,6 +755,8 @@ class _AppMapState extends ConsumerState<_AppMap>
                           points: leg.points,
                           strokeWidth: 5.0,
                           color: leg.color,
+                          borderColor: Colors.black26,
+                          borderStrokeWidth: 1.5,
                         ))
                     .toList(),
               ),
@@ -686,12 +766,53 @@ class _AppMapState extends ConsumerState<_AppMap>
                 markers: [
                   Marker(
                     point: activeRoute.legs.last.points.last,
-                    width: 32,
-                    height: 32,
-                    child: const Icon(
-                      Icons.location_pin,
-                      color: Colors.red,
-                      size: 32,
+                    width: 40,
+                    height: 40,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: GSColors.error,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: GSColors.error.withValues(alpha: 0.4),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.location_on,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            // Origin marker (shown when a route is active)
+            if (activeRoute != null && activeRoute.legs.isNotEmpty)
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: activeRoute.legs.first.points.first,
+                    width: 36,
+                    height: 36,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: GSColors.accent,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: GSColors.accent.withValues(alpha: 0.4),
+                            blurRadius: 6,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                          Icons.my_location, color: Colors.white, size: 16),
                     ),
                   ),
                 ],
@@ -707,13 +828,47 @@ class _AppMapState extends ConsumerState<_AppMap>
                 ),
               ],
             ),
+            // Long-press destination pin
+            if (_longPressPoint != null)
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: _longPressPoint!,
+                    width: 44,
+                    height: 44,
+                    child: const Icon(
+                      Icons.location_on,
+                      color: Colors.orangeAccent,
+                      size: 44,
+                    ),
+                  ),
+                ],
+              ),
           ],
         ),
 
-        // FAB — re-center on user position
+        // "¿Ir aquí?" overlay when a long-press destination is selected
+        if (_longPressPoint != null)
+          Positioned(
+            left: GSSpacing.s4,
+            right: GSSpacing.s4,
+            bottom: GSSize.bottomNav + GSSpacing.s4,
+            child: _GoHereCard(
+              point: _longPressPoint!,
+              onConfirm: () {
+                ref.read(pendingDestinationProvider.notifier).state =
+                    _longPressPoint;
+                setState(() => _longPressPoint = null);
+                context.push(AppRoutes.routePlanner);
+              },
+              onCancel: () => setState(() => _longPressPoint = null),
+            ),
+          ),
+
+        // FAB — re-center on user position (above bottom nav)
         Positioned(
           right: GSSpacing.s4,
-          bottom: GSSpacing.s4,
+          bottom: GSSize.bottomNav + GSSpacing.s4,
           child: FloatingActionButton.small(
             heroTag: 'recenter',
             backgroundColor: GSColors.primary,
@@ -721,15 +876,6 @@ class _AppMapState extends ConsumerState<_AppMap>
             child: const Icon(Icons.my_location, color: Colors.white, size: 20),
           ),
         ),
-
-        // Active route banner
-        if (activeRoute != null)
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: _RouteBanner(route: activeRoute),
-          ),
       ],
     );
   }
@@ -812,6 +958,105 @@ class _PulsingMarker extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─── "¿Ir aquí?" card overlay ─────────────────────────────────────────────────
+
+class _GoHereCard extends StatelessWidget {
+  const _GoHereCard({
+    required this.point,
+    required this.onConfirm,
+    required this.onCancel,
+  });
+  final LatLng point;
+  final VoidCallback onConfirm;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: GSSpacing.s4,
+        vertical: GSSpacing.s3,
+      ),
+      decoration: BoxDecoration(
+        color: GSColors.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(GSRadius.xl),
+        boxShadow: GSShadow.lg,
+        border: Border.all(
+          color: GSColors.accent.withValues(alpha: 0.15),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.orangeAccent.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.location_on,
+              color: Colors.orangeAccent,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: GSSpacing.s3),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  '¿Ir aquí?',
+                  style: TextStyle(
+                    color: GSColors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  '${point.latitude.toStringAsFixed(4)}, ${point.longitude.toStringAsFixed(4)}',
+                  style: const TextStyle(
+                    color: GSColors.textSecondary,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: GSSpacing.s2),
+          TextButton(
+            onPressed: onCancel,
+            style: TextButton.styleFrom(
+              foregroundColor: GSColors.textSecondary,
+              padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s2),
+              minimumSize: Size.zero,
+            ),
+            child: const Text('Cancelar'),
+          ),
+          const SizedBox(width: GSSpacing.s1),
+          FilledButton(
+            onPressed: onConfirm,
+            style: FilledButton.styleFrom(
+              backgroundColor: GSColors.accent,
+              foregroundColor: GSColors.bg,
+              padding: const EdgeInsets.symmetric(
+                horizontal: GSSpacing.s3,
+                vertical: GSSpacing.s2,
+              ),
+              minimumSize: Size.zero,
+            ),
+            child: const Text(
+              'Buscar ruta',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

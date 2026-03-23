@@ -11,6 +11,8 @@ class RouteLeg {
   final Color color;
   final int durationMin;
   final double distanceKm;
+  final String? instruction; // e.g. "Toma el Metro Línea A hasta Industriales"
+  final String? lineId;      // e.g. "A", "B", "TransMilenio"
 
   const RouteLeg({
     required this.mode,
@@ -18,6 +20,8 @@ class RouteLeg {
     required this.color,
     required this.durationMin,
     required this.distanceKm,
+    this.instruction,
+    this.lineId,
   });
 }
 
@@ -27,12 +31,16 @@ class RouteResult {
   final double distanceKm;
   final int durationMin;
   final String profile; // 'walking' | 'driving' | 'cycling'
+  final int estimatedCostCop;  // estimated cost in Colombian pesos
+  final String category;       // 'private' or 'public'
 
   const RouteResult({
     required this.legs,
     required this.distanceKm,
     required this.durationMin,
     required this.profile,
+    this.estimatedCostCop = 0,
+    this.category = 'private',
   });
 }
 

@@ -6,32 +6,25 @@ import 'design_tokens.dart';
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get light {
-    final textTheme = GoogleFonts.interTextTheme(ThemeData.light().textTheme).copyWith(
-      displayLarge: GoogleFonts.inter(
-        fontSize: 32, fontWeight: FontWeight.w700,
-        color: GSColors.textPrimary, height: 1.2,
-      ),
-      displayMedium: GoogleFonts.inter(
-        fontSize: 28, fontWeight: FontWeight.w700,
-        color: GSColors.textPrimary, height: 1.2,
-      ),
-      displaySmall: GoogleFonts.inter(
-        fontSize: 24, fontWeight: FontWeight.w700,
-        color: GSColors.textPrimary, height: 1.3,
-      ),
-      headlineLarge: GoogleFonts.inter(
-        fontSize: 24, fontWeight: FontWeight.w600,
-        color: GSColors.textPrimary,
-      ),
-      headlineMedium: GoogleFonts.inter(
-        fontSize: 20, fontWeight: FontWeight.w600,
-        color: GSColors.textPrimary,
-      ),
-      headlineSmall: GoogleFonts.inter(
-        fontSize: 17, fontWeight: FontWeight.w600,
-        color: GSColors.textPrimary,
-      ),
+  static ThemeData get dark {
+    // Display & headlines use Plus Jakarta Sans (editorial, premium).
+    // Body & labels use Inter (legible at small sizes).
+    final displayStyle = GoogleFonts.plusJakartaSans(
+      color: GSColors.textPrimary,
+      fontWeight: FontWeight.w700,
+    );
+    final headlineStyle = GoogleFonts.plusJakartaSans(
+      color: GSColors.textPrimary,
+      fontWeight: FontWeight.w700,
+    );
+
+    final textTheme = ThemeData.dark().textTheme.copyWith(
+      displayLarge: displayStyle.copyWith(fontSize: 32, height: 1.2),
+      displayMedium: displayStyle.copyWith(fontSize: 28, height: 1.2),
+      displaySmall: displayStyle.copyWith(fontSize: 24, height: 1.3),
+      headlineLarge: headlineStyle.copyWith(fontSize: 24, fontWeight: FontWeight.w700),
+      headlineMedium: headlineStyle.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+      headlineSmall: headlineStyle.copyWith(fontSize: 17, fontWeight: FontWeight.w600),
       titleLarge: GoogleFonts.inter(
         fontSize: 17, fontWeight: FontWeight.w600,
         color: GSColors.textPrimary,
@@ -58,7 +51,7 @@ class AppTheme {
       ),
       labelLarge: GoogleFonts.inter(
         fontSize: 15, fontWeight: FontWeight.w600,
-        color: GSColors.textPrimary, // neutral default; buttons override this
+        color: GSColors.textPrimary,
       ),
       labelMedium: GoogleFonts.inter(
         fontSize: 13, fontWeight: FontWeight.w500,
@@ -72,35 +65,35 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
+      brightness: Brightness.dark,
       colorScheme: const ColorScheme(
-        brightness: Brightness.light,
+        brightness: Brightness.dark,
         primary: GSColors.accent,
-        onPrimary: Colors.white,
-        primaryContainer: GSColors.accentLight,
-        onPrimaryContainer: GSColors.primary,
+        onPrimary: Color(0xFF003711),
+        primaryContainer: GSColors.accentContainer,
+        onPrimaryContainer: GSColors.textPrimary,
         secondary: GSColors.accentAlt,
-        onSecondary: Colors.white,
+        onSecondary: Color(0xFF003D2E),
         secondaryContainer: GSColors.accentAltLight,
-        onSecondaryContainer: GSColors.primary,
-        tertiary: GSColors.eco,
-        onTertiary: Colors.white,
-        tertiaryContainer: GSColors.ecoLight,
-        onTertiaryContainer: GSColors.ecoDark,
+        onSecondaryContainer: GSColors.textPrimary,
+        tertiary: GSColors.tertiary,
+        onTertiary: GSColors.tertiaryLight,
+        tertiaryContainer: GSColors.tertiaryLight,
+        onTertiaryContainer: GSColors.textPrimary,
         error: GSColors.error,
-        onError: Colors.white,
+        onError: Color(0xFF3D1500),
         errorContainer: GSColors.errorLight,
         onErrorContainer: GSColors.error,
         surface: GSColors.surface,
         onSurface: GSColors.textPrimary,
-        surfaceContainerHighest: GSColors.surfaceDark,
+        surfaceContainerHighest: GSColors.surfaceContainerHighest,
         onSurfaceVariant: GSColors.textSecondary,
         outline: GSColors.border,
-        outlineVariant: GSColors.border,
+        outlineVariant: GSColors.surfaceBright,
         shadow: Colors.black,
         scrim: Colors.black,
-        inverseSurface: GSColors.primary,
-        onInverseSurface: Colors.white,
+        inverseSurface: GSColors.textPrimary,
+        onInverseSurface: GSColors.primary,
         inversePrimary: GSColors.accentLight,
       ),
       scaffoldBackgroundColor: GSColors.bg,
@@ -108,16 +101,16 @@ class AppTheme {
 
       // AppBar
       appBarTheme: AppBarTheme(
-        backgroundColor: GSColors.surface,
+        backgroundColor: GSColors.bg,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark,
+          statusBarIconBrightness: Brightness.light,
         ),
-        titleTextStyle: GoogleFonts.inter(
-          fontSize: 17, fontWeight: FontWeight.w600,
+        titleTextStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 17, fontWeight: FontWeight.w700,
           color: GSColors.textPrimary,
         ),
         iconTheme: const IconThemeData(color: GSColors.textPrimary, size: 24),
@@ -133,21 +126,27 @@ class AppTheme {
         margin: EdgeInsets.zero,
       ),
 
-      // Input
+      // Input — dark fields with ghost border
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: GSColors.surface,
+        fillColor: GSColors.surfaceContainerLow,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(GSRadius.xl),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(GSRadius.xl),
-          borderSide: const BorderSide(color: GSColors.border, width: 1),
+          borderSide: BorderSide(
+            color: GSColors.border.withValues(alpha: 0.15),
+            width: 1,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(GSRadius.xl),
-          borderSide: const BorderSide(color: GSColors.accent, width: 1.5),
+          borderSide: BorderSide(
+            color: GSColors.accent.withValues(alpha: 0.40),
+            width: 1.5,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(GSRadius.xl),
@@ -160,14 +159,19 @@ class AppTheme {
         contentPadding: const EdgeInsets.symmetric(
           horizontal: GSSpacing.s4, vertical: GSSpacing.s4,
         ),
-        hintStyle: GoogleFonts.inter(color: GSColors.textDisabled, fontSize: 15),
+        hintStyle: GoogleFonts.inter(
+          color: GSColors.textDisabled, fontSize: 15,
+        ),
+        labelStyle: GoogleFonts.inter(
+          color: GSColors.textSecondary, fontSize: 15,
+        ),
       ),
 
-      // ElevatedButton
+      // ElevatedButton — note: GSButton overrides this with gradients
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: GSColors.accent,
-          foregroundColor: Colors.white,
+          foregroundColor: GSColors.primary,
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(GSRadius.full),
@@ -182,7 +186,10 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: GSColors.accent,
           minimumSize: const Size(double.infinity, 52),
-          side: const BorderSide(color: GSColors.accent, width: 1.5),
+          side: BorderSide(
+            color: GSColors.accent.withValues(alpha: 0.40),
+            width: 1.5,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(GSRadius.full),
           ),
@@ -209,25 +216,28 @@ class AppTheme {
         unselectedLabelStyle: GoogleFonts.inter(fontSize: 11),
       ),
 
-      // Chip
+      // Chip — dark base, kinetic green selected
       chipTheme: ChipThemeData(
-        backgroundColor: GSColors.surfaceDark,
+        backgroundColor: GSColors.surfaceContainerHigh,
         selectedColor: GSColors.accentLight,
         labelStyle: GoogleFonts.inter(fontSize: 13, color: GSColors.textPrimary),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(GSRadius.full),
+          borderRadius: BorderRadius.circular(GSRadius.sm),
         ),
+        side: BorderSide.none,
         padding: const EdgeInsets.symmetric(
           horizontal: GSSpacing.s3, vertical: GSSpacing.s1,
         ),
       ),
 
-      // Divider
-      dividerTheme: const DividerThemeData(
-        color: GSColors.border, thickness: 1, space: 0,
+      // Divider — subtle, no hard lines
+      dividerTheme: DividerThemeData(
+        color: GSColors.border.withValues(alpha: 0.20),
+        thickness: 1,
+        space: 0,
       ),
 
-      // Switch — use WidgetStateProperty (Flutter 3.19+)
+      // Switch
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) return GSColors.accent;
@@ -235,9 +245,19 @@ class AppTheme {
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) return GSColors.accentLight;
-          return GSColors.border;
+          return GSColors.surfaceContainerHigh;
         }),
+      ),
+
+      // ListTile
+      listTileTheme: const ListTileThemeData(
+        tileColor: Colors.transparent,
+        iconColor: GSColors.textSecondary,
+        textColor: GSColors.textPrimary,
       ),
     );
   }
+
+  // Keep the old getter name so main.dart doesn't break
+  static ThemeData get light => dark;
 }

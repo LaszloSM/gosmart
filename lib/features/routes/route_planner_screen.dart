@@ -14,7 +14,9 @@ import '../../providers/active_route_provider.dart';
 import '../../services/location_service.dart';
 import '../../services/directions_service.dart';
 import '../../services/geocoding_service.dart';
+import '../../services/public_transport_service.dart';
 import '../../providers/selected_mode_provider.dart';
+import '../../models/route_result.dart';
 
 class RoutePlannerScreen extends ConsumerStatefulWidget {
   const RoutePlannerScreen({super.key});
@@ -37,6 +39,33 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   void initState() {
     super.initState();
     _resolveOrigin();
+    _destCtrl.addListener(_onDestChanged);
+    // Pre-fill destination si el usuario llegó via long-press en el mapa
+    WidgetsBinding.instance.addPostFrameCallback((_) => _applyPendingDestination());
+  }
+
+  void _applyPendingDestination() {
+    final pending = ref.read(pendingDestinationProvider);
+    if (pending == null) return;
+    _destCtrl.removeListener(_onDestChanged);
+    _destCtrl.text =
+        '${pending.latitude.toStringAsFixed(5)}, ${pending.longitude.toStringAsFixed(5)}';
+    setState(() => _destLatLng = pending);
+    _destCtrl.addListener(_onDestChanged);
+    ref.read(pendingDestinationProvider.notifier).state = null;
+  }
+
+  void _swap() {
+    _destCtrl.removeListener(_onDestChanged);
+    final tmpText = _originCtrl.text;
+    final tmpLatLng = _originLatLng;
+    _originCtrl.text = _destCtrl.text;
+    _destCtrl.text = tmpText;
+    setState(() {
+      _originLatLng = _destLatLng;
+      _destLatLng = tmpLatLng;
+      _suggestions = [];
+    });
     _destCtrl.addListener(_onDestChanged);
   }
 
@@ -91,9 +120,24 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     }
 
     setState(() => _loading = true);
-    final profile = routeProfileFor(ref.read(selectedModeProvider));
-    final result = await directionsService.getRoute(
-        origin: _originLatLng!, destination: destLatLng, profile: profile);
+    final mode = ref.read(selectedModeProvider);
+    RouteResult? result;
+
+    if (isPublicTransport(mode)) {
+      result = await publicTransportService.planRoute(
+        origin: _originLatLng!,
+        destination: destLatLng,
+        mode: mode,
+      );
+    } else {
+      final profile = routeProfileFor(mode);
+      result = await directionsService.getRoute(
+        origin: _originLatLng!,
+        destination: destLatLng,
+        profile: profile,
+      );
+    }
+
     if (!mounted) return;
     setState(() => _loading = false);
     if (result != null) {
@@ -116,6 +160,11 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currentMode = ref.watch(selectedModeProvider);
+    final modeLabel = isPublicTransport(currentMode)
+        ? 'Publico: $currentMode'
+        : 'Privado: $currentMode';
+
     return Scaffold(
       backgroundColor: GSColors.bg,
       appBar: AppBar(
@@ -131,7 +180,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       ),
       body: Column(
         children: [
-          _LocationInputs(originCtrl: _originCtrl, destCtrl: _destCtrl),
+          _LocationInputs(originCtrl: _originCtrl, destCtrl: _destCtrl, onSwap: _swap),
           // Autocomplete suggestions
           if (_suggestions.isNotEmpty)
             Container(
@@ -152,7 +201,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                   final s = _suggestions[i];
                   return ListTile(
                     dense: true,
-                    leading: const Icon(Icons.location_on_outlined,
+                    leading: Icon(s.icon,
                         size: 18, color: GSColors.accent),
                     title: Text(s.placeName,
                         style: const TextStyle(
@@ -182,13 +231,13 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
             child: Row(
               children: [
                 Icon(
-                  modeIconFor(ref.watch(selectedModeProvider)),
+                  modeIconFor(currentMode),
                   size: 16,
                   color: GSColors.accent,
                 ),
                 const SizedBox(width: GSSpacing.s2),
                 Text(
-                  'Modo: ${ref.watch(selectedModeProvider)}',
+                  modeLabel,
                   style: const TextStyle(
                     fontSize: 13,
                     color: GSColors.textSecondary,
@@ -221,9 +270,11 @@ class _LocationInputs extends StatelessWidget {
   const _LocationInputs({
     required this.originCtrl,
     required this.destCtrl,
+    required this.onSwap,
   });
   final TextEditingController originCtrl;
   final TextEditingController destCtrl;
+  final VoidCallback onSwap;
 
   @override
   Widget build(BuildContext context) {
@@ -269,11 +320,7 @@ class _LocationInputs extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.swap_vert_rounded,
                 color: GSColors.textSecondary),
-            onPressed: () {
-              final tmp = originCtrl.text;
-              originCtrl.text = destCtrl.text;
-              destCtrl.text = tmp;
-            },
+            onPressed: onSwap,
           ),
         ],
       ),
