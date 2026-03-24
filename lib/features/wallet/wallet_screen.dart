@@ -78,6 +78,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 amount.toInt(),
                 description: 'Recarga de \$${amount.toStringAsFixed(0)} COP',
               );
+          if (success) {
+            ref.invalidate(walletMockProvider);
+          }
           GSToast.showWithMessenger(
             messenger,
             message: success
@@ -329,22 +332,29 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                       // Bottom row — balance + status badge
                       Row(
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Saldo disponible',
-                                style: TextStyle(
-                                  color: GSColors.primary.withValues(alpha: 0.65),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              _AnimatedBalance(
-                                key: ValueKey(card?.balance),
-                                amount: card?.balance ?? 0,
-                              ),
-                            ],
+                          Builder(
+                            builder: (context) {
+                              final mockWallet = ref.watch(walletMockProvider);
+                              final balance = mockWallet.valueOrNull?.balance ??
+                                  ref.watch(walletMockBalanceProvider);
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Saldo disponible',
+                                    style: TextStyle(
+                                      color: GSColors.primary.withValues(alpha: 0.65),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  _AnimatedBalance(
+                                    key: ValueKey(balance),
+                                    amount: (balance ?? 0).toDouble(),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                           const Spacer(),
                           Container(

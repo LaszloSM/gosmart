@@ -2,7 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_card.dart';
 import '../../providers/ai_conversation_provider.dart';
@@ -23,6 +25,7 @@ class AiChatScreen extends ConsumerStatefulWidget {
 class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final _ctrl = TextEditingController();
   final _scrollCtrl = ScrollController();
+  LatLng? _currentLocation;
 
   static const _suggestions = [
     '¿Cuánto cuesta el Metro de Medellín?',
@@ -30,6 +33,26 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     'Horario del TransMilenio',
     'Ruta más económica en Bogotá',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl.addListener(() => setState(() {}));
+    _getLocation();
+  }
+
+  Future<void> _getLocation() async {
+    try {
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.low,
+        ),
+      );
+      if (mounted) {
+        setState(() => _currentLocation = LatLng(pos.latitude, pos.longitude));
+      }
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -47,6 +70,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     await ref.read(aiConversationProvider.notifier).send(
       msg,
       selectedMode: ref.read(selectedModeProvider),
+      userLatLng: _currentLocation,
     );
     // Scroll again once the assistant reply is appended.
     _scrollToBottom();
@@ -138,7 +162,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             ),
 
           const SizedBox(height: GSSpacing.s2),
-          _ChatInput(ctrl: _ctrl, onSend: _send),
+          _ChatInput(
+            ctrl: _ctrl,
+            onSend: _send,
+            canSend: _ctrl.text.trim().isNotEmpty,
+          ),
           SizedBox(
               height: MediaQuery.of(context).padding.bottom + 8),
         ],
@@ -495,9 +523,14 @@ class _SuggestionChip extends StatelessWidget {
 // ── Chat input ────────────────────────────────────────────────────────────────
 
 class _ChatInput extends StatelessWidget {
-  const _ChatInput({required this.ctrl, required this.onSend});
+  const _ChatInput({
+    required this.ctrl,
+    required this.onSend,
+    required this.canSend,
+  });
   final TextEditingController ctrl;
   final VoidCallback onSend;
+  final bool canSend;
 
   @override
   Widget build(BuildContext context) {
@@ -517,7 +550,7 @@ class _ChatInput extends StatelessWidget {
             child: TextField(
               controller: ctrl,
               decoration: const InputDecoration(
-                hintText: 'Pregunta lo que quieras...',
+                hintText: 'Pregunta sobre rutas y transporte...',
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
@@ -526,19 +559,21 @@ class _ChatInput extends StatelessWidget {
                 isDense: true,
               ),
               style: const TextStyle(fontSize: 15),
-              onSubmitted: (_) => onSend(),
+              onSubmitted: (_) {
+                if (canSend) onSend();
+              },
             ),
           ),
           const SizedBox(width: GSSpacing.s2),
           GestureDetector(
-            onTap: onSend,
+            onTap: canSend ? onSend : null,
             child: Container(
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: GSColors.accent,
+                color: canSend ? GSColors.accent : GSColors.border,
                 shape: BoxShape.circle,
-                boxShadow: GSShadow.primary,
+                boxShadow: canSend ? GSShadow.primary : null,
               ),
               child: const Icon(Icons.send_rounded,
                   color: Colors.white, size: 18),

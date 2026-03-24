@@ -2,10 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../../providers/auth_provider.dart';
 import '../../router/app_router.dart';
 import '../../services/auth_service.dart';
+import '../../services/profile_service.dart';
 import '../../theme/design_tokens.dart';
 import '../../providers/profile_provider.dart';
 import '../../providers/transaction_provider.dart';
@@ -38,6 +41,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   // birth_date is managed via DatePicker, stored as ISO string
   DateTime? _selectedBirthDate;
+
+  bool _uploadingPhoto = false;
 
   @override
   void initState() {
@@ -75,6 +80,42 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       case 3:
         context.go(AppRoutes.profile);
         break;
+    }
+  }
+
+  // ── Photo upload ───────────────────────────────────────────────────────────
+
+  Future<void> _pickAndUploadPhoto() async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 85,
+    );
+    if (image == null) return;
+
+    setState(() => _uploadingPhoto = true);
+
+    try {
+      final user = ref.read(currentUserProvider);
+      if (user == null) return;
+
+      final svc = ProfileService();
+      final url = await svc.uploadAvatar(user.id, image.path);
+
+      if (url != null) {
+        await ref.read(profileProvider.notifier).updateProfile(avatarUrl: url);
+        if (mounted) {
+          GSToast.show(
+            context,
+            message: 'Foto actualizada',
+            type: GSToastType.success,
+          );
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingPhoto = false);
     }
   }
 
@@ -426,13 +467,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 data: (p) => Column(
                   children: [
                     GestureDetector(
-                      onTap: () {
-                        GSToast.show(
-                          context,
-                          message: 'Foto de perfil: próximamente disponible',
-                          type: GSToastType.info,
-                        );
-                      },
+                      onTap: _pickAndUploadPhoto,
                       child: Stack(
                         alignment: Alignment.bottomRight,
                         children: [
@@ -450,6 +485,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   )
                                 : null,
                           ),
+                          if (_uploadingPhoto)
+                            const Positioned.fill(
+                              child: CircleAvatar(
+                                radius: 44,
+                                backgroundColor: Colors.black45,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            ),
                           Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(

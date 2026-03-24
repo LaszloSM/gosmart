@@ -26,6 +26,7 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel>> {
     String? cedula,
     String? city,
     String? birthDate,
+    String? avatarUrl,
   }) async {
     final previous = state;
     try {
@@ -35,6 +36,7 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel>> {
         cedula: cedula,
         city: city,
         birthDate: birthDate,
+        avatarUrl: avatarUrl,
       );
       await load();
     } catch (e, st) {

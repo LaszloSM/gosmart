@@ -1,6 +1,7 @@
 // lib/providers/ai_conversation_provider.dart
 import 'package:flutter/foundation.dart'; // for @visibleForTesting
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:latlong2/latlong.dart';
 import '../services/ai_service.dart';
 import '../models/ai_models.dart';
 
@@ -53,7 +54,7 @@ class AiConversationNotifier extends StateNotifier<AiConversationState> {
   /// Send a user message and receive an assistant reply.
   /// The notifier reads state.history and passes it to sendMessage() —
   /// the screen never constructs or passes history directly.
-  Future<void> send(String query, {String? selectedMode}) async {
+  Future<void> send(String query, {String? selectedMode, LatLng? userLatLng}) async {
     final trimmed = query.trim();
     if (trimmed.isEmpty) return;
 
@@ -70,6 +71,7 @@ class AiConversationNotifier extends StateNotifier<AiConversationState> {
         query: trimmed,
         history: state.history,
         selectedMode: selectedMode,
+        userLatLng: userLatLng,
       );
 
       // Build updated history and trim to last 10 turns

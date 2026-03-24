@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/supabase_client.dart';
 import '../models/profile_model.dart';
@@ -26,6 +29,7 @@ class ProfileService {
     String? cedula,
     String? city,
     String? birthDate,
+    String? avatarUrl,
   }) async {
     final user = _client.auth.currentUser;
     if (user == null) throw Exception('Not authenticated');
@@ -44,10 +48,40 @@ class ProfileService {
     if (birthDate != null) {
       updates['birth_date'] = birthDate;
     }
+    if (avatarUrl != null) updates['avatar_url'] = avatarUrl;
 
     if (updates.isEmpty) return;
 
     await _client.from('profiles').update(updates).eq('id', user.id);
+  }
+
+  /// Uploads a photo to the "avatars" Supabase Storage bucket and returns
+  /// the public URL, or null on failure.
+  Future<String?> uploadAvatar(String userId, String filePath) async {
+    try {
+      final file = File(filePath);
+      final bytes = await file.readAsBytes();
+
+      await GoSmartSupabase.client.storage
+          .from('avatars')
+          .uploadBinary(
+            '$userId/avatar.jpg',
+            bytes,
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg',
+              upsert: true,
+            ),
+          );
+
+      final url = GoSmartSupabase.client.storage
+          .from('avatars')
+          .getPublicUrl('$userId/avatar.jpg');
+
+      return url;
+    } catch (e) {
+      debugPrint('[ProfileService] uploadAvatar error: $e');
+      return null;
+    }
   }
 
   /// Changes the authenticated user's password via Supabase Auth.

@@ -180,9 +180,28 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       ),
       body: Column(
         children: [
-          _LocationInputs(originCtrl: _originCtrl, destCtrl: _destCtrl, onSwap: _swap),
+          _LocationInputs(
+            originCtrl: _originCtrl,
+            destCtrl: _destCtrl,
+            onSwap: _swap,
+            destSuffixIcon: _destCtrl.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.close,
+                        color: GSColors.textDisabled, size: 18),
+                    onPressed: () {
+                      _destCtrl.removeListener(_onDestChanged);
+                      _destCtrl.clear();
+                      _destCtrl.addListener(_onDestChanged);
+                      setState(() {
+                        _destLatLng = null;
+                        _suggestions = [];
+                      });
+                    },
+                  )
+                : null,
+          ),
           // Autocomplete suggestions
-          if (_suggestions.isNotEmpty)
+          if (_suggestions.isNotEmpty || _destCtrl.text.length < 2)
             Container(
               margin: const EdgeInsets.fromLTRB(
                   GSSpacing.s5, 0, GSSpacing.s5, GSSpacing.s3),
@@ -191,60 +210,130 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                 borderRadius: BorderRadius.circular(GSRadius.md),
                 border: Border.all(color: GSColors.border),
               ),
-              child: ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _suggestions.length,
-                separatorBuilder: (_, __) =>
-                    const Divider(height: 1, color: GSColors.border),
-                itemBuilder: (_, i) {
-                  final s = _suggestions[i];
-                  return ListTile(
-                    dense: true,
-                    leading: Icon(s.icon,
-                        size: 18, color: GSColors.accent),
-                    title: Text(s.placeName,
-                        style: const TextStyle(
-                            fontSize: 14,
-                            color: GSColors.textPrimary,
-                            fontWeight: FontWeight.w600)),
-                    subtitle: Text(s.fullAddress,
-                        style: const TextStyle(
-                            fontSize: 12, color: GSColors.textSecondary)),
-                    onTap: () {
-                      _destCtrl.removeListener(_onDestChanged);
-                      _destCtrl.text = s.placeName;
-                      _destCtrl.addListener(_onDestChanged);
-                      setState(() {
-                        _destLatLng = s.latLng;
-                        _suggestions = [];
-                      });
-                    },
-                  );
-                },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ── "Mi ubicación actual" tile ──────────────────────────
+                  if (_destCtrl.text.length < 2) ...[
+                    ListTile(
+                      dense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: GSSpacing.s3, vertical: GSSpacing.s1),
+                      leading: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: GSColors.accent.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(GSRadius.sm),
+                        ),
+                        child: const Icon(Icons.my_location,
+                            color: GSColors.accent, size: 18),
+                      ),
+                      title: const Text('Mi ubicación actual',
+                          style: TextStyle(
+                              fontSize: 14,
+                              color: GSColors.textPrimary,
+                              fontWeight: FontWeight.w600)),
+                      subtitle: const Text('Usar posición GPS',
+                          style: TextStyle(
+                              fontSize: 12, color: GSColors.textSecondary)),
+                      onTap: () async {
+                        final pos = await locationService.getCurrentPosition();
+                        if (!mounted || pos == null) return;
+                        _destCtrl.removeListener(_onDestChanged);
+                        _destCtrl.text = 'Mi ubicación';
+                        _destCtrl.addListener(_onDestChanged);
+                        setState(() {
+                          _destLatLng = pos;
+                          _suggestions = [];
+                        });
+                      },
+                    ),
+                    if (_suggestions.isNotEmpty)
+                      const Divider(height: 1, color: GSColors.border),
+                  ],
+                  // ── Regular suggestions ─────────────────────────────────
+                  if (_suggestions.isNotEmpty)
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _suggestions.length,
+                      separatorBuilder: (_, __) =>
+                          const Divider(height: 1, color: GSColors.border),
+                      itemBuilder: (_, i) {
+                        final s = _suggestions[i];
+                        return ListTile(
+                          dense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: GSSpacing.s3,
+                              vertical: GSSpacing.s1),
+                          leading: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: GSColors.surfaceContainerLow,
+                              borderRadius:
+                                  BorderRadius.circular(GSRadius.sm),
+                            ),
+                            child: Icon(s.icon,
+                                color: GSColors.textSecondary, size: 18),
+                          ),
+                          title: Text(
+                            s.placeName,
+                            style: const TextStyle(
+                                fontSize: 14,
+                                color: GSColors.textPrimary,
+                                fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            s.fullAddress,
+                            style: const TextStyle(
+                                fontSize: 12,
+                                color: GSColors.textDisabled),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          onTap: () {
+                            _destCtrl.removeListener(_onDestChanged);
+                            _destCtrl.text = s.placeName;
+                            _destCtrl.addListener(_onDestChanged);
+                            setState(() {
+                              _destLatLng = s.latLng;
+                              _suggestions = [];
+                            });
+                          },
+                        );
+                      },
+                    ),
+                ],
               ),
             ),
           // Mode indicator
           Padding(
             padding: const EdgeInsets.fromLTRB(
                 GSSpacing.s5, 0, GSSpacing.s5, GSSpacing.s3),
-            child: Row(
-              children: [
-                Icon(
-                  modeIconFor(currentMode),
-                  size: 16,
-                  color: GSColors.accent,
-                ),
-                const SizedBox(width: GSSpacing.s2),
-                Text(
-                  modeLabel,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: GSColors.textSecondary,
-                    fontWeight: FontWeight.w500,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  Icon(
+                    modeIconFor(currentMode),
+                    size: 16,
+                    color: GSColors.accent,
                   ),
-                ),
-              ],
+                  const SizedBox(width: GSSpacing.s2),
+                  Text(
+                    modeLabel,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: GSColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           Padding(
@@ -271,10 +360,12 @@ class _LocationInputs extends StatelessWidget {
     required this.originCtrl,
     required this.destCtrl,
     required this.onSwap,
+    this.destSuffixIcon,
   });
   final TextEditingController originCtrl;
   final TextEditingController destCtrl;
   final VoidCallback onSwap;
+  final Widget? destSuffixIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -312,7 +403,11 @@ class _LocationInputs extends StatelessWidget {
               children: [
                 GSTextField(hint: 'Origen', controller: originCtrl),
                 const SizedBox(height: GSSpacing.s3),
-                GSTextField(hint: 'Destino', controller: destCtrl),
+                GSTextField(
+                  hint: 'Destino',
+                  controller: destCtrl,
+                  suffixIcon: destSuffixIcon,
+                ),
               ],
             ),
           ),

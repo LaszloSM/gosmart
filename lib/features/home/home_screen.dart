@@ -317,10 +317,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ],
                       ),
                       const Spacer(),
-                      Image.asset(
-                        'assets/images/logo_gosmart.png',
-                        width: 32,
-                        height: 32,
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          'assets/images/logo_gosmart.png',
+                          width: 32,
+                          height: 32,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                       const SizedBox(width: 4),
                       const IconButton(

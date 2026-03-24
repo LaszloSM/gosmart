@@ -92,6 +92,10 @@ REGLAS DE RESPUESTA:
 8. Para ciudades pequeñas sin sistema BRT, siempre menciona mototaxi y colectivo como opciones principales.
 
 FORMATO: Texto plano sin Markdown. Para listas usa "•" como viñeta. Sin asteriscos, sin #, sin **negrita**. Máximo 3 párrafos concisos.
+
+## Respuestas cortas
+Para preguntas simples (saludos, preguntas de precio, horario), responde en MÁXIMO 3-4 líneas.
+Solo usa párrafos largos para rutas complejas que requieran pasos detallados.
 ''';
 
 const _fallbackReply =
@@ -340,6 +344,7 @@ Ajusta los tiempos de viaje con este factor. No menciones el número directament
     required String query,
     List<ConversationTurn>? history,
     Map<String, double>? userLocation,
+    LatLng? userLatLng,
     String? selectedMode,
     String? context,
   }) async {
@@ -352,6 +357,19 @@ Ajusta los tiempos de viaje con este factor. No menciones el número directament
         source: 'cache',
       );
     }
+
+    // Build location context string injected into the user message
+    final resolvedLatLng = userLatLng ??
+        (userLocation != null
+            ? LatLng(
+                userLocation['lat'] ?? userLocation['latitude'] ?? 0,
+                userLocation['lng'] ?? userLocation['longitude'] ?? 0,
+              )
+            : null);
+    final locationContext = resolvedLatLng != null
+        ? '\n[UBICACIÓN ACTUAL DEL USUARIO: lat=${resolvedLatLng.latitude.toStringAsFixed(4)}, lng=${resolvedLatLng.longitude.toStringAsFixed(4)} — Colombia]\n'
+        : '';
+    final contextualQuery = '$locationContext$query';
 
     final now = DateTime.now();
     final t0  = now.millisecondsSinceEpoch;
@@ -368,16 +386,9 @@ Ajusta los tiempos de viaje con este factor. No menciones el número directament
     if (_routePattern.hasMatch(query)) {
       final destString = _extractDestination(query);
       if (destString != null) {
-        // Use passed userLocation if available, otherwise ask GPS
-        LatLng? originLatLng;
-        if (userLocation != null) {
-          originLatLng = LatLng(
-            userLocation['lat'] ?? userLocation['latitude'] ?? 0,
-            userLocation['lng'] ?? userLocation['longitude'] ?? 0,
-          );
-        } else {
-          originLatLng = await locationService.getCurrentPosition();
-        }
+        // Use passed userLatLng / userLocation if available, otherwise ask GPS
+        LatLng? originLatLng = resolvedLatLng;
+        originLatLng ??= await locationService.getCurrentPosition();
 
         if (originLatLng != null) {
           final destSuggestion = await geocodingService.geocodeFirst(
@@ -432,7 +443,7 @@ Al final de tu respuesta agrega exactamente esta línea: "Toca 'Ver en mapa' par
       final messages = <Map<String, String>>[
         {'role': 'system', 'content': systemPrompt},
         ...((history ?? []).take(8).map((t) => {'role': t.role, 'content': t.content})),
-        {'role': 'user', 'content': query},
+        {'role': 'user', 'content': contextualQuery},
       ];
 
       final response = await http.post(
