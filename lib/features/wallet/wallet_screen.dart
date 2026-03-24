@@ -2,10 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../models/transaction_model.dart';
 import '../../providers/card_provider.dart';
 import '../../providers/transaction_provider.dart';
+import '../../providers/wallet_mock_provider.dart';
 import '../../router/app_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
@@ -64,16 +66,24 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   void _showRechargeSheet() {
     GSBottomSheet.show(
       context: context,
-      title: 'Recargar tarjeta',
-      initialChildSize: 0.55,
+      title: 'Recargar saldo',
+      initialChildSize: 0.60,
       child: _RechargeSheetContent(
-        onConfirm: (amount) {
+        onConfirm: (amount) async {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Recarga de \$${amount.toStringAsFixed(0)} COP próximamente'),
-              duration: const Duration(seconds: 2),
-            ),
+          final messenger = ScaffoldMessenger.of(context);
+          final success = await ref
+              .read(walletMockNotifierProvider.notifier)
+              .recharge(
+                amount.toInt(),
+                description: 'Recarga de \$${amount.toStringAsFixed(0)} COP',
+              );
+          GSToast.showWithMessenger(
+            messenger,
+            message: success
+                ? '¡Recarga de \$${amount.toStringAsFixed(0)} COP exitosa!'
+                : 'Error al recargar. Intenta de nuevo.',
+            type: success ? GSToastType.success : GSToastType.error,
           );
         },
       ),
@@ -186,6 +196,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 
             // ── Section 4: Card controls ──────────────────────────────────────
             _buildCardControls(theme),
+            const SizedBox(height: GSSpacing.s4),
+
+            // ── Section 5: Wallet mock saldo ──────────────────────────────────
+            _buildMockWalletSection(theme),
             const SizedBox(height: GSSpacing.s6),
           ],
         ),
@@ -621,6 +635,174 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       ),
     );
   }
+  // ── Section 5 ───────────────────────────────────────────────────────────────
+  Widget _buildMockWalletSection(ThemeData theme) {
+    final walletAsync = ref.watch(walletMockProvider);
+    final txAsync = ref.watch(walletMockTransactionsProvider(8));
+
+    return walletAsync.when(
+      data: (wallet) {
+        if (wallet == null) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Text(
+                  'Saldo GoSmart',
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(width: GSSpacing.s2),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: GSColors.info.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(GSRadius.full),
+                    border: Border.all(
+                      color: GSColors.info.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: const Text(
+                    'DEMO',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: GSColors.info,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: GSSpacing.s3),
+            // Saldo card
+            GSCard(
+              padding: const EdgeInsets.all(GSSpacing.s4),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: GSColors.accent.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(GSRadius.sm),
+                    ),
+                    child: const Icon(
+                      Icons.account_balance_wallet_rounded,
+                      color: GSColors.accent,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: GSSpacing.s3),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          wallet.formattedBalance,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: GSColors.accent,
+                          ),
+                        ),
+                        Text(
+                          wallet.maskedCardNumber,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: GSColors.textSecondary,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: GSSpacing.s4),
+            // Movimientos del wallet mock
+            Text(
+              'Movimientos de saldo',
+              style: theme.textTheme.titleSmall
+                  ?.copyWith(color: GSColors.textSecondary),
+            ),
+            const SizedBox(height: GSSpacing.s2),
+            txAsync.when(
+              data: (transactions) {
+                if (transactions.isEmpty) {
+                  return const GSEmptyState(
+                    icon: Icons.receipt_long_rounded,
+                    title: 'Sin movimientos',
+                    subtitle: 'Recarga tu saldo para comenzar',
+                  );
+                }
+                return Column(
+                  children: transactions.map((tx) {
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: tx.color.withValues(alpha: 0.12),
+                          borderRadius:
+                              BorderRadius.circular(GSRadius.sm),
+                        ),
+                        child: Icon(tx.icon, color: tx.color, size: 18),
+                      ),
+                      title: Text(
+                        tx.typeLabel,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: GSColors.textPrimary,
+                        ),
+                      ),
+                      subtitle: Text(
+                        tx.description ?? tx.formattedDate,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: GSColors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: Text(
+                        tx.formattedAmount,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: tx.color,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(GSSpacing.s4),
+                  child: CircularProgressIndicator(
+                    color: GSColors.accent,
+                    strokeWidth: 2,
+                  ),
+                ),
+              ),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
+          ],
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
 }
 
 // ─── Quick Action data class ──────────────────────────────────────────────────
@@ -708,10 +890,31 @@ class _RechargeSheetContentState extends State<_RechargeSheetContent> {
           leadingIcon: Icons.add_rounded,
         ),
         const SizedBox(height: GSSpacing.s3),
-        const Text(
-          'Integración con Stripe disponible próximamente',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 11, color: GSColors.textDisabled),
+        Container(
+          padding: const EdgeInsets.all(GSSpacing.s3),
+          decoration: BoxDecoration(
+            color: GSColors.info.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(GSRadius.md),
+            border: Border.all(
+              color: GSColors.info.withValues(alpha: 0.3),
+            ),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.info_outline_rounded,
+                  color: GSColors.info, size: 16),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Modo demo: recarga simulada — no se realiza ningún cobro real',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: GSColors.info,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );

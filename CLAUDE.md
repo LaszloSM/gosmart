@@ -76,6 +76,8 @@ Run all migrations in order in Supabase SQL Editor. Each is safe to re-run (IF N
 | `005_profile_extra_fields.sql` | Adds `phone`, `cedula`, `city`, `birth_date` to profiles — **required for profile editing** |
 | `006_colombia_kg.sql` | RAG Colombia KG: `colombia_kg`, `colombia_kg_aliases`, `colombia_kg_embeddings` (vector 384), `rag_fallback_log`. Requires pgvector. |
 | `007_fix_embedding_dim.sql` | Cambia `colombia_kg_embeddings.embedding` de `vector(1536)` a `vector(384)` y recrea RPC `match_colombia_kg`. Correr **antes** de `load_supabase.py`. |
+| `008_wallet_mock.sql` | Tables: `wallets` (balance INTEGER, card_number, card_status), `wallet_transactions`. RPCs: `recharge_wallet` (row-locking), `generate_gosmart_card_number`. Trigger: `create_wallet_for_new_user` (auto-creates wallet with $10,000 COP welcome balance on signup). |
+| `009_favorites_history.sql` | Tables: `favorite_places` (unique partial index per home/work per user), `trip_history`. RPC: `increment_favorite_use`. |
 
 After running 005+, PostgREST reloads automatically via `NOTIFY pgrst, 'reload schema'`.
 
@@ -93,27 +95,35 @@ lib/
 │   └── supabase_client.dart      # GoSmartSupabase.client singleton (initialized once in main)
 ├── features/                     # Screen-level UI (one folder per feature)
 │   ├── ai_chat/                  # AI assistant chat UI
-│   ├── auth/                     # Onboarding, login, register, SMS OTP
+│   ├── auth/                     # Login, register, SMS OTP
 │   ├── history/                  # Transaction history
 │   ├── home/                     # Main home screen (balance, quick actions)
+│   │   └── widgets/              # QuickPlacesRow (Casa/Trabajo chips)
 │   ├── nfc_simulator/            # Debug NFC simulator (LOCAL MOCK — no Edge Function)
+│   ├── onboarding/               # IntroScreen (3 slides), LocationPermissionScreen
 │   ├── payment/                  # Payment validation screen
 │   ├── profile/                  # User profile + edit sheets
 │   ├── routes/                   # Route planner + route detail
-│   └── wallet/                   # Wallet / recharge screen
+│   ├── splash/                   # SplashScreen — animated logo, onboarding routing
+│   └── wallet/                   # Wallet / recharge screen (uses wallet mock)
 ├── models/                       # Pure data classes (no Flutter dependencies)
 │   ├── ai_models.dart            # AiMessage, ConversationTurn, RouteOption, Leg
 │   ├── authorize_result.dart     # NFC authorization result
 │   ├── card_model.dart           # CardModel
+│   ├── favorite_place.dart       # FavoritePlace, FavoritePlaceType (home/work/custom)
 │   ├── profile_model.dart        # ProfileModel (includes cedula, city, birthDate)
 │   ├── transaction_model.dart    # TransactionModel
+│   ├── wallet_model.dart         # WalletMock (SEPARATE from CardModel — mock wallet)
+│   ├── wallet_transaction_model.dart # WalletTransactionModel, WalletTxType enum
 │   └── geocode_suggestion.dart   # Address suggestion from Mapbox Geocoding: placeName, fullAddress, latLng
 ├── providers/                    # Riverpod StateNotifierProviders
 │   ├── ai_conversation_provider.dart
 │   ├── auth_provider.dart
 │   ├── card_provider.dart
+│   ├── favorites_provider.dart   # FavoritePlace CRUD + home/work/top derived providers
 │   ├── profile_provider.dart
-│   └── transaction_provider.dart
+│   ├── transaction_provider.dart
+│   └── wallet_mock_provider.dart # Mock wallet balance + recharge (uses wallets table)
 ├── router/
 │   └── app_router.dart           # GoRouter config + AppRoutes constants
 ├── services/                     # Plain Dart classes (each has a top-level singleton)
@@ -146,6 +156,13 @@ All providers in `lib/providers/`. Pattern: `StateNotifierProvider<Notifier, Asy
 | `locationProvider` | `FutureProvider<LatLng?>` | One-shot GPS position for initial map center |
 | `activeRouteProvider` | `StateProvider<RouteResult?>` | Route currently drawn on home map |
 | `selectedModeProvider` | `StateProvider<String>` | Travel mode selected on home ('Auto' default) |
+| `walletMockProvider` | `FutureProvider<WalletMock?>` | Mock wallet balance — `lib/providers/wallet_mock_provider.dart` |
+| `walletMockNotifierProvider` | `AsyncNotifierProvider` | recharge(amount) calls `recharge_wallet` RPC |
+| `walletMockTransactionsProvider` | `FutureProvider.family<..., int>` | Paginated mock transactions (pass limit) |
+| `favoritesNotifierProvider` | `AsyncNotifierProvider` | addOrUpdatePlace(), removePlace(), incrementUseCount() |
+| `homePlaceProvider` | `Provider<FavoritePlace?>` | Derived — filters favoritePlaces by type=home |
+| `workPlaceProvider` | `Provider<FavoritePlace?>` | Derived — filters favoritePlaces by type=work |
+| `topFavoritePlacesProvider` | `Provider<List<FavoritePlace>>` | Top 3 by use_count |
 
 **Critical state pattern** — `updateProfile()` preserves previous state on error:
 ```dart
@@ -221,6 +238,9 @@ Auth redirect re-evaluates automatically on every Supabase auth stream event via
 **Always use `AppRoutes.*` constants, never raw strings.**
 
 ```dart
+AppRoutes.splash           // '/splash'           ← initialLocation (first screen)
+AppRoutes.intro            // '/intro'            ← onboarding slides (first launch only)
+AppRoutes.locationPermission // '/location-permission' ← GPS permission request
 AppRoutes.home             // '/home'
 AppRoutes.wallet           // '/wallet'
 AppRoutes.history          // '/history'
@@ -231,6 +251,11 @@ AppRoutes.routeDetail      // '/routes/detail'
 AppRoutes.paymentValidation // '/payment-validation'
 AppRoutes.nfcSimulator     // '/debug/nfc-simulator'
 ```
+
+**Onboarding flow** (controlled by `SharedPreferences` key `onboarding_complete`):
+- First launch: `/splash` → `/intro` → `/location-permission` → `/onboarding` (auth)
+- Returning user: `/splash` → `/onboarding` or `/home` depending on auth state
+- Splash/intro/location-permission are public pages (no auth redirect)
 
 ### Design System
 
@@ -358,6 +383,7 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 | `intl` | ^0.20.2 | Date formatting, localization |
 | `flutter_localizations` | sdk | Spanish date picker support |
 | `uuid` | ^4.3.3 | Idempotency keys for NFC |
+| `shared_preferences` | ^2.2.2 | Persist `onboarding_complete` flag across launches |
 
 ## Common Gotchas
 
@@ -369,3 +395,6 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 - **GoRouter `extra` param**: Data passed via `extra` is lost on deep link or browser refresh — only use it for in-session navigation (e.g., `SmsVerifyScreen` phone number).
 - **Supabase Realtime**: `activeCardProvider` holds an active subscription. Dispose it properly or use `ref.onDispose`.
 - **`idempotency_key` on transactions**: Always generate a UUID before NFC tap, not after — the key must be sent with the authorization request, not generated from the response.
+- **`GSButton` API**: Use `isLoading:` (not `loading:`), `isFullWidth:` (not `fullWidth:`). Variant: `GSButtonVariant.outline / .ghost / .primary`.
+- **`GeocodingService`**: Method is `.search(query)` (not `.suggest()`). Returns `List<GeocodeSuggestion>`.
+- **Wallet Mock isolation**: The `wallets` / `wallet_transactions` tables and `walletMockProvider` are SEPARATE from the existing `cards` table and `activeCardProvider`. Never mix them.

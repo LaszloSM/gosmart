@@ -1,5 +1,6 @@
 // lib/features/ai_chat/ai_chat_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../theme/design_tokens.dart';
@@ -10,6 +11,7 @@ import '../../providers/active_route_provider.dart';
 import '../../providers/selected_mode_provider.dart';
 import '../../router/app_router.dart';
 import '../../widgets/gs_button.dart';
+import '../../widgets/gs_toast.dart';
 
 class AiChatScreen extends ConsumerStatefulWidget {
   const AiChatScreen({super.key});
@@ -23,10 +25,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final _scrollCtrl = ScrollController();
 
   static const _suggestions = [
-    'Mejor ruta de Chapinero a La Candelaria',
-    'Cómo llego al aeropuerto barato',
-    'Ruta ecológica a Usaquén',
-    '¿Cuánto cuesta el metro?',
+    '¿Cuánto cuesta el Metro de Medellín?',
+    '¿Cómo voy al centro en TransMilenio?',
+    'Horario del TransMilenio',
+    'Ruta más económica en Bogotá',
   ];
 
   @override
@@ -193,32 +195,48 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
                   ? CrossAxisAlignment.end
                   : CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: GSSpacing.s4,
-                      vertical: GSSpacing.s3),
-                  decoration: BoxDecoration(
-                    color: isUser
-                        ? GSColors.primary
-                        : GSColors.surface,
-                    borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(GSRadius.lg),
-                      topRight: const Radius.circular(GSRadius.lg),
-                      bottomLeft: Radius.circular(
-                          isUser ? GSRadius.lg : 4),
-                      bottomRight: Radius.circular(
-                          isUser ? 4 : GSRadius.lg),
-                    ),
-                    boxShadow: GSShadow.sm,
-                  ),
-                  child: Text(
-                    message.content,
-                    style: TextStyle(
-                      fontSize: 14,
+                GestureDetector(
+                  onLongPress: !isUser
+                      ? () async {
+                          await Clipboard.setData(
+                            ClipboardData(text: message.content),
+                          );
+                          if (context.mounted) {
+                            GSToast.show(
+                              context,
+                              message: 'Copiado al portapapeles',
+                              type: GSToastType.info,
+                            );
+                          }
+                        }
+                      : null,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: GSSpacing.s4,
+                        vertical: GSSpacing.s3),
+                    decoration: BoxDecoration(
                       color: isUser
-                          ? Colors.white
-                          : GSColors.textPrimary,
-                      height: 1.5,
+                          ? GSColors.primary
+                          : GSColors.surface,
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(GSRadius.lg),
+                        topRight: const Radius.circular(GSRadius.lg),
+                        bottomLeft: Radius.circular(
+                            isUser ? GSRadius.lg : 4),
+                        bottomRight: Radius.circular(
+                            isUser ? 4 : GSRadius.lg),
+                      ),
+                      boxShadow: GSShadow.sm,
+                    ),
+                    child: Text(
+                      message.content,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isUser
+                            ? Colors.white
+                            : GSColors.textPrimary,
+                        height: 1.5,
+                      ),
                     ),
                   ),
                 ),

@@ -16,8 +16,10 @@ import '../../providers/transaction_provider.dart';
 import '../../models/transaction_model.dart';
 import '../../models/route_result.dart';
 import '../../providers/active_route_provider.dart';
+import '../../providers/favorites_provider.dart';
 import '../../services/location_service.dart';
 import '../../providers/selected_mode_provider.dart';
+import 'widgets/quick_places_row.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -382,6 +384,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       hint: '¿A dónde vas?',
                       readOnly: true,
                       onTap: () => context.push(AppRoutes.routePlanner),
+                    ),
+
+                    const SizedBox(height: GSSpacing.s3),
+
+                    // Accesos rápidos: Casa, Trabajo, favoritos
+                    QuickPlacesRow(
+                      onPlaceSelected: (place) {
+                        ref
+                            .read(favoritesNotifierProvider.notifier)
+                            .incrementUseCount(place.id);
+                        // Navegar al planificador con el lugar como destino
+                        context.push(AppRoutes.routePlanner);
+                      },
                     ),
 
                     const SizedBox(height: GSSpacing.s4),

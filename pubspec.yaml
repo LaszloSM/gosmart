@@ -53,6 +53,9 @@ dependencies:
   # Utilities
   intl: ^0.20.2
 
+  # Onboarding state persistence
+  shared_preferences: ^2.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

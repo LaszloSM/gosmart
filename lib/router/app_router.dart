@@ -6,6 +6,9 @@ import 'package:go_router/go_router.dart';
 
 import '../core/supabase_client.dart';
 import '../theme/design_tokens.dart';
+import '../features/splash/splash_screen.dart';
+import '../features/onboarding/intro_screen.dart';
+import '../features/onboarding/location_permission_screen.dart';
 import '../features/auth/onboarding_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/register_screen.dart';
@@ -55,7 +58,10 @@ class _StreamChangeNotifier extends ChangeNotifier {
 
 /// Route name constants — use these instead of hard-coded strings
 abstract class AppRoutes {
-  static const onboarding       = '/';
+  static const splash           = '/splash';
+  static const intro            = '/intro';
+  static const locationPermission = '/location-permission';
+  static const onboarding       = '/onboarding';
   static const login            = '/login';
   static const register         = '/register';
   static const smsVerify        = '/sms-verify';
@@ -79,23 +85,59 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   ref.onDispose(notifier.dispose);
 
   return GoRouter(
-    initialLocation: AppRoutes.onboarding,
+    initialLocation: AppRoutes.splash,
     refreshListenable: notifier,
     redirect: (context, state) {
       final session = GoSmartSupabase.client.auth.currentSession;
       final isAuth = session != null;
-      final onAuthPage = state.matchedLocation == AppRoutes.login ||
+      // Rutas públicas (no requieren auth)
+      final isPublicPage = state.matchedLocation == AppRoutes.splash ||
+          state.matchedLocation == AppRoutes.intro ||
+          state.matchedLocation == AppRoutes.locationPermission ||
+          state.matchedLocation == AppRoutes.login ||
           state.matchedLocation == AppRoutes.register ||
           state.matchedLocation == AppRoutes.onboarding ||
-          state.matchedLocation == AppRoutes.smsVerify; // mid-OTP flow, not yet authenticated
+          state.matchedLocation == AppRoutes.smsVerify;
 
-      // If authenticated and on auth page → go to home
-      if (isAuth && onAuthPage) return AppRoutes.home;
-      // If not authenticated and on protected page → go to login
-      if (!isAuth && !onAuthPage) return AppRoutes.login;
+      // Si autenticado y en página auth → ir a home
+      if (isAuth &&
+          (state.matchedLocation == AppRoutes.login ||
+              state.matchedLocation == AppRoutes.register ||
+              state.matchedLocation == AppRoutes.onboarding)) {
+        return AppRoutes.home;
+      }
+      // Si no autenticado y en página protegida → login
+      if (!isAuth && !isPublicPage) return AppRoutes.login;
       return null;
     },
     routes: [
+      GoRoute(
+        path: AppRoutes.splash,
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const SplashScreen(),
+          transitionDuration: GSDuration.page,
+          transitionsBuilder: _slideAndFade,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.intro,
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const IntroScreen(),
+          transitionDuration: GSDuration.page,
+          transitionsBuilder: _slideAndFade,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.locationPermission,
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const LocationPermissionScreen(),
+          transitionDuration: GSDuration.page,
+          transitionsBuilder: _slideAndFade,
+        ),
+      ),
       GoRoute(
         path: AppRoutes.onboarding,
         pageBuilder: (context, state) => CustomTransitionPage(
