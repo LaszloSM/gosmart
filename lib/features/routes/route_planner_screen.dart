@@ -16,6 +16,8 @@ import '../../services/directions_service.dart';
 import '../../services/geocoding_service.dart';
 import '../../services/public_transport_service.dart';
 import '../../providers/selected_mode_provider.dart';
+import '../../providers/favorites_provider.dart';
+import '../../models/favorite_place.dart';
 import '../../models/route_result.dart';
 
 class RoutePlannerScreen extends ConsumerStatefulWidget {
@@ -105,19 +107,12 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       return;
     }
 
-    LatLng? destLatLng = _destLatLng;
-    if (destLatLng == null) {
-      final suggestion = await geocodingService.geocodeFirst(
-          _destCtrl.text.trim(), proximity: _originLatLng);
-      if (!mounted) return;
-      if (suggestion == null) {
-        GSToast.showWithMessenger(messenger,
-            message: 'Destino no encontrado. Selecciona una sugerencia.');
-        return;
-      }
-      destLatLng = suggestion.latLng;
-      setState(() => _destLatLng = destLatLng);
+    if (_destLatLng == null) {
+      GSToast.showWithMessenger(messenger,
+          message: 'Selecciona un destino de las sugerencias.');
+      return;
     }
+    final destLatLng = _destLatLng!;
 
     setState(() => _loading = true);
     final mode = ref.read(selectedModeProvider);
@@ -200,9 +195,63 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                   )
                 : null,
           ),
-          // Autocomplete suggestions
-          if (_suggestions.isNotEmpty || _destCtrl.text.length < 2)
-            Container(
+          // Autocomplete suggestions + favoritos rápidos
+          Builder(builder: (context) {
+            final home = ref.watch(homePlaceProvider);
+            final work = ref.watch(workPlaceProvider);
+            final showFavorites =
+                _destCtrl.text.length < 2 && (home != null || work != null);
+            final showSuggestions = _suggestions.isNotEmpty;
+            if (!showFavorites && !showSuggestions) return const SizedBox();
+
+            // Helper para construir un tile de favorito
+            Widget favTile(FavoritePlace place, {bool divider = false}) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: GSSpacing.s3, vertical: GSSpacing.s1),
+                    leading: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: place.color.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(GSRadius.sm),
+                      ),
+                      child: Icon(place.iconData, color: place.color, size: 18),
+                    ),
+                    title: Text(
+                      place.typeLabel,
+                      style: const TextStyle(
+                          fontSize: 14,
+                          color: GSColors.textPrimary,
+                          fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(
+                      place.address,
+                      style: const TextStyle(
+                          fontSize: 12, color: GSColors.textSecondary),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    onTap: () {
+                      _destCtrl.removeListener(_onDestChanged);
+                      _destCtrl.text = place.name;
+                      _destCtrl.addListener(_onDestChanged);
+                      setState(() {
+                        _destLatLng = place.latLng;
+                        _suggestions = [];
+                      });
+                    },
+                  ),
+                  if (divider) const Divider(height: 1, color: GSColors.border),
+                ],
+              );
+            }
+
+            return Container(
               margin: const EdgeInsets.fromLTRB(
                   GSSpacing.s5, 0, GSSpacing.s5, GSSpacing.s3),
               decoration: BoxDecoration(
@@ -213,47 +262,16 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // ── "Mi ubicación actual" tile ──────────────────────────
-                  if (_destCtrl.text.length < 2) ...[
-                    ListTile(
-                      dense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: GSSpacing.s3, vertical: GSSpacing.s1),
-                      leading: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: GSColors.accent.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(GSRadius.sm),
-                        ),
-                        child: const Icon(Icons.my_location,
-                            color: GSColors.accent, size: 18),
-                      ),
-                      title: const Text('Mi ubicación actual',
-                          style: TextStyle(
-                              fontSize: 14,
-                              color: GSColors.textPrimary,
-                              fontWeight: FontWeight.w600)),
-                      subtitle: const Text('Usar posición GPS',
-                          style: TextStyle(
-                              fontSize: 12, color: GSColors.textSecondary)),
-                      onTap: () async {
-                        final pos = await locationService.getCurrentPosition();
-                        if (!mounted || pos == null) return;
-                        _destCtrl.removeListener(_onDestChanged);
-                        _destCtrl.text = 'Mi ubicación';
-                        _destCtrl.addListener(_onDestChanged);
-                        setState(() {
-                          _destLatLng = pos;
-                          _suggestions = [];
-                        });
-                      },
-                    ),
-                    if (_suggestions.isNotEmpty)
-                      const Divider(height: 1, color: GSColors.border),
+                  // ── Favoritos (casa / trabajo) ──────────────────────────
+                  if (showFavorites) ...[
+                    if (home != null)
+                      favTile(home,
+                          divider: work != null || showSuggestions),
+                    if (work != null)
+                      favTile(work, divider: showSuggestions),
                   ],
-                  // ── Regular suggestions ─────────────────────────────────
-                  if (_suggestions.isNotEmpty)
+                  // ── Sugerencias de geocoding ────────────────────────────
+                  if (showSuggestions)
                     ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -309,7 +327,8 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                     ),
                 ],
               ),
-            ),
+            );
+          }),
           // Mode indicator
           Padding(
             padding: const EdgeInsets.fromLTRB(

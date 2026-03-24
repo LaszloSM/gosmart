@@ -16,6 +16,20 @@ class GeocodingService {
   ///
   /// [proximity]: optional LatLng to bias results toward user location.
   /// Returns [] if token is empty, query has fewer than 2 chars, or any error.
+  /// Builds a tight bounding box around [proximity] (±0.35° ≈ 38 km).
+  /// Falls back to the full Colombia bbox when proximity is null.
+  String _buildBbox(LatLng? proximity) {
+    if (proximity != null) {
+      const d = 0.35;
+      final minLng = (proximity.longitude - d).clamp(-81.7, -66.8);
+      final minLat = (proximity.latitude - d).clamp(1.0, 13.4);
+      final maxLng = (proximity.longitude + d).clamp(-81.7, -66.8);
+      final maxLat = (proximity.latitude + d).clamp(1.0, 13.4);
+      return '$minLng,$minLat,$maxLng,$maxLat';
+    }
+    return '-81.7,1.0,-66.8,13.4';
+  }
+
   Future<List<GeocodeSuggestion>> search(
     String query, {
     LatLng? proximity,
@@ -32,7 +46,7 @@ class GeocodingService {
           '&limit=8'
           '&autocomplete=true'
           '&types=address,poi,neighborhood,locality,place'
-          '&bbox=-81.7,1.0,-66.8,13.4';
+          '&bbox=${_buildBbox(proximity)}';
       if (proximity != null) {
         url += '&proximity=${proximity.longitude},${proximity.latitude}';
       }

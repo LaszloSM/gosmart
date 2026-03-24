@@ -30,7 +30,7 @@ class GeocodeSuggestion {
       case 'poi':
         return Icons.storefront_outlined;
       case 'address':
-        return Icons.home_outlined;
+        return Icons.signpost_outlined;
       case 'neighborhood':
       case 'locality':
         return Icons.location_city_outlined;

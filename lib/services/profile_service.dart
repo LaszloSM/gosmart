@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/supabase_client.dart';
 import '../models/profile_model.dart';
@@ -57,10 +56,9 @@ class ProfileService {
 
   /// Uploads a photo to the "avatars" Supabase Storage bucket and returns
   /// the public URL, or null on failure.
-  Future<String?> uploadAvatar(String userId, String filePath) async {
+  Future<String?> uploadAvatar(String userId, XFile xFile) async {
     try {
-      final file = File(filePath);
-      final bytes = await file.readAsBytes();
+      final bytes = await xFile.readAsBytes();
 
       await GoSmartSupabase.client.storage
           .from('avatars')

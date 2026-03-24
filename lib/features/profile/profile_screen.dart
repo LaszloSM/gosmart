@@ -102,7 +102,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (user == null) return;
 
       final svc = ProfileService();
-      final url = await svc.uploadAvatar(user.id, image.path);
+      final url = await svc.uploadAvatar(user.id, image);
 
       if (url != null) {
         await ref.read(profileProvider.notifier).updateProfile(avatarUrl: url);
