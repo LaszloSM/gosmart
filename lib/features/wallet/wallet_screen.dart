@@ -647,37 +647,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            Row(
-              children: [
-                Text(
-                  'Saldo GoSmart',
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(width: GSSpacing.s2),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: GSColors.info.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(GSRadius.full),
-                    border: Border.all(
-                      color: GSColors.info.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  child: const Text(
-                    'DEMO',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: GSColors.info,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ],
+            Text(
+              'Saldo GoSmart',
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: GSSpacing.s3),
             // Saldo card
@@ -888,33 +861,6 @@ class _RechargeSheetContentState extends State<_RechargeSheetContent> {
           label: 'Continuar con ${_fmt(_selected)}',
           onPressed: () => widget.onConfirm(_selected),
           leadingIcon: Icons.add_rounded,
-        ),
-        const SizedBox(height: GSSpacing.s3),
-        Container(
-          padding: const EdgeInsets.all(GSSpacing.s3),
-          decoration: BoxDecoration(
-            color: GSColors.info.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(GSRadius.md),
-            border: Border.all(
-              color: GSColors.info.withValues(alpha: 0.3),
-            ),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.info_outline_rounded,
-                  color: GSColors.info, size: 16),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Modo demo: recarga simulada — no se realiza ningún cobro real',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: GSColors.info,
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ],
     );

@@ -281,6 +281,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       Icons.star_outline_rounded,
                       'Calificar la app',
                     ),
+                    _SettingsTile(
+                      Icons.share_rounded,
+                      'Compartir GoSmart',
+                      iconColor: GSColors.accent,
+                      onTap: () {
+                        GSToast.show(
+                          context,
+                          message: '¡Comparte GoSmart con tus amigos!',
+                          type: GSToastType.info,
+                        );
+                      },
+                    ),
                     if (kDebugMode)
                       _SettingsTile(
                         Icons.nfc_rounded,
@@ -413,19 +425,49 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 data: (p) => Column(
                   children: [
-                    CircleAvatar(
-                      radius: 44,
-                      backgroundColor: GSColors.accentLight,
-                      backgroundImage: p.avatarUrl != null
-                          ? NetworkImage(p.avatarUrl!)
-                          : null,
-                      child: p.avatarUrl == null
-                          ? const Icon(
-                              Icons.person_rounded,
-                              size: 44,
+                    GestureDetector(
+                      onTap: () {
+                        GSToast.show(
+                          context,
+                          message: 'Foto de perfil: próximamente disponible',
+                          type: GSToastType.info,
+                        );
+                      },
+                      child: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          CircleAvatar(
+                            radius: 44,
+                            backgroundColor: GSColors.accentLight,
+                            backgroundImage: p.avatarUrl != null
+                                ? NetworkImage(p.avatarUrl!)
+                                : null,
+                            child: p.avatarUrl == null
+                                ? const Icon(
+                                    Icons.person_rounded,
+                                    size: 44,
+                                    color: GSColors.accent,
+                                  )
+                                : null,
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
                               color: GSColors.accent,
-                            )
-                          : null,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 2,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt_rounded,
+                              size: 14,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -465,6 +507,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final ecoPoints =
         ref.watch(profileProvider).valueOrNull?.ecoPoints ?? 0;
 
+    final ecoLevel = ecoPoints >= 500
+        ? 'Elite'
+        : ecoPoints >= 200
+            ? 'Pro'
+            : 'Básico';
+
     return GSCard(
       margin: const EdgeInsets.fromLTRB(
         GSSpacing.s4,
@@ -490,6 +538,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             label: '$ecoPoints Pts Eco',
             icon: Icons.eco_rounded,
             color: GSColors.eco,
+          ),
+          Container(
+            width: 1,
+            height: 40,
+            color: GSColors.border,
+            margin:
+                const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
+          ),
+          _StatChip(
+            label: ecoLevel,
+            icon: Icons.workspace_premium_rounded,
+            color: GSColors.accentAlt,
           ),
         ],
       ),

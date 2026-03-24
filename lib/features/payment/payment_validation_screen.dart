@@ -1,6 +1,5 @@
 import 'dart:math' show cos, sin, pi;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -138,13 +137,6 @@ class _PaymentValidationScreenState
     _runAuthorize();
   }
 
-  void _setDemo(PaymentValidationState s) {
-    setState(() => _state = s);
-    if (s == PaymentValidationState.authorized) {
-      _successCtrl.forward(from: 0);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -152,9 +144,6 @@ class _PaymentValidationScreenState
       body: SafeArea(
         child: Column(
           children: [
-            // Debug-only state switcher — hidden in release builds
-            if (kDebugMode) _DemoSwitcher(onSelect: _setDemo),
-
             Expanded(
               child: Center(
                 child: Padding(
@@ -596,56 +585,6 @@ class _OfflineView extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-// ─── Debug-only state switcher ────────────────────────────────────────────────
-
-class _DemoSwitcher extends StatelessWidget {
-  const _DemoSwitcher({required this.onSelect});
-  final ValueChanged<PaymentValidationState> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(
-          horizontal: GSSpacing.s4, vertical: GSSpacing.s2),
-      child: Row(
-        children: [
-          const Text('Demo: ',
-              style: TextStyle(fontSize: 11, color: GSColors.textDisabled)),
-          _DemoChip('✓ OK', () => onSelect(PaymentValidationState.authorized)),
-          _DemoChip('\$ Bajo', () => onSelect(PaymentValidationState.insufficient)),
-          _DemoChip('✗ Error', () => onSelect(PaymentValidationState.error)),
-          _DemoChip('Offline', () => onSelect(PaymentValidationState.offline)),
-        ],
-      ),
-    );
-  }
-}
-
-class _DemoChip extends StatelessWidget {
-  const _DemoChip(this.label, this.onTap);
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(left: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: GSColors.surfaceDark,
-          borderRadius: BorderRadius.circular(GSRadius.full),
-        ),
-        child: Text(label,
-            style: const TextStyle(
-                fontSize: 11, color: GSColors.textSecondary)),
-      ),
     );
   }
 }

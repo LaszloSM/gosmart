@@ -317,6 +317,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ],
                       ),
                       const Spacer(),
+                      Image.asset(
+                        'assets/images/logo_gosmart.png',
+                        width: 32,
+                        height: 32,
+                      ),
+                      const SizedBox(width: 4),
                       const IconButton(
                         icon: Icon(
                           Icons.notifications_rounded,

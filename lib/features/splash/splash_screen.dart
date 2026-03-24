@@ -95,10 +95,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                         ),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.directions_transit_rounded,
-                      size: 56,
-                      color: Colors.black,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(GSRadius.xl),
+                      child: Image.asset(
+                        'assets/images/logo_gosmart.png',
+                        width: 110,
+                        height: 110,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),
