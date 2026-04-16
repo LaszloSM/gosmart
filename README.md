@@ -75,40 +75,6 @@
 - **Realtime**: Supabase Realtime para live updates
 - **Funciones**: Triggers, RPCs, políticas de seguridad
 
----
-
-## 📁 Estructura del Proyecto
-
-gosmart/
-|-- lib/
-|   |-- core/
-|   |   |-- env.dart
-|   |   `-- supabase_client.dart
-|   |-- features/
-|   |   |-- ai_chat/
-|   |   |-- auth/
-|   |   |-- home/
-|   |   |-- wallet/
-|   |   `-- ...
-|   |-- models/
-|   |-- providers/
-|   |-- services/
-|   |-- router/
-|   |-- theme/
-|   |-- widgets/
-|   `-- main.dart
-|-- backend/
-|-- pipeline/
-|-- design/
-|-- test/
-|-- assets/
-|-- android/
-|-- ios/
-|-- pubspec.yaml
-`-- CLAUDE.md
-
-
----
 
 ## 🚀 Quick Start
 
