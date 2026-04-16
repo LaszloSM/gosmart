@@ -80,47 +80,32 @@
 ## 📁 Estructura del Proyecto
 
 gosmart/
-├── lib/
-│   ├── core/
-│   │   ├── env.dart                      # Configuración de variables de entorno
-│   │   └── supabase_client.dart          # Cliente Supabase singleton
-│   │
-│   ├── features/                         # Pantallas y features
-│   │   ├── ai_chat/                      # Asistente de IA conversacional
-│   │   ├── auth/                         # Autenticación (login/register/OTP)
-│   │   ├── home/                         # Pantalla principal
-│   │   ├── wallet/                       # Billetera y recargas
-│   │   ├── history/                      # Historial de transacciones
-│   │   ├── profile/                      # Perfil de usuario
-│   │   ├── routes/                       # Planificador y detalle de rutas
-│   │   ├── payment/                      # Validación de pagos NFC
-│   │   ├── nfc_simulator/                # Simulador NFC (debug)
-│   │   ├── onboarding/                   # Introducción y permisos
-│   │   └── splash/                       # Pantalla de carga
-│   │
-│   ├── models/                           # Modelos de datos (DTOs)
-│   ├── providers/                        # Riverpod StateNotifierProviders
-│   ├── services/                         # Servicios de negocio (singletons)
-│   ├── router/                           # Configuración GoRouter
-│   ├── theme/                            # Tokens y temas
-│   ├── widgets/                          # Componentes reutilizables GS*
-│   └── main.dart                         # Punto de entrada
-│
-├── backend/
-│   ├── migrations/                       # Migraciones SQL
-│   └── functions/                        # Edge Functions (Deno/TypeScript)
-│
-├── pipeline/                             # Pipeline de IA y embeddings
-├── design/                               # Figma exports y tokens
-├── test/                                 # Tests
-├── assets/                               # Iconos, imágenes, animaciones
-├── android/                              # Configuración Android
-├── ios/                                  # Configuración iOS
-├── web/                                  # Configuración Web
-├── pubspec.yaml                          # Dependencias Flutter
-├── .env.example                          # Template de variables
-├── openapi.yaml                          # API contract
-└── CLAUDE.md                             # Notas de arquitectura
+|-- lib/
+|   |-- core/
+|   |   |-- env.dart
+|   |   `-- supabase_client.dart
+|   |-- features/
+|   |   |-- ai_chat/
+|   |   |-- auth/
+|   |   |-- home/
+|   |   |-- wallet/
+|   |   `-- ...
+|   |-- models/
+|   |-- providers/
+|   |-- services/
+|   |-- router/
+|   |-- theme/
+|   |-- widgets/
+|   `-- main.dart
+|-- backend/
+|-- pipeline/
+|-- design/
+|-- test/
+|-- assets/
+|-- android/
+|-- ios/
+|-- pubspec.yaml
+`-- CLAUDE.md
 
 
 ---
