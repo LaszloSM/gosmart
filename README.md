@@ -122,6 +122,7 @@ gosmart/
 ├── openapi.yaml                          # API contract
 └── CLAUDE.md                             # Notas de arquitectura
 
+
 ---
 
 ## 🚀 Quick Start
