@@ -8,7 +8,9 @@ import 'package:uuid/uuid.dart';
 
 import '../../theme/design_tokens.dart';
 import '../../providers/card_provider.dart';
+import '../../providers/profile_provider.dart';
 import '../../models/authorize_result.dart';
+import '../../services/eco_service.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_toast.dart';
 
@@ -75,6 +77,13 @@ class _NfcAuthSimulatorScreenState
       );
     }
 
+    // Sumar eco-puntos al autorizar (simulación de viaje en bus ~2.5 km)
+    int ecoPointsEarned = 0;
+    if (result.isAuthorized) {
+      ecoPointsEarned = EcoService.ecoPointsForTrip(profile: 'bus', distanceKm: 2.5);
+      ref.read(profileProvider.notifier).addEcoPoints(ecoPointsEarned);
+    }
+
     setState(() {
       _isLoading = false;
       _lastResult = result;
@@ -83,10 +92,11 @@ class _NfcAuthSimulatorScreenState
     });
 
     if (mounted) {
+      final ecoMsg = ecoPointsEarned > 0 ? ' · +$ecoPointsEarned pts 🌿' : '';
       GSToast.show(
         context,
         message: result.isAuthorized
-            ? '✓ Autorizado (simulado) — Saldo: \$${result.remainingBalance!.toStringAsFixed(0)} COP'
+            ? '✓ Autorizado (simulado) — Saldo: \$${result.remainingBalance!.toStringAsFixed(0)} COP$ecoMsg'
             : '✗ ${_errorMessage(result)}',
         type: result.isAuthorized ? GSToastType.success : GSToastType.error,
       );
@@ -297,6 +307,19 @@ class _ResultCard extends StatelessWidget {
             Text(
               'Saldo estimado: \$${result.remainingBalance!.toStringAsFixed(0)} COP',
               style: const TextStyle(fontSize: 13),
+            ),
+          ],
+          if (result.isAuthorized) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(Icons.eco_rounded, color: GSColors.eco, size: 14),
+                const SizedBox(width: 4),
+                Text(
+                  '+${EcoService.ecoPointsForTrip(profile: "bus", distanceKm: 2.5)} puntos ecológicos ganados',
+                  style: const TextStyle(color: GSColors.eco, fontSize: 12),
+                ),
+              ],
             ),
           ],
           if (result.errorCode != null) ...[

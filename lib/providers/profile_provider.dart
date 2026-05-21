@@ -50,6 +50,20 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel>> {
   Future<void> updatePassword(String newPassword) async {
     await profileService.updatePassword(newPassword);
   }
+
+  /// Suma [delta] eco-puntos en BD y actualiza el estado local optimísticamente.
+  Future<void> addEcoPoints(int delta) async {
+    final previous = state;
+    try {
+      final newTotal = await profileService.addEcoPoints(delta);
+      final current = state.valueOrNull;
+      if (current != null) {
+        state = AsyncValue.data(current.copyWith(ecoPoints: newTotal));
+      }
+    } catch (_) {
+      state = previous;
+    }
+  }
 }
 
 final profileProvider =

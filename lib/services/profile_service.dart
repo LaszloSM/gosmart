@@ -86,6 +86,26 @@ class ProfileService {
   Future<void> updatePassword(String newPassword) async {
     await _client.auth.updateUser(UserAttributes(password: newPassword));
   }
+
+  /// Incrementa eco_points en la BD y devuelve el nuevo total.
+  Future<int> addEcoPoints(int delta) async {
+    final user = _client.auth.currentUser;
+    if (user == null) throw Exception('Not authenticated');
+
+    final current = await _client
+        .from('profiles')
+        .select('eco_points')
+        .eq('id', user.id)
+        .single();
+
+    final newTotal = ((current['eco_points'] as num?)?.toInt() ?? 0) + delta;
+    await _client
+        .from('profiles')
+        .update({'eco_points': newTotal})
+        .eq('id', user.id);
+
+    return newTotal;
+  }
 }
 
 /// Singleton instance used across the app.

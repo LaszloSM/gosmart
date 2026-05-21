@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../models/transaction_model.dart';
 import '../../providers/transaction_provider.dart';
+import '../../providers/profile_provider.dart';
 import '../../router/app_router.dart';
+import '../../services/eco_service.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
 import '../../widgets/gs_card.dart';
@@ -32,6 +34,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       ),
       body: Column(
         children: [
+          _EcoStatsBanner(ref: ref),
           _buildPillTabBar(),
           Expanded(child: _buildBody()),
         ],
@@ -442,5 +445,62 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           (m) => '${m[1]}.',
         );
     return '\$$formatted COP';
+  }
+}
+
+class _EcoStatsBanner extends StatelessWidget {
+  final WidgetRef ref;
+  const _EcoStatsBanner({required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    final profileAsync = ref.watch(profileProvider);
+    return profileAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (profile) {
+        if (profile.ecoPoints == 0) return const SizedBox.shrink();
+        final co2Grams = profile.ecoPoints * 10.0;
+        final trees = EcoService.treesEquivalent(co2Grams);
+        return Container(
+          margin: const EdgeInsets.fromLTRB(
+              GSSpacing.s4, GSSpacing.s3, GSSpacing.s4, 0),
+          padding: const EdgeInsets.symmetric(
+              horizontal: GSSpacing.s4, vertical: GSSpacing.s3),
+          decoration: BoxDecoration(
+            color: GSColors.eco.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(GSRadius.md),
+            border: Border.all(color: GSColors.eco.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.eco_rounded, color: GSColors.eco, size: 20),
+              const SizedBox(width: GSSpacing.s3),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${profile.formattedEcoPoints} puntos ecológicos acumulados',
+                      style: const TextStyle(
+                          color: GSColors.eco,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13),
+                    ),
+                    Text(
+                      '${EcoService.formatCo2Saved(co2Grams)} CO₂ ahorrado · '
+                      '${trees.toStringAsFixed(2)} árboles equiv.',
+                      style: TextStyle(
+                          color: GSColors.eco.withValues(alpha: 0.8),
+                          fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

@@ -17,8 +17,10 @@ import '../../services/geocoding_service.dart';
 import '../../services/public_transport_service.dart';
 import '../../providers/selected_mode_provider.dart';
 import '../../providers/favorites_provider.dart';
+import '../../providers/profile_provider.dart';
 import '../../models/favorite_place.dart';
 import '../../models/route_result.dart';
+import '../../services/eco_service.dart';
 
 class RoutePlannerScreen extends ConsumerStatefulWidget {
   const RoutePlannerScreen({super.key});
@@ -137,6 +139,28 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     setState(() => _loading = false);
     if (result != null) {
       ref.read(activeRouteProvider.notifier).state = result;
+
+      // Sumar eco-puntos por rutas sostenibles (caminata o bici)
+      const ecoProfiles = {'walking', 'cycling'};
+      if (ecoProfiles.contains(result.profile)) {
+        final pts = EcoService.ecoPointsForTrip(
+          profile: result.profile,
+          distanceKm: result.distanceKm,
+        );
+        if (pts > 0) {
+          ref.read(profileProvider.notifier).addEcoPoints(pts);
+          final co2 = EcoService.co2SavedGrams(
+            profile: result.profile,
+            distanceKm: result.distanceKm,
+          );
+          GSToast.showWithMessenger(
+            messenger,
+            message: '+$pts pts ecológicos — ${EcoService.formatCo2Saved(co2)} CO₂ ahorrado',
+            type: GSToastType.success,
+          );
+        }
+      }
+
       context.pop();
     } else {
       GSToast.showWithMessenger(messenger,

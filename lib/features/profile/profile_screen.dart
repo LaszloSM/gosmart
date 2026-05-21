@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
 import '../../router/app_router.dart';
 import '../../services/auth_service.dart';
+import '../../services/eco_service.dart';
 import '../../services/profile_service.dart';
 import '../../theme/design_tokens.dart';
 import '../../providers/profile_provider.dart';
@@ -233,6 +234,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               children: [
                 // Stats row
                 _buildStatsRow(),
+
+                // Eco impact card
+                _buildEcoImpactCard(),
 
                 // Settings sections
                 _SettingsSection(
@@ -538,6 +542,69 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ── Eco impact card ────────────────────────────────────────────────────────
+
+  Widget _buildEcoImpactCard() {
+    final profile = ref.watch(profileProvider).valueOrNull;
+    if (profile == null || profile.ecoPoints == 0) return const SizedBox.shrink();
+
+    final co2Grams = profile.ecoPoints * 10.0;
+    final trees = EcoService.treesEquivalent(co2Grams);
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+          GSSpacing.s4, GSSpacing.s4, GSSpacing.s4, 0),
+      padding: const EdgeInsets.all(GSSpacing.s4),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            GSColors.eco.withValues(alpha: 0.15),
+            GSColors.accentAlt.withValues(alpha: 0.10),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(GSRadius.lg),
+        border: Border.all(color: GSColors.eco.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(children: [
+            Icon(Icons.eco_rounded, color: GSColors.eco, size: 18),
+            SizedBox(width: GSSpacing.s2),
+            Text(
+              'Impacto ambiental',
+              style: TextStyle(
+                  color: GSColors.eco,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14),
+            ),
+          ]),
+          const SizedBox(height: GSSpacing.s3),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _EcoStat(
+                label: 'Eco-puntos',
+                value: profile.formattedEcoPoints,
+                icon: Icons.stars_rounded,
+              ),
+              _EcoStat(
+                label: 'CO₂ ahorrado',
+                value: EcoService.formatCo2Saved(co2Grams),
+                icon: Icons.cloud_off_rounded,
+              ),
+              _EcoStat(
+                label: 'Árboles equiv.',
+                value: trees.toStringAsFixed(2),
+                icon: Icons.park_rounded,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1017,6 +1084,32 @@ class _StatChip extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _EcoStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  const _EcoStat(
+      {required this.label, required this.value, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icon, color: GSColors.eco, size: 20),
+        const SizedBox(height: 4),
+        Text(value,
+            style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14)),
+        Text(label,
+            style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.6), fontSize: 10)),
+      ],
     );
   }
 }
