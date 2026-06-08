@@ -181,6 +181,106 @@ flutter run -d chrome
 
 ---
 
+## 📱 Instalar y probar en un teléfono Android físico
+
+Guía paso a paso para correr GoSmart en tu propio celular Android (la plataforma principal del proyecto).
+
+### Opción A — Conectar el teléfono por USB y correr en modo debug (recomendado para probar)
+
+Esta es la forma más rápida: el código se compila e instala directo en el teléfono desde tu PC.
+
+**1. Activa las Opciones de desarrollador en el teléfono**
+
+1. Ve a **Ajustes → Acerca del teléfono**
+2. Toca **7 veces** sobre **"Número de compilación"** hasta que aparezca "Ya eres desarrollador"
+3. Vuelve a **Ajustes → Sistema → Opciones de desarrollador**
+4. Activa **"Depuración por USB"**
+
+**2. Conecta el teléfono al PC con un cable USB**
+
+- Cuando el teléfono pregunte *"¿Permitir depuración USB?"*, acepta (marca "Siempre permitir desde este equipo").
+- Elige el modo de conexión **"Transferencia de archivos (MTP)"** si lo pide.
+
+**3. Verifica que Flutter detecte el dispositivo**
+
+```bash
+flutter devices
+```
+
+Debe aparecer tu teléfono en la lista (con su nombre y un device-id). Si no aparece:
+```bash
+adb devices          # debe listar el dispositivo como "device" (no "unauthorized")
+adb kill-server && adb start-server   # reinicia el demonio ADB si hace falta
+```
+
+**4. Asegúrate de tener el `.env` configurado**
+
+Sin las 4 claves obligatorias (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `STRIPE_PUBLISHABLE_KEY`, `GOOGLE_MAPS_API_KEY`) la app crashea al iniciar. Copia y edita:
+```bash
+cp .env.example .env
+```
+
+**5. Corre la app en el teléfono**
+
+```bash
+flutter pub get          # solo la primera vez o si cambiaron dependencias
+flutter run              # instala y abre la app en el teléfono conectado
+```
+
+Si tienes varios dispositivos conectados:
+```bash
+flutter run -d <device-id>     # usa el id que mostró "flutter devices"
+```
+
+La app se instala y se abre sola. Mientras está corriendo puedes usar **hot reload** (`r` en la terminal) y **hot restart** (`R`) para ver cambios al instante.
+
+### Opción B — Generar un APK e instalarlo manualmente (para compartir o probar sin PC)
+
+Útil para pasarle la app a otra persona o tenerla instalada de forma permanente sin cable.
+
+**1. Construye el APK**
+
+```bash
+flutter build apk --release          # APK de release (optimizado)
+# o para pruebas rápidas:
+flutter build apk --debug
+```
+
+El APK queda en:
+```
+build/app/outputs/flutter-apk/app-release.apk
+```
+
+**2. Pásalo al teléfono**
+
+- Por cable: `adb install build/app/outputs/flutter-apk/app-release.apk`
+- O copia el archivo `.apk` al teléfono (USB, WhatsApp, Drive, etc.) y ábrelo desde el explorador de archivos.
+
+**3. Permite instalar apps de origen desconocido**
+
+Android pedirá permiso para instalar apps fuera de Play Store. Acepta en **Ajustes → Apps → Acceso especial → Instalar apps desconocidas** y permite el origen (explorador de archivos / navegador).
+
+**4. Abre la app**
+
+Ya queda instalada como cualquier otra app en el cajón de aplicaciones.
+
+> **Nota:** el APK `--release` lleva embebidas las claves del `.env` del momento de la compilación. No compartas el APK de release públicamente si contiene claves sensibles.
+
+### Requisitos y problemas comunes
+
+| Problema | Solución |
+|----------|----------|
+| El teléfono aparece como `unauthorized` en `adb devices` | Desconecta/reconecta el cable y acepta el diálogo de depuración USB en el teléfono |
+| `flutter devices` no muestra el teléfono | Verifica que la Depuración USB esté activa y que el cable sea de datos (no solo de carga) |
+| La app crashea al abrir | Falta alguna de las 4 claves obligatorias en `.env` |
+| El mapa no carga | Revisa `GOOGLE_MAPS_API_KEY` (o configura `MAPBOX_PUBLIC_TOKEN` para usar Mapbox/OSM) |
+| El asistente AI dice "no configurado" | Falta `GROQ_API_KEY` en el `.env` |
+| Error de NFC al instalar | Normal si el teléfono no tiene hardware NFC — el simulador local funciona igual sin NFC |
+
+> El `minSdkVersion` del proyecto es **21** (Android 5.0 Lollipop), así que funciona en prácticamente cualquier teléfono Android moderno.
+
+---
+
 ## 🗄️ Esquema de Base de Datos
 
 ### Tablas Principales
