@@ -123,9 +123,10 @@ input,textarea{font:inherit;font-size:16px;color:var(--tinta)}
 .nav button.ai .ic{color:var(--cal)!important;width:20px;height:20px}
 
 /* ---------- the wall (signature) ---------- */
-.wall{position:relative;color:var(--wall-fg);background:var(--wall-bg);padding:58px 20px 22px;overflow:hidden}
+.wall{container-type:inline-size;position:relative;color:var(--wall-fg);background:var(--wall-bg);padding:58px 20px 22px;overflow:hidden}
 .wall[data-s="abierta"]{--wall-bg:var(--turquesa);--wall-fg:var(--turquesa-fg)}
 .wall[data-s="bloqueo"]{--wall-bg:var(--coral);--wall-fg:var(--coral-fg)}
+.wall[data-s="precaucion"] .big{font-size:clamp(36px,13cqi,52px)}
 .wall[data-s="precaucion"]{--wall-bg:var(--ocre);--wall-fg:var(--ocre-fg)}
 .wall .paint{position:absolute;inset:0;background:var(--wall-bg);z-index:0}
 .wall.repaint .paint{animation:repaint 520ms var(--ease-out) both}
@@ -133,7 +134,7 @@ input,textarea{font:inherit;font-size:16px;color:var(--tinta)}
 .wall > *:not(.paint){position:relative;z-index:1}
 .wall .route{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;opacity:.92}
 .wall .route .ic{width:16px;height:16px}
-.wall .big{font-size:60px;margin:10px 0 6px;text-wrap:balance}
+.wall .big{font-size:clamp(40px,17cqi,60px);margin:10px 0 6px;text-wrap:balance}
 .wall .sub{font-size:15px;max-width:30ch}
 .wall .meta{display:flex;gap:16px;margin-top:14px;font-size:13px;font-weight:600;flex-wrap:wrap}
 .wall .meta span{display:inline-flex;gap:6px;align-items:center}
@@ -168,6 +169,7 @@ input,textarea{font:inherit;font-size:16px;color:var(--tinta)}
 .row .tx b{display:block;font-size:15px;font-weight:650}
 .row .tx small{display:block;color:var(--tinta-3);font-size:13px;overflow:hidden;text-overflow:ellipsis}
 .row .amt{font-weight:700;white-space:nowrap}
+.rows.fares .amt{font-family:var(--f-rotulo);font-stretch:68%;font-weight:850;font-size:21px}
 .badge{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none}
 .badge .ic{width:22px;height:22px}
 .b-ok{background:var(--turquesa-suave);color:var(--turquesa-tx)}
@@ -253,7 +255,7 @@ input,textarea{font:inherit;font-size:16px;color:var(--tinta)}
 .leg:last-child::before{display:none}
 .leg .tx b{display:block;font-size:15px}
 .leg .tx small{display:block;color:var(--tinta-3);font-size:13px}
-.leg .fare{text-align:right;font-weight:750;font-size:15px;white-space:nowrap}
+.leg .fare{text-align:right;white-space:nowrap;font-family:var(--f-rotulo);font-stretch:68%;font-weight:850;font-size:22px;line-height:1}
 .leg .fare small{display:block;font-weight:500;font-size:11px;color:var(--tinta-3)}
 .disp{background:var(--turquesa-suave);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px}
 .seats{display:grid;grid-template-columns:repeat(12,1fr);gap:4px}
@@ -672,7 +674,7 @@ function scrPago(){
   <div class="pad stack">
     <div class="panel">
       <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-weight:650">Total del viaje</span><span class="rotulo num" style="font-size:40px">${cop(TOTAL())}</span></div>
-      <div class="rows" style="margin-top:6px">
+      <div class="rows fares" style="margin-top:6px">
         ${legs.map((l,i)=>`<div class="row"><span class="badge ${l.cls}">${ic(l.mode)}</span><span class="tx"><b>Tramo ${i+1}</b><small>${l.p.split(" · ")[1]?l.p.split(" · ")[0]:l.p}</small></span><span class="amt num">${cop(l.fare)}</span></div>`).join("")}
       </div>
     </div>
@@ -723,7 +725,7 @@ function scrRecibo(){
     <div class="receipt">
       <div class="head"><small style="opacity:.75">Viaje GS-2611-0847, martes 8:16 a ${ARRIVE()}</small><div class="rotulo big num">${cop(TOTAL())}</div><small style="opacity:.75">Centro de Riohacha a Palacio de Justicia, Maicao</small></div>
       <div class="body">
-        ${legs.map((l,i)=>`<div class="line"><span><b>Tramo ${i+1}</b><br><small style="color:var(--tinta-3)">${l.p}</small></span><span class="num" style="font-weight:700">${cop(l.fare)}</span></div>`).join("")}
+        ${legs.map((l,i)=>`<div class="line"><span><b>Tramo ${i+1}</b><br><small style="color:var(--tinta-3)">${l.p}</small></span><span class="num rotulo" style="font-size:21px">${cop(l.fare)}</span></div>`).join("")}
         <div class="line"><span>Pagado con</span><span>Saldo GoSmart</span></div>
       </div>
     </div>
@@ -821,7 +823,7 @@ function scrDCobro(){
   <div class="pad stack">
     <div class="qrwrap">${QR}<b>Llave Bre-B @ricardo.fonseca</b><small>También Nequi y Daviplata. El pasajero escanea tu QR.</small></div>
     <div class="sec-h"><h3>Cerrar carrera</h3><span class="note">Riohacha a Maicao, 8:31</span></div>
-    <div class="rows">
+    <div class="rows fares">
       <div class="row"><span class="badge b-ok">${ic("wallet")}</span><span class="tx"><b>Daniela I., puesto 8</b><small>Saldo GoSmart, se libera al cerrar</small></span><span class="amt num">$15.000</span></div>
       <div class="row"><span class="badge b-n">${ic("bank")}</span><span class="tx"><b>Yesenia P., puesto 3</b><small>Transferencia Bre-B recibida</small></span><span class="amt num">$15.000</span></div>
       <button class="row" data-act="cash"><span class="badge ${d.cash?"b-ok":"b-warn"}">${ic("money")}</span><span class="tx"><b>Jesús M., puesto 5</b><small>${d.cash?"Efectivo recibido":"Efectivo. Toca para confirmar"}</small></span><span class="amt num">$15.000</span></button>
@@ -939,6 +941,7 @@ function toast(msg){
   clearTimeout(tt); tt=setTimeout(()=>t.classList.remove("in"),2600);
 }
 function openSheet(html){
+  hideToast();
   const o=$("#overlay");
   o.innerHTML=`<div class="scrim" data-act="close-overlay"></div><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div>`;
   requestAnimationFrame(()=>requestAnimationFrame(()=>{o.querySelector(".scrim").classList.add("in");o.querySelector(".sheet").classList.add("in")}));
@@ -996,10 +999,10 @@ document.addEventListener("click",e=>{
     case "scenario-block":
       S.block=!S.block; S.repaintWall=true; render(true);
       if(S.block&&S.role==="pasajero"&&S.screen==="viaje"&&S.trip&&S.stage>=1&&S.stage<=3&&!S.detourTaken) replanSheet();
-      else if(S.block) toast("Alerta: vía cerrada en el km 42. Te avisamos antes de salir");
-      else toast("La Troncal volvió a abrir");
+      else if(S.screen!=="home") toast(S.block?"Alerta: vía cerrada en el km 42. Te avisamos antes de salir":"La Troncal volvió a abrir");
+      else hideToast();
       break;
-    case "scenario-rain": S.rain=!S.rain; S.repaintWall=true; render(true); toast(S.rain?"Lluvia fuerte en Riohacha. El planificador evita calles inundadas":"Pasó la lluvia"); break;
+    case "scenario-rain": S.rain=!S.rain; S.repaintWall=true; render(true); if(S.screen!=="home") toast(S.rain?"Lluvia fuerte en Riohacha. El planificador evita calles inundadas":"Pasó la lluvia"); else hideToast(); break;
     case "scenario-off": S.offline=!S.offline; if(!S.offline&&S.pendingSync){toast(`Señal recuperada. ${S.pendingSync} cambios sincronizados`);S.pendingSync=0} render(true); break;
     case "report-open": S.reportType=null; reportSheet(); break;
     case "rtype": S.reportType=v; reportSheet(); break;
