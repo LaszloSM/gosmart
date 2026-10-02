@@ -1,0 +1,705 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-02T00:00:00Z",
+  "title": "Design System: GoSmart Guajira",
+  "extensions": {
+    "colorMeta": {
+      "cal": {
+        "role": "neutral",
+        "displayName": "Cal",
+        "canonical": "#F1F5F3",
+        "oklch": "oklch(96.7% 0.005 165.0)",
+        "tonalRamp": [
+          "#090C0B",
+          "#232624",
+          "#404341",
+          "#5F6260",
+          "#808381",
+          "#A2A6A4",
+          "#C6CAC8",
+          "#ECEFED"
+        ],
+        "darkToken": "cal-dark"
+      },
+      "cal-2": {
+        "role": "neutral",
+        "displayName": "Cal Shade",
+        "canonical": "#E3EBE7",
+        "oklch": "oklch(93.3% 0.010 164.9)",
+        "tonalRamp": [
+          "#070D0A",
+          "#212724",
+          "#3D4441",
+          "#5C6360",
+          "#7D8481",
+          "#A0A7A3",
+          "#C3CBC7",
+          "#E9F1ED"
+        ],
+        "darkToken": "cal-2-dark"
+      },
+      "muro": {
+        "role": "neutral",
+        "displayName": "Muro",
+        "canonical": "#FFFFFF",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ],
+        "darkToken": "muro-dark"
+      },
+      "tinta": {
+        "role": "neutral",
+        "displayName": "Tinta",
+        "canonical": "#172033",
+        "oklch": "oklch(24.5% 0.039 264.4)",
+        "tonalRamp": [
+          "#040A1B",
+          "#1B2538",
+          "#384257",
+          "#566178",
+          "#77839A",
+          "#99A5BE",
+          "#BDC9E3",
+          "#E7EFFF"
+        ],
+        "darkToken": "tinta-dark"
+      },
+      "tinta-2": {
+        "role": "neutral",
+        "displayName": "Tinta 2",
+        "canonical": "#4A5568",
+        "oklch": "oklch(44.7% 0.034 261.3)",
+        "tonalRamp": [
+          "#040B19",
+          "#1C2536",
+          "#384255",
+          "#566275",
+          "#778397",
+          "#99A6BB",
+          "#BDCAE0",
+          "#E6EFFE"
+        ],
+        "darkToken": "tinta-2-dark"
+      },
+      "tinta-3": {
+        "role": "neutral",
+        "displayName": "Tinta 3",
+        "canonical": "#6B7385",
+        "oklch": "oklch(55.5% 0.030 266.4)",
+        "tonalRamp": [
+          "#060B18",
+          "#1E2534",
+          "#3B4252",
+          "#596173",
+          "#7A8295",
+          "#9CA5B8",
+          "#C0C9DD",
+          "#E7EFFF"
+        ],
+        "darkToken": "tinta-3-dark"
+      },
+      "linea": {
+        "role": "neutral",
+        "displayName": "Línea",
+        "canonical": "#CBD6D1",
+        "oklch": "oklch(86.6% 0.014 167.1)",
+        "tonalRamp": [
+          "#060D0A",
+          "#1F2724",
+          "#3B4440",
+          "#5A6460",
+          "#7B8581",
+          "#9DA8A3",
+          "#C1CCC7",
+          "#E6F2EC"
+        ],
+        "darkToken": "linea-dark"
+      },
+      "turquesa": {
+        "role": "primary",
+        "displayName": "Caribbean Turquoise",
+        "canonical": "#1FB0A6",
+        "oklch": "oklch(68.5% 0.114 187.4)",
+        "tonalRamp": [
+          "#000F0D",
+          "#012C29",
+          "#034D48",
+          "#09706A",
+          "#12968D",
+          "#33BCB1",
+          "#62E1D6",
+          "#B7FFF7"
+        ],
+        "darkToken": "turquesa-dark"
+      },
+      "turquesa-fg": {
+        "role": "primary",
+        "displayName": "Turquoise Ink",
+        "canonical": "#10202A",
+        "oklch": "oklch(23.4% 0.029 237.2)",
+        "tonalRamp": [
+          "#010D16",
+          "#172732",
+          "#334550",
+          "#526470",
+          "#738592",
+          "#95A8B5",
+          "#B8CCDA",
+          "#DFF2FE"
+        ],
+        "darkToken": "turquesa-fg-dark"
+      },
+      "turquesa-tx": {
+        "role": "primary",
+        "displayName": "Deep Lagoon",
+        "canonical": "#0A6F6B",
+        "oklch": "oklch(49.0% 0.082 190.4)",
+        "tonalRamp": [
+          "#000F0E",
+          "#012C2A",
+          "#044D4A",
+          "#0C706C",
+          "#3C928D",
+          "#62B6B1",
+          "#87DBD5",
+          "#B7FEF9"
+        ],
+        "darkToken": "turquesa-tx-dark"
+      },
+      "turquesa-suave": {
+        "role": "primary",
+        "displayName": "Sea Glass",
+        "canonical": "#D3EAE6",
+        "oklch": "oklch(91.9% 0.025 184.2)",
+        "tonalRamp": [
+          "#010E0C",
+          "#172926",
+          "#334643",
+          "#526663",
+          "#728784",
+          "#95AAA7",
+          "#B8CFCB",
+          "#DDF4F0"
+        ],
+        "darkToken": "turquesa-suave-dark"
+      },
+      "ocre": {
+        "role": "secondary",
+        "displayName": "Guajira Ochre",
+        "canonical": "#E9A825",
+        "oklch": "oklch(77.4% 0.152 78.8)",
+        "tonalRamp": [
+          "#120900",
+          "#332100",
+          "#583C01",
+          "#805905",
+          "#AA780A",
+          "#D5981A",
+          "#FEBC42",
+          "#FFECCE"
+        ],
+        "darkToken": "ocre-dark"
+      },
+      "ocre-fg": {
+        "role": "secondary",
+        "displayName": "Ochre Ink",
+        "canonical": "#172033",
+        "oklch": "oklch(24.5% 0.039 264.4)",
+        "tonalRamp": [
+          "#040A1B",
+          "#1B2538",
+          "#384257",
+          "#566178",
+          "#77839A",
+          "#99A5BE",
+          "#BDC9E3",
+          "#E7EFFF"
+        ],
+        "darkToken": "ocre-fg-dark"
+      },
+      "ocre-suave": {
+        "role": "secondary",
+        "displayName": "Ochre Wash",
+        "canonical": "#FBEBC6",
+        "oklch": "oklch(94.4% 0.051 87.4)",
+        "tonalRamp": [
+          "#110A00",
+          "#302302",
+          "#4E4020",
+          "#6E603F",
+          "#8F815F",
+          "#B3A481",
+          "#D7C8A4",
+          "#FDEDC8"
+        ],
+        "darkToken": "ocre-suave-dark"
+      },
+      "coral": {
+        "role": "tertiary",
+        "displayName": "Blockade Coral",
+        "canonical": "#C8412F",
+        "oklch": "oklch(56.6% 0.174 30.7)",
+        "tonalRamp": [
+          "#1E0100",
+          "#4C0300",
+          "#7C1105",
+          "#AE2716",
+          "#D64F3C",
+          "#FB7762",
+          "#FEB4A6",
+          "#FFE9E5"
+        ],
+        "darkToken": "coral-dark"
+      },
+      "coral-fg": {
+        "role": "tertiary",
+        "displayName": "Coral Ink",
+        "canonical": "#FFFFFF",
+        "oklch": "oklch(100.0% 0.000 89.9)",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ],
+        "darkToken": "coral-fg-dark"
+      },
+      "coral-suave": {
+        "role": "tertiary",
+        "displayName": "Coral Wash",
+        "canonical": "#F7D9D2",
+        "oklch": "oklch(90.8% 0.035 33.3)",
+        "tonalRamp": [
+          "#170603",
+          "#341F1A",
+          "#533B36",
+          "#745A54",
+          "#967B75",
+          "#BA9E97",
+          "#DFC2BB",
+          "#FEE9E4"
+        ],
+        "darkToken": "coral-suave-dark"
+      },
+      "mar": {
+        "role": "tertiary",
+        "displayName": "TransPadilla Sea",
+        "canonical": "#2B5DA8",
+        "oklch": "oklch(48.5% 0.132 258.5)",
+        "tonalRamp": [
+          "#000923",
+          "#012253",
+          "#0A3E86",
+          "#2D5FAB",
+          "#4E82D0",
+          "#70A6F7",
+          "#AACBFD",
+          "#E5EFFE"
+        ],
+        "darkToken": "mar-dark"
+      },
+      "mar-suave": {
+        "role": "tertiary",
+        "displayName": "Sea Wash",
+        "canonical": "#DCE6F5",
+        "oklch": "oklch(92.2% 0.023 258.4)",
+        "tonalRamp": [
+          "#060B15",
+          "#1E2530",
+          "#3B434E",
+          "#59626F",
+          "#7A8390",
+          "#9CA6B4",
+          "#C0CAD9",
+          "#E5EFFE"
+        ],
+        "darkToken": "mar-suave-dark"
+      },
+      "mapa-mar": {
+        "role": "neutral",
+        "displayName": "Map Sea",
+        "canonical": "#D6E7EE",
+        "oklch": "oklch(91.7% 0.021 224.3)",
+        "tonalRamp": [
+          "#030D12",
+          "#1A272D",
+          "#37454A",
+          "#55646A",
+          "#76858C",
+          "#98A8AF",
+          "#BCCCD3",
+          "#E1F2F9"
+        ],
+        "darkToken": "mapa-mar-dark"
+      },
+      "mapa-tierra": {
+        "role": "neutral",
+        "displayName": "Map Land",
+        "canonical": "#ECE6D3",
+        "oklch": "oklch(92.5% 0.026 92.4)",
+        "tonalRamp": [
+          "#0F0B01",
+          "#292516",
+          "#474232",
+          "#666151",
+          "#888271",
+          "#ABA593",
+          "#CFC9B6",
+          "#F4EEDB"
+        ],
+        "darkToken": "mapa-tierra-dark"
+      },
+      "marco": {
+        "role": "neutral",
+        "displayName": "Phone Bezel",
+        "canonical": "#172033",
+        "oklch": "oklch(24.5% 0.039 264.4)",
+        "tonalRamp": [
+          "#040A1B",
+          "#1B2538",
+          "#384257",
+          "#566178",
+          "#77839A",
+          "#99A5BE",
+          "#BDC9E3",
+          "#E7EFFF"
+        ],
+        "darkToken": "marco-dark"
+      }
+    },
+    "themes": {
+      "light": "default :root",
+      "dark": "@media (prefers-color-scheme: dark) on :root:not([data-theme=light]) and :root[data-theme=dark]; every light token has a *-dark counterpart in the frontmatter; --sombra becomes 0 0 0"
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Rótulo Display",
+        "purpose": "Road state on the wall, arrival on the itinerary wall, balances, totals, alert. Uppercase, font-stretch 68%, weight 850, sized against the wall container (cqi). Caution variant clamps to 36px/13cqi/52px."
+      },
+      "headline": {
+        "displayName": "Rótulo Headline",
+        "purpose": "Screen titles beside the back button."
+      },
+      "fare": {
+        "displayName": "Rótulo Fare",
+        "purpose": "Per-leg prices and fare rows; tabular."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section heads, ask prompt; sheet titles at 20px/800."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Base copy, chat bubbles, row titles."
+      },
+      "body-sm": {
+        "displayName": "Body Small",
+        "purpose": "Hints, chips, toggles, notes."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Nav labels (11px), tags (12px/700), wall meta (13px)."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Timestamps, disclaimers, demo notes in tinta-3."
+      }
+    },
+    "fontVariation": {
+      "family": "Archivo (Google Fonts, wdth 62..125, wght 300..900)",
+      "rotulo": "font-stretch:68%; font-weight:850; text-transform:uppercase; letter-spacing:.01em; line-height:.95",
+      "plate": "font-stretch:75%; font-weight:800; letter-spacing:.04em"
+    },
+    "shadows": [
+      {
+        "name": "ask-lift",
+        "value": "0 10px 24px -14px rgb(var(--sombra)/.35), 0 1px 0 rgb(var(--sombra)/.06)",
+        "purpose": "Assistant card overlapping the wall."
+      },
+      {
+        "name": "request-lift",
+        "value": "0 12px 24px -16px rgb(var(--sombra)/.45)",
+        "purpose": "Incoming ride request card (driver)."
+      },
+      {
+        "name": "fab",
+        "value": "0 12px 24px -10px rgb(var(--sombra)/.55)",
+        "purpose": "Report FAB on the corridor map."
+      },
+      {
+        "name": "sheet",
+        "value": "0 -12px 30px -12px rgb(var(--sombra)/.35)",
+        "purpose": "Bottom sheets."
+      },
+      {
+        "name": "toast",
+        "value": "0 14px 28px -12px rgb(var(--sombra)/.6)",
+        "purpose": "Transient notices."
+      },
+      {
+        "name": "thumb",
+        "value": "0 1px 2px rgb(var(--sombra)/.3)",
+        "purpose": "Switch knobs."
+      },
+      {
+        "name": "scrim",
+        "value": "rgb(var(--sombra)/.42)",
+        "purpose": "Backdrop behind sheets."
+      },
+      {
+        "name": "step-halo",
+        "value": "0 0 0 5px var(--turquesa-suave)",
+        "purpose": "Current trip step dot."
+      },
+      {
+        "name": "selected-ring",
+        "value": "inset 0 0 0 1px var(--tinta)",
+        "purpose": "Selected method, amount, report type (with ink border)."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Entries, presses, toggles, the wall repaint."
+      },
+      {
+        "name": "ease-drawer",
+        "value": "cubic-bezier(0.32, 0.72, 0, 1)",
+        "purpose": "Bottom sheet slide (380ms)."
+      },
+      {
+        "name": "wall-repaint",
+        "value": "@keyframes repaint{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}} 520ms ease-out (home wall), 560ms (itinerary wall)",
+        "purpose": "Signature: paint layer wipes in left to right in the new state color on corridor state change and when chat becomes itinerary."
+      },
+      {
+        "name": "hold-fill",
+        "value": "clip-path inset wipe, 1500ms linear while held, 200ms ease-out retract",
+        "purpose": "Emergency hold-to-confirm."
+      },
+      {
+        "name": "press",
+        "value": "transform: scale(.97), 140ms ease-out",
+        "purpose": "Buttons and FAB (seat tiles .96)."
+      },
+      {
+        "name": "msg-in",
+        "value": "opacity 0 + translateY(6px) to rest, 260ms ease-out",
+        "purpose": "Chat messages."
+      },
+      {
+        "name": "toast-in",
+        "value": "opacity 220ms + translateY(-10px) 260ms, ease-out",
+        "purpose": "Toast entry."
+      },
+      {
+        "name": "scrim-fade",
+        "value": "opacity 260ms ease",
+        "purpose": "Sheet backdrop."
+      },
+      {
+        "name": "alert-fade",
+        "value": "opacity 200ms ease",
+        "purpose": "Full-screen coral alert."
+      },
+      {
+        "name": "countdown",
+        "value": "scaleX 1 to 0, 20s linear, transform-origin left",
+        "purpose": "Ride request timer bar (ochre)."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation and transition durations 1ms",
+        "purpose": "prefers-reduced-motion: reduce."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "stacked",
+        "value": "860px",
+        "purpose": "Rail stacks below the phone."
+      },
+      {
+        "name": "phone",
+        "value": "440px",
+        "purpose": "Page becomes the phone: no frame, 100dvh, no status bar."
+      },
+      {
+        "name": "hover",
+        "value": "(hover:hover) and (pointer:fine)",
+        "purpose": "Hover states only on fine pointers."
+      }
+    ],
+    "focus": {
+      "value": "outline: 3px solid var(--ocre); outline-offset: 2px; border-radius: 6px",
+      "purpose": "Global :focus-visible."
+    },
+    "icons": {
+      "set": "Phosphor (MIT), fill style, 256 viewBox, inlined via SVG sprite",
+      "sizes": "20px default; 16px meta; 22 to 24px badges and nav"
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ink button for the main action of every screen.",
+      "html": "<button class=\"ds-btn ds-btn-p\">Pagar $24.000 una sola vez</button>",
+      "css": ".ds-btn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 20px;border:0;border-radius:14px;font:750 16px/1 Archivo,system-ui,sans-serif;width:100%;cursor:pointer;transition:transform 140ms cubic-bezier(0.23,1,0.32,1),background-color 160ms ease}.ds-btn:active{transform:scale(.97)}.ds-btn:focus-visible{outline:3px solid var(--ocre,#E9A825);outline-offset:2px}.ds-btn-p{background:var(--tinta,#172033);color:var(--cal,#F1F5F3)}.ds-btn-p:hover{background:color-mix(in srgb,var(--tinta,#172033) 88%,var(--turquesa,#1FB0A6))}"
+    },
+    {
+      "name": "Turquoise Button",
+      "kind": "button",
+      "refersTo": "button-turquesa",
+      "description": "State action on the open/calm color.",
+      "html": "<button class=\"ds-btn-t\">Confirmar ruta</button>",
+      "css": ".ds-btn-t{display:flex;align-items:center;justify-content:center;min-height:52px;padding:0 20px;border:0;border-radius:14px;font:750 16px/1 Archivo,system-ui,sans-serif;width:100%;background:var(--turquesa,#1FB0A6);color:var(--turquesa-fg,#10202A);cursor:pointer;transition:transform 140ms cubic-bezier(0.23,1,0.32,1)}.ds-btn-t:active{transform:scale(.97)}.ds-btn-t:focus-visible{outline:3px solid var(--ocre,#E9A825);outline-offset:2px}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary action on the cal shade.",
+      "html": "<button class=\"ds-btn-g\">Ahora no</button>",
+      "css": ".ds-btn-g{display:flex;align-items:center;justify-content:center;min-height:52px;padding:0 20px;border:0;border-radius:14px;font:750 16px/1 Archivo,system-ui,sans-serif;width:100%;background:var(--cal-2,#E3EBE7);color:var(--tinta,#172033);cursor:pointer;transition:transform 140ms cubic-bezier(0.23,1,0.32,1)}.ds-btn-g:active{transform:scale(.97)}.ds-btn-g:focus-visible{outline:3px solid var(--ocre,#E9A825);outline-offset:2px}"
+    },
+    {
+      "name": "Corridor Wall",
+      "kind": "custom",
+      "refersTo": "wall-abierta",
+      "description": "Signature: road state as a painted field with a condensed rótulo; repaints by clip-path wipe. Toggle data-s to abierta, precaucion, bloqueo.",
+      "html": "<section class=\"ds-wall\" data-s=\"bloqueo\"><i class=\"ds-paint\"></i><span class=\"ds-route\">Troncal del Caribe, Riohacha a Maicao</span><h2 class=\"ds-rotulo\">Bloqueo<br>en el km 42</h2><p class=\"ds-sub\">Vía cerrada confirmada por 9 reportes. Desvío por Albania y Cuestecitas.</p></section>",
+      "css": ".ds-wall{container-type:inline-size;position:relative;overflow:hidden;padding:58px 20px 22px;background:var(--wall-bg);color:var(--wall-fg);font-family:Archivo,system-ui,sans-serif}.ds-wall[data-s=abierta]{--wall-bg:var(--turquesa,#1FB0A6);--wall-fg:var(--turquesa-fg,#10202A)}.ds-wall[data-s=precaucion]{--wall-bg:var(--ocre,#E9A825);--wall-fg:var(--ocre-fg,#172033)}.ds-wall[data-s=bloqueo]{--wall-bg:var(--coral,#C8412F);--wall-fg:var(--coral-fg,#FFFFFF)}.ds-paint{position:absolute;inset:0;background:var(--wall-bg);animation:ds-repaint 520ms cubic-bezier(0.23,1,0.32,1) both}.ds-wall>*:not(.ds-paint){position:relative}.ds-route{font-size:14px;font-weight:600;opacity:.92}.ds-rotulo{font-stretch:68%;font-weight:850;text-transform:uppercase;letter-spacing:.01em;line-height:.95;font-size:clamp(40px,17cqi,60px);margin:10px 0 6px;text-wrap:balance}.ds-sub{font-size:15px;max-width:30ch;margin:0}@keyframes ds-repaint{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}@media (prefers-reduced-motion:reduce){.ds-paint{animation-duration:1ms}}"
+    },
+    {
+      "name": "Ask Card",
+      "kind": "card",
+      "refersTo": "ask-card",
+      "description": "Primary entry to the assistant, overlapping the wall by 22px with an ink-tinted lift.",
+      "html": "<button class=\"ds-ask\"><svg viewBox=\"0 0 256 256\" width=\"24\" height=\"24\" fill=\"currentColor\"><path d=\"M128 24a104 104 0 0 0-91.82 152.88l-11.35 34.05a16 16 0 0 0 20.24 20.24l34.05-11.35A104 104 0 1 0 128 24Zm-44 116a12 12 0 1 1 12-12 12 12 0 0 1-12 12Zm44 0a12 12 0 1 1 12-12 12 12 0 0 1-12 12Zm44 0a12 12 0 1 1 12-12 12 12 0 0 1-12 12Z\"/></svg><span><b>¿Para dónde vas?</b><small>Escribe o dile al asistente</small></span></button>",
+      "css": ".ds-ask{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;cursor:pointer;background:var(--muro,#FFFFFF);color:var(--tinta,#172033);border-radius:14px;padding:16px;font-family:Archivo,system-ui,sans-serif;box-shadow:0 10px 24px -14px rgb(23 32 51/.35),0 1px 0 rgb(23 32 51/.06)}.ds-ask svg{color:var(--turquesa-tx,#0A6F6B);flex:none}.ds-ask b{display:block;font-size:17px}.ds-ask small{color:var(--tinta-3,#6B7385);font-size:13px}.ds-ask:focus-visible{outline:3px solid var(--ocre,#E9A825);outline-offset:2px}"
+    },
+    {
+      "name": "Place Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Quick place pill, 44px tall.",
+      "html": "<button class=\"ds-chip\">Palacio de Justicia <small>Maicao</small></button>",
+      "css": ".ds-chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:10px 14px;border-radius:999px;background:var(--muro,#FFFFFF);border:1px solid var(--linea,#CBD6D1);color:var(--tinta,#172033);font:600 14px Archivo,system-ui,sans-serif;cursor:pointer}.ds-chip small{color:var(--tinta-3,#6B7385);font-weight:500}.ds-chip:hover{border-color:var(--tinta-3,#6B7385)}.ds-chip:focus-visible{outline:3px solid var(--ocre,#E9A825);outline-offset:2px}"
+    },
+    {
+      "name": "State Tags",
+      "kind": "chip",
+      "refersTo": "tag-ok",
+      "description": "Small pills on state washes.",
+      "html": "<span class=\"ds-tag ds-t-ok\">En vivo</span> <span class=\"ds-tag ds-t-bad\">Vía cerrada</span> <span class=\"ds-tag ds-t-n\">Guardado en el teléfono</span>",
+      "css": ".ds-tag{display:inline-flex;align-items:center;gap:5px;font:700 12px Archivo,system-ui,sans-serif;padding:3px 8px;border-radius:999px;white-space:nowrap}.ds-t-ok{background:var(--turquesa-suave,#D3EAE6);color:var(--turquesa-tx,#0A6F6B)}.ds-t-bad{background:var(--coral-suave,#F7D9D2);color:var(--coral,#C8412F)}.ds-t-n{background:var(--cal-2,#E3EBE7);color:var(--tinta-2,#4A5568)}"
+    },
+    {
+      "name": "Composer Input",
+      "kind": "input",
+      "refersTo": "input-composer",
+      "description": "Chat composer: pill input with an ink send button.",
+      "html": "<form class=\"ds-composer\"><input placeholder=\"Escribe a dónde vas\"><button type=\"button\" aria-label=\"Enviar\"><svg viewBox=\"0 0 256 256\" width=\"20\" height=\"20\" fill=\"currentColor\"><path d=\"M231.87 114l-168-95.89A16 16 0 0 0 40.92 37.34L71.55 128 40.92 218.67A16 16 0 0 0 56 240a16.15 16.15 0 0 0 7.93-2.1l167.92-96.05a16 16 0 0 0 .02-27.85Z\"/></svg></button></form>",
+      "css": ".ds-composer{display:flex;gap:8px;padding:10px 12px;background:var(--cal,#F1F5F3);border-top:1px solid var(--linea,#CBD6D1)}.ds-composer input{flex:1;min-width:0;border:1px solid var(--linea,#CBD6D1);background:var(--muro,#FFFFFF);color:var(--tinta,#172033);border-radius:999px;padding:10px 16px;font:16px Archivo,system-ui,sans-serif}.ds-composer input:focus-visible{outline:3px solid var(--ocre,#E9A825);outline-offset:2px}.ds-composer button{width:44px;height:44px;border-radius:50%;border:0;display:grid;place-items:center;background:var(--tinta,#172033);color:var(--cal,#F1F5F3);cursor:pointer}"
+    },
+    {
+      "name": "Bottom Nav",
+      "kind": "nav",
+      "refersTo": "nav",
+      "description": "Five items; active turns ink with Deep Lagoon icon; assistant is an ink pill.",
+      "html": "<nav class=\"ds-nav\"><a aria-current=\"page\"><i></i>Inicio</a><a><i></i>Corredor</a><a class=\"ds-ai\"><b></b>Asistente</a><a><i></i>Viaje</a><a><i></i>Perfil</a></nav>",
+      "css": ".ds-nav{display:grid;grid-template-columns:repeat(5,1fr);padding:8px 8px 22px;background:var(--cal,#F1F5F3);border-top:1px solid var(--linea,#CBD6D1);font-family:Archivo,system-ui,sans-serif}.ds-nav a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--tinta-3,#6B7385);padding:6px 0;min-height:44px;cursor:pointer}.ds-nav a i{width:24px;height:24px;border-radius:6px;background:currentColor;opacity:.9;margin:3px 0}.ds-nav a[aria-current=page]{color:var(--tinta,#172033)}.ds-nav a[aria-current=page] i{background:var(--turquesa-tx,#0A6F6B)}.ds-nav .ds-ai b{width:44px;height:30px;border-radius:999px;background:var(--tinta,#172033)}"
+    },
+    {
+      "name": "Emergency Hold",
+      "kind": "custom",
+      "refersTo": "button-coral",
+      "description": "Hold to confirm: coral fills by clip-path wipe over 1500ms.",
+      "html": "<button class=\"ds-hold\"><i class=\"ds-fill\"></i><span class=\"ds-lbl\">Mantén para enviar alerta</span></button>",
+      "css": ".ds-hold{position:relative;overflow:hidden;width:100%;min-height:56px;border:0;border-radius:14px;background:var(--coral-suave,#F7D9D2);color:var(--coral,#C8412F);font:800 16px Archivo,system-ui,sans-serif;cursor:pointer}.ds-fill{position:absolute;inset:0;background:var(--coral,#C8412F);clip-path:inset(0 100% 0 0);transition:clip-path 200ms cubic-bezier(0.23,1,0.32,1)}.ds-lbl{position:relative}.ds-hold:active .ds-fill{clip-path:inset(0 0 0 0);transition:clip-path 1500ms linear}.ds-hold:active .ds-lbl{color:var(--coral-fg,#FFFFFF)}.ds-hold:focus-visible{outline:3px solid var(--ocre,#E9A825);outline-offset:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Muros de Cal",
+    "overview": "GoSmart is a sunlit street object, not a dark map dashboard. The ground is cool limewash, the ink is deep indigo, and the state of the Troncal del Caribe is announced by whole painted fields of color: Caribbean turquoise when the road is open, ochre for caution or detour, coral for a blockade. The color is the message. It is laid down as a wall, the way a facade on the malecón is painted, never sprinkled as a glowing accent.\n\nType behaves like hand-painted sign lettering. Destinations, road states, arrival times and fares are set in Archivo squeezed to a condensed heavy cap (68% width, weight 850); everything else is Archivo at regular width, plain and readable under strong sun. Surfaces are flat and tonal; the only shadows are soft, ink-tinted, and reserved for things that float. Motion has one signature: the wall repaint, a left-to-right clip-path wipe in the new state color.\n\nThe world is light-first because it is used outdoors under Caribbean sun, on mid and low-end Android phones. A full dark token set exists and mirrors every role. This replaces the incumbent \"Kinetic Flow\" look (dark navy with a neon teal accent, still in `lib/theme/design_tokens.dart`); the Flutter tokens have not yet been migrated.",
+    "keyCharacteristics": [
+      "Cool lime-white ground, indigo ink, three state colors applied as full fields.",
+      "Condensed heavy caps (rótulos) only for states, destinations, arrival times and money.",
+      "One radius family: 14px panels and buttons, pill chips and tags.",
+      "Flat by default; tinted soft shadows only on floating layers.",
+      "Signature motion: the clip-path wall repaint.",
+      "Phosphor icons (fill style, 256 grid) inlined from an SVG sprite."
+    ],
+    "rules": [
+      {
+        "name": "The Painted Wall Rule",
+        "body": "A road state is announced by a whole field of its color (the home wall, the itinerary wall, the full-screen alert), with the state written on it as a rótulo. Elsewhere state colors appear only as their soft wash behind a badge or tag. Never a neon accent on a dark ground.",
+        "section": "colors"
+      },
+      {
+        "name": "The Three-State Rule",
+        "body": "Turquoise means open and calm, ochre means caution or detour, coral means blockade or emergency. Do not reuse them decoratively. Sea blue belongs to TransPadilla only.",
+        "section": "colors"
+      },
+      {
+        "name": "The Ink Leads Rule",
+        "body": "The primary action on a screen is an ink button (tinta on cal). Turquoise and coral buttons are reserved for state-specific actions.",
+        "section": "colors"
+      },
+      {
+        "name": "The Paired Ink Rule",
+        "body": "Every paint color has a named foreground (turquesa-fg, ocre-fg, coral-fg). Text on a wall uses its pair; text on the ground uses turquesa-tx, never raw turquoise.",
+        "section": "colors"
+      },
+      {
+        "name": "The Rótulo Rule",
+        "body": "Condensed heavy caps are for the road state, destinations, arrival times, totals, fares and screen titles. Never for paragraphs, buttons or labels.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Money Rule",
+        "body": "Every number that changes or is compared (fares, balances, times, seat counts) uses tabular figures.",
+        "section": "typography"
+      },
+      {
+        "name": "The Floating-Only Shadow Rule",
+        "body": "Panels, rows, chips and walls never cast shadows. Only layers that float over content (ask card, sheet, toast, FAB, request card) get one, and it is ink-tinted.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do announce road state with a whole painted field and a rótulo, using the state's paired ink.",
+      "Do use Deep Lagoon (turquesa-tx) for turquoise text and icons on the limewash ground.",
+      "Do set road states, destinations, arrival times, totals and fares in the condensed rótulo (68% width, 850, uppercase, 0.95 leading), with tabular figures for money and times.",
+      "Do keep radius to the one family: 14px panels and buttons, 10px small controls, pills for chips and tags.",
+      "Do tint every shadow with the ink RGB and reserve shadows for floating layers.",
+      "Do use the clip-path wall repaint (520 to 560ms, ease-out) when the corridor state changes or the chat becomes an itinerary.",
+      "Do keep touch targets at 44px or more and the primary button at 52px.",
+      "Do mark selection with an ink border plus inset ink ring."
+    ],
+    "donts": [
+      "Don't return to the dark map dashboard with a neon accent; this world is light-first limewash.",
+      "Don't use turquoise, ochre or coral as decoration; each means one road state.",
+      "Don't use sea blue for anything other than TransPadilla.",
+      "Don't put white text on turquoise or ochre, or raw turquoise text on the ground.",
+      "Don't set paragraphs, buttons or labels in the condensed rótulo.",
+      "Don't add shadows to panels, rows, chips or walls.",
+      "Don't show offline as an error; it is an ink banner, not coral."
+    ]
+  }
+}
