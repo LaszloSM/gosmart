@@ -67,3 +67,6 @@ supabase/functions/
 
 # Claude Code settings
 .claude/settings.local.json
+
+# Impeccable: capturas de revisión locales
+.impeccable/review/

@@ -1,0 +1,1060 @@
+<title>GoSmart Guajira</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&display=swap">
+<style>
+/* Layout: presenter rail on the left, phone frame on the right. Inside the phone,
+   the corridor state is a painted limewash wall; everything else sits on the cal ground. */
+:root{
+  --cal:#F1F5F3;          /* ground: cool limewash */
+  --cal-2:#E3EBE7;        /* sectioning layer */
+  --muro:#FFFFFF;         /* raised surfaces (sheets, inputs) */
+  --tinta:#172033;        /* ink */
+  --tinta-2:#4A5568;      /* secondary ink */
+  --tinta-3:#6B7385;      /* tertiary ink, captions */
+  --linea:#CBD6D1;        /* hairlines */
+  --turquesa:#1FB0A6;     /* Caribbean turquoise field: brand + "vía abierta" wall */
+  --turquesa-fg:#10202A;  /* ink on turquoise */
+  --turquesa-tx:#0A6F6B;  /* turquoise for text and icons on the ground */
+  --turquesa-suave:#D3EAE6;
+  --ocre:#E9A825;         /* caution / mototaxi */
+  --ocre-fg:#172033;
+  --ocre-suave:#FBEBC6;
+  --coral:#C8412F;        /* blockade / emergency */
+  --coral-fg:#FFFFFF;
+  --coral-suave:#F7D9D2;
+  --mar:#2B5DA8;          /* TransPadilla */
+  --mar-suave:#DCE6F5;
+  --sombra:23 32 51;      /* rgb of ink for tinted shadows */
+  --marco:#172033;        /* phone bezel */
+  --mapa-mar:#D6E7EE;
+  --mapa-tierra:#ECE6D3;
+
+  --f-ui:"Archivo",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-rotulo:"Archivo","Arial Narrow",ui-sans-serif,system-ui,sans-serif;
+
+  --r:14px; --r-sm:10px; --pill:999px;
+  --ease-out:cubic-bezier(0.23,1,0.32,1);
+  --ease-drawer:cubic-bezier(0.32,0.72,0,1);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --cal:#10161F; --cal-2:#18212D; --muro:#1E2836; --tinta:#E8EEF0; --tinta-2:#B3BDC8; --tinta-3:#8D97A5; --linea:#2C3847;
+    --turquesa:#1A9E95; --turquesa-fg:#0C1A20; --turquesa-tx:#47C9BE; --turquesa-suave:#143936;
+    --ocre:#E3A223; --ocre-fg:#14191F; --ocre-suave:#3A2E12;
+    --coral:#C4402E; --coral-fg:#FFFFFF; --coral-suave:#40201B;
+    --mar:#5B8DD8; --mar-suave:#1C2B45; --sombra:0 0 0; --marco:#05080C;
+    --mapa-mar:#14303B; --mapa-tierra:#262A26;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --cal:#10161F; --cal-2:#18212D; --muro:#1E2836; --tinta:#E8EEF0; --tinta-2:#B3BDC8; --tinta-3:#8D97A5; --linea:#2C3847;
+  --turquesa:#1A9E95; --turquesa-fg:#0C1A20; --turquesa-tx:#47C9BE; --turquesa-suave:#143936;
+  --ocre:#E3A223; --ocre-fg:#14191F; --ocre-suave:#3A2E12;
+  --coral:#C4402E; --coral-fg:#FFFFFF; --coral-suave:#40201B;
+  --mar:#5B8DD8; --mar-suave:#1C2B45; --sombra:0 0 0; --marco:#05080C;
+  --mapa-mar:#14303B; --mapa-tierra:#262A26;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+body{background:var(--cal-2);color:var(--tinta);font-family:var(--f-ui);font-size:15px;line-height:1.45;padding-inline:16px;padding-block:24px}
+::selection{background:var(--ocre);color:var(--ocre-fg)}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+input,textarea{font:inherit;font-size:16px;color:var(--tinta)}
+:focus-visible{outline:3px solid var(--ocre);outline-offset:2px;border-radius:6px}
+.ic{width:20px;height:20px;flex:none;fill:currentColor}
+.num{font-variant-numeric:tabular-nums}
+.rotulo{font-family:var(--f-rotulo);font-stretch:68%;font-weight:850;text-transform:uppercase;letter-spacing:.01em;line-height:.95}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- page shell ---------- */
+.stage{display:grid;grid-template-columns:minmax(0,320px) auto;gap:40px;justify-content:center;align-items:start;max-width:1100px;margin:0 auto}
+.rail{position:sticky;top:24px;display:flex;flex-direction:column;gap:22px;min-width:0}
+.rail h1{margin:0;font-size:44px}
+.rail h1 span{color:var(--turquesa-tx)}
+.rail p{margin:0;color:var(--tinta-2);max-width:34ch}
+.rail h2{margin:0 0 8px;font-size:16px;font-weight:750;color:var(--tinta)}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--cal);border-radius:var(--pill);padding:4px;border:1px solid var(--linea)}
+.seg button{padding:10px 12px;border-radius:var(--pill);font-weight:650;display:flex;gap:8px;align-items:center;justify-content:center;transition:background-color 180ms ease,color 180ms ease}
+.seg button[aria-pressed="true"]{background:var(--tinta);color:var(--cal)}
+.idx{display:flex;flex-direction:column;gap:2px}
+.idx button{display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:left;padding:8px 10px;border-radius:var(--r-sm);color:var(--tinta-2);font-size:14px}
+.idx button b{font-weight:600;color:var(--tinta)}
+.idx button small{font-size:12px;color:var(--tinta-3);white-space:nowrap}
+.idx button[aria-current="true"]{background:var(--cal)}
+.idx button[aria-current="true"] b{color:var(--turquesa-tx)}
+.toggles{display:flex;flex-direction:column;gap:8px}
+.tg{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--r-sm);background:var(--cal);border:1px solid var(--linea);text-align:left}
+.tg .sw{width:38px;height:22px;border-radius:var(--pill);background:var(--linea);position:relative;flex:none;transition:background-color 200ms ease}
+.tg .sw::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--muro);box-shadow:0 1px 2px rgb(var(--sombra)/.3);transition:transform 220ms var(--ease-out)}
+.tg[aria-pressed="true"] .sw{background:var(--coral)}
+.tg[aria-pressed="true"] .sw::after{transform:translateX(16px)}
+.tg span{display:flex;flex-direction:column;font-size:14px;font-weight:600}
+.tg span small{font-weight:400;color:var(--tinta-3);font-size:12px}
+.linkbtn{font-size:14px;font-weight:600;color:var(--turquesa-tx);display:inline-flex;gap:6px;align-items:center;padding:6px 0}
+.disclaimer{font-size:12px;color:var(--tinta-3);border-top:1px solid var(--linea);padding-top:14px}
+
+/* ---------- phone ---------- */
+.phone{width:390px;height:812px;max-width:100%;border-radius:48px;background:var(--marco);padding:12px;box-shadow:0 30px 60px -20px rgb(var(--sombra)/.45),0 8px 18px -8px rgb(var(--sombra)/.3)}
+.screen{position:relative;width:100%;height:100%;border-radius:37px;overflow:hidden;background:var(--cal);display:flex;flex-direction:column;isolation:isolate}
+.status{position:absolute;top:0;left:0;right:0;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 30px;font-size:14px;font-weight:650;z-index:5;pointer-events:none;background:var(--cal);transition:background-color 200ms ease}
+.status .notch{position:absolute;left:50%;top:9px;transform:translateX(-50%);width:104px;height:28px;border-radius:20px;background:var(--marco)}
+.status .sig{display:flex;gap:6px;align-items:center}
+.status .sig .ic{width:16px;height:16px}
+.batt{width:24px;height:12px;border:1.5px solid currentColor;border-radius:4px;position:relative;opacity:.85}
+.batt::after{content:"";position:absolute;inset:1.5px;right:7px;background:currentColor;border-radius:1.5px}
+.view.pt{padding-top:44px}
+.view{flex:1;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--linea) transparent;position:relative}
+.view::-webkit-scrollbar{width:4px}.view::-webkit-scrollbar-thumb{background:var(--linea);border-radius:4px}
+.pad{padding:0 20px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.endspace{height:24px}
+
+.nav{flex:none;display:grid;grid-template-columns:repeat(5,1fr);padding:8px 8px 22px;background:var(--cal);border-top:1px solid var(--linea);position:relative;z-index:4}
+.nav button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--tinta-3);padding:6px 0;min-height:44px;border-radius:12px}
+.nav button .ic{width:24px;height:24px}
+.nav button > svg.ic{margin:3px 0}
+.nav button[aria-current="page"]{color:var(--tinta)}
+.nav button[aria-current="page"] .ic{color:var(--turquesa-tx)}
+.nav button.ai .bub{width:44px;height:30px;border-radius:var(--pill);display:grid;place-items:center;background:var(--tinta);color:var(--cal)}
+.nav button.ai .ic{color:var(--cal)!important;width:20px;height:20px}
+
+/* ---------- the wall (signature) ---------- */
+.wall{position:relative;color:var(--wall-fg);background:var(--wall-bg);padding:58px 20px 22px;overflow:hidden}
+.wall[data-s="abierta"]{--wall-bg:var(--turquesa);--wall-fg:var(--turquesa-fg)}
+.wall[data-s="bloqueo"]{--wall-bg:var(--coral);--wall-fg:var(--coral-fg)}
+.wall[data-s="precaucion"]{--wall-bg:var(--ocre);--wall-fg:var(--ocre-fg)}
+.wall .paint{position:absolute;inset:0;background:var(--wall-bg);z-index:0}
+.wall.repaint .paint{animation:repaint 520ms var(--ease-out) both}
+@keyframes repaint{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+.wall > *:not(.paint){position:relative;z-index:1}
+.wall .route{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;opacity:.92}
+.wall .route .ic{width:16px;height:16px}
+.wall .big{font-size:60px;margin:10px 0 6px;text-wrap:balance}
+.wall .sub{font-size:15px;max-width:30ch}
+.wall .meta{display:flex;gap:16px;margin-top:14px;font-size:13px;font-weight:600;flex-wrap:wrap}
+.wall .meta span{display:inline-flex;gap:6px;align-items:center}
+.wall .meta .ic{width:16px;height:16px}
+.wall .top{display:flex;justify-content:space-between;align-items:center}
+.wall .bell{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:rgb(23 32 51 / .1)}
+.wall[data-s="bloqueo"] .bell{background:rgb(255 255 255 / .16)}
+
+/* ---------- generic pieces ---------- */
+.ask{display:flex;align-items:center;gap:12px;background:var(--muro);border-radius:var(--r);padding:16px;box-shadow:0 10px 24px -14px rgb(var(--sombra)/.35),0 1px 0 rgb(var(--sombra)/.06);margin-top:-22px;position:relative;z-index:2;width:100%;text-align:left}
+.ask .ic{color:var(--turquesa-tx);width:24px;height:24px}
+.ask b{display:block;font-size:17px}
+.ask small{color:var(--tinta-3);font-size:13px}
+.ask .mic{margin-left:auto;width:40px;height:40px;border-radius:50%;background:var(--cal-2);display:grid;place-items:center}
+.ask .mic .ic{color:var(--tinta);width:20px;height:20px}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;margin:6px 0 -4px}
+.sec-h h3{margin:0;font-size:17px;font-weight:750}
+.sec-h button{font-size:13px;font-weight:650;color:var(--turquesa-tx)}
+.hint{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:var(--r);background:var(--mar-suave)}
+.hint .ic{color:var(--mar);width:22px;height:22px;margin-top:1px}
+.hint p{margin:0;font-size:14px}
+.hint b{display:block;font-size:15px}
+.places{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:2px 20px}
+.places::-webkit-scrollbar{display:none}
+.chip{flex:none;display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--pill);background:var(--muro);border:1px solid var(--linea);font-size:14px;font-weight:600;min-height:44px}
+.chip .ic{width:18px;height:18px;color:var(--turquesa-tx)}
+.chip small{color:var(--tinta-3);font-weight:500}
+.rows{display:flex;flex-direction:column}
+.row{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--linea);min-width:0;text-align:left;width:100%}
+.row:last-child{border-bottom:0}
+.row .tx{flex:1;min-width:0}
+.row .tx b{display:block;font-size:15px;font-weight:650}
+.row .tx small{display:block;color:var(--tinta-3);font-size:13px;overflow:hidden;text-overflow:ellipsis}
+.row .amt{font-weight:700;white-space:nowrap}
+.badge{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none}
+.badge .ic{width:22px;height:22px}
+.b-ok{background:var(--turquesa-suave);color:var(--turquesa-tx)}
+.b-warn{background:var(--ocre-suave);color:#8A5A00}
+.b-bad{background:var(--coral-suave);color:var(--coral)}
+.b-mar{background:var(--mar-suave);color:var(--mar)}
+.b-n{background:var(--cal-2);color:var(--tinta-2)}
+:root[data-theme="dark"] .b-warn{color:var(--ocre)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .b-warn{color:var(--ocre)}}
+.panel{background:var(--muro);border-radius:var(--r);padding:16px}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:3px 8px;border-radius:var(--pill);white-space:nowrap}
+.t-ok{background:var(--turquesa-suave);color:var(--turquesa-tx)}
+.t-warn{background:var(--ocre-suave);color:#7A5000}
+.t-bad{background:var(--coral-suave);color:var(--coral)}
+.t-n{background:var(--cal-2);color:var(--tinta-2)}
+:root[data-theme="dark"] .t-warn{color:var(--ocre)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .t-warn{color:var(--ocre)}}
+.tag .ic{width:13px;height:13px}
+
+.btn{white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 20px;border-radius:var(--r);font-weight:750;font-size:16px;width:100%;transition:transform 140ms var(--ease-out),background-color 160ms ease}
+.btn:active{transform:scale(.97)}
+.btn-p{background:var(--tinta);color:var(--cal)}
+.btn-t{background:var(--turquesa);color:var(--turquesa-fg)}
+.btn-c{background:var(--coral);color:var(--coral-fg)}
+.btn-g{background:var(--cal-2);color:var(--tinta)}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.back{display:flex;align-items:center;gap:10px;padding:6px 20px 12px}
+.back button{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--muro)}
+.back h2{margin:0;font-size:30px;font-family:var(--f-rotulo);font-stretch:68%;font-weight:850;text-transform:uppercase;line-height:.95}
+.note{font-size:12px;color:var(--tinta-3)}
+.demo-ctl{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:650;color:var(--tinta-2);padding:10px;border:1.5px dashed var(--linea);border-radius:var(--r);width:100%}
+.demo-ctl .ic{width:16px;height:16px}
+
+/* map */
+.map{display:block;width:100%;height:auto;border-radius:var(--r);background:var(--mapa-mar)}
+.map text{font-family:var(--f-ui);font-size:10px;font-weight:650;fill:var(--tinta-2)}
+.map .city{font-size:12px;font-weight:800;fill:var(--tinta)}
+.map .sea{font-size:10px;font-style:italic;fill:var(--tinta-3);font-weight:500}
+
+/* corridor screen */
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--tinta-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:18px;height:4px;border-radius:2px;display:inline-block}
+.conf{display:flex;gap:3px;align-items:center}
+.conf i{width:6px;height:14px;border-radius:2px;background:var(--linea)}
+.conf i.on{background:var(--tinta-2)}
+.pattern{display:flex;gap:12px;padding:14px;border-radius:var(--r);background:var(--cal-2)}
+.pattern .ic{color:var(--tinta-2);margin-top:2px}
+.pattern p{margin:0;font-size:14px}
+.fab{position:absolute;right:18px;bottom:18px;z-index:3;display:flex;align-items:center;gap:8px;background:var(--tinta);color:var(--cal);padding:0 18px;height:52px;border-radius:var(--pill);font-weight:750;box-shadow:0 12px 24px -10px rgb(var(--sombra)/.55);transition:transform 140ms var(--ease-out)}
+.fab:active{transform:scale(.97)}
+
+/* chat */
+.chat{display:flex;flex-direction:column;gap:10px;padding:4px 20px 16px}
+.msg{max-width:84%;padding:11px 14px;border-radius:18px;font-size:15px;animation:msgIn 260ms var(--ease-out) both}
+.msg.ai{background:var(--muro);border-bottom-left-radius:6px;align-self:flex-start}
+.msg.me{background:var(--tinta);color:var(--cal);border-bottom-right-radius:6px;align-self:flex-end}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.checks{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.checks div{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--tinta-3);transition:color 200ms ease}
+.checks div .ic{width:18px;height:18px;color:var(--linea);transition:color 200ms ease}
+.checks div.done{color:var(--tinta)}
+.checks div.done .ic{color:var(--turquesa-tx)}
+.suggest{display:flex;flex-direction:column;gap:8px;padding:0 20px}
+.suggest button{text-align:left;padding:12px 14px;border-radius:var(--r);border:1px solid var(--linea);background:var(--muro);font-size:14px;font-weight:550}
+.composer{flex:none;display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--linea);background:var(--cal)}
+.composer input{flex:1;min-width:0;border:1px solid var(--linea);background:var(--muro);border-radius:var(--pill);padding:10px 16px}
+.composer button{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--tinta);color:var(--cal);flex:none}
+.composer button.g{background:var(--cal-2);color:var(--tinta)}
+
+/* itinerary */
+.itin{animation:none}
+.itin-wall{position:relative;color:var(--turquesa-fg);background:var(--turquesa);padding:18px 20px 20px;overflow:hidden}
+.itin-wall.detour{background:var(--ocre);color:var(--ocre-fg)}
+.itin-wall .paint{position:absolute;inset:0;background:inherit;animation:repaint 560ms var(--ease-out) both}
+.itin-wall > *:not(.paint){position:relative}
+.itin-wall .big{font-size:52px;margin:4px 0}
+.itin-wall .sum{display:flex;gap:6px 18px;font-size:14px;font-weight:650;flex-wrap:wrap}
+.legs{display:flex;flex-direction:column;padding:6px 0}
+.leg{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:start;padding:12px 0;position:relative}
+.leg::before{content:"";position:absolute;left:19px;top:52px;bottom:-12px;width:2px;background:var(--linea)}
+.leg:last-child::before{display:none}
+.leg .tx b{display:block;font-size:15px}
+.leg .tx small{display:block;color:var(--tinta-3);font-size:13px}
+.leg .fare{text-align:right;font-weight:750;font-size:15px;white-space:nowrap}
+.leg .fare small{display:block;font-weight:500;font-size:11px;color:var(--tinta-3)}
+.disp{background:var(--turquesa-suave);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px}
+.seats{display:grid;grid-template-columns:repeat(12,1fr);gap:4px}
+.seats i{height:18px;border-radius:4px;background:var(--muro);border:1.5px solid var(--turquesa)}
+.seats i.on{background:var(--turquesa)}
+.disp p{margin:0;font-size:14px}
+.disp .row2{display:flex;justify-content:space-between;gap:10px;font-size:14px}
+.disp .row2 b{font-size:18px}
+
+/* trip */
+.steps{display:flex;flex-direction:column;gap:0;padding:4px 0}
+.step{display:grid;grid-template-columns:24px 1fr;gap:12px;align-items:start;position:relative;padding-bottom:14px}
+.step::before{content:"";position:absolute;left:11px;top:22px;bottom:0;width:2px;background:var(--linea)}
+.step:last-child::before{display:none}
+.step .dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--linea);background:var(--cal);display:grid;place-items:center;position:relative;z-index:1}
+.step .dot .ic{width:14px;height:14px}
+.step.done .dot{background:var(--turquesa);border-color:var(--turquesa);color:var(--turquesa-fg)}
+.step.now .dot{border-color:var(--turquesa);box-shadow:0 0 0 5px var(--turquesa-suave)}
+.step.now .dot::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--turquesa)}
+.step b{font-size:14px;display:block}
+.step small{font-size:12px;color:var(--tinta-3)}
+.step.pend b{color:var(--tinta-3);font-weight:550}
+.driver{display:flex;gap:12px;align-items:center}
+.avatar{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-weight:800;font-size:17px;background:var(--ocre-suave);color:#7A5000;flex:none}
+.avatar.t{background:var(--turquesa-suave);color:var(--turquesa-tx)}
+.driver .tx{flex:1;min-width:0}
+.driver .tx b{display:block}
+.driver .tx small{color:var(--tinta-3);font-size:13px;display:block}
+.driver .tx small .ic{width:14px;height:14px;vertical-align:-2px;color:var(--ocre)}
+.plate{font-family:var(--f-rotulo);font-stretch:75%;font-weight:800;font-size:15px;background:var(--ocre);color:var(--ocre-fg);border-radius:6px;padding:3px 8px;letter-spacing:.04em;border:1.5px solid var(--tinta)}
+.hold{position:relative;overflow:hidden;background:var(--coral-suave);color:var(--coral);border-radius:var(--r);min-height:56px;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;width:100%}
+.hold .fill{position:absolute;inset:0;background:var(--coral);clip-path:inset(0 100% 0 0);transition:clip-path 200ms var(--ease-out)}
+.hold.holding .fill{clip-path:inset(0 0 0 0);transition:clip-path 1500ms linear}
+.hold .lbl{position:relative;display:flex;gap:10px;align-items:center}
+.hold.holding .lbl{color:var(--coral-fg)}
+.share{display:flex;align-items:center;gap:12px}
+.switch{width:46px;height:28px;border-radius:var(--pill);background:var(--linea);position:relative;flex:none;transition:background-color 200ms ease}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgb(var(--sombra)/.3);transition:transform 220ms var(--ease-out)}
+[aria-checked="true"] > .switch,.switch[aria-checked="true"]{background:var(--turquesa)}
+[aria-checked="true"] > .switch::after,.switch[aria-checked="true"]::after{transform:translateX(18px)}
+
+/* payment */
+.method{display:flex;gap:12px;align-items:center;padding:14px;border-radius:var(--r);border:1.5px solid var(--linea);background:var(--muro);text-align:left;width:100%}
+.method[aria-checked="true"]{border-color:var(--tinta);box-shadow:inset 0 0 0 1px var(--tinta)}
+.method .tx{flex:1;min-width:0}
+.method .tx b{display:block}
+.method .tx small{color:var(--tinta-3);font-size:13px;display:block}
+.radio{width:22px;height:22px;border-radius:50%;border:2px solid var(--linea);flex:none;display:grid;place-items:center}
+.method[aria-checked="true"] .radio{border-color:var(--tinta)}
+.method[aria-checked="true"] .radio::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--tinta)}
+
+/* receipt */
+.receipt{background:var(--muro);border-radius:var(--r);overflow:hidden}
+.receipt .head{background:var(--tinta);color:var(--cal);padding:18px}
+.receipt .head .big{font-size:44px;margin-top:4px}
+.receipt .body{padding:6px 16px 16px}
+.receipt .line{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px dashed var(--linea);font-size:14px}
+.receipt .line:last-child{border-bottom:0}
+.stars{display:flex;gap:2px}
+.stars button{width:30px;height:30px;display:grid;place-items:center;color:var(--linea)}
+.stars button.on{color:var(--ocre)}
+.stars .ic{width:22px;height:22px}
+
+/* wallet */
+.balance{background:var(--tinta);color:var(--cal);padding:60px 20px 24px}
+.balance .big{font-size:58px;margin:6px 0 4px}
+.balance small{opacity:.75}
+.amounts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.amounts button{padding:12px 0;border-radius:var(--r-sm);background:var(--muro);border:1.5px solid var(--linea);font-weight:750}
+.amounts button[aria-pressed="true"]{border-color:var(--tinta);box-shadow:inset 0 0 0 1px var(--tinta)}
+
+/* sheet / toast / overlay */
+.scrim{position:absolute;inset:0;background:rgb(var(--sombra)/.42);z-index:20;opacity:0;transition:opacity 260ms ease}
+.scrim.in{opacity:1}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:21;background:var(--cal);border-radius:24px 24px 0 0;padding:10px 20px 28px;transform:translateY(100%);transition:transform 380ms var(--ease-drawer);max-height:88%;overflow-y:auto;box-shadow:0 -12px 30px -12px rgb(var(--sombra)/.35)}
+.sheet.in{transform:none}
+.sheet .grab{width:40px;height:5px;border-radius:3px;background:var(--linea);margin:0 auto 14px}
+.sheet h3{margin:0 0 4px;font-size:20px;font-weight:800}
+.sheet p{margin:0;color:var(--tinta-2);font-size:14px}
+.rtypes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rtypes button{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:14px;border-radius:var(--r);background:var(--muro);border:1.5px solid var(--linea);text-align:left;font-weight:650;font-size:14px;min-height:88px}
+.rtypes button[aria-pressed="true"]{border-color:var(--tinta);box-shadow:inset 0 0 0 1px var(--tinta)}
+.rtypes button .ic{width:24px;height:24px}
+.ethic{display:flex;gap:10px;padding:12px;border-radius:var(--r-sm);background:var(--cal-2);font-size:13px;color:var(--tinta-2)}
+.ethic .ic{width:18px;height:18px;margin-top:1px;color:var(--tinta-2)}
+.toast{position:absolute;left:16px;right:16px;top:52px;z-index:30;background:var(--tinta);color:var(--cal);border-radius:var(--r);padding:13px 16px;font-size:14px;font-weight:600;display:flex;gap:10px;align-items:center;box-shadow:0 14px 28px -12px rgb(var(--sombra)/.6);opacity:0;transform:translateY(-10px);transition:opacity 220ms var(--ease-out),transform 260ms var(--ease-out);pointer-events:none}
+.toast.in{opacity:1;transform:none}
+.toast .ic{color:var(--ocre);width:20px;height:20px}
+.offline{flex:none;display:flex;gap:10px;align-items:center;padding:54px 16px 10px;background:var(--tinta);color:var(--cal);font-size:13px;font-weight:600;position:relative;z-index:6}
+.offline .ic{width:18px;height:18px;color:var(--ocre)}
+.offline small{opacity:.75;font-weight:500;margin-left:auto;white-space:nowrap}
+.alert-full{position:absolute;inset:0;z-index:40;background:var(--coral);color:var(--coral-fg);display:flex;flex-direction:column;justify-content:center;padding:28px;gap:16px;animation:fadeIn 200ms ease both}
+.alert-full .big{font-size:60px}
+.alert-full p{margin:0;font-size:16px}
+.alert-full ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:15px}
+.alert-full li{display:flex;gap:10px;align-items:center}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* driver */
+.dwall{padding:60px 20px 22px;background:var(--tinta);color:var(--cal)}
+.dwall.off{background:var(--cal-2);color:var(--tinta)}
+.dwall .big{font-size:56px;margin:8px 0 6px}
+.avail{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;padding:12px 14px;border-radius:var(--r);background:rgb(255 255 255 / .1);width:100%;text-align:left}
+.dwall.off .avail{background:var(--muro)}
+.avail b{display:block;font-size:16px}
+.avail small{opacity:.75;font-size:13px}
+.request{background:var(--muro);border-radius:var(--r);overflow:hidden;box-shadow:0 12px 24px -16px rgb(var(--sombra)/.45)}
+.request .bar{height:4px;background:var(--cal-2);position:relative}
+.request .bar i{position:absolute;inset:0;background:var(--ocre);transform-origin:left;animation:countdown 20s linear forwards}
+@keyframes countdown{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+.request .in{padding:16px;display:flex;flex-direction:column;gap:12px}
+.route2{display:grid;grid-template-columns:16px 1fr;gap:4px 10px;font-size:14px}
+.route2 i{width:10px;height:10px;border-radius:50%;border:2.5px solid var(--tinta);margin:5px 3px 0}
+.route2 i.e{background:var(--tinta)}
+.fairbox{display:flex;justify-content:space-between;align-items:end;gap:10px;padding:12px;border-radius:var(--r-sm);background:var(--ocre-suave)}
+.fairbox b{font-size:22px}
+.seatgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.seatgrid button{aspect-ratio:1;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:2px solid var(--turquesa);background:var(--muro);color:var(--turquesa-tx);font-weight:800;font-size:13px;transition:background-color 160ms ease,transform 140ms var(--ease-out);max-width:100%}
+.seatgrid button:active{transform:scale(.96)}
+.seatgrid button .ic{width:22px;height:22px}
+.seatgrid button.on{background:var(--turquesa);color:var(--turquesa-fg)}
+.seatgrid button.app{background:var(--turquesa-suave);border-style:dashed}
+.seatgrid .driverseat{border-color:var(--linea);color:var(--tinta-3);background:var(--cal-2);pointer-events:none}
+.qrwrap{background:#fff;border-radius:var(--r);padding:18px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.qrwrap .qr{width:200px;height:200px;display:block}
+.qrwrap b{color:#172033;font-size:16px}
+.qrwrap small{color:#4A5568;font-size:13px}
+.chart{display:block;width:100%;height:auto}
+.chart text{font-family:var(--f-ui);font-size:10px;fill:var(--tinta-3)}
+.doc{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--linea)}
+.doc:last-child{border-bottom:0}
+
+@media (hover:hover) and (pointer:fine){
+  .idx button:hover{background:var(--cal)}
+  .chip:hover,.suggest button:hover,.method:hover{border-color:var(--tinta-3)}
+  .btn-p:hover{background:color-mix(in srgb,var(--tinta) 88%,var(--turquesa))}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:1ms!important;transition-duration:1ms!important}
+}
+
+/* phone-width viewing: the page becomes the phone */
+@media (max-width: 860px){
+  body{padding-inline:16px;padding-block:16px}
+  .stage{grid-template-columns:minmax(0,1fr);gap:24px;justify-items:center}
+  .rail{position:static;order:2;width:100%;max-width:420px}
+  .phone{order:1}
+}
+@media (max-width: 440px){
+  body{padding-inline:0;padding-block:0}
+  .stage{gap:0}
+  .phone{width:100%;height:100dvh;border-radius:0;padding:0;box-shadow:none}
+  .screen{border-radius:0}
+  .status{display:none}
+  .view.pt{padding-top:0}
+  .rail{padding:24px 16px}
+}
+</style>
+
+%%SPRITE%%
+
+<div class="stage">
+  <aside class="rail" aria-label="Controles de la demo">
+    <div>
+      <h1 class="rotulo">Go<span>Smart</span><br>Guajira</h1>
+    </div>
+    <p>Prototipo navegable de la app de movilidad para Riohacha, Maicao y la Troncal del Caribe. Todos los datos son simulados.</p>
+    <div>
+      <h2>Ver como</h2>
+      <div class="seg" role="group" aria-label="Rol">
+        <button type="button" data-act="role" data-v="pasajero" aria-pressed="true"><svg class="ic"><use href="#i-person-simple-walk"/></svg>Pasajero</button>
+        <button type="button" data-act="role" data-v="conductor" aria-pressed="false"><svg class="ic"><use href="#i-steering-wheel"/></svg>Conductor</button>
+      </div>
+    </div>
+    <div>
+      <h2>Pantallas</h2>
+      <nav class="idx" id="idx" aria-label="Índice de pantallas"></nav>
+    </div>
+    <div>
+      <h2>Escenarios</h2>
+      <div class="toggles">
+        <button type="button" class="tg" id="tg-block" data-act="scenario-block" aria-pressed="false"><i class="sw"></i><span>Bloqueo en el km 42<small>La Troncal se cierra y la app desvía</small></span></button>
+        <button type="button" class="tg" id="tg-rain" data-act="scenario-rain" aria-pressed="false"><i class="sw"></i><span>Lluvia fuerte<small>Precaución y calles inundadas</small></span></button>
+        <button type="button" class="tg" id="tg-off" data-act="scenario-off" aria-pressed="false"><i class="sw"></i><span>Sin señal<small>Modo sin conexión del corredor</small></span></button>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start">
+      <button type="button" class="linkbtn" data-act="case"><svg class="ic"><use href="#i-path"/></svg>Recorrer el caso de referencia</button>
+      <button type="button" class="linkbtn" data-act="reset"><svg class="ic"><use href="#i-arrow-clockwise"/></svg>Reiniciar demo</button>
+    </div>
+    <p class="disclaimer">Tarifas, tiempos, nombres, placas y reportes son de ejemplo. El mapa es esquemático. La app informa estados de vía y nunca identifica personas ni comunidades.</p>
+  </aside>
+
+  <div class="phone">
+    <div class="screen" id="screen">
+      <div class="status" id="status"><span class="num">8:04</span><i class="notch"></i><span class="sig"><svg class="ic" id="sigicon"><use href="#i-wifi-high"/></svg><i class="batt"></i></span></div>
+      <div id="offline-slot"></div>
+      <main class="view" id="view" tabindex="-1"></main>
+      <div id="composer-slot"></div>
+      <nav class="nav" id="nav" aria-label="Navegación principal"></nav>
+      <div id="overlay"></div>
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const ic=(n,c="")=>`<svg class="ic ${c}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const cop=n=>"$"+Math.round(n).toLocaleString("es-CO").replace(/,/g,".");
+const QR=`%%QR%%`;
+
+/* ---------- state ---------- */
+const fresh=()=>({
+  role:"pasajero", screen:"home", block:false, rain:false, offline:false,
+  balance:48600, pendingSync:0,
+  chat:[], chatPhase:0, planned:false,
+  pay:"saldo", trip:null, stage:0, detourTaken:false, sharing:true,
+  rated:{}, recharge:20000,
+  reportType:null,
+  myReports:[],
+  d:{ available:true, vehicle:"colectivo", seats:[1,1,1,1,2,2,2,0,0,0,0,0], reqState:"pending", earningsToday:40500, closed:false, cash:false, impago:false },
+  repaintWall:false
+});
+let S=fresh();
+
+/* ---------- synthetic data ---------- */
+const LEGS=()=>{
+  const d=S.block;
+  return [
+    {mode:"motorcycle",cls:"b-warn",t:"Mototaxi al Terminal de Riohacha",p:"Over Brito · placa KTZ 28F",time:"8:16 a 8:25",min:9,fare:5000,fareNote:"Tarifa justa $4.000 a $5.500"},
+    {mode:"van",cls:"b-ok",t:d?"Colectivo por Albania y Cuestecitas":"Colectivo Riohacha a Maicao",p:"Colectivo WGM 417 · Ricardo Fonseca",time:d?"8:31 a 10:01":"8:31 a 9:36",min:d?90:65,fare:15000,fareNote:"Tarifa autorizada"},
+    {mode:"motorcycle",cls:"b-warn",t:"Mototaxi al Palacio de Justicia de Maicao",p:"Luis Ángel Pimienta · placa MZR 63D",time:d?"10:03 a 10:11":"9:38 a 9:46",min:8,fare:4000,fareNote:"Tarifa justa $3.500 a $5.000"}
+  ];
+};
+const TOTAL=()=>LEGS().reduce((a,l)=>a+l.fare,0);
+const ARRIVE=()=>S.block?"10:11":"9:46";
+const REPORTS=()=>{
+  const r=[];
+  if(S.block) r.push({k:"bad",i:"traffic-cone",t:"Vía cerrada",w:"Troncal del Caribe, km 42",c:9,ago:"hace 6 min",lvl:"Confianza alta"});
+  r.push({k:"warn",i:"drop",t:"Calle inundada",w:"Calle 15 con Carrera 7, Riohacha",c:5,ago:"hace 22 min",lvl:"Confianza alta"});
+  r.push({k:"warn",i:"road-horizon",t:"Hueco crítico",w:"Troncal del Caribe, km 27",c:3,ago:"hace 40 min",lvl:"Confianza media"});
+  r.push({k:"warn",i:"shield-check",t:"Reporte de inseguridad en el sector",w:"Troncal del Caribe, km 58",c:2,ago:"hace 1 h",lvl:"Confianza media"});
+  return S.myReports.concat(r);
+};
+const RTYPES=[
+  {id:"cerrada",i:"traffic-cone",t:"Vía cerrada o bloqueo"},
+  {id:"inseg",i:"shield-check",t:"Inseguridad en el sector"},
+  {id:"inund",i:"drop",t:"Calle inundada"},
+  {id:"hueco",i:"road-horizon",t:"Hueco crítico"},
+  {id:"desvio",i:"arrows-split",t:"Desvío"},
+  {id:"reten",i:"identification-card",t:"Control de tránsito"}
+];
+const STAGES=[
+  {t:"Planificado",s:"Pagado una sola vez con saldo"},
+  {t:"Tramo 1 en curso",s:"Mototaxi al Terminal de Riohacha"},
+  {t:"En espera de despacho",s:"Colectivo WGM 417, puestos 8 de 12"},
+  {t:"Tramo 2 en curso",s:"Colectivo hacia Maicao"},
+  {t:"Tramo 3 en curso",s:"Mototaxi al Palacio de Justicia"},
+  {t:"Finalizado",s:"Recibo único generado"}
+];
+
+/* ---------- screens registry (for rail index) ---------- */
+const P_SCREENS=[
+  ["home","Inicio","Estado del corredor"],
+  ["corredor","Corredor en vivo","Módulo 1"],
+  ["asistente","Asistente y planificador","Módulo 2"],
+  ["pago","Pago único","Módulo 4"],
+  ["viaje","Viaje encadenado","Módulo 3"],
+  ["recibo","Recibo y calificación","Módulo 5"],
+  ["billetera","Billetera","Módulo 4"],
+  ["perfil","Confianza y perfil","Módulo 5"]
+];
+const D_SCREENS=[
+  ["d-home","Inicio y solicitudes","Disponibilidad"],
+  ["d-ocupacion","Ocupación del colectivo","Despacho"],
+  ["d-cobro","Cobro y cierre","Llave de pago"],
+  ["d-ingresos","Historial de ingresos","Trazabilidad"],
+  ["d-perfil","Documentos y reputación","Validación"]
+];
+
+/* ---------- corridor map (schematic) ---------- */
+function corridorMap(opts={}){
+  const blocked=S.block, detour=opts.detour ?? (S.block);
+  const main="M44 92 C 92 90, 120 118, 172 120 S 262 96, 304 104";
+  const alt="M44 92 C 58 150, 110 176, 158 172 C 196 169, 214 160, 236 152 C 268 140, 296 128, 304 104";
+  const mainColor=blocked?"var(--coral)":"var(--turquesa)";
+  const kms=[[96,98,"km 20"],[172,120,"km 42"],[246,104,"km 60"]];
+  const progress=opts.progress;
+  return `<svg class="map" viewBox="0 0 340 200" role="img" aria-label="Mapa esquemático de la Troncal del Caribe entre Riohacha y Maicao${blocked?", con bloqueo en el kilómetro 42":""}">
+    <path d="M0 0 H340 V58 C 280 66, 220 50, 160 60 S 60 70, 0 62 Z" fill="var(--mapa-mar)"/>
+    <path d="M0 62 C 60 70, 100 60, 160 60 S 280 66, 340 58 V200 H0 Z" fill="var(--mapa-tierra)"/>
+    <text class="sea" x="120" y="30">Mar Caribe</text>
+    <path d="${alt}" fill="none" stroke="${detour?"var(--ocre)":"var(--linea)"}" stroke-width="${detour?5:3}" stroke-dasharray="${detour?"0":"6 6"}" stroke-linecap="round"/>
+    <path d="${main}" fill="none" stroke="${mainColor}" stroke-width="6" stroke-linecap="round" ${blocked?'stroke-dasharray="14 8"':""}/>
+    ${kms.map(([x,y,l])=>{const hit=blocked&&l==="km 42";return `<g><rect x="${x-3}" y="${y-12}" width="6" height="12" rx="1.5" fill="var(--tinta)"/><text x="${hit?x+17:x+6}" y="${hit?y+20:y-6}">${l}</text></g>`}).join("")}
+    ${blocked?`<g transform="translate(172 120)"><circle r="13" fill="var(--coral)" stroke="var(--cal)" stroke-width="3"/><path d="M-5 -5 L5 5 M5 -5 L-5 5" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>`:""}
+    <circle cx="158" cy="172" r="4" fill="var(--tinta-2)"/><text x="122" y="190">Cuestecitas</text>
+    <circle cx="236" cy="152" r="4" fill="var(--tinta-2)"/><text x="228" y="172">Albania</text>
+    <circle cx="44" cy="92" r="8" fill="var(--tinta)" stroke="var(--cal)" stroke-width="3"/><text class="city" x="14" y="78">Riohacha</text>
+    <circle cx="304" cy="104" r="8" fill="var(--tinta)" stroke="var(--cal)" stroke-width="3"/><text class="city" x="262" y="88">Maicao</text>
+    ${progress!=null?`<circle r="7" fill="var(--ocre)" stroke="var(--tinta)" stroke-width="2.5"><animateMotion dur="0.01s" fill="freeze" keyPoints="${progress};${progress}" keyTimes="0;1" calcMode="linear" path="${detour?alt:main}"/></circle>`:""}
+  </svg>`;
+}
+
+/* ---------- passenger screens ---------- */
+function wallBlock(){
+  const b=S.block, r=!b&&S.rain;
+  return `<section class="wall ${S.repaintWall?"repaint":""}" data-s="${b?"bloqueo":r?"precaucion":"abierta"}" aria-live="polite">
+    <i class="paint" aria-hidden="true"></i>
+    <div class="top">
+      <span class="route">${ic("road-horizon")}Troncal del Caribe, Riohacha a Maicao</span>
+      <button class="bell" data-act="go" data-v="corredor" aria-label="Ver alertas del corredor">${ic("bell-ringing")}</button>
+    </div>
+    <h2 class="rotulo big">${b?"Bloqueo<br>en el km 42":r?"Precaución<br>por lluvia":"Troncal<br>abierta"}</h2>
+    <p class="sub">${b?"Vía cerrada confirmada por 9 reportes. Hay desvío por Albania y Cuestecitas, unos 25 min más.":r?"La Troncal sigue abierta. La Calle 15 está inundada en Riohacha y las rutas urbanas toman desvío.":"Sin bloqueos activos. Precaución por un hueco crítico en el km 27."}</p>
+    <div class="meta">
+      <span>${ic("clock")}Confirmado ${b?"hace 6 min":"hace 3 min"}</span>
+      <span>${ic("users-three")}${b?"9":"14"} reportes</span>
+    </div>
+  </section>`;
+}
+function scrHome(){
+  return `${wallBlock()}
+  <div class="pad stack">
+    <button class="ask" data-act="go" data-v="asistente">${ic("chat-circle-dots-f")}<span><b>¿Para dónde vas?</b><small>Escribe o dile al asistente</small></span><span class="mic">${ic("microphone")}</span></button>
+    <div class="hint">${ic("bus")}<p><b>¿Vas para la Universidad de La Guajira?</b>La ruta 3 de TransPadilla pasa en 4 min por la Carrera 15. Sueles salir a esta hora los martes.</p></div>
+    <div class="places">
+      <button class="chip" data-act="plan-case">${ic("scales")}Palacio de Justicia <small>Maicao</small></button>
+      <button class="chip" data-act="toast" data-v="Ruta a Casa lista en el asistente">${ic("house")}Casa</button>
+      <button class="chip" data-act="toast" data-v="Ruta al Trabajo lista en el asistente">${ic("briefcase")}Trabajo</button>
+      <button class="chip" data-act="toast" data-v="Ruta a la Universidad lista en el asistente">${ic("graduation-cap")}Uniguajira</button>
+    </div>
+    <div class="sec-h"><h3>Cerca de ti</h3><button data-act="go" data-v="corredor">Ver mapa</button></div>
+    <div class="rows">
+      <div class="row"><span class="badge b-mar">${ic("bus")}</span><span class="tx"><b>TransPadilla ruta 3</b><small>Parada Carrera 15 con Calle 13</small></span><span class="amt num">4 min</span></div>
+      <div class="row"><span class="badge b-ok">${ic("van")}</span><span class="tx"><b>Colectivo a Maicao</b><small>Terminal de Riohacha, 7 de 12 puestos</small></span><span class="amt num">8:27 a 8:35</span></div>
+      <div class="row"><span class="badge b-warn">${ic("motorcycle")}</span><span class="tx"><b>Mototaxis disponibles</b><small>6 conductores verificados a menos de 500 m</small></span><span class="amt num">2 min</span></div>
+    </div>
+    <div class="endspace"></div>
+  </div>`;
+}
+
+function scrCorredor(){
+  const reps=REPORTS();
+  return `<div class="back"><h2>Corredor en vivo</h2></div>
+  <div class="pad stack">
+    ${corridorMap()}
+    <div class="legend">
+      <span><i style="background:var(--turquesa)"></i>Abierta</span>
+      <span><i style="background:var(--coral)"></i>Bloqueo</span>
+      <span><i style="background:var(--ocre)"></i>Desvío</span>
+      <span><i style="background:var(--linea)"></i>Ruta alterna</span>
+    </div>
+    ${S.block?`<div class="pattern">${ic("chart-line-up")}<p>Este punto ha tenido <b>4 bloqueos en los últimos 3 meses</b>, casi siempre en la mañana. Te avisaremos antes de salir si tienes un viaje planeado por aquí.</p></div>`:`<div class="pattern">${ic("cloud-rain")}<p>Temporada de lluvias. El planificador evita las calles con historial de inundación en Riohacha y Maicao.</p></div>`}
+    <div class="sec-h"><h3>Reportes activos</h3><button data-act="toast" data-v="Alertas activadas para Riohacha a Maicao">Activar alertas</button></div>
+    <div class="rows">
+      ${reps.map(r=>`<div class="row"><span class="badge b-${r.k}">${ic(r.i)}</span><span class="tx"><b>${r.t}</b><small>${r.w}, ${r.ago}</small></span><span style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span class="conf" aria-label="${r.c} confirmaciones">${Array.from({length:5},(_,i)=>`<i class="${i<Math.min(5,Math.ceil(r.c/2))?"on":""}"></i>`).join("")}</span><small class="note num">${r.c} conf.</small></span></div>`).join("")}
+    </div>
+    <p class="note">Varios reportes independientes en el mismo punto suben la confianza del dato. Los reportes describen la vía, nunca a personas ni comunidades.</p>
+    <div style="height:70px"></div>
+  </div>
+  <button class="fab" data-act="report-open">${ic("megaphone")}Reportar</button>`;
+}
+
+function scrAsistente(){
+  if(S.planned) return scrItinerary();
+  const msgs=S.chat.map(m=>{
+    if(m.k==="checks") return `<div class="msg ai"><span>Déjame armarlo.</span><div class="checks">${m.items.map((it,i)=>`<div class="${i<m.done?"done":""}">${ic("check-circle-f")}${it}</div>`).join("")}</div></div>`;
+    return `<div class="msg ${m.k}">${m.t}</div>`;
+  }).join("");
+  return `<div class="back"><h2>Asistente GoSmart</h2></div>
+  <div class="chat">
+    <div class="msg ai">Hola, Daniela. Dime a dónde necesitas llegar y a qué hora. Reviso el corredor, armo los tramos y te digo cuánto cuesta todo.</div>
+    ${msgs}
+  </div>
+  ${S.chatPhase===0?`<div class="suggest">
+    <button data-act="plan-case">Necesito llegar al Palacio de Justicia de Maicao antes de las 10, saliendo del centro de Riohacha.</button>
+    <button data-act="toast" data-v="En la demo, prueba el caso del Palacio de Justicia">¿Cuánto cuesta un mototaxi del centro al Terminal?</button>
+    <button data-act="toast" data-v="En la demo, prueba el caso del Palacio de Justicia">¿Está abierta la Troncal ahora?</button>
+  </div>`:""}
+  <div class="endspace"></div>`;
+}
+function composer(){
+  if(S.role!=="pasajero"||S.screen!=="asistente"||S.planned) return "";
+  return `<form class="composer" data-act="compose"><label class="sr" for="ask-in">Mensaje para el asistente</label><input id="ask-in" autocomplete="off" placeholder="Escribe a dónde vas"><button type="button" class="g" aria-label="Hablar" data-act="toast" data-v="La voz se usa en la app real; aquí escribe o toca la sugerencia">${ic("microphone")}</button><button type="submit" aria-label="Enviar">${ic("paper-plane-right")}</button></form>`;
+}
+function scrItinerary(){
+  const legs=LEGS(), d=S.block;
+  return `<section class="itin">
+    <div class="itin-wall ${d?"detour":""}" style="padding-top:58px">
+      <i class="paint" aria-hidden="true"></i>
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:14px;font-weight:650">Centro de Riohacha a Palacio de Justicia, Maicao</span><button data-act="replan-reset" aria-label="Volver al chat" style="width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:rgb(23 32 51 / .12)">${ic("x")}</button></div>
+      <h2 class="rotulo big">Llegas ${ARRIVE()}</h2>
+      <div class="sum num"><span>${cop(TOTAL())} en total</span><span>3 tramos</span><span>${d?"Desvío por Albania":"Troncal despejada"}</span></div>
+    </div>
+    <div class="pad stack" style="padding-top:14px">
+      ${d?`<div class="pattern" style="background:var(--ocre-suave)">${ic("arrows-split")}<p>La Troncal está cerrada en el km 42. Armé la ruta por Albania y Cuestecitas. Llegas a las 10:11, once minutos después de lo que pediste, pero es la opción más segura.</p></div>`:""}
+      ${corridorMap({detour:d})}
+      <div class="legs">
+        ${legs.map((l,i)=>`<div class="leg"><span class="badge ${l.cls}">${ic(l.mode)}</span><span class="tx"><b>${l.t}</b><small>${l.p}</small><small class="num">${l.time}, ${l.min} min</small><small style="color:var(--tinta-2);font-weight:600">${l.fareNote}</small></span><span class="fare num">${cop(l.fare)}</span></div>`+(i===0?`<div class="disp"><div class="row2"><span>Colectivo WGM 417</span><b class="num">7 de 12</b></div><div class="seats" aria-hidden="true">${Array.from({length:12},(_,k)=>`<i class="${k<7?"on":""}"></i>`).join("")}</div><div class="row2"><span>Salida estimada</span><b class="num">8:27 a 8:35</b></div><p>Para llegar justo al despacho, toma el mototaxi a las <b class="num">8:16</b>. Es un rango: los colectivos salen cuando se llenan.</p></div>`:"")).join("")}
+      </div>
+      <p class="note">La tarifa del colectivo es la autorizada por el Ministerio de Transporte y no se negocia. Las de mototaxi son un rango justo según distancia, hora y zona.</p>
+      <button class="btn btn-p" data-act="go" data-v="pago">Pagar ${cop(TOTAL())} una sola vez</button>
+      <div class="endspace"></div>
+    </div>
+  </section>`;
+}
+
+function scrPago(){
+  const legs=LEGS();
+  const m=(id,icn,t,s,dis)=>`<button class="method" role="radio" aria-checked="${S.pay===id}" data-act="pay" data-v="${id}">${ic(icn)}<span class="tx"><b>${t}</b><small>${s}</small></span><i class="radio"></i></button>`;
+  return `<div class="back"><button data-act="go" data-v="asistente" aria-label="Volver">${ic("arrow-left")}</button><h2>Pago único</h2></div>
+  <div class="pad stack">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-weight:650">Total del viaje</span><span class="rotulo num" style="font-size:40px">${cop(TOTAL())}</span></div>
+      <div class="rows" style="margin-top:6px">
+        ${legs.map((l,i)=>`<div class="row"><span class="badge ${l.cls}">${ic(l.mode)}</span><span class="tx"><b>Tramo ${i+1}</b><small>${l.p.split(" · ")[1]?l.p.split(" · ")[0]:l.p}</small></span><span class="amt num">${cop(l.fare)}</span></div>`).join("")}
+      </div>
+    </div>
+    <p class="note">Pagas una vez. Cada conductor recibe su parte cuando cierra su tramo. Si un tramo no se hace, ese valor vuelve a tu saldo.</p>
+    <div role="radiogroup" aria-label="Método de pago" class="stack" style="gap:8px">
+      ${m("saldo","wallet-f","Saldo GoSmart",`Disponible ${cop(S.balance)}. Permite el pago único repartido.`)}
+      ${m("breb","bank","Transferencia a la llave del conductor","Bre-B, Nequi o Daviplata. Se paga tramo por tramo.")}
+      ${m("efectivo","money","Efectivo","Pagas a cada conductor. Se paga tramo por tramo.")}
+    </div>
+    ${S.pay!=="saldo"?`<div class="ethic">${ic("info")}<span>Con este método pagas en cada tramo y recibes el recibo igual, con el desglose de los tres.</span></div>`:""}
+    <button class="btn btn-p" data-act="pay-confirm" ${S.pay==="saldo"&&S.balance<TOTAL()?"disabled":""}>${S.pay==="saldo"?`Pagar ${cop(TOTAL())}`:"Confirmar viaje"}</button>
+    <div class="endspace"></div>
+  </div>`;
+}
+
+function scrViaje(){
+  if(!S.trip) return `<div class="back"><h2>Viaje encadenado</h2></div><div class="pad stack"><div class="panel stack"><span class="badge b-n">${ic("path")}</span><b style="font-size:17px">Aún no tienes un viaje en curso</b><p style="margin:0;color:var(--tinta-2)">Pídele al asistente una ruta. Verás aquí cada tramo, el conductor y el estado en vivo.</p><button class="btn btn-p" data-act="plan-case">Armar el caso de referencia</button></div></div>`;
+  const st=S.stage, legs=LEGS();
+  const legIdx=st<=1?0:st<=3?1:2;
+  const L=legs[legIdx];
+  const prog=[0.02,0.02,0.02,0.45,0.98,1][st];
+  const drv=[["OB","Over Brito","Mototaxi · KTZ 28F","4,9"],["RF","Ricardo Fonseca","Colectivo · WGM 417","4,8"],["LP","Luis Ángel Pimienta","Mototaxi · MZR 63D","4,7"]][legIdx];
+  return `<div class="back"><h2>Viaje en curso</h2><span class="tag ${S.offline?"t-n":"t-ok"}" style="margin-left:auto">${S.offline?ic("wifi-slash")+"Guardado en el teléfono":ic("broadcast")+"En vivo"}</span></div>
+  <div class="pad stack">
+    ${corridorMap({detour:S.block,progress:legIdx===1?prog:(st>=4?1:0)})}
+    <div class="panel">
+      <div class="steps">
+        ${STAGES.map((s,i)=>`<div class="step ${i<st?"done":i===st?"now":"pend"}"><span class="dot">${i<st?ic("check"):""}</span><span><b>${s.t}</b><small>${i===2&&st===2?"Salida estimada 8:27 a 8:35":i===3&&S.block?"Por Albania y Cuestecitas":s.s}</small></span></div>`).join("")}
+      </div>
+    </div>
+    ${st<5?`<div class="panel stack" style="gap:12px">
+      <div class="driver"><span class="avatar ${legIdx===1?"t":""}">${drv[0]}</span><span class="tx"><b>${drv[1]}</b><small>${drv[2]}</small><small>${ic("star-f","")} ${drv[3]} · documentos verificados</small></span>${ic("seal-check-f")}</div>
+      <div style="display:flex;justify-content:space-between;font-size:14px"><span style="color:var(--tinta-3)">Tramo ${legIdx+1} de 3</span><span class="num" style="font-weight:700">${L.time}</span></div>
+    </div>
+    <button class="share panel" role="switch" aria-checked="${S.sharing}" data-act="share" style="width:100%;text-align:left">${ic("share-network")}<span style="flex:1"><b style="display:block">Compartir viaje en vivo</b><small style="color:var(--tinta-3)">${S.sharing?"Carmen Iguarán ve tu ubicación":"Nadie ve tu ubicación"}</small></span><i class="switch"></i></button>
+    <button class="hold" id="hold" data-hold="1"><i class="fill"></i><span class="lbl">${ic("siren-f")}Mantén para emergencia</span></button>
+    <button class="demo-ctl" data-act="advance">${ic("caret-right")}Avanzar al siguiente estado (demo)</button>`
+    :`<button class="btn btn-p" data-act="go" data-v="recibo">Ver recibo único</button>`}
+    <div class="endspace"></div>
+  </div>`;
+}
+
+function scrRecibo(){
+  const legs=LEGS();
+  if(!S.trip||S.stage<5) return `<div class="back"><h2>Recibo</h2></div><div class="pad stack"><div class="panel stack"><span class="badge b-n">${ic("receipt")}</span><b style="font-size:17px">El recibo aparece al terminar el viaje</b><p style="margin:0;color:var(--tinta-2)">Un solo recibo con el desglose de los tres tramos, útil para trámites laborales o judiciales.</p><button class="btn btn-g" data-act="finish-demo">Ver un recibo de ejemplo</button></div></div>`;
+  return `<div class="back"><h2>Recibo único</h2></div>
+  <div class="pad stack">
+    <div class="receipt">
+      <div class="head"><small style="opacity:.75">Viaje GS-2611-0847, martes 8:16 a ${ARRIVE()}</small><div class="rotulo big num">${cop(TOTAL())}</div><small style="opacity:.75">Centro de Riohacha a Palacio de Justicia, Maicao</small></div>
+      <div class="body">
+        ${legs.map((l,i)=>`<div class="line"><span><b>Tramo ${i+1}</b><br><small style="color:var(--tinta-3)">${l.p}</small></span><span class="num" style="font-weight:700">${cop(l.fare)}</span></div>`).join("")}
+        <div class="line"><span>Pagado con</span><span>Saldo GoSmart</span></div>
+      </div>
+    </div>
+    <div class="sec-h"><h3>Califica a tus conductores</h3></div>
+    <div class="rows">
+      ${[["OB","Over Brito"],["RF","Ricardo Fonseca"],["LP","Luis Ángel Pimienta"]].map(([a,n],i)=>`<div class="row"><span class="avatar ${i===1?"t":""}" style="width:40px;height:40px;font-size:14px">${a}</span><span class="tx"><b>${n}</b></span><span class="stars">${[1,2,3,4,5].map(k=>`<button class="${(S.rated[i]||0)>=k?"on":""}" data-act="rate" data-i="${i}" data-v="${k}" aria-label="${k} estrellas">${ic("star-f")}</button>`).join("")}</span></div>`).join("")}
+    </div>
+    <p class="note">La calificación es en ambos sentidos: los conductores también califican a los pasajeros.</p>
+    <div class="endspace"></div>
+  </div>`;
+}
+
+function scrBilletera(){
+  return `<section class="balance"><small>Saldo GoSmart</small><div class="rotulo big num">${cop(S.balance)}</div><small>Úsalo para pagar viajes encadenados en un solo pago</small></section>
+  <div class="pad stack" style="padding-top:18px">
+    <div class="sec-h"><h3>Recargar</h3></div>
+    <div class="amounts" role="group" aria-label="Valor a recargar">${[10000,20000,50000].map(v=>`<button class="num" aria-pressed="${S.recharge===v}" data-act="amt" data-v="${v}">${cop(v)}</button>`).join("")}</div>
+    <button class="btn btn-p" data-act="recharge">Recargar ${cop(S.recharge)} con Nequi</button>
+    <p class="note">En la demo la recarga es simulada y no mueve dinero.</p>
+    <div class="sec-h"><h3>Movimientos</h3></div>
+    <div class="rows">
+      ${S.trip?`<div class="row"><span class="badge b-n">${ic("path")}</span><span class="tx"><b>Viaje a Maicao, 3 tramos</b><small>Hoy, se libera por tramo</small></span><span class="amt num">-${cop(TOTAL())}</span></div>`:""}
+      <div class="row"><span class="badge b-ok">${ic("arrow-clockwise")}</span><span class="tx"><b>Reembolso de tramo no realizado</b><small>Domingo, mototaxi en Maicao</small></span><span class="amt num">+$4.000</span></div>
+      <div class="row"><span class="badge b-n">${ic("bus")}</span><span class="tx"><b>TransPadilla ruta 3</b><small>Sábado, 7:42</small></span><span class="amt num">-$2.600</span></div>
+      <div class="row"><span class="badge b-ok">${ic("plus")}</span><span class="tx"><b>Recarga con Nequi</b><small>Viernes</small></span><span class="amt num">+$50.000</span></div>
+    </div>
+    <div class="endspace"></div>
+  </div>`;
+}
+
+function scrPerfil(){
+  return `<div class="back"><h2>Confianza y perfil</h2></div>
+  <div class="pad stack">
+    <div class="panel driver"><span class="avatar t">DI</span><span class="tx"><b style="font-size:17px">Daniela Iguarán</b><small>Pasajera desde marzo, Riohacha</small></span><span style="text-align:right"><b class="rotulo num" style="font-size:30px">4,8</b><small class="note" style="display:block">reputación</small></span></div>
+    <div class="rows">
+      <div class="row"><span class="badge b-ok">${ic("check-circle")}</span><span class="tx"><b>Sin reportes de impago</b><small>Dos impagos confirmados bloquean la cuenta hasta regularizar</small></span></div>
+      <div class="row"><span class="badge b-n">${ic("megaphone")}</span><span class="tx"><b>Tus reportes viales</b><small>${12+S.myReports.length} enviados, 11 confirmados por otros</small></span><span class="tag t-ok">Confiable</span></div>
+      <div class="row"><span class="badge b-n">${ic("users-three")}</span><span class="tx"><b>Contactos de confianza</b><small>Carmen Iguarán, José Brito</small></span>${ic("caret-right")}</div>
+      <div class="row"><span class="badge b-n">${ic("wifi-slash")}</span><span class="tx"><b>Rutas guardadas sin señal</b><small>Riohacha a Maicao y 3 rutas urbanas</small></span><span class="tag t-ok">Al día</span></div>
+    </div>
+    <div class="pattern">${ic("info")}<p>GoSmart informa el estado de la vía y protege tu viaje. No promete acabar con los bloqueos ni la inseguridad, y nunca señala a personas ni comunidades.</p></div>
+    <div class="endspace"></div>
+  </div>`;
+}
+
+/* ---------- driver screens ---------- */
+function scrDHome(){
+  const d=S.d, moto=d.vehicle==="mototaxi";
+  const req=`<div class="request">
+      <div class="bar">${d.reqState==="pending"?"<i></i>":""}</div>
+      <div class="in">
+        <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:17px">Nueva solicitud</b><span class="tag t-ok">${ic("star-f")} 4,8</span></div>
+        <div class="route2"><i></i><span>Calle 2 con Carrera 7, centro de Riohacha</span><i class="e"></i><span>Terminal de Transportes, 2,1 km</span></div>
+        <div class="fairbox"><span><small class="note">Tarifa justa sugerida</small><br><b class="num">$4.000 a $5.500</b></span><span class="num" style="font-weight:750">Ofrece $5.000</span></div>
+        ${d.reqState==="pending"?`<div class="btn-row"><button class="btn btn-g" data-act="req" data-v="no">Rechazar</button><button class="btn btn-t" data-act="req" data-v="si">Aceptar</button></div>`:d.reqState==="si"?`<div class="tag t-ok" style="justify-content:center;padding:10px">${ic("check")}Aceptada. Daniela I. te espera en 3 min</div>`:`<div class="tag t-n" style="justify-content:center;padding:10px">Rechazada. Seguimos buscando</div>`}
+      </div>
+    </div>`;
+  return `<section class="dwall ${d.available?"":"off"}">
+    <span style="font-size:14px;font-weight:600;opacity:.85">Ricardo Fonseca, ${moto?"mototaxi KTZ 28F":"colectivo WGM 417"}</span>
+    <h2 class="rotulo big num">${cop(d.earningsToday)}</h2>
+    <span style="font-size:14px;opacity:.85">Ganado hoy, 4 viajes registrados</span>
+    <button class="avail" role="switch" aria-checked="${d.available}" data-act="avail"><span><b>${d.available?"Disponible":"No disponible"}</b><small>${d.available?"Recibes solicitudes y reservas":"No recibes solicitudes"}</small></span><i class="switch"></i></button>
+  </section>
+  <div class="pad stack" style="padding-top:16px">
+    <div class="seg" role="group" aria-label="Tipo de vehículo"><button data-act="veh" data-v="mototaxi" aria-pressed="${moto}">${ic("motorcycle")}Mototaxi</button><button data-act="veh" data-v="colectivo" aria-pressed="${!moto}">${ic("van")}Colectivo</button></div>
+    <div class="row" style="border:0;padding:0"><span class="badge ${S.block?"b-bad":"b-ok"}">${ic(S.block?"traffic-cone":"road-horizon")}</span><span class="tx"><b>${S.block?"Bloqueo en el km 42":"Troncal abierta"}</b><small>${S.block?"Usa el desvío por Albania y Cuestecitas":"Hueco crítico en el km 27"}</small></span><button data-act="toast" data-v="Reporte enviado. Gracias por confirmar" class="tag t-n">Confirmar</button></div>
+    ${d.available?(moto?req:`<div class="panel stack" style="gap:10px"><div style="display:flex;justify-content:space-between"><b>Colectivo a Maicao</b><span class="tag t-ok num">${d.seats.filter(Boolean).length} de 12</span></div><div class="seats" aria-hidden="true">${d.seats.map(v=>`<i class="${v?"on":""}"></i>`).join("")}</div><p style="margin:0;font-size:14px;color:var(--tinta-2)">3 puestos reservados por la app. Salida estimada ${dispatchRange()}.</p><button class="btn btn-p" data-act="go" data-v="d-ocupacion">Actualizar ocupación</button></div>`):`<div class="panel"><p style="margin:0;color:var(--tinta-2)">Activa tu disponibilidad para recibir solicitudes de mototaxi o reservas de puestos.</p></div>`}
+    <div class="endspace"></div>
+  </div>`;
+}
+function dispatchRange(){
+  const free=S.d.seats.filter(v=>!v).length;
+  if(free===0) return "ahora";
+  const base=8*60+4, lo=base+free*2, hi=base+free*3+2;
+  const f=m=>`${Math.floor(m/60)}:${String(m%60).padStart(2,"0")}`;
+  return `${f(lo)} a ${f(hi)}`;
+}
+function scrDOcupacion(){
+  const s=S.d.seats, n=s.filter(Boolean).length;
+  return `<div class="back"><h2>Ocupación del colectivo</h2></div>
+  <div class="pad stack">
+    <div class="panel" style="display:flex;justify-content:space-between;align-items:end;gap:10px"><span><small class="note">Puestos ocupados</small><br><b class="rotulo num" style="font-size:42px;white-space:nowrap">${n} de 12</b></span><span style="text-align:right"><small class="note">Salida estimada</small><br><b class="num" style="font-size:16px;white-space:nowrap">${dispatchRange()}</b></span></div>
+    <p class="note">Toca un puesto cuando alguien se sube. Los puestos con borde punteado están reservados desde la app. La estimación usa el histórico de llenado de esta franja.</p>
+    <div class="seatgrid">
+      <button class="driverseat" aria-label="Conductor">${ic("steering-wheel")}</button>
+      ${s.map((v,i)=>`<button class="${v===1?"on":v===2?"app":""}" data-act="seat" data-i="${i}" aria-label="Puesto ${i+1}, ${v===1?"ocupado":v===2?"reservado por app":"libre"}">${ic(v?"armchair-f":"armchair")}${i+1}</button>`).join("")}
+    </div>
+    <button class="btn btn-t" data-act="depart">${n===12?"Salir ahora, colectivo lleno":"Salir ahora con "+n+" puestos"}</button>
+    <div class="endspace"></div>
+  </div>`;
+}
+function scrDCobro(){
+  const d=S.d;
+  return `<div class="back"><h2>Cobro y cierre</h2></div>
+  <div class="pad stack">
+    <div class="qrwrap">${QR}<b>Llave Bre-B @ricardo.fonseca</b><small>También Nequi y Daviplata. El pasajero escanea tu QR.</small></div>
+    <div class="sec-h"><h3>Cerrar carrera</h3><span class="note">Riohacha a Maicao, 8:31</span></div>
+    <div class="rows">
+      <div class="row"><span class="badge b-ok">${ic("wallet")}</span><span class="tx"><b>Daniela I., puesto 8</b><small>Saldo GoSmart, se libera al cerrar</small></span><span class="amt num">$15.000</span></div>
+      <div class="row"><span class="badge b-n">${ic("bank")}</span><span class="tx"><b>Yesenia P., puesto 3</b><small>Transferencia Bre-B recibida</small></span><span class="amt num">$15.000</span></div>
+      <button class="row" data-act="cash"><span class="badge ${d.cash?"b-ok":"b-warn"}">${ic("money")}</span><span class="tx"><b>Jesús M., puesto 5</b><small>${d.cash?"Efectivo recibido":"Efectivo. Toca para confirmar"}</small></span><span class="amt num">$15.000</span></button>
+    </div>
+    ${d.impago?`<div class="ethic">${ic("warning")}<span>Reportaste un impago. Si se confirma un segundo impago, la cuenta del pasajero queda bloqueada hasta que pague.</span></div>`:""}
+    ${d.closed?`<div class="panel" style="display:flex;gap:10px;align-items:center">${ic("check-circle-f")}<span><b>Carrera cerrada</b><br><small class="note">Pago y llegada confirmados. Quedó en tu historial verificable.</small></span></div>`:`<div class="btn-row"><button class="btn btn-g" data-act="impago">Reportar impago</button><button class="btn btn-p" data-act="close-ride">Cerrar carrera</button></div>`}
+    <div class="endspace"></div>
+  </div>`;
+}
+function scrDIngresos(){
+  const vals=[62,85,74,91,103,128,40.5], days=["L","M","M","J","V","S","D"];
+  const W=320,H=150,pl=30,pb=20,max=130,bw=26;
+  const y=v=>H-pb-(v/max)*(H-pb-10);
+  const grid=[0,50,100].map(g=>`<line x1="${pl}" x2="${W}" y1="${y(g)}" y2="${y(g)}" stroke="var(--linea)" stroke-width="1"/><text x="0" y="${y(g)+3}">${g?g+" mil":"0"}</text>`).join("");
+  const bars=vals.map((v,i)=>{const x=pl+12+i*((W-pl-12)/7);return `<rect x="${x}" y="${y(v)}" width="${bw}" height="${H-pb-y(v)}" rx="5" fill="${i===6?"var(--ocre)":"var(--turquesa)"}"/><text x="${x+bw/2}" y="${H-5}" text-anchor="middle">${days[i]}</text>`}).join("");
+  return `<div class="back"><h2>Historial de ingresos</h2></div>
+  <div class="pad stack">
+    <div class="panel"><small class="note">Esta semana</small><div class="rotulo num" style="font-size:44px">$583.500</div><small class="note">51 viajes, todos con conductor identificado</small>
+      <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Ingresos por día de esta semana, en miles de pesos">${grid}${bars}</svg>
+    </div>
+    <button class="btn btn-p" data-act="cert">${ic("file-text")}Certificado de actividad</button>
+    <p class="note">Un historial verificable de trayectos e ingresos sirve para pedir un crédito o demostrar actividad laboral.</p>
+    <div class="sec-h"><h3>Últimos viajes</h3></div>
+    <div class="rows">
+      <div class="row"><span class="badge b-ok">${ic("van")}</span><span class="tx"><b>Riohacha a Maicao, 11 pasajeros</b><small>Hoy 6:10, cerrada</small></span><span class="amt num">$165.000</span></div>
+      <div class="row"><span class="badge b-warn">${ic("motorcycle")}</span><span class="tx"><b>Centro a Terminal</b><small>Ayer 17:42, saldo GoSmart</small></span><span class="amt num">$5.000</span></div>
+      <div class="row"><span class="badge b-warn">${ic("motorcycle")}</span><span class="tx"><b>Barrio Cooperativo a Uniguajira</b><small>Ayer 7:15, efectivo</small></span><span class="amt num">$4.500</span></div>
+    </div>
+    <div class="endspace"></div>
+  </div>`;
+}
+function scrDPerfil(){
+  const doc=(n,s)=>`<div class="doc"><span class="badge b-ok">${ic("seal-check")}</span><span class="tx" style="flex:1"><b style="display:block">${n}</b><small class="note">${s}</small></span><span class="tag t-ok">Verificado</span></div>`;
+  return `<div class="back"><h2>Documentos y reputación</h2></div>
+  <div class="pad stack">
+    <div class="panel driver"><span class="avatar t">RF</span><span class="tx"><b style="font-size:17px">Ricardo Fonseca</b><small>Conductor verificado desde abril</small></span><span style="text-align:right"><b class="rotulo num" style="font-size:30px">4,8</b><small class="note" style="display:block">612 viajes</small></span></div>
+    <div class="panel" style="padding-block:4px">
+      ${doc("Cédula de ciudadanía","Revisada al registrarse")}
+      ${doc("Licencia de conducción","Categoría C1, vence en 2029")}
+      ${doc("Tarjeta de propiedad","Vehículo WGM 417")}
+      <div class="doc"><span class="badge b-warn">${ic("calendar-blank")}</span><span class="tx" style="flex:1"><b style="display:block">SOAT</b><small class="note">Vence en 23 días</small></span><button class="tag t-warn" data-act="toast" data-v="Te recordaremos renovar el SOAT">Renovar</button></div>
+    </div>
+    <div class="sec-h"><h3>Lo que dicen los pasajeros</h3></div>
+    <div class="rows">
+      <div class="row"><span class="tx"><b>"Salió a la hora que decía la app."</b><small>Pasajera, Riohacha a Maicao</small></span></div>
+      <div class="row"><span class="tx"><b>"Tomó el desvío sin cobrar de más."</b><small>Pasajero, durante el cierre del km 42</small></span></div>
+    </div>
+    <p class="note">Comentarios de ejemplo para la demo.</p>
+    <div class="endspace"></div>
+  </div>`;
+}
+
+const SCREENS={home:scrHome,corredor:scrCorredor,asistente:scrAsistente,pago:scrPago,viaje:scrViaje,recibo:scrRecibo,billetera:scrBilletera,perfil:scrPerfil,
+  "d-home":scrDHome,"d-ocupacion":scrDOcupacion,"d-cobro":scrDCobro,"d-ingresos":scrDIngresos,"d-perfil":scrDPerfil};
+
+/* ---------- nav ---------- */
+function navHTML(){
+  const items=S.role==="pasajero"
+    ?[["home","house","Inicio"],["corredor","map-trifold","Corredor"],["asistente","chat-circle-dots","Asistente",1],["viaje","path","Viaje"],["billetera","wallet","Billetera"]]
+    :[["d-home","house","Inicio"],["d-ocupacion","armchair","Puestos"],["d-cobro","qr-code","Cobrar"],["d-ingresos","chart-line-up","Ingresos"],["d-perfil","identification-card","Perfil"]];
+  return items.map(([id,i,l,ai])=>{
+    const cur=S.screen===id||(id==="viaje"&&(S.screen==="recibo"||S.screen==="pago"))||(id==="billetera"&&S.screen==="perfil");
+    const iconName=cur&&["house","map-trifold","wallet","armchair"].includes(i)?i+"-f":i;
+    return `<button class="${ai?"ai":""}" data-act="go" data-v="${id}" ${cur?'aria-current="page"':""}>${ai?`<span class="bub">${ic(i)}</span>`:ic(iconName)}${l}</button>`;
+  }).join("");
+}
+function railHTML(){
+  const list=S.role==="pasajero"?P_SCREENS:D_SCREENS;
+  return list.map(([id,t,s])=>`<button data-act="go" data-v="${id}" aria-current="${S.screen===id}"><b>${t}</b><small>${s}</small></button>`).join("");
+}
+
+/* ---------- render ---------- */
+const view=$("#view");
+function render(keepScroll){
+  const top=view.scrollTop;
+  view.innerHTML=SCREENS[S.screen]();
+  $("#nav").innerHTML=navHTML();
+  $("#idx").innerHTML=railHTML();
+  $("#composer-slot").innerHTML=composer();
+  document.querySelectorAll('[data-act="role"]').forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.role));
+  $("#tg-block").setAttribute("aria-pressed",S.block);
+  $("#tg-off").setAttribute("aria-pressed",S.offline);
+  $("#tg-rain").setAttribute("aria-pressed",S.rain);
+  $("#offline-slot").innerHTML=S.offline?`<div class="offline">${ic("wifi-slash")}Sin señal. Todo queda guardado en el teléfono.<small>${S.pendingSync} por sincronizar</small></div>`:"";
+  $("#sigicon").innerHTML=`<use href="#i-${S.offline?"wifi-slash":"wifi-high"}"/>`;
+  const walled=!S.offline&&(["home","billetera","d-home"].includes(S.screen)||(S.screen==="asistente"&&S.planned));
+  view.classList.toggle("pt",!walled&&!S.offline);
+  let col="";
+  if(S.offline) col="var(--cal)";
+  else if(S.screen==="home") col=S.block?"var(--coral-fg)":"var(--turquesa-fg)";
+  else if(S.screen==="billetera") col="var(--cal)";
+  else if(S.screen==="d-home") col=S.d.available?"var(--cal)":"var(--tinta)";
+  else if(S.screen==="asistente"&&S.planned) col=S.block?"var(--ocre-fg)":"var(--turquesa-fg)";
+  let bg="var(--cal)";
+  if(S.offline) bg="var(--tinta)";
+  else if(S.screen==="home") bg=S.block?"var(--coral)":S.rain?"var(--ocre)":"var(--turquesa)";
+  else if(S.screen==="billetera") bg="var(--tinta)";
+  else if(S.screen==="d-home") bg=S.d.available?"var(--tinta)":"var(--cal-2)";
+  else if(S.screen==="asistente"&&S.planned) bg=S.block?"var(--ocre)":"var(--turquesa)";
+  if(S.screen==="home"&&!S.offline&&!S.block&&S.rain) col="var(--ocre-fg)";
+  $("#status").style.color=col; $("#status").style.background=bg;
+  view.scrollTop=keepScroll?top:0;
+  S.repaintWall=false;
+}
+function hideToast(){clearTimeout(tt);$("#toast").classList.remove("in")}
+function go(id){
+  hideToast(); S.screen=id; closeOverlay(); render();
+  view.focus({preventScroll:true});
+}
+
+/* ---------- toast & overlay ---------- */
+let tt;
+function toast(msg){
+  const t=$("#toast"); t.innerHTML=ic("info")+`<span>${msg}</span>`; t.classList.add("in");
+  clearTimeout(tt); tt=setTimeout(()=>t.classList.remove("in"),2600);
+}
+function openSheet(html){
+  const o=$("#overlay");
+  o.innerHTML=`<div class="scrim" data-act="close-overlay"></div><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div>`;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{o.querySelector(".scrim").classList.add("in");o.querySelector(".sheet").classList.add("in")}));
+}
+function closeOverlay(){ $("#overlay").innerHTML=""; }
+function reportSheet(){
+  openSheet(`<h3>Reportar en la vía</h3><p>Tu ubicación se adjunta. Otros usuarios confirman el reporte.</p>
+  <div class="rtypes" style="margin:16px 0">${RTYPES.map(r=>`<button aria-pressed="${S.reportType===r.id}" data-act="rtype" data-v="${r.id}">${ic(r.i)}${r.t}</button>`).join("")}</div>
+  <div class="ethic">${ic("hand-palm")}<span>Describe lo que pasa en la vía. No identifiques personas, grupos ni comunidades.</span></div>
+  <div style="margin-top:14px"><button class="btn btn-p" data-act="report-send" ${S.reportType?"":"disabled"}>Enviar reporte</button></div>`);
+}
+function replanSheet(){
+  openSheet(`<h3>Bloqueo adelante en el km 42</h3><p>9 reportes confirman la vía cerrada. Te propongo el desvío por Albania y Cuestecitas.</p>
+  <div style="margin:14px 0">${corridorMap({detour:true})}</div>
+  <div class="rows"><div class="row"><span class="badge b-warn">${ic("arrows-split")}</span><span class="tx"><b>Desvío por Albania y Cuestecitas</b><small>Unos 25 min más, sin costo extra</small></span><span class="amt num">10:11</span></div></div>
+  <div class="btn-row" style="margin-top:14px"><button class="btn btn-g" data-act="close-overlay">Esperar</button><button class="btn btn-p" data-act="detour">Desviar</button></div>`);
+}
+
+/* ---------- flows ---------- */
+let chatTimers=[];
+function planCase(){
+  chatTimers.forEach(clearTimeout); chatTimers=[];
+  S.role="pasajero"; S.screen="asistente"; S.planned=false; S.chatPhase=1;
+  S.chat=[{k:"me",t:"Necesito llegar al Palacio de Justicia de Maicao antes de las 10, saliendo del centro de Riohacha."}];
+  render();
+  const items=[S.block?"Corredor: bloqueo en el km 42, busco desvío":"Corredor: Troncal abierta, sin bloqueos","Tramos: mototaxi, colectivo, mototaxi","Colectivo WGM 417: 7 de 12 puestos","Tarifas: justa y autorizada"];
+  chatTimers.push(setTimeout(()=>{S.chat.push({k:"checks",items,done:0});render(true);view.scrollTop=view.scrollHeight},350));
+  items.forEach((_,i)=>chatTimers.push(setTimeout(()=>{S.chat[1].done=i+1;render(true);view.scrollTop=view.scrollHeight},800+i*480)));
+  chatTimers.push(setTimeout(()=>{S.planned=true;S.chatPhase=2;if(S.screen==="asistente")render()},800+items.length*480+380));
+}
+function startTrip(){
+  if(S.pay==="saldo") S.balance-=TOTAL();
+  S.trip=true; S.stage=1; S.detourTaken=S.block;
+  if(S.offline) S.pendingSync++;
+  go("viaje"); toast(S.pay==="saldo"?`Pagaste ${cop(TOTAL())}. Cada conductor cobra al cerrar su tramo`:"Viaje confirmado. Pagas en cada tramo");
+}
+function advance(){
+  if(S.stage<5){ S.stage++; if(S.offline) S.pendingSync++; }
+  render(true);
+  if(S.stage===3&&!S.block){ setTimeout(()=>!$("#overlay").innerHTML&&!S.block&&toast("Tip de la demo: activa el bloqueo en el km 42 para ver el replaneo"),400); }
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click",e=>{
+  const el=e.target.closest("[data-act]"); if(!el) return;
+  const a=el.dataset.act, v=el.dataset.v;
+  switch(a){
+    case "go": go(v); break;
+    case "role": hideToast(); S.role=v; S.screen=v==="pasajero"?"home":"d-home"; render(); break;
+    case "toast": toast(v); break;
+    case "case": planCase(); break;
+    case "plan-case": planCase(); break;
+    case "replan-reset": S.planned=false; S.chat=[]; S.chatPhase=0; render(); break;
+    case "reset": chatTimers.forEach(clearTimeout); S=fresh(); render(); toast("Demo reiniciada"); break;
+    case "scenario-block":
+      S.block=!S.block; S.repaintWall=true; render(true);
+      if(S.block&&S.role==="pasajero"&&S.screen==="viaje"&&S.trip&&S.stage>=1&&S.stage<=3&&!S.detourTaken) replanSheet();
+      else if(S.block) toast("Alerta: vía cerrada en el km 42. Te avisamos antes de salir");
+      else toast("La Troncal volvió a abrir");
+      break;
+    case "scenario-rain": S.rain=!S.rain; S.repaintWall=true; render(true); toast(S.rain?"Lluvia fuerte en Riohacha. El planificador evita calles inundadas":"Pasó la lluvia"); break;
+    case "scenario-off": S.offline=!S.offline; if(!S.offline&&S.pendingSync){toast(`Señal recuperada. ${S.pendingSync} cambios sincronizados`);S.pendingSync=0} render(true); break;
+    case "report-open": S.reportType=null; reportSheet(); break;
+    case "rtype": S.reportType=v; reportSheet(); break;
+    case "report-send": {
+      const t=RTYPES.find(r=>r.id===S.reportType);
+      S.myReports.unshift({k:S.reportType==="cerrada"?"bad":"warn",i:t.i,t:t.t+" (tu reporte)",w:"Cerca de tu ubicación",c:1,ago:"ahora",lvl:"Por confirmar"});
+      if(S.offline) S.pendingSync++;
+      closeOverlay(); render(true); toast(S.offline?"Reporte guardado. Se envía al volver la señal":"Reporte enviado. Esperando confirmaciones");
+      break; }
+    case "close-overlay": closeOverlay(); break;
+    case "pay": S.pay=v; render(true); break;
+    case "pay-confirm": startTrip(); break;
+    case "advance": advance(); break;
+    case "detour": S.detourTaken=true; closeOverlay(); render(true); toast("Ruta actualizada. Llegas a las 10:11"); break;
+    case "share": S.sharing=!S.sharing; render(true); toast(S.sharing?"Carmen Iguarán ya ve tu viaje":"Dejaste de compartir el viaje"); break;
+    case "finish-demo": S.trip=true; S.stage=5; render(); break;
+    case "rate": S.rated[el.dataset.i]=+v; render(true); break;
+    case "amt": S.recharge=+v; render(true); break;
+    case "recharge": S.balance+=S.recharge; if(S.offline){S.pendingSync++;} render(true); toast(`Recarga simulada de ${cop(S.recharge)}`); break;
+    case "avail": S.d.available=!S.d.available; render(true); break;
+    case "veh": S.d.vehicle=v; S.d.reqState="pending"; render(true); break;
+    case "req": S.d.reqState=v; if(v==="si"){S.d.earningsToday+=5000} render(true); break;
+    case "seat": { const i=+el.dataset.i; S.d.seats[i]=S.d.seats[i]?0:1; render(true); break; }
+    case "depart": toast("Despacho registrado. Los pasajeros con reserva reciben el aviso"); S.d.seats=S.d.seats.map(()=>0); render(true); break;
+    case "cash": S.d.cash=true; render(true); break;
+    case "impago": S.d.impago=true; render(true); toast("Impago reportado. Lo revisamos con el pasajero"); break;
+    case "close-ride": if(!S.d.cash){toast("Confirma primero el efectivo de Jesús M. o reporta impago");break} S.d.closed=true; S.d.earningsToday+=45000; render(true); toast("Carrera cerrada y registrada"); break;
+    case "cert": openSheet(`<h3>Certificado de actividad</h3><p>Ricardo Fonseca, conductor de colectivo WGM 417.</p><div class="panel" style="margin:14px 0"><div class="rows"><div class="row"><span class="tx"><b>Viajes en los últimos 6 meses</b></span><span class="amt num">1.204</span></div><div class="row"><span class="tx"><b>Ingresos registrados</b></span><span class="amt num">$13.870.000</span></div><div class="row"><span class="tx"><b>Reputación</b></span><span class="amt num">4,8</span></div></div></div><p class="note">Documento de ejemplo. En la app real se genera como PDF firmado.</p><div style="margin-top:14px"><button class="btn btn-p" data-act="close-overlay">Listo</button></div>`); break;
+  }
+});
+document.addEventListener("submit",e=>{
+  const f=e.target.closest('[data-act="compose"]'); if(!f) return;
+  e.preventDefault();
+  const v=f.querySelector("input").value.trim();
+  if(!v){toast("Escribe a dónde vas");return}
+  if(/maicao|palacio|justicia/i.test(v)) planCase();
+  else { S.chat.push({k:"me",t:v.replace(/[<>]/g,"")},{k:"ai",t:"En esta demo el asistente resuelve el caso de referencia. Prueba con: Palacio de Justicia de Maicao antes de las 10."}); S.chatPhase=1; render(true); view.scrollTop=view.scrollHeight; }
+});
+
+/* hold-to-alert */
+let holdT;
+document.addEventListener("pointerdown",e=>{
+  const h=e.target.closest("[data-hold]"); if(!h) return;
+  h.classList.add("holding");
+  holdT=setTimeout(()=>{
+    h.classList.remove("holding");
+    $("#overlay").innerHTML=`<div class="alert-full" role="alertdialog" aria-label="Alerta de emergencia"><h2 class="rotulo big">Alerta<br>enviada</h2><p>Tu ubicación en vivo se compartió. Esto es una simulación.</p><ul><li>${ic("check-circle-f")}Carmen Iguarán</li><li>${ic("check-circle-f")}José Brito</li><li>${ic("check-circle-f")}Tránsito y Policía de Riohacha</li></ul><button class="btn" style="background:#fff;color:var(--coral)" data-act="close-overlay">Estoy bien, cancelar alerta</button></div>`;
+  },1500);
+});
+["pointerup","pointerleave","pointercancel"].forEach(t=>document.addEventListener(t,e=>{
+  const h=e.target.closest&&e.target.closest("[data-hold]");
+  clearTimeout(holdT); document.querySelectorAll(".hold.holding").forEach(x=>x.classList.remove("holding"));
+},true));
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeOverlay(); });
+
+render();
+})();
+</script>
