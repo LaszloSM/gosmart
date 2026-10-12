@@ -135,6 +135,8 @@ carrocería separada de la marca). Falta solo el estilo nocturno del mapa (Fase 
 **Pendiente de verificar:** la legibilidad real de Barlow al sol y en un teléfono de gama media.
 
 ## Fase 3 · Núcleo: roles, mapa, offline, seguridad básica (semanas 5–8)
+> **Estado (2026-10-12):** hecha salvo push (FCM). Offline con SharedPreferences en vez de drift. Detalle en `docs/ESTADO_IMPLEMENTACION.md`.
+
 - **Esquema:**
   - `profiles.role` y `drivers`: documentos, verificación, llave Bre-B/Nequi, vehículo y zona.
   - `vehicles`.
@@ -172,6 +174,8 @@ carrocería separada de la marca). Falta solo el estilo nocturno del mapa (Fase 
 - **Manifiesto:** agregar permisos de cámara (QR), notificaciones y ubicación en segundo plano.
 
 ## Fase 4 · M1 Estado del corredor + WhatsApp (semanas 7–10)
+> **Estado (2026-10-12):** hecha (migración 013, pestaña Reportar, `public_web/via.html`). Sin alertas push.
+
 - **Tablas:**
   - `road_segments`: Troncal por km, vías urbanas clave y desvío Albania–Cuestecitas.
   - `road_reports`: tipo cerrado (bloqueo, retén, inundación, hueco, accidente), punto, confirmaciones, confianza y expiración.
@@ -184,6 +188,8 @@ carrocería separada de la marca). Falta solo el estilo nocturno del mapa (Fase 
 - **Arranque:** un admin carga el estado inicial. Opcionalmente se integran avisos oficiales del concesionario.
 
 ## Fase 5 · M2 Planificador puerta a puerta + IA (semanas 9–13)
+> **Estado (2026-10-12):** hecha (014, `lib/planner/`, IA con herramientas). Los 3 casos de referencia pasan sobre la semilla aproximada. Sin voz ni predicción de despacho.
+
 - **Grafo** (`graph_nodes`, `graph_edges`) con modo, tiempo, costo mínimo y máximo, riesgo y segmento.
 - **Puerta a puerta:**
   - El origen y el destino arbitrarios se **enganchan** a los nodos cercanos, buscando por radio con PostGIS.
@@ -205,6 +211,8 @@ carrocería separada de la marca). Falta solo el estilo nocturno del mapa (Fase 
   3. Maicao → la Terminal de Riohacha con la Troncal bloqueada (usa el desvío).
 
 ## Fase 6 · Conductor completo + viaje encadenado (semanas 11–15)
+> **Estado (2026-10-12):** hecha (015, pestaña Viaje, modo conductor). D7 probado con carrera real. Sin replaneo automático ni PDF.
+
 - **Despacho estilo InDrive:**
   - El pasajero solicita, con una tarifa sugerida por el estimador.
   - Se avisa por Realtime/push a los conductores disponibles en radio (`ST_DWithin`).
@@ -222,6 +230,8 @@ carrocería separada de la marca). Falta solo el estilo nocturno del mapa (Fase 
 - **Offline (E6):** el servidor manda. Cada acción offline lleva un `idempotency_key` y se envía al volver la señal. Si el servidor la rechaza por estado inválido, el celular descarta su versión, muestra el estado real y avisa.
 
 ## Fase 7 · M4 Pago unificado (semanas 13–16)
+> **Estado (2026-10-12):** hecha en sandbox (016, QR, efectivo, recibo único, Edge Function `wompi`). Wompi sin probar contra el sandbox real.
+
 - **Billetera real:** recarga con Wompi sandbox (Edge Function + webhook) y bono de bienvenida.
 - **Cobro del conductor:**
   1. QR del conductor: el pasajero paga con saldo o con deep link a Nequi/Bre-B.
@@ -230,6 +240,8 @@ carrocería separada de la marca). Falta solo el estilo nocturno del mapa (Fase 
 - **Pago por tramo + recibo único (D5):** cada tramo se cobra al cerrarse, con una RPC atómica y su `idempotency_key`. El viaje genera un solo recibo con el desglose.
 
 ## Fase 8 · M5 Confianza + panel admin (semanas 15–17)
+> **Estado (2026-10-12):** hecha (017, calificaciones, impago, `/admin`). Edición de rutas/tarifas/lugares aún en Supabase.
+
 - **Reputación:**
   - Calificación bidireccional.
   - Impago: con 2 confirmados se bloquea al pasajero.
@@ -241,6 +253,8 @@ carrocería separada de la marca). Falta solo el estilo nocturno del mapa (Fase 
   - Métricas para Instramd y la Alcaldía de Maicao.
 
 ## Fase 9 · Piloto y sustentación (semanas 17–18)
+> **Estado (2026-10-12):** preparado, no ejecutado: `docs/PILOTO.md` y `docs/NO_IMPLEMENTADO.md`.
+
 - **Piloto en el corredor:** conductores reclutados, viajes reales.
 - **Medición:**
   - Precisión del despacho.
