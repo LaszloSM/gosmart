@@ -3,11 +3,9 @@
 // antiguo "Historial": el dinero vive en un solo lugar (`wallets`).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../core/money.dart';
 import '../../providers/wallet_provider.dart';
-import '../../router/app_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
 import '../../widgets/gs_bottom_sheet.dart';
@@ -77,27 +75,19 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             const BalanceHeader(),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: GSButton(
-                      label: 'Recargar',
-                      leadingIcon: Icons.add_rounded,
-                      isLoading: recharging,
-                      onPressed: recharging ? null : _showRechargeSheet,
-                    ),
-                  ),
-                  const SizedBox(width: GSSpacing.s3),
-                  Expanded(
-                    child: GSButton(
-                      label: 'Pagar',
-                      leadingIcon: Icons.qr_code_rounded,
-                      variant: GSButtonVariant.outline,
-                      onPressed: () =>
-                          context.push(AppRoutes.paymentValidation),
-                    ),
-                  ),
-                ],
+              child: GSButton(
+                label: 'Recargar saldo',
+                leadingIcon: Icons.add_rounded,
+                isLoading: recharging,
+                onPressed: recharging ? null : _showRechargeSheet,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  GSSpacing.s4, GSSpacing.s2, GSSpacing.s4, 0),
+              child: Text(
+                'Pronto vas a poder pagar el viaje con el QR del conductor.',
+                style: text.bodySmall,
               ),
             ),
             const SizedBox(height: GSSpacing.s6),

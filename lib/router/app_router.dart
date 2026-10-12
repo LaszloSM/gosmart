@@ -19,7 +19,6 @@ import '../features/profile/profile_screen.dart';
 import '../features/routes/route_planner_screen.dart';
 import '../features/routes/route_detail_screen.dart';
 import '../features/ai_chat/ai_chat_screen.dart';
-import '../features/payment/payment_validation_screen.dart';
 import '../features/nfc_simulator/nfc_auth_simulator_screen.dart';
 
 Widget _slideAndFade(
@@ -234,14 +233,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           transitionsBuilder: _slideAndFade,
         ),
       ),
+      // El pago real (QR del conductor) llega en la Fase 7; mientras tanto
+      // la ruta vieja de validación NFC lleva a la billetera.
       GoRoute(
         path: AppRoutes.paymentValidation,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const PaymentValidationScreen(),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
-        ),
+        redirect: (_, __) => AppRoutes.wallet,
       ),
       // Simulador local: solo en builds de depuración.
       if (kDebugMode)

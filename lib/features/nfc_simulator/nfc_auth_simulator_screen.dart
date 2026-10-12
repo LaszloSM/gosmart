@@ -122,8 +122,8 @@ class _NfcAuthSimulatorScreenState
       backgroundColor: GSColors.bg,
       appBar: AppBar(
         title: const Text('Simulador NFC (Debug)'),
-        backgroundColor: Colors.orange,
-        foregroundColor: Colors.white,
+        backgroundColor: GSColors.text,
+        foregroundColor: GSColors.onBrand,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(GSSpacing.s5),
@@ -134,14 +134,14 @@ class _NfcAuthSimulatorScreenState
             Container(
               padding: const EdgeInsets.all(GSSpacing.s4),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                border: Border.all(color: Colors.orange),
+                color: GSColors.surfaceSunken,
+                border: Border.all(color: GSColors.textMuted),
                 borderRadius: BorderRadius.circular(GSRadius.md),
               ),
               child: const Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.bug_report, color: Colors.orange),
+                  Icon(Icons.bug_report, color: GSColors.text),
                   SizedBox(width: 8),
                   Expanded(
                     child: Column(
@@ -279,7 +279,7 @@ class _ResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = result.isAuthorized ? Colors.green : Colors.red;
+    final color = result.isAuthorized ? GSColors.brand : GSColors.textMuted;
     return Container(
       padding: const EdgeInsets.all(GSSpacing.s4),
       decoration: BoxDecoration(
@@ -300,7 +300,7 @@ class _ResultCard extends StatelessWidget {
           if (result.txId != null) ...[
             const SizedBox(height: 4),
             Text('TX: ${result.txId}',
-                style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                style: const TextStyle(fontSize: 12, color: GSColors.textMuted)),
           ],
           if (result.remainingBalance != null) ...[
             const SizedBox(height: 4),
