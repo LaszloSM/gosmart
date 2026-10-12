@@ -92,13 +92,31 @@ class _RouteBody extends StatelessWidget {
             routeMode: mode,
             isLast: i == route.legs.length - 1,
           ),
+        for (final note in route.notes)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                GSSpacing.s4, GSSpacing.s3, GSSpacing.s4, 0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline_rounded,
+                    size: 20, color: GSColors.brand),
+                const SizedBox(width: GSSpacing.s2),
+                Expanded(child: Text(note, style: text.bodyMedium)),
+              ],
+            ),
+          ),
         if (route.estimatedCostCop > 0) ...[
           const GSSectionTitle('Tarifa'),
           GSListRow(
             icon: Icons.payments_outlined,
             title: 'Precio de referencia',
             subtitle: 'Aún sin verificar en la calle; puede variar.',
-            value: formatCop(route.estimatedCostCop),
+            value: route.fareMin != null &&
+                    route.fareMax != null &&
+                    route.fareMax! > route.fareMin!
+                ? '${formatCop(route.fareMin!)}–${formatCop(route.fareMax!)}'
+                : formatCop(route.estimatedCostCop),
           ),
         ],
         if (co2 > 0) ...[

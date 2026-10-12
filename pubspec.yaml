@@ -57,6 +57,7 @@ dependencies:
   # Error reporting (optional, SENTRY_DSN)
   sentry_flutter: ^9.0.0
   url_launcher: ^6.3.3
+  collection: ^1.19.1
 
 dev_dependencies:
   flutter_test:

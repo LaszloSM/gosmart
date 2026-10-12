@@ -77,6 +77,7 @@ All migrations live in `supabase/migrations/`. Run them in order in the Supabase
 | `011_roles_safety.sql` | `profiles.role` (passenger/driver/admin; trigger impide subirse de rol), `drivers` (solo admin aprueba vía `admin_review_driver`), `driver_documents` + bucket privado `driver-docs`, `vehicles`, `emergency_contacts` (+57, máx. 5), `sos_events` (idempotente), `trip_shares` + RPCs `trip_share_start/update/stop/view`. Sin PostGIS. |
 | `012_places_directory.sql` | `places` gazetteer (name + aliases, city, kind, lat/lng, `verified`), `gs_norm()` (sin tildes), trigram index, public RPC `search_places(q, lat, lng, limit)`. Seed (approximate, unverified): `supabase/seed/places_seed.sql`. |
 | `013_corridor.sql` | `road_segments` (Troncal por km + desvío, coords aprox.), `road_reports` (tipos cerrados, SIN texto libre), `road_report_votes`. RPCs: `report_road` (límite 6/h, 1 por tramo+tipo/30 min, idempotente), `vote_road_report`, públicas `road_status()` y `road_patterns()`. Cerrada exige confianza ≥ 0,9 (reputación + confirmaciones). |
+| `014_transport_graph.sql` | `graph_nodes`, `graph_edges` (modo, minutos, espera, tarifa mín/máx, `segment_ids` de la Troncal, `night_ok`), `fare_rules`; RPC pública `graph_snapshot()`. Semilla aproximada = `test/planner/fixture_graph.dart`. |
 | `010_wallet_hardening.sql` | **Security fix for 008.** Drops user UPDATE on `wallets` and INSERT on `wallet_transactions`; revokes `recharge_wallet` from clients; adds `idempotency_key`; new RPC `wallet_recharge_simulated(p_amount, p_idempotency_key)` that uses `auth.uid()`. Backfills wallets for older users. |
 
 **SQL tests:** `supabase/tests/` runs on a plain Postgres 16 (CI job `sql-tests`). `_supabase_stub.sql`
@@ -136,6 +137,11 @@ lib/
 │   ├── wallet_model.dart         # Wallet (table `wallets`; SEPARATE from CardModel)
 │   ├── wallet_transaction_model.dart # WalletTransactionModel, WalletTxType enum
 │   └── geocode_suggestion.dart   # Address suggestion from Mapbox Geocoding: placeName, fullAddress, latLng
+├── planner/                      # Planificador en el celular (D6), Dart puro
+│   ├── graph.dart                # TransitMode, GraphNode/Edge, TransportGraph, haversineKm
+│   ├── fares.dart                # estimateFare → FareRange (referencia, ±25 %, recargo nocturno)
+│   ├── planner.dart              # TripPlanner.plan(PlanRequest) → PlannedTrip (Dijkstra, enganche, bloqueos)
+│   └── to_route.dart             # PlannedTrip → RouteResult (rango de tarifa, avisos)
 ├── providers/                    # Riverpod StateNotifierProviders
 │   ├── ai_conversation_provider.dart
 │   ├── auth_provider.dart
@@ -192,6 +198,7 @@ All providers in `lib/providers/`. Pattern: `StateNotifierProvider<Notifier, Asy
 | `emergencyContactsProvider` | `FutureProvider<List<EmergencyContact>>` | Empty for guests |
 | `tripShareProvider` | `StateNotifierProvider<…, TripShare?>` | start()/stop(); pushes location every minute while the app is open |
 | `myDriverProvider` | `FutureProvider<DriverProfile?>` | Own driver row + vehicle + uploaded doc kinds; null = never registered |
+| `transportGraphProvider` | `FutureProvider<GraphBundle>` | `graph_snapshot()` or the cached copy (planner works offline) |
 | `topFavoritePlacesProvider` | `Provider<List<FavoritePlace>>` | Top 3 by use_count |
 
 **Critical state pattern** — `updateProfile()` preserves previous state on error:
@@ -461,6 +468,9 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 - **Offline writes** go through `syncQueue.enqueue(SyncOp(kind, key, payload))` with the op's
   idempotency key; register a handler per kind (`safetyService.registerSyncHandlers`) in `main.dart`.
   Flushed at startup and on app resume. Drift was not used (no codegen); fine for small volumes.
+- **Planner**: Colectivo/TransPadilla/Intermunicipal are planned locally with `TripPlanner` over
+  `transportGraphProvider` + `corridorStatusProvider` (closed segments are never used). If you change
+  the SQL seed graph, change `test/planner/fixture_graph.dart` too (the 3 reference cases run on it).
 - **Money formatting**: always `formatCop()` and `GSFonts.mono` for amounts the user compares.
   No red/green for income/expense — the sign carries it (red/green are road-only).
 - **`DateFormat(..., 'es')` throws** unless `initializeDateFormatting` ran (it doesn't in this app).

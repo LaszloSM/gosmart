@@ -36,6 +36,13 @@ class RouteResult {
   /// Nombre del destino tal como lo eligió el usuario (para compartir el viaje).
   final String? destinationLabel;
 
+  /// Rango de tarifa de referencia (planificador). null = sin rango.
+  final int? fareMin;
+  final int? fareMax;
+
+  /// Avisos del planificador: desvío por bloqueo, tramos en precaución.
+  final List<String> notes;
+
   const RouteResult({
     required this.legs,
     required this.distanceKm,
@@ -44,6 +51,9 @@ class RouteResult {
     this.estimatedCostCop = 0,
     this.category = 'private',
     this.destinationLabel,
+    this.fareMin,
+    this.fareMax,
+    this.notes = const [],
   });
 
   RouteResult withDestination(String? label) => RouteResult(
@@ -54,6 +64,9 @@ class RouteResult {
         estimatedCostCop: estimatedCostCop,
         category: category,
         destinationLabel: label,
+        fareMin: fareMin,
+        fareMax: fareMax,
+        notes: notes,
       );
 }
 

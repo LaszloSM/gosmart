@@ -9,6 +9,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../models/corridor_status.dart';
+import '../../planner/graph.dart';
+import '../../planner/planner.dart';
+import '../../planner/to_route.dart';
+import '../../providers/corridor_provider.dart';
+import '../../providers/planner_provider.dart';
+import '../../services/graph_service.dart';
 import '../../models/geocode_suggestion.dart';
 import '../../models/route_result.dart';
 import '../../providers/active_route_provider.dart';
@@ -21,7 +28,6 @@ import '../../services/directions_service.dart';
 import '../../services/eco_service.dart';
 import '../../services/place_search.dart';
 import '../../services/location_service.dart';
-import '../../services/public_transport_service.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_list_row.dart';
@@ -148,8 +154,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     setState(() => _loading = true);
     final mode = ref.read(selectedModeProvider);
     final RouteResult? result = isPublicTransport(mode)
-        ? await publicTransportService.planRoute(
-            origin: _originLatLng!, destination: _destLatLng!, mode: mode)
+        ? await _planWithGraph(mode)
         : await directionsService.getRoute(
             origin: _originLatLng!,
             destination: _destLatLng!,
@@ -159,7 +164,9 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
 
     if (result == null) {
       GSToast.showWithMessenger(messenger,
-          message: 'No pudimos calcular la ruta. Revisa tu conexión.',
+          message: isPublicTransport(mode)
+              ? 'Aún no tenemos $mode para ese viaje. Prueba en mototaxi o taxi.'
+              : 'No pudimos calcular la ruta. Revisa tu conexión.',
           type: GSToastType.error);
       return;
     }
@@ -167,6 +174,38 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
         result.withDestination(_destLabel);
     _awardEcoPoints(result, messenger);
     context.pop();
+  }
+
+  /// Colectivo, TransPadilla e intermunicipal: planificador en el celular
+  /// sobre el grafo guardado (D6), evitando tramos cerrados de la Troncal.
+  Future<RouteResult?> _planWithGraph(String mode) async {
+    final GraphBundle bundle;
+    try {
+      bundle = await ref.read(transportGraphProvider.future);
+    } catch (_) {
+      return null;
+    }
+    if (bundle.graph.isEmpty) return null;
+    final corridor = ref.read(corridorStatusProvider).valueOrNull;
+    final selected = TransitMode.values.firstWhere((m) => m.label == mode,
+        orElse: () => TransitMode.colectivo);
+    final trips = TripPlanner(bundle.graph, fareRules: bundle.fareRules).plan(
+      PlanRequest(
+        origin: _originLatLng!,
+        destination: _destLatLng!,
+        at: DateTime.now(),
+        // El modo elegido más lo que se necesita para llegar y salir.
+        allowed: {TransitMode.walk, TransitMode.mototaxi, selected},
+        roadStates: {
+          for (final s in corridor?.segments ?? const <CorridorSegment>[])
+            if (s.id != null) s.id!: s.state,
+        },
+        originName: _originLabel,
+        destinationName: _destLabel ?? 'Tu destino',
+      ),
+    );
+    if (trips.isEmpty) return null;
+    return routeFromTrip(trips.first, corridor: corridor);
   }
 
   void _awardEcoPoints(RouteResult result, ScaffoldMessengerState messenger) {
