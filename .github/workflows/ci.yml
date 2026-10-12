@@ -2,7 +2,8 @@ name: GoSmart CI
 
 on:
   push:
-    branches: [main]
+    # También las ramas de trabajo, para ver el APK compilar antes del PR.
+    branches: [main, 'claude/**']
   pull_request:
     branches: [main]
 
