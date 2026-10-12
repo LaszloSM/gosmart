@@ -7,7 +7,7 @@ import '../../../core/money.dart';
 import '../../../providers/wallet_provider.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_skeleton_loader.dart';
-import 'inline_error.dart';
+import '../../../widgets/gs_inline_error.dart';
 
 class BalanceHeader extends ConsumerWidget {
   const BalanceHeader({super.key});
@@ -29,13 +29,13 @@ class BalanceHeader extends ConsumerWidget {
             skipLoadingOnRefresh: true,
             loading: () => const GSSkeletonLoader(
                 width: 180, height: 40, radius: GSRadius.sm),
-            error: (_, __) => InlineError(
+            error: (_, __) => GSInlineError(
               message: 'No pudimos cargar tu saldo',
               onRetry: () => ref.invalidate(walletProvider),
             ),
             data: (wallet) {
               if (wallet == null) {
-                return InlineError(
+                return GSInlineError(
                   message: 'Tu billetera aún no está lista',
                   onRetry: () => ref.invalidate(walletProvider),
                 );

@@ -1,11 +1,11 @@
-// lib/features/wallet/widgets/inline_error.dart
+// lib/widgets/gs_inline_error.dart
 import 'package:flutter/material.dart';
 
-import '../../../theme/design_tokens.dart';
+import '../theme/design_tokens.dart';
 
 /// Error en línea: mensaje + "Reintentar". Sin caja roja (DESIGN.md).
-class InlineError extends StatelessWidget {
-  const InlineError({super.key, required this.message, required this.onRetry});
+class GSInlineError extends StatelessWidget {
+  const GSInlineError({super.key, required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;

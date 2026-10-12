@@ -61,7 +61,7 @@ class GSBottomSheet extends StatelessWidget {
           decoration: BoxDecoration(
             color: GSColors.surface,
             borderRadius: GSRadius.sheetRadius,
-            boxShadow: GSShadow.lg,
+            boxShadow: GSShadow.sheet,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -73,7 +73,7 @@ class GSBottomSheet extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: GSColors.accent.withValues(alpha: 0.4),
+                    color: GSColors.line,
                     borderRadius: BorderRadius.circular(GSRadius.full),
                   ),
                 ),
@@ -83,8 +83,8 @@ class GSBottomSheet extends StatelessWidget {
               if (title != null)
                 Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: GSSpacing.s5,
-                    vertical: GSSpacing.s4,
+                    horizontal: GSSpacing.s4,
+                    vertical: GSSpacing.s3,
                   ),
                   child: Row(
                     children: [
@@ -92,10 +92,11 @@ class GSBottomSheet extends StatelessWidget {
                         child: Text(
                           title!,
                           style: const TextStyle(
-                            
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: GSColors.textPrimary,
+                            fontFamily: GSFonts.display,
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                            height: 1.1,
+                            color: GSColors.text,
                           ),
                         ),
                       ),
@@ -111,7 +112,9 @@ class GSBottomSheet extends StatelessWidget {
                 child: SingleChildScrollView(
                   controller: scrollController,
                   padding: padding ??
-                      const EdgeInsets.all(GSSpacing.s5),
+                      EdgeInsets.fromLTRB(GSSpacing.s4, GSSpacing.s4,
+                          GSSpacing.s4,
+                          GSSpacing.s6 + MediaQuery.of(context).viewInsets.bottom),
                   child: child,
                 ),
               ),

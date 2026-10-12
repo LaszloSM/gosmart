@@ -7,7 +7,7 @@ import '../../../models/wallet_transaction_model.dart';
 import '../../../providers/wallet_provider.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_skeleton_loader.dart';
-import 'inline_error.dart';
+import '../../../widgets/gs_inline_error.dart';
 
 /// Movimientos por página.
 const walletPageSize = 20;
@@ -51,7 +51,7 @@ class WalletMovements extends ConsumerWidget {
       ),
       error: (_, __) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
-        child: InlineError(
+        child: GSInlineError(
           message: 'No pudimos cargar tus movimientos',
           onRetry: () => ref.invalidate(walletTransactionsProvider(limit)),
         ),

@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../router/app_router.dart';
 import '../../../theme/design_tokens.dart';
+import '../../../widgets/gs_list_row.dart';
 import '../../../widgets/gs_route_plate.dart';
 import 'quick_places_row.dart';
 
@@ -53,7 +54,7 @@ class HomeSheetContent extends ConsumerWidget {
         ),
         const SizedBox(height: GSSpacing.s3),
         const Divider(),
-        _SheetRow(
+        GSListRow(
           icon: Icons.chat_bubble_outline_rounded,
           title: 'Pregúntale al asistente',
           subtitle: 'Cómo llegar, cuánto cuesta, cómo está la vía',
@@ -61,7 +62,7 @@ class HomeSheetContent extends ConsumerWidget {
         ),
         if (isGuest) ...[
           const Divider(),
-          _SheetRow(
+          GSListRow(
             icon: Icons.person_outline_rounded,
             title: 'Entrar o crear cuenta',
             subtitle: 'Para reportar la vía, pedir mototaxi o pagar',
@@ -83,59 +84,6 @@ class HomeSheetContent extends ConsumerWidget {
               GSSpacing.s4,
         ),
       ],
-    );
-  }
-}
-
-/// Fila plana con divisor (DESIGN.md: sin tarjetas por defecto).
-class _SheetRow extends StatelessWidget {
-  const _SheetRow({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return InkWell(
-      onTap: onTap,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 64),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: GSSpacing.s4, vertical: GSSpacing.s3),
-          child: Row(
-            children: [
-              Icon(icon, color: GSColors.brand),
-              const SizedBox(width: GSSpacing.s3),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(title, style: text.titleMedium),
-                    Text(
-                      subtitle,
-                      style: text.bodySmall,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded,
-                  color: GSColors.textMuted),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

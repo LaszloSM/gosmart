@@ -43,6 +43,8 @@ void main() {
       await tester.pumpWidget(buildTestApp(const LoginScreen()));
       await tester.pumpAndSettle();
 
+      await tester.ensureVisible(find.text('Enviar código'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Enviar código'));
       await tester.pumpAndSettle();
 
@@ -55,6 +57,9 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Correo').first);
+      await tester.pumpAndSettle();
+      // Los campos llevan la etiqueta encima: el botón puede quedar abajo.
+      await tester.ensureVisible(find.text('Iniciar sesión'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Iniciar sesión'));
       await tester.pumpAndSettle();

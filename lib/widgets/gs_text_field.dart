@@ -44,36 +44,58 @@ class GSTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Etiqueta ARRIBA del campo, nunca flotante ni como placeholder
+    // (taste-skill 4.6); el error queda debajo.
+    final field = TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      onChanged: onChanged,
+      onFieldSubmitted: onSubmitted,
+      validator: validator,
+      inputFormatters: inputFormatters,
+      maxLength: maxLength,
+      maxLines: maxLines,
+      enabled: enabled,
+      autofocus: autofocus,
+      textCapitalization: textCapitalization,
+      style: const TextStyle(
+        fontFamily: GSFonts.sans,
+        fontSize: 17,
+        color: GSColors.text,
+        fontWeight: FontWeight.w500,
+      ),
+      decoration: InputDecoration(
+        hintText: hint,
+        counterText: '',
+        prefixIcon: prefixIcon != null
+            ? Icon(prefixIcon, size: 22, color: GSColors.textMuted)
+            : null,
+        suffixIcon: suffixIcon,
+      ),
+    );
+
     return Semantics(
       label: semanticLabel ?? label ?? hint,
-      child: TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        obscureText: obscureText,
-        onChanged: onChanged,
-        onFieldSubmitted: onSubmitted,
-        validator: validator,
-        inputFormatters: inputFormatters,
-        maxLength: maxLength,
-        maxLines: maxLines,
-        enabled: enabled,
-        autofocus: autofocus,
-        textCapitalization: textCapitalization,
-        style: const TextStyle(
-          fontSize: 15,
-          color: GSColors.textPrimary,
-          fontWeight: FontWeight.w400,
-        ),
-        decoration: InputDecoration(
-          hintText: hint,
-          labelText: label,
-          counterText: '',
-          prefixIcon: prefixIcon != null
-              ? Icon(prefixIcon, size: 20, color: GSColors.textSecondary)
-              : null,
-          suffixIcon: suffixIcon,
-        ),
-      ),
+      child: label == null
+          ? field
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label!,
+                  style: const TextStyle(
+                    fontFamily: GSFonts.sans,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: GSColors.text,
+                  ),
+                ),
+                const SizedBox(height: GSSpacing.s2),
+                field,
+              ],
+            ),
     );
   }
 }
