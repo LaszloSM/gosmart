@@ -436,6 +436,9 @@ CREATE TABLE IF NOT EXISTS trip_legs (
   mode         TEXT NOT NULL CHECK (mode IN
                  ('walk', 'mototaxi', 'taxi', 'colectivo', 'transpadilla', 'intermunicipal')),
   from_label   TEXT, to_label TEXT,
+  -- Puntos del grafo (014) cuando el tramo sale de un paradero/terminal.
+  from_node    TEXT REFERENCES graph_nodes(id) ON DELETE SET NULL,
+  to_node      TEXT REFERENCES graph_nodes(id) ON DELETE SET NULL,
   from_lat DOUBLE PRECISION, from_lng DOUBLE PRECISION,
   to_lat   DOUBLE PRECISION, to_lng   DOUBLE PRECISION,
   minutes      INTEGER,
@@ -464,7 +467,8 @@ REVOKE INSERT, UPDATE, DELETE ON chained_trips, trip_legs FROM authenticated;
 GRANT SELECT ON chained_trips, trip_legs TO authenticated;
 
 -- Crea el viaje con sus tramos (del planificador del celular).
--- p_legs: [{mode, from_label, to_label, from_lat, from_lng, to_lat, to_lng, minutes, fare_min, fare_max}]
+-- p_legs: [{mode, from_label, to_label, from_node?, to_node?, from_lat, from_lng, to_lat, to_lng,
+--           minutes, fare_min, fare_max}]
 CREATE OR REPLACE FUNCTION create_trip(
   p_origin TEXT, p_dest TEXT, p_legs JSONB, p_idempotency_key UUID)
 RETURNS UUID AS $$
@@ -491,9 +495,11 @@ BEGIN
   VALUES (auth.uid(), left(p_origin, 120), left(p_dest, 120), p_idempotency_key)
   RETURNING id INTO v_id;
   FOR l IN SELECT * FROM jsonb_array_elements(p_legs) LOOP
-    INSERT INTO trip_legs (trip_id, seq, mode, from_label, to_label, from_lat, from_lng,
-                           to_lat, to_lng, minutes, fare_min, fare_max)
+    INSERT INTO trip_legs (trip_id, seq, mode, from_label, to_label, from_node, to_node,
+                           from_lat, from_lng, to_lat, to_lng, minutes, fare_min, fare_max)
     VALUES (v_id, i, l->>'mode', left(l->>'from_label', 120), left(l->>'to_label', 120),
+            (SELECT id FROM graph_nodes WHERE id = l->>'from_node'),
+            (SELECT id FROM graph_nodes WHERE id = l->>'to_node'),
             (l->>'from_lat')::float8, (l->>'from_lng')::float8,
             (l->>'to_lat')::float8, (l->>'to_lng')::float8,
             (l->>'minutes')::int, coalesce((l->>'fare_min')::int, 0), coalesce((l->>'fare_max')::int, 0));

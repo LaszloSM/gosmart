@@ -4,9 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../router/app_router.dart';
 import '../theme/design_tokens.dart';
 
-/// Destinos de la barra inferior. "Viaje" se suma en la Fase 6; el
-/// historial vive dentro de la Billetera.
-enum GSNavTab { home, report, wallet, profile }
+/// Destinos de la barra inferior (DS1). El historial vive en la Billetera.
+enum GSNavTab { home, trip, report, wallet, profile }
 
 /// Barra inferior en ultramar (la carrocería): ícono activo sobre una placa
 /// blanca con franja fucsia, etiqueta siempre debajo. Navega sola con
@@ -18,6 +17,7 @@ class GSBottomNav extends StatelessWidget {
 
   static const _items = [
     _NavItem(GSNavTab.home, Icons.home_rounded, 'Inicio', AppRoutes.home),
+    _NavItem(GSNavTab.trip, Icons.route_rounded, 'Viaje', AppRoutes.trip),
     _NavItem(GSNavTab.report, Icons.campaign_rounded, 'Reportar',
         AppRoutes.report),
     _NavItem(GSNavTab.wallet, Icons.account_balance_wallet_rounded, 'Billetera',

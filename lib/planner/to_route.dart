@@ -35,6 +35,13 @@ RouteResult routeFromTrip(PlannedTrip t, {CorridorStatus? corridor}) {
               ? '${l.instruction} (espera ~${l.waitMinutes} min)'
               : l.instruction,
           lineId: l.mode.label,
+          transitMode: l.mode.name,
+          fromLabel: l.fromName,
+          toLabel: l.toName,
+          fromNode: l.fromId,
+          toNode: l.toId,
+          fareMin: l.fare.min,
+          fareMax: l.fare.max,
         ),
     ],
     distanceKm: t.distanceKm,

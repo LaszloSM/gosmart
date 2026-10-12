@@ -114,7 +114,8 @@ lib/
 ├── features/                     # Screen-level UI (one folder per feature)
 │   ├── ai_chat/                  # AI assistant chat UI
 │   ├── auth/                     # Login, register, SMS OTP
-│   ├── driver/                   # Modo conductor (DS6, 72 dp): registro, documentos, disponible
+│   ├── driver/                   # Modo conductor (DS6, 72 dp): registro, documentos, disponible,
+│   │                             #   driver_work_panel (solicitudes cercanas, viaje activo, salidas)
 │   ├── legal/                    # Política Ley 1581 y términos (borrador con [PENDIENTE] visible)
 │   ├── home/                     # Inicio: Línea del corredor → mapa → hoja "¿A dónde vas?"
 │   │   └── widgets/              # HomeMap, HomeSheetContent, CorridorDetailSheet, QuickPlacesRow
@@ -125,6 +126,7 @@ lib/
 │   ├── routes/                   # Route planner + route detail
 │   ├── safety/                   # SOS sheet (123/WhatsApp/SMS), emergency contacts, trip sharing
 │   ├── splash/                   # SplashScreen — animated logo, onboarding routing
+│   ├── trip/                     # Pestaña Viaje: viaje encadenado; leg_panels (a pie, mototaxi InDrive, colectivo)
 │   └── wallet/                   # Billetera: saldo, recargar/pagar, movimientos (ex-historial), tarjeta
 │       └── widgets/              # BalanceHeader, WalletMovements, RechargeSheetContent, CardControls
 ├── models/                       # Pure data classes (no Flutter dependencies)
@@ -200,6 +202,8 @@ All providers in `lib/providers/`. Pattern: `StateNotifierProvider<Notifier, Asy
 | `tripShareProvider` | `StateNotifierProvider<…, TripShare?>` | start()/stop(); pushes location every minute while the app is open |
 | `myDriverProvider` | `FutureProvider<DriverProfile?>` | Own driver row + vehicle + uploaded doc kinds; null = never registered |
 | `transportGraphProvider` | `FutureProvider<GraphBundle>` | `graph_snapshot()` or the cached copy (planner works offline) |
+| `activeTripProvider` | `FutureProvider<ChainedTrip?>` | Planned/in-progress chained trip with legs; null for guests |
+| `dispatchEnabledProvider` | `FutureProvider<bool>` | `app_flags.dispatch_enabled` |
 | `topFavoritePlacesProvider` | `Provider<List<FavoritePlace>>` | Top 3 by use_count |
 
 **Critical state pattern** — `updateProfile()` preserves previous state on error:
@@ -291,6 +295,7 @@ AppRoutes.routeDetail      // '/routes/detail'
 AppRoutes.paymentValidation // '/payment-validation'
 AppRoutes.nfcSimulator     // '/debug/nfc-simulator'
 AppRoutes.emergencyContacts // '/safety/contacts'  (needs account)
+AppRoutes.trip             // '/trip'    (pestaña Viaje; needs account)
 AppRoutes.report           // '/report'  (pestaña Reportar; needs account)
 AppRoutes.driver           // '/driver'  (modo conductor; needs account)
 AppRoutes.driverSignup     // '/driver/signup'
@@ -353,8 +358,7 @@ GSSize.touchTarget=48 .touchTargetDriver=72 .corridorLine=56 .bottomNav=72 .topB
 - `GSCard`, `GSInfoCard`, `GSOptionCard`, `GSModeChip`
 - `GSCorridorLine` — DESIGN.md corridor line (56 px); state always icon + word, time in mono
 - `GSTextField`, `GSSearchBar`
-- `GSBottomNav(current: GSNavTab.home|report|wallet|profile)` — navigates by itself; 4 tabs
-  (Viaje joins in Fase 6)
+- `GSBottomNav(current: GSNavTab.home|trip|report|wallet|profile)` — navigates by itself; 5 tabs (DS1)
 - `GSBottomSheet`
 - `GSToast`, `GSSkeletonLoader`, `GSEmptyState`
 
@@ -478,6 +482,9 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 - **Planner**: Colectivo/TransPadilla/Intermunicipal are planned locally with `TripPlanner` over
   `transportGraphProvider` + `corridorStatusProvider` (closed segments are never used). If you change
   the SQL seed graph, change `test/planner/fixture_graph.dart` too (the 3 reference cases run on it).
+- **Dispatch** (`dispatchService`): never decide races on the client; call the RPC and show
+  `DispatchException.message` ('already_taken', 'no_seats'…). Ride and driver screens poll (4–5 s)
+  while open; there is no push yet, so a driver with the app closed gets no requests.
 - **Money formatting**: always `formatCop()` and `GSFonts.mono` for amounts the user compares.
   No red/green for income/expense — the sign carries it (red/green are road-only).
 - **`DateFormat(..., 'es')` throws** unless `initializeDateFormatting` ran (it doesn't in this app).

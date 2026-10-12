@@ -5,6 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:uuid/uuid.dart';
+
+import '../../providers/auth_provider.dart';
+import '../../providers/dispatch_provider.dart';
+import '../../services/dispatch_service.dart';
+import '../../widgets/gs_toast.dart';
 import '../../core/money.dart';
 import '../../models/route_result.dart';
 import '../../providers/active_route_provider.dart';
@@ -18,11 +24,46 @@ import '../../widgets/gs_list_row.dart';
 import '../../widgets/gs_route_plate.dart';
 import '../safety/trip_share_section.dart';
 
-class RouteDetailScreen extends ConsumerWidget {
+class RouteDetailScreen extends ConsumerStatefulWidget {
   const RouteDetailScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RouteDetailScreen> createState() => _RouteDetailScreenState();
+}
+
+class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen> {
+  bool _starting = false;
+  // Una llave por pantalla: tocar dos veces no crea dos viajes.
+  final _tripKey = const Uuid().v4();
+
+  Future<void> _startTrip(RouteResult route) async {
+    if (ref.read(isGuestProvider)) {
+      context.push(AppRoutes.login);
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+    setState(() => _starting = true);
+    try {
+      await dispatchService.createTrip(
+        route,
+        originLabel: route.legs.first.fromLabel ?? 'Tu ubicación',
+        destLabel:
+            route.destinationLabel ?? route.legs.last.toLabel ?? 'Tu destino',
+        idempotencyKey: _tripKey,
+      );
+      ref.invalidate(activeTripProvider);
+      router.go(AppRoutes.trip);
+    } on DispatchException catch (e) {
+      GSToast.showWithMessenger(messenger,
+          message: e.message, type: GSToastType.error);
+    } finally {
+      if (mounted) setState(() => _starting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final route = ref.watch(activeRouteProvider);
     final mode = ref.watch(selectedModeProvider);
 
@@ -47,10 +88,24 @@ class RouteDetailScreen extends ConsumerWidget {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
                     GSSpacing.s4, GSSpacing.s2, GSSpacing.s4, GSSpacing.s3),
-                child: GSButton(
-                  label: 'Ver en el mapa',
-                  leadingIcon: Icons.map_outlined,
-                  onPressed: () => context.go(AppRoutes.home),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    GSButton(
+                      label: 'Iniciar viaje',
+                      leadingIcon: Icons.play_arrow_rounded,
+                      isLoading: _starting,
+                      onPressed: _starting ? null : () => _startTrip(route),
+                    ),
+                    const SizedBox(height: GSSpacing.s2),
+                    GSButton(
+                      label: 'Ver en el mapa',
+                      leadingIcon: Icons.map_outlined,
+                      variant: GSButtonVariant.outline,
+                      onPressed: () => context.go(AppRoutes.home),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -135,8 +190,8 @@ class _RouteBody extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(
               GSSpacing.s4, GSSpacing.s4, GSSpacing.s4, 0),
           child: Text(
-            'Pronto vas a poder iniciar el viaje, pedir mototaxi y pagar '
-            'cada tramo desde aquí.',
+            'Al iniciar el viaje pides cada tramo: mototaxi o taxi con '
+            'conductores cercanos, o un cupo en el colectivo.',
             style: text.bodySmall,
           ),
         ),

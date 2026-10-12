@@ -14,6 +14,16 @@ class RouteLeg {
   final String? instruction; // e.g. "Toma el Metro Línea A hasta Industriales"
   final String? lineId;      // e.g. "Ruta 1", "TransPadilla"
 
+  /// Del planificador: modo ('mototaxi', 'colectivo'…), lugares, puntos del
+  /// grafo y tarifa. Sirven para crear el viaje encadenado (Fase 6).
+  final String? transitMode;
+  final String? fromLabel;
+  final String? toLabel;
+  final String? fromNode;
+  final String? toNode;
+  final int fareMin;
+  final int fareMax;
+
   const RouteLeg({
     required this.mode,
     required this.points,
@@ -22,6 +32,13 @@ class RouteLeg {
     required this.distanceKm,
     this.instruction,
     this.lineId,
+    this.transitMode,
+    this.fromLabel,
+    this.toLabel,
+    this.fromNode,
+    this.toNode,
+    this.fareMin = 0,
+    this.fareMax = 0,
   });
 }
 

@@ -3,7 +3,8 @@
 // 72 dp y máximo dos acciones por pantalla. Según el estado del registro:
 //   sin registro → invitación; pendiente → documentos que faltan;
 //   rechazado → motivo y corregir; aprobado → Disponible / No disponible.
-// Las solicitudes de viaje llegan con el despacho (Fase 6); aquí no se fingen.
+// Disponible y aprobado: DriverWorkPanel (solicitudes cercanas, viaje activo,
+// salidas de colectivo).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,6 +22,7 @@ import '../../widgets/gs_inline_error.dart';
 import '../../widgets/gs_list_row.dart';
 import '../../widgets/gs_route_plate.dart';
 import '../../widgets/gs_toast.dart';
+import 'driver_work_panel.dart';
 
 class DriverHomeScreen extends ConsumerWidget {
   const DriverHomeScreen({super.key});
@@ -116,8 +118,8 @@ class _DriverBodyState extends ConsumerState<_DriverBody> {
 
     final (statusTitle, statusDetail) = switch (d.status) {
       DriverStatus.approved => d.available
-          ? ('Disponible', 'Cuando el despacho llegue a tu zona, las '
-              'solicitudes aparecen aquí.')
+          ? ('Disponible', 'Las solicitudes cercanas aparecen abajo mientras '
+              'esta pantalla esté abierta.')
           : ('No disponible', 'Nadie te ve. Ponte disponible cuando '
               'quieras trabajar.'),
       DriverStatus.pending => d.isComplete
@@ -177,6 +179,7 @@ class _DriverBodyState extends ConsumerState<_DriverBody> {
                 title: 'Editar mis datos',
                 onTap: () => context.push(AppRoutes.driverSignup),
               ),
+              if (approved && d.available) DriverWorkPanel(driver: d),
               if (!approved) ...[
                 const GSSectionTitle('Documentos'),
                 Padding(

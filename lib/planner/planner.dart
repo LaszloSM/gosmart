@@ -54,7 +54,13 @@ class PlannedLeg {
     required this.fare,
     required this.distanceKm,
     this.segmentIds = const [],
+    this.fromId,
+    this.toId,
   });
+
+  /// Ids de `graph_nodes`; null en el origen o destino de la persona.
+  final String? fromId;
+  final String? toId;
 
   final TransitMode mode;
   final String fromName;
@@ -142,6 +148,7 @@ class TripPlanner {
 
   static const _origin = '__origin__';
   static const _dest = '__dest__';
+  static String? _nodeId(String id) => id == _origin || id == _dest ? null : id;
 
   /// Hasta [max] alternativas distintas (rápida, equilibrada, barata).
   List<PlannedTrip> plan(PlanRequest req, {int max = 3}) {
@@ -273,6 +280,8 @@ class TripPlanner {
           fare: last.fare + FareRange(e.fareMin, e.fareMax),
           distanceKm: last.distanceKm + km,
           segmentIds: [...last.segmentIds, ...e.segmentIds],
+          fromId: last.fromId,
+          toId: _nodeId(e.to),
         );
       } else {
         legs.add(PlannedLeg(
@@ -280,6 +289,7 @@ class TripPlanner {
           minutes: e.minutes, waitMinutes: e.waitMinutes,
           fare: FareRange(e.fareMin, e.fareMax), distanceKm: km,
           segmentIds: e.segmentIds,
+          fromId: _nodeId(e.from), toId: _nodeId(e.to),
         ));
       }
     }
