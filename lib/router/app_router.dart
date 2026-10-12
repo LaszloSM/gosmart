@@ -20,6 +20,7 @@ import '../features/routes/route_planner_screen.dart';
 import '../features/routes/route_detail_screen.dart';
 import '../features/ai_chat/ai_chat_screen.dart';
 import '../features/nfc_simulator/nfc_auth_simulator_screen.dart';
+import '../features/safety/emergency_contacts_screen.dart';
 
 /// Transición de pantalla: fundido + 4 % de desplazamiento con ease-out
 /// fuerte (Emil). Con "quitar animaciones" queda solo el fundido.
@@ -90,6 +91,7 @@ abstract class AppRoutes {
   static const aiChat           = '/ai-chat';
   static const paymentValidation = '/payment-validation';
   static const nfcSimulator     = '/debug/nfc-simulator';
+  static const emergencyContacts = '/safety/contacts';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -186,6 +188,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.routeDetail,
         pageBuilder: (context, state) => _page(state, const RouteDetailScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.emergencyContacts,
+        pageBuilder: (context, state) =>
+            _page(state, const EmergencyContactsScreen()),
       ),
       GoRoute(
         path: AppRoutes.aiChat,

@@ -16,6 +16,7 @@ import '../../widgets/gs_button.dart';
 import '../../widgets/gs_empty_state.dart';
 import '../../widgets/gs_list_row.dart';
 import '../../widgets/gs_route_plate.dart';
+import '../safety/trip_share_section.dart';
 
 class RouteDetailScreen extends ConsumerWidget {
   const RouteDetailScreen({super.key});
@@ -108,6 +109,10 @@ class _RouteBody extends StatelessWidget {
             subtitle: 'Frente a hacer el mismo trayecto en carro',
           ),
         ],
+        TripShareSection(
+          destination: route.destinationLabel ?? 'mi destino',
+          mode: mode,
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(
               GSSpacing.s4, GSSpacing.s4, GSSpacing.s4, 0),

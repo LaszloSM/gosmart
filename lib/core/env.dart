@@ -14,4 +14,8 @@ class Env {
 
   /// Sentry DSN (opcional). Vacío = sin reporte de errores.
   static String get sentryDsn => dotenv.env['SENTRY_DSN'] ?? '';
+
+  /// Página pública que muestra un viaje compartido (`public_web/viaje.html`
+  /// publicada en GitHub Pages). Vacío = el mensaje lleva solo el punto en el mapa.
+  static String get shareBaseUrl => dotenv.env['SHARE_BASE_URL'] ?? '';
 }

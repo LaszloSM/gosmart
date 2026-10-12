@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../safety/sos_sheet.dart';
 import '../../models/corridor_status.dart';
 import '../../models/route_result.dart';
 import '../../providers/active_route_provider.dart';
@@ -230,6 +231,12 @@ class _RouteBanner extends ConsumerWidget {
                     ),
                   ],
                 ),
+              ),
+              IconButton(
+                tooltip: 'Ayuda',
+                icon: Icon(Icons.health_and_safety_outlined,
+                    color: GSColors.onShell),
+                onPressed: () => showSosSheet(context),
               ),
               IconButton(
                 tooltip: 'Quitar ruta',

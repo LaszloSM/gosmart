@@ -1,0 +1,37 @@
+# Publica public_web/ (páginas que se abren desde WhatsApp sin la app).
+# Requiere activar GitHub Pages con fuente "GitHub Actions" y los secrets
+# SUPABASE_URL y SUPABASE_ANON_KEY. Sin ellos, la página dice "sin configurar".
+name: Public web
+on:
+  push:
+    branches: [main]
+    paths: ['public_web/**', '.github/workflows/pages.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generar config.js
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          printf 'window.GOSMART = { supabaseUrl: %s, supabaseAnonKey: %s };\n' \
+            "$(jq -Rn --arg v "$SUPABASE_URL" '$v')" \
+            "$(jq -Rn --arg v "$SUPABASE_ANON_KEY" '$v')" > public_web/config.js
+      - name: Copiar fuentes
+        run: mkdir -p public_web/fonts && cp assets/fonts/*.ttf public_web/fonts/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public_web
+      - uses: actions/deploy-pages@v4

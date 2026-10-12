@@ -33,6 +33,8 @@ class RouteResult {
   final String profile; // 'walking' | 'driving' | 'cycling'
   final int estimatedCostCop;  // estimated cost in Colombian pesos
   final String category;       // 'private' or 'public'
+  /// Nombre del destino tal como lo eligió el usuario (para compartir el viaje).
+  final String? destinationLabel;
 
   const RouteResult({
     required this.legs,
@@ -41,7 +43,18 @@ class RouteResult {
     required this.profile,
     this.estimatedCostCop = 0,
     this.category = 'private',
+    this.destinationLabel,
   });
+
+  RouteResult withDestination(String? label) => RouteResult(
+        legs: legs,
+        distanceKm: distanceKm,
+        durationMin: durationMin,
+        profile: profile,
+        estimatedCostCop: estimatedCostCop,
+        category: category,
+        destinationLabel: label,
+      );
 }
 
 /// Maps a Mapbox profile to a RouteLeg mode, color, and card label.

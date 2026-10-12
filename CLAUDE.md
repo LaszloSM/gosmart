@@ -49,6 +49,7 @@ Optional:
 SENTRY_DSN=                    # empty = no error reporting (lib/core/telemetry.dart)
 MAP_PROVIDER=google            # 'google' (default) or 'osm' for OpenStreetMap
 MAPBOX_PUBLIC_TOKEN=pk.eyJ... # Mapbox public token; if empty, map falls back to OSM
+SHARE_BASE_URL=                # public_web on GitHub Pages; empty = share sends a Maps point
 ```
 
 > **No AI key in the app.** Groq is called only from the Edge Function `ai-chat`.
@@ -73,11 +74,18 @@ All migrations live in `supabase/migrations/`. Run them in order in the Supabase
 | `007_fix_embedding_dim.sql` | Cambia `colombia_kg_embeddings.embedding` de `vector(1536)` a `vector(384)` y recrea RPC `match_colombia_kg`. Correr **antes** de `load_supabase.py`. |
 | `008_wallet_mock.sql` | Tables: `wallets` (balance INTEGER, card_number, card_status), `wallet_transactions`. RPCs: `recharge_wallet` (row-locking), `generate_gosmart_card_number`. Trigger: `create_wallet_for_new_user` (auto-creates wallet with $10,000 COP welcome balance on signup). |
 | `009_favorites_history.sql` | Tables: `favorite_places` (unique partial index per home/work per user), `trip_history`. RPC: `increment_favorite_use`. |
+| `011_roles_safety.sql` | `profiles.role` (passenger/driver/admin; trigger impide subirse de rol), `drivers` (solo admin aprueba vía `admin_review_driver`), `driver_documents` + bucket privado `driver-docs`, `vehicles`, `emergency_contacts` (+57, máx. 5), `sos_events` (idempotente), `trip_shares` + RPCs `trip_share_start/update/stop/view`. Sin PostGIS. |
 | `010_wallet_hardening.sql` | **Security fix for 008.** Drops user UPDATE on `wallets` and INSERT on `wallet_transactions`; revokes `recharge_wallet` from clients; adds `idempotency_key`; new RPC `wallet_recharge_simulated(p_amount, p_idempotency_key)` that uses `auth.uid()`. Backfills wallets for older users. |
 
 **SQL tests:** `supabase/tests/` runs on a plain Postgres 16 (CI job `sql-tests`). `_supabase_stub.sql`
 fakes roles, `auth.users` and `auth.uid()` (read from `request.jwt.claim.sub`).
 Locally: apply the stub, then the migrations, then the `*_test.sql` file with `psql -v ON_ERROR_STOP=1`.
+`001_schema.sql` needs PostGIS (not in CI): tests for 011+ load `_profiles_fixture.sql` instead.
+
+**Public web** (`public_web/`, GitHub Pages via `pages.yml`): `viaje.html#t=<token>` shows a shared
+trip by calling `trip_share_view` with the anon key. Supabase Edge Functions can't serve HTML on
+`*.supabase.co`, so public pages live here. App env `SHARE_BASE_URL` points to it (empty = the
+message carries only a Google Maps point).
 
 After running 005+, PostgREST reloads automatically via `NOTIFY pgrst, 'reload schema'`.
 
@@ -106,6 +114,7 @@ lib/
 │   ├── payment/                  # Payment validation screen
 │   ├── profile/                  # User profile + edit sheets
 │   ├── routes/                   # Route planner + route detail
+│   ├── safety/                   # SOS sheet (123/WhatsApp/SMS), emergency contacts, trip sharing
 │   ├── splash/                   # SplashScreen — animated logo, onboarding routing
 │   └── wallet/                   # Billetera: saldo, recargar/pagar, movimientos (ex-historial), tarjeta
 │       └── widgets/              # BalanceHeader, WalletMovements, RechargeSheetContent, CardControls
@@ -170,6 +179,8 @@ All providers in `lib/providers/`. Pattern: `StateNotifierProvider<Notifier, Asy
 | `favoritesNotifierProvider` | `AsyncNotifierProvider` | addOrUpdatePlace(), removePlace(), incrementUseCount() |
 | `homePlaceProvider` | `Provider<FavoritePlace?>` | Derived — filters favoritePlaces by type=home |
 | `workPlaceProvider` | `Provider<FavoritePlace?>` | Derived — filters favoritePlaces by type=work |
+| `emergencyContactsProvider` | `FutureProvider<List<EmergencyContact>>` | Empty for guests |
+| `tripShareProvider` | `StateNotifierProvider<…, TripShare?>` | start()/stop(); pushes location every minute while the app is open |
 | `topFavoritePlacesProvider` | `Provider<List<FavoritePlace>>` | Top 3 by use_count |
 
 **Critical state pattern** — `updateProfile()` preserves previous state on error:
@@ -254,6 +265,7 @@ AppRoutes.routePlanner     // '/routes'
 AppRoutes.routeDetail      // '/routes/detail'
 AppRoutes.paymentValidation // '/payment-validation'
 AppRoutes.nfcSimulator     // '/debug/nfc-simulator'
+AppRoutes.emergencyContacts // '/safety/contacts'  (needs account)
 ```
 
 **Onboarding flow** (controlled by `SharedPreferences` key `onboarding_complete`):

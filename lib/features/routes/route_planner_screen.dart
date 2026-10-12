@@ -153,7 +153,8 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
           type: GSToastType.error);
       return;
     }
-    ref.read(activeRouteProvider.notifier).state = result;
+    ref.read(activeRouteProvider.notifier).state =
+        result.withDestination(_destLabel);
     _awardEcoPoints(result, messenger);
     context.pop();
   }

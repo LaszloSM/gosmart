@@ -70,3 +70,5 @@ supabase/functions/
 
 # Capturas de revisión de diseño (se regeneran con tool/screenshots)
 .impeccable/review/
+public_web/config.js
+public_web/fonts/

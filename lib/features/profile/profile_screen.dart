@@ -218,6 +218,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const GSSectionTitle('Seguridad'),
           GSListRow(
+            icon: Icons.group_outlined,
+            title: 'Contactos de emergencia',
+            subtitle: 'Reciben tu ubicación cuando pides ayuda',
+            onTap: () => context.push(AppRoutes.emergencyContacts),
+          ),
+          const Divider(indent: GSSpacing.s4),
+          GSListRow(
             icon: Icons.lock_outline_rounded,
             title: 'Cambiar contraseña',
             onTap: _showChangePassword,
