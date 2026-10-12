@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/push.dart';
 import 'core/supabase_client.dart';
 import 'core/sync_queue.dart';
 import 'core/telemetry.dart';
@@ -30,6 +31,9 @@ Future<void> main() async {
   AppLifecycleListener(
     onResume: () => syncQueue.flush(),
   );
+
+  // Push opcional: sin Firebase configurado no hace nada.
+  Push.init();
 
   // Portrait only
   await SystemChrome.setPreferredOrientations([

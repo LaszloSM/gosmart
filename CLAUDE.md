@@ -83,6 +83,7 @@ All migrations live in `supabase/migrations/`. Run them in order in the Supabase
 | `015_dispatch.sql` | `app_flags` (`dispatch_enabled`), `driver_locations`, `ride_requests` + `ride_offers` (InDrive), `colectivo_departures` + `seat_reservations`, `chained_trips` + `trip_legs` (la `trips` de 001 no se usa). RPCs atómicas con `FOR UPDATE` (D7): `accept_ride`, `accept_offer`, `reserve_seat`; además `request_ride`, `nearby_requests`, `counter_offer`, `ride_transition`, `ride_driver_view`, `publish_departure`, `create_trip`, `trip_leg_transition`, `cancel_trip`, `driver_ping`. Carrera real: `supabase/tests/015_race_test.sh`. |
 | `016_payments.sql` | Pago por tramo (D5): `charges` (QR del conductor), `leg_payments` (idempotente; un viaje se paga una vez), `wallet_topups` (Wompi). RPCs: `pay_ride` (saldo o efectivo), `confirm_cash`, `create_charge`, `charge_preview`, `pay_charge`, `trip_receipt`; solo servidor: `wallet_topup_create/settle`. Transferencias con `_wallet_transfer` (bloqueo en orden). Tipo de movimiento nuevo: `earning`. |
 | `017_trust_admin.sql` | `ride_ratings` (1–5 + etiquetas cerradas, sin texto libre), bloqueo por 2 impagos confirmados (trigger en `ride_requests`), `user_rating`, `ride_driver_view` con calificación; admin: `admin_driver_queue`, `admin_recent_reports`, `admin_remove_report`, `admin_metrics` (sin datos personales). |
+| `018_push.sql` | `push_tokens` + `register_push_token`; `push_targets_for_request` (conductores disponibles ≤ 3 km, vistos hace < 10 min) y `push_targets_for_report` (viajeros en la Troncal), solo service_role. |
 | `010_wallet_hardening.sql` | **Security fix for 008.** Drops user UPDATE on `wallets` and INSERT on `wallet_transactions`; revokes `recharge_wallet` from clients; adds `idempotency_key`; new RPC `wallet_recharge_simulated(p_amount, p_idempotency_key)` that uses `auth.uid()`. Backfills wallets for older users. |
 
 **SQL tests:** `supabase/tests/` runs on a plain Postgres 16 (CI job `sql-tests`). `_supabase_stub.sql`
@@ -235,6 +236,9 @@ Future<void> updateProfile({...}) async {
   - `authorize` — NFC payment authorization (NOT currently deployed; simulator uses local mock)
   - `ai-chat` — Groq proxy used by `AiService` (model `llama-3.1-8b-instant`, falls back to 70b on 429/5xx)
   - `delete-account` — account deletion
+  - `push` — FCM HTTP v1 (JWT RS256 en `fcm.ts`, probado). Disparada por Database Webhooks en INSERT de
+    `ride_requests` y `road_reports` con header `x-webhook-secret`. Secrets `FCM_SERVICE_ACCOUNT`,
+    `PUSH_WEBHOOK_SECRET`. Sin ellos responde `skipped`.
   - `wompi` — checkout URL with integrity signature + webhook (checksum verified) → `wallet_topup_settle`.
     Signing in `signing.ts` (tested in `signing_test.ts`, no remote imports). NOT verified against the
     real sandbox from this environment.
@@ -508,6 +512,8 @@ Currency: `'cop'` | `'usd'` | `'eur'`
   The QR is always drawn on white (also at night) so any camera reads it.
 - **Admin**: `flutter build web` compiles (checked 2026-10-12); the panel caps at 1200 px for desktop.
   First admin is set by SQL (`UPDATE profiles SET role='admin' WHERE id=…`); users can't self-promote.
+- **Push is optional**: `Push.init()` (lib/core/push.dart) does nothing without Firebase; Gradle applies
+  google-services only if `android/app/google-services.json` exists (git-ignored).
 - **Map**: screens never import a map package; they use `MapView` + `MapViewController` (moveTo, fit).
   Google Maps when `useGoogleMaps` (key `AIza…` in `.env`, also read by Gradle into the manifest), with
   rotate/tilt/compass, `assets/map_styles/night.json` at night and camera bounds on La Guajira;

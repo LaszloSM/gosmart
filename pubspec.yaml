@@ -60,6 +60,8 @@ dependencies:
   collection: ^1.19.1
   mobile_scanner: ^6.0.0
   google_maps_flutter: ^2.18.2
+  firebase_core: ^4.15.0
+  firebase_messaging: ^16.7.0
 
 dev_dependencies:
   flutter_test:

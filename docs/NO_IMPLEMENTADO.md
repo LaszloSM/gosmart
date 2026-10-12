@@ -20,7 +20,7 @@ construcción. Cada punto dice por qué y qué haría falta.
 
 | Qué | Estado | Qué falta |
 |---|---|---|
-| **Push (FCM)** | No hecho | Proyecto Firebase, `google-services.json`, `firebase_messaging`, tabla de tokens y una Edge Function que envíe: solicitudes al conductor con la app cerrada, alertas de vía a quien tiene un viaje que cruza un tramo afectado |
+| **Push (FCM) en vivo** | Código listo, sin probar | Crear el proyecto de Firebase, poner `google-services.json`, los secrets de la Edge Function `push` y los dos Database Webhooks. La alerta de vía avisa a quien viaja en colectivo/intermunicipal; afinarla por tramo exacto pide guardar los tramos en `trip_legs` |
 | Datos de campo (Fase 1) | Semilla aproximada | Levantar 300+ lugares por ciudad, tramos de la Troncal, rutas de TransPadilla, tarifas reales y tiempos de llenado de colectivos |
 | Responsable y contacto en la política de datos | `[PENDIENTE]` visible | Nombre o razón social, correo, revisión de un abogado |
 | drift (SQLite) para offline | Se usó SharedPreferences | Solo si el volumen crece (miles de lugares) |

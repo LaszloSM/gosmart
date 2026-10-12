@@ -92,7 +92,7 @@ jobs:
           run supabase/migrations/010_wallet_hardening.sql
           # Cada migración dos veces: deben ser seguras de re-ejecutar.
           for m in 011_roles_safety 012_places_directory 013_corridor \
-                   014_transport_graph 015_dispatch 016_payments 017_trust_admin; do
+                   014_transport_graph 015_dispatch 016_payments 017_trust_admin 018_push; do
             run "supabase/migrations/$m.sql"
             run "supabase/migrations/$m.sql"
           done
@@ -105,6 +105,7 @@ jobs:
           bash supabase/tests/015_race_test.sh gosmart_core
           run supabase/tests/016_payments_test.sql
           run supabase/tests/017_trust_admin_test.sql
+          run supabase/tests/018_push_test.sql
 
   edge-functions:
     name: Edge Functions (Deno)
@@ -126,6 +127,12 @@ jobs:
         working-directory: backend/functions/wompi
         run: |
           deno test signing_test.ts
+          deno check index.ts
+
+      - name: Test and type-check push
+        working-directory: backend/functions/push
+        run: |
+          deno test fcm_test.ts
           deno check index.ts
 
   build-android:

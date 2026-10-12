@@ -58,6 +58,12 @@ flutter {
     source = "../.."
 }
 
+// Push (FCM) es opcional: sin android/app/google-services.json la app compila
+// y funciona igual, solo que sin notificaciones.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 dependencies {
     implementation("com.google.android.material:material:1.12.0")
 }

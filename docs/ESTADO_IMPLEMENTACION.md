@@ -32,8 +32,9 @@ pudo verificar. Escrito para la sustentación: aquí no se exagera nada.
   contra el sandbox (sin llaves ni red hacia Wompi desde aquí).
 - **Datos de campo.** Lugares, tramos de la Troncal, grafo de transporte y tarifas son una
   SEMILLA APROXIMADA (`verified=false`). La Fase 1 (levantamiento) no se ha hecho.
-- **Push (FCM).** No hay proyecto de Firebase; sin push, un conductor con la app cerrada no
-  recibe solicitudes. Ver `NO_IMPLEMENTADO.md`.
+- **Push (FCM).** El código está (018, `lib/core/push.dart`, Edge Function `push`) y la firma
+  del JWT tiene prueba, pero no hay proyecto de Firebase: no se ha enviado ninguna notificación
+  real. Sin `google-services.json` la app funciona igual, sin push.
 
 ## Fase por fase
 
@@ -49,7 +50,7 @@ Hay tablas listas para recibir los datos (`places`, `road_segments`, `graph_node
 Mundo "Rótulo de colectivo", día y noche, revisado con impeccable y Emil Kowalski.
 El mapa nocturno de Google quedó como estilo JSON, sin verlo en pantalla.
 
-### Fase 3 · Núcleo — hecha salvo push
+### Fase 3 · Núcleo — hecha (push sin probar en vivo)
 | Parte | Estado |
 |---|---|
 | Roles y conductor (011) | hecho; nadie se sube de rol solo |
@@ -59,12 +60,13 @@ El mapa nocturno de Google quedó como estilo JSON, sin verlo en pantalla.
 | Buscador en capas (directorio → proveedor → pin) | hecho, con aviso de búsqueda limitada (D8) |
 | Offline | cola de envíos (`SyncQueue`) y copia local del corredor y del grafo. **Sin drift**: se usó SharedPreferences (menos código, sin generación) |
 | Google Maps | hecho detrás de `MapView`; sin verificar en teléfono |
-| Push FCM | **no hecho** |
+| Push FCM | código listo y opcional; falta proyecto de Firebase para probarlo |
 | Manifiesto | cámara, notificaciones, queries de url_launcher. Sin ubicación en segundo plano (a propósito) |
 
 ### Fase 4 · Estado del corredor — hecha
 Reportes de tipo cerrado sin texto libre, confirmación cruzada con reputación, límite por
-usuario, estado público, patrones, compartir a WhatsApp y `via.html`. Sin alertas push.
+usuario, estado público, patrones, compartir a WhatsApp y `via.html`. Alerta push a viajeros
+en la Troncal (sin probar en vivo).
 
 ### Fase 5 · Planificador + IA — hecha
 Planificador en el celular (Dijkstra, enganche puerta a puerta, bloqueos y noche), tarifa

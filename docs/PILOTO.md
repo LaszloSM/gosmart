@@ -5,7 +5,7 @@ Lista para pasar de "compila y pasa pruebas" a "funciona en la calle". En orden.
 ## 1. Backend (una tarde)
 
 1. En el SQL Editor de Supabase, correr en orden: `008`, `009`, `010`, `011`, `012`, `013`,
-   `014`, `015`, `016`, `017` (todas son seguras de re-ejecutar).
+   `014`, `015`, `016`, `017`, `018` (todas son seguras de re-ejecutar).
 2. Revisar que existe el bucket privado `driver-docs` (lo crea `011` si hay `storage`).
 3. Nombrar el primer admin:
    `UPDATE profiles SET role = 'admin' WHERE id = '<uuid de tu usuario>';`
@@ -15,6 +15,15 @@ Lista para pasar de "compila y pasa pruebas" a "funciona en la calle". En orden.
    `npx supabase functions deploy wompi --no-verify-jwt`, `delete-account`.
 6. En Wompi (sandbox), la URL de eventos apunta a `https://<ref>.supabase.co/functions/v1/wompi`.
    Activar `wompi_enabled` en `/admin → Ajustes` solo después de una recarga de prueba exitosa.
+
+### Push (opcional, recomendado)
+
+1. Crear proyecto en Firebase, app Android con el `applicationId`, bajar `google-services.json`
+   a `android/app/` (no se sube al repo).
+2. Cuenta de servicio de Firebase → JSON en el secret `FCM_SERVICE_ACCOUNT`; inventar un
+   `PUSH_WEBHOOK_SECRET`. Desplegar `push` con `--no-verify-jwt`.
+3. Database → Webhooks: INSERT en `ride_requests` y en `road_reports` → función `push`, con
+   el header `x-webhook-secret`.
 
 ## 2. Páginas públicas (15 minutos)
 
@@ -44,7 +53,7 @@ Lista para pasar de "compila y pasa pruebas" a "funciona en la calle". En orden.
 
 - Reclutar 10–20 en campo (mototaxi en Riohacha, colectivos en la Troncal).
 - Aprobar desde `/admin` revisando documentos.
-- Explicar que, sin push, deben tener la pantalla "Modo conductor" abierta para recibir viajes.
+- Sin push configurado, deben tener la pantalla "Modo conductor" abierta para recibir viajes.
 
 ## 6. Pruebas en la calle (antes de abrir a más gente)
 
