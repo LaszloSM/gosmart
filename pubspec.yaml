@@ -55,7 +55,7 @@ dependencies:
   image_picker: ^1.0.7
 
   # Error reporting (optional, SENTRY_DSN)
-  sentry_flutter: ^8.14.2
+  sentry_flutter: ^9.0.0
   url_launcher: ^6.3.3
 
 dev_dependencies:
