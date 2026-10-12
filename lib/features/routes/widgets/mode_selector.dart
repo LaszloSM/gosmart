@@ -14,20 +14,21 @@ class ModeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+    // En varias filas: todos los modos a la vista, sin scroll escondido,
+    // y caben con texto grande.
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
-      child: Row(
+      child: Wrap(
+        spacing: GSSpacing.s2,
+        runSpacing: GSSpacing.s2,
         children: [
-          for (final m in travelModes) ...[
+          for (final m in travelModes)
             _ModeOption(
               label: m,
               icon: modeIconFor(m),
               selected: m == selected,
               onTap: () => onChanged(m),
             ),
-            if (m != travelModes.last) const SizedBox(width: GSSpacing.s2),
-          ],
         ],
       ),
     );
@@ -66,7 +67,8 @@ class _ModeOption extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: Container(
-            height: GSSize.touchTarget + 4,
+            constraints:
+                const BoxConstraints(minHeight: GSSize.touchTarget + 4),
             padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s3),
             decoration: BoxDecoration(
               border: Border(

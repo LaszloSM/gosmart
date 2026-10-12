@@ -55,11 +55,23 @@ class WalletTransactionModel {
 
   IconData get icon => switch (type) {
         WalletTxType.recharge => Icons.add_circle_outline_rounded,
-        // El movimiento no guarda el modo: ícono genérico de ruta, no un bus.
-        WalletTxType.trip => Icons.route_rounded,
+        WalletTxType.trip => _tripIcon,
         WalletTxType.refund => Icons.replay_rounded,
         WalletTxType.bonus => Icons.card_giftcard_rounded,
       };
+
+  /// El movimiento no guarda el modo; se deduce de la descripción con los
+  /// mismos íconos del planificador. Sin pista, ícono genérico de ruta.
+  IconData get _tripIcon {
+    final d = (description ?? '').toLowerCase();
+    if (d.contains('mototaxi')) return Icons.two_wheeler_rounded;
+    if (d.contains('taxi')) return Icons.local_taxi_rounded;
+    if (d.contains('colectivo')) return Icons.airport_shuttle_rounded;
+    if (d.contains('transpadilla')) return Icons.directions_bus_rounded;
+    if (d.contains('intermunicipal')) return Icons.directions_bus_filled_rounded;
+    if (d.contains('a pie')) return Icons.directions_walk_rounded;
+    return Icons.route_rounded;
+  }
 
   String get formattedDate {
     final now = DateTime.now();

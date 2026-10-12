@@ -72,8 +72,11 @@ class BalanceHeader extends ConsumerWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.science_outlined,
-                          size: 18, color: GSColors.textMuted),
+                      const Padding(
+                        padding: EdgeInsets.only(top: 2),
+                        child: Icon(Icons.science_outlined,
+                            size: 18, color: GSColors.textMuted),
+                      ),
                       const SizedBox(width: GSSpacing.s1),
                       Expanded(
                         child: Text(
@@ -83,10 +86,19 @@ class BalanceHeader extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  Text(
-                    'Tarjeta ${wallet.maskedCardNumber}'
-                    '${wallet.cardStatus == 'active' ? '' : ' · bloqueada'}',
-                    style: text.bodySmall?.copyWith(fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular),
+                  const SizedBox(height: GSSpacing.s2),
+                  // El número enmascarado nunca se parte en dos líneas.
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Tarjeta ${wallet.maskedCardNumber}'
+                      '${wallet.cardStatus == 'active' ? '' : ' · bloqueada'}',
+                      softWrap: false,
+                      style: text.bodySmall?.copyWith(
+                          fontFamily: GSFonts.mono,
+                          fontFeatures: GSFonts.tabular),
+                    ),
                   ),
                 ],
               );

@@ -13,9 +13,12 @@ import '../../../widgets/gs_route_plate.dart';
 import 'quick_places_row.dart';
 
 class HomeSheetContent extends ConsumerWidget {
-  const HomeSheetContent({super.key, this.scrollController});
+  const HomeSheetContent({super.key, this.scrollController, this.peekKey});
 
   final ScrollController? scrollController;
+
+  /// Marca la parte visible en reposo (asa → pista) para medir su alto.
+  final Key? peekKey;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -26,39 +29,46 @@ class HomeSheetContent extends ConsumerWidget {
       controller: scrollController,
       padding: EdgeInsets.zero,
       children: [
-        Center(
-          child: Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.only(
-                top: GSSpacing.s3, bottom: GSSpacing.s4),
-            decoration: BoxDecoration(
-              color: GSColors.line,
-              borderRadius: BorderRadius.circular(GSRadius.full),
+        // Parte visible en reposo: se mide para fijar la altura de la hoja.
+        Column(
+          key: peekKey,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(
+                    top: GSSpacing.s3, bottom: GSSpacing.s4),
+                decoration: BoxDecoration(
+                  color: GSColors.line,
+                  borderRadius: BorderRadius.circular(GSRadius.full),
+                ),
+              ),
             ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
-          // La placa en blanco: el destino se "pinta" en el planificador.
-          child: GSRoutePlate(
-            text: '¿A dónde vas?',
-            isPlaceholder: true,
-            leading: Icons.search_rounded,
-            onTap: () => context.push(AppRoutes.routePlanner),
-          ),
-        ),
-        const SizedBox(height: GSSpacing.s3),
-        QuickPlacesRow(
-          onPlaceSelected: (_) => context.push(AppRoutes.routePlanner),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-              GSSpacing.s4, GSSpacing.s2, GSSpacing.s4, GSSpacing.s3),
-          child: Text(
-            'También puedes mantener presionado el mapa para elegir un punto.',
-            style: text.bodySmall,
-          ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
+              // La placa en blanco: el destino se "pinta" en el planificador.
+              child: GSRoutePlate(
+                text: '¿A dónde vas?',
+                isPlaceholder: true,
+                leading: Icons.search_rounded,
+                onTap: () => context.push(AppRoutes.routePlanner),
+              ),
+            ),
+            const SizedBox(height: GSSpacing.s3),
+            QuickPlacesRow(
+              onPlaceSelected: (_) => context.push(AppRoutes.routePlanner),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  GSSpacing.s4, GSSpacing.s2, GSSpacing.s4, GSSpacing.s3),
+              child: Text(
+                'También puedes mantener presionado el mapa para elegir un punto.',
+                style: text.bodySmall,
+              ),
+            ),
+          ],
         ),
         const Divider(),
         GSListRow(
@@ -77,8 +87,7 @@ class HomeSheetContent extends ConsumerWidget {
           ),
         ],
         SizedBox(
-          height: MediaQuery.of(context).padding.bottom +
-              GSSpacing.s4,
+          height: MediaQuery.of(context).padding.bottom + GSSpacing.s4,
         ),
       ],
     );

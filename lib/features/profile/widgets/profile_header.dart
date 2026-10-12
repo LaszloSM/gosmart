@@ -43,6 +43,7 @@ class ProfileHeader extends ConsumerWidget {
           return GSRoutePlate(
             text: name,
             maxLines: 3,
+            detailMaxLines: 2,
             detail: p.email.isEmpty ? null : p.email,
             size: GSPlateSize.lg,
             isActive: true,

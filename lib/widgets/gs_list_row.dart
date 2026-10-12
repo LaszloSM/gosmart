@@ -72,7 +72,7 @@ class GSListRow extends StatelessWidget {
                         Text(
                           subtitle!,
                           style: text.bodySmall,
-                          maxLines: 2,
+                          maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
                     ],

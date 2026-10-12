@@ -2,13 +2,16 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:gosmart/features/ai_chat/ai_chat_screen.dart';
 import 'package:gosmart/features/auth/login_screen.dart';
 import 'package:gosmart/features/auth/register_screen.dart';
+import 'package:gosmart/features/home/home_screen.dart';
 import 'package:gosmart/features/home/widgets/home_sheet.dart';
+import 'package:gosmart/providers/corridor_provider.dart';
 import 'package:gosmart/features/onboarding/intro_screen.dart';
 import 'package:gosmart/features/onboarding/location_permission_screen.dart';
 import 'package:gosmart/features/profile/profile_screen.dart';
@@ -70,20 +73,28 @@ Future<void> _save(WidgetTester t, String name) async {
 void main() {
   testWidgets('review shots', (t) async {
     phone(t);
+    dotenv.testLoad(fileInput: 'MAPBOX_PUBLIC_TOKEN=\n');
     await t.runAsync(loadFonts);
     const a = LatLng(11.54, -72.90), b = LatLng(11.55, -72.91), c = LatLng(11.38, -72.24);
     const route = RouteResult(legs: [
       RouteLeg(mode: 'walk', points: [a, b], color: GSColors.walk, durationMin: 6, distanceKm: 0.5, instruction: 'Camina hasta la parada de la calle 15'),
       RouteLeg(mode: 'bus', points: [b, c], color: GSColors.bus, durationMin: 72, distanceKm: 74.2, instruction: 'Toma el colectivo hasta el terminal de Maicao', lineId: 'Colectivo'),
     ], distanceKm: 74.7, durationMin: 78, profile: 'driving', estimatedCostCop: 15000, category: 'public');
+    final status = CorridorStatus(segments: const [
+      CorridorSegment(kmFrom: 0, kmTo: 38, state: RoadState.open),
+      CorridorSegment(kmFrom: 38, kmTo: 46, state: RoadState.closed, reason: 'Bloqueo', reports: 3),
+      CorridorSegment(kmFrom: 46, kmTo: 75, state: RoadState.open),
+    ], updatedAt: DateTime.now().subtract(const Duration(minutes: 12)));
+    var routeOn = false;
     final ov = <Override>[
+      corridorStatusProvider.overrideWith((ref) async => status),
       isGuestProvider.overrideWithValue(true),
       currentUserProvider.overrideWithValue(null),
       favoritePlacesProvider.overrideWith((ref) async => []),
       activeCardProvider.overrideWith((ref) => _Card()),
       profileProvider.overrideWith((ref) => _P()),
       aiConversationProvider.overrideWith((ref) => _Ai()),
-      activeRouteProvider.overrideWith((ref) => route),
+      activeRouteProvider.overrideWith((ref) => routeOn ? route : null),
       selectedModeProvider.overrideWith((ref) => 'Colectivo'),
       walletProvider.overrideWith((ref) async => Wallet(id: 'w', userId: 'u', balance: 37500, cardNumber: 'GS-1234-5678-9012', cardStatus: 'active', createdAt: DateTime(2026))),
       walletTransactionsProvider.overrideWith((ref, l) async => [
@@ -93,16 +104,11 @@ void main() {
       ]),
     ];
     Future<void> shot(Widget w, String n, {bool settle = true}) async {
-      await t.pumpWidget(ProviderScope(overrides: ov, child: MaterialApp(debugShowCheckedModeBanner: false, theme: AppTheme.light,
+      await t.pumpWidget(ProviderScope(key: UniqueKey(), overrides: ov, child: MaterialApp(debugShowCheckedModeBanner: false, theme: AppTheme.light,
           home: RepaintBoundary(key: const ValueKey('shot'), child: w))));
       if (settle) { await t.pumpAndSettle(); } else { await t.pump(const Duration(milliseconds: 400)); }
       await _save(t, n);
     }
-    final status = CorridorStatus(segments: const [
-      CorridorSegment(kmFrom: 0, kmTo: 38, state: RoadState.open),
-      CorridorSegment(kmFrom: 38, kmTo: 46, state: RoadState.closed, reason: 'Bloqueo', reports: 3),
-      CorridorSegment(kmFrom: 46, kmTo: 75, state: RoadState.open),
-    ], updatedAt: DateTime.now().subtract(const Duration(minutes: 12)));
     // Inicio: el mapa real carga teselas de red, que no hay en tests; se usa
     // un fondo liso en su lugar (dicho en el paquete de revisión).
     await shot(Scaffold(extendBody: true, body: Column(children: [
@@ -115,6 +121,15 @@ void main() {
           child: const HomeSheetContent())),
       ])),
     ]), bottomNavigationBar: const GSBottomNav(current: GSNavTab.home)), 'phone-home');
+    await shot(const HomeScreen(), 'phone-home-real', settle: false);
+    await t.pump(const Duration(milliseconds: 300));
+    await _save(t, 'phone-home-real');
+    routeOn = true;
+    // Inicio real (con el mapa sin teselas: en tests no hay red) para
+    // verificar la altura medida de la hoja en reposo.
+    await shot(const HomeScreen(), 'phone-home-route', settle: false);
+    await t.pump(const Duration(milliseconds: 300));
+    await _save(t, 'phone-home-route');
     await shot(const WalletScreen(), 'phone-wallet');
     await shot(const ProfileScreen(), 'phone-profile');
     await shot(const RoutePlannerScreen(), 'phone-planner', settle: false);

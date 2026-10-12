@@ -23,6 +23,7 @@ class GSRoutePlate extends StatefulWidget {
     this.onTap,
     this.semanticLabel,
     this.maxLines = 1,
+    this.detailMaxLines = 1,
   });
 
   /// Destino o nombre principal. Se pinta en mayúsculas.
@@ -48,6 +49,9 @@ class GSRoutePlate extends StatefulWidget {
 
   /// Líneas del rótulo principal (2 para nombres largos).
   final int maxLines;
+
+  /// Líneas de la línea pequeña (más con texto grande del sistema).
+  final int detailMaxLines;
 
   @override
   State<GSRoutePlate> createState() => _GSRoutePlateState();
@@ -149,7 +153,7 @@ class _GSRoutePlateState extends State<GSRoutePlate> {
                   const SizedBox(height: 2),
                   Text(
                     widget.detail!,
-                    maxLines: 1,
+                    maxLines: widget.detailMaxLines,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontFamily: GSFonts.sans,

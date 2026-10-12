@@ -214,7 +214,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                       child: Text(
                         'Desde: $originText',
                         style: Theme.of(context).textTheme.titleMedium,
-                        maxLines: 2,
+                        maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),

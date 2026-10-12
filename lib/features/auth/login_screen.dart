@@ -120,14 +120,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: GSSpacing.s6),
                 SegmentedButton<bool>(
                   segments: const [
-                    ButtonSegment(
-                        value: true,
-                        label: Text('Celular'),
-                        icon: Icon(Icons.sms_outlined)),
-                    ButtonSegment(
-                        value: false,
-                        label: Text('Correo'),
-                        icon: Icon(Icons.mail_outline_rounded)),
+                    ButtonSegment(value: true, label: Text('Celular')),
+                    ButtonSegment(value: false, label: Text('Correo')),
                   ],
                   selected: {_useSms},
                   showSelectedIcon: false,

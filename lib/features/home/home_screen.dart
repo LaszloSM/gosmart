@@ -27,9 +27,33 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _sheetCtrl = DraggableScrollableController();
+  final _peekKey = GlobalKey();
 
-  static const _sheetMin = 0.14;
-  static const _sheetInitial = 0.36;
+  /// Con ruta activa la hoja se oculta: el banner de la ruta es el asomo.
+  static const _sheetHidden = 0.0;
+
+  /// Altura de reposo de la hoja: se mide para que termine justo después de
+  /// la pista (sin filas cortadas a la mitad bajo la barra), con cualquier
+  /// pantalla y tamaño de texto.
+  double _sheetInitial = 0.36;
+  double _stackHeight = 0;
+
+  /// Relleno inferior visto DENTRO del Scaffold (incluye la barra, porque
+  /// extendBody suma su alto); el context del State no lo ve.
+  double _bodyBottomInset = 0;
+
+  void _measurePeek() {
+    final box = _peekKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize || _stackHeight <= 0 || !mounted) return;
+    final visible = box.size.height + _bodyBottomInset;
+    final fraction = (visible / _stackHeight).clamp(0.2, 0.75);
+    if ((fraction - _sheetInitial).abs() < 0.005) return;
+    setState(() => _sheetInitial = fraction);
+    if (_sheetCtrl.isAttached) {
+      _sheetCtrl.jumpTo(
+          ref.read(activeRouteProvider) == null ? fraction : _sheetHidden);
+    }
+  }
 
   @override
   void dispose() {
@@ -43,7 +67,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.listen<RouteResult?>(activeRouteProvider, (prev, next) {
       if (!_sheetCtrl.isAttached) return;
       final double? target = next != null && prev == null
-          ? _sheetMin
+          ? _sheetHidden
           : next == null && prev != null
               ? _sheetInitial
               : null;
@@ -52,7 +76,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _sheetCtrl.jumpTo(target);
       } else {
         _sheetCtrl.animateTo(target,
-            duration: target == _sheetMin
+            duration: target == _sheetHidden
                 ? GSDuration.sheetOut
                 : GSDuration.sheetIn,
             curve: GSCurve.enter);
@@ -76,8 +100,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: SafeArea(
                 bottom: false,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(GSSpacing.s3,
-                      GSSpacing.s2, GSSpacing.s3, GSSpacing.s3),
+                  padding: const EdgeInsets.fromLTRB(
+                      GSSpacing.s3, GSSpacing.s2, GSSpacing.s3, GSSpacing.s3),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(GSRadius.md),
                     child: _CorridorHeader(corridor: corridor),
@@ -89,35 +113,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
           // ── Mapa + hoja inferior ───────────────────────────────────────────
           Expanded(
-            child: Stack(
-              children: [
-                const Positioned.fill(child: HomeMap()),
-                DraggableScrollableSheet(
-                  controller: _sheetCtrl,
-                  initialChildSize: _sheetInitial,
-                  minChildSize: _sheetMin,
-                  maxChildSize: 0.8,
-                  snap: true,
-                  snapSizes: const [_sheetMin, _sheetInitial],
-                  builder: (context, scrollController) => DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: GSColors.surface,
-                      borderRadius: GSRadius.sheetRadius,
-                      boxShadow: GSShadow.sheet,
+            child: LayoutBuilder(builder: (context, box) {
+              final inset = MediaQuery.of(context).padding.bottom;
+              if (box.maxHeight != _stackHeight || inset != _bodyBottomInset) {
+                _stackHeight = box.maxHeight;
+                _bodyBottomInset = inset;
+                WidgetsBinding.instance
+                    .addPostFrameCallback((_) => _measurePeek());
+              }
+              return Stack(
+                children: [
+                  const Positioned.fill(child: HomeMap()),
+                  DraggableScrollableSheet(
+                    controller: _sheetCtrl,
+                    initialChildSize: _sheetInitial,
+                    // Sin ruta, la hoja no baja de su altura medida: nunca
+                    // queda una fila cortada en reposo.
+                    minChildSize: route != null ? _sheetHidden : _sheetInitial,
+                    maxChildSize: 0.8,
+                    snap: true,
+                    builder: (context, scrollController) => DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: GSColors.surface,
+                        borderRadius: GSRadius.sheetRadius,
+                        boxShadow: GSShadow.sheet,
+                      ),
+                      child: HomeSheetContent(
+                          scrollController: scrollController,
+                          peekKey: _peekKey),
                     ),
-                    child: HomeSheetContent(
-                        scrollController: scrollController),
                   ),
-                ),
-                if (route != null)
-                  Positioned(
-                    bottom: MediaQuery.of(context).padding.bottom,
-                    left: 0,
-                    right: 0,
-                    child: _RouteBanner(route: route),
-                  ),
-              ],
-            ),
+                  if (route != null)
+                    Positioned(
+                      bottom: MediaQuery.of(context).padding.bottom,
+                      left: 0,
+                      right: 0,
+                      child: _RouteBanner(route: route),
+                    ),
+                ],
+              );
+            }),
           ),
         ],
       ),
@@ -161,8 +196,8 @@ class _RouteBanner extends ConsumerWidget {
         onTap: () => context.push(AppRoutes.routeDetail),
         child: Container(
           decoration: const BoxDecoration(
-            border: Border(
-                bottom: BorderSide(color: GSColors.stripe, width: 4)),
+            border:
+                Border(bottom: BorderSide(color: GSColors.stripe, width: 4)),
           ),
           padding: const EdgeInsets.only(left: GSSpacing.s4),
           child: Row(
