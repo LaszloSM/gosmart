@@ -2,10 +2,13 @@
 // Fila horizontal de accesos rápidos: Casa, Trabajo y favoritos frecuentes
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../models/favorite_place.dart';
 import '../../../models/geocode_suggestion.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../providers/favorites_provider.dart';
+import '../../../router/app_router.dart';
 import '../../../services/geocoding_service.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_button.dart';
@@ -91,6 +94,11 @@ class QuickPlacesRow extends ConsumerWidget {
     WidgetRef ref,
     FavoritePlaceType type,
   ) {
+    // Modo invitado: guardar un lugar necesita cuenta (DS3).
+    if (ref.read(isGuestProvider)) {
+      context.push(AppRoutes.login);
+      return;
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

@@ -99,8 +99,8 @@ lib/
 │   ├── ai_chat/                  # AI assistant chat UI
 │   ├── auth/                     # Login, register, SMS OTP
 │   ├── history/                  # Transaction history
-│   ├── home/                     # Main home screen (balance, quick actions)
-│   │   └── widgets/              # QuickPlacesRow (Casa/Trabajo chips)
+│   ├── home/                     # Inicio: Línea del corredor → mapa → hoja "¿A dónde vas?"
+│   │   └── widgets/              # HomeMap, HomeSheetContent, CorridorDetailSheet, QuickPlacesRow
 │   ├── nfc_simulator/            # Debug NFC simulator (LOCAL MOCK — no Edge Function)
 │   ├── onboarding/               # IntroScreen (3 slides), LocationPermissionScreen
 │   ├── payment/                  # Payment validation screen
@@ -112,6 +112,7 @@ lib/
 │   ├── ai_models.dart            # AiMessage, ConversationTurn, RouteOption, Leg
 │   ├── authorize_result.dart     # NFC authorization result
 │   ├── card_model.dart           # CardModel
+│   ├── corridor_status.dart      # CorridorStatus, CorridorSegment, RoadState (Línea del corredor)
 │   ├── favorite_place.dart       # FavoritePlace, FavoritePlaceType (home/work/custom)
 │   ├── profile_model.dart        # ProfileModel (includes cedula, city, birthDate)
 │   ├── transaction_model.dart    # TransactionModel
@@ -122,6 +123,7 @@ lib/
 │   ├── ai_conversation_provider.dart
 │   ├── auth_provider.dart
 │   ├── card_provider.dart
+│   ├── corridor_provider.dart    # corridorStatusProvider (hoy noData; Fase 4 → road_status)
 │   ├── favorites_provider.dart   # FavoritePlace CRUD + home/work/top derived providers
 │   ├── profile_provider.dart
 │   ├── transaction_provider.dart
@@ -151,6 +153,8 @@ All providers in `lib/providers/`. Pattern: `StateNotifierProvider<Notifier, Asy
 |----------|-------|-------|
 | `authSessionProvider` | `StreamProvider` | Supabase auth stream |
 | `currentUserProvider` | derived from session | |
+| `isGuestProvider` | `Provider<bool>` | true without session (guest mode, DS3) |
+| `corridorStatusProvider` | `FutureProvider<CorridorStatus>` | Returns `CorridorStatus.noData()` until road reports exist (Fase 4). Never fake a state |
 | `activeCardProvider` | `AsyncValue<CardModel>` | Supabase Realtime for live balance |
 | `transactionListProvider` | `AsyncValue<List<TransactionModel>>` | paginated (20/page), `loadMore()` |
 | `profileProvider` | `AsyncValue<ProfileModel>` | load(), updateProfile(), updatePassword() |
@@ -252,9 +256,12 @@ AppRoutes.nfcSimulator     // '/debug/nfc-simulator'
 ```
 
 **Onboarding flow** (controlled by `SharedPreferences` key `onboarding_complete`):
-- First launch: `/splash` → `/intro` → `/location-permission` → `/onboarding` (auth)
-- Returning user: `/splash` → `/onboarding` or `/home` depending on auth state
-- Splash/intro/location-permission are public pages (no auth redirect)
+- First launch: `/splash` → `/intro` → `/location-permission` → `/home` (guest)
+- Returning user: `/splash` → `/home` (with or without session)
+- **Guest mode (DS3):** public pages are splash, intro, location-permission, auth pages,
+  `/home`, `/routes`, `/routes/detail` and `/ai-chat`. Anything else redirects to login.
+  Actions that need an account (saving Casa/Trabajo, eco-points, wallet, reports, rides)
+  check `isGuestProvider` and send the user to `AppRoutes.login`.
 
 ### Design System
 
@@ -296,6 +303,7 @@ GSSize.bottomNav=72   GSSize.topBar=56
 **Reusable widgets** (all in `lib/widgets/`, prefixed `GS*`):
 - `GSButton`, `GSIconButton`
 - `GSCard`, `GSInfoCard`, `GSOptionCard`, `GSModeChip`
+- `GSCorridorLine` — DESIGN.md corridor line (56 px); state always icon + word, time in mono
 - `GSTextField`, `GSSearchBar`
 - `GSBottomNav`, `GSBottomSheet`
 - `GSToast`, `GSSkeletonLoader`, `GSEmptyState`

@@ -12,3 +12,9 @@ final authSessionProvider = StreamProvider<Session?>((ref) {
 final currentUserProvider = Provider<User?>((ref) {
   return ref.watch(authSessionProvider).value?.user;
 });
+
+/// Modo invitado (DS3): sin sesión se puede ver el corredor y planear;
+/// la cuenta se pide al reportar, pedir mototaxi, reservar o pagar.
+final isGuestProvider = Provider<bool>((ref) {
+  return ref.watch(currentUserProvider) == null;
+});

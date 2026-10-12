@@ -17,6 +17,7 @@ import '../../services/geocoding_service.dart';
 import '../../services/public_transport_service.dart';
 import '../../providers/selected_mode_provider.dart';
 import '../../providers/favorites_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../models/favorite_place.dart';
 import '../../models/route_result.dart';
@@ -147,7 +148,8 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
           profile: result.profile,
           distanceKm: result.distanceKm,
         );
-        if (pts > 0) {
+        // Los eco-puntos se guardan en el perfil: solo con cuenta.
+        if (pts > 0 && !ref.read(isGuestProvider)) {
           ref.read(profileProvider.notifier).addEcoPoints(pts);
           final co2 = EcoService.co2SavedGrams(
             profile: result.profile,

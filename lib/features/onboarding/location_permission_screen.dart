@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../router/app_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 
@@ -236,6 +237,6 @@ class _LocationPermissionScreenState
   Future<void> _completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_complete', true);
-    if (mounted) context.go('/onboarding');
+    if (mounted) context.go(AppRoutes.home);
   }
 }

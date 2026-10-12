@@ -107,9 +107,9 @@ class GSSearchBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
         decoration: BoxDecoration(
           color: GSColors.surface,
-          borderRadius: BorderRadius.circular(GSRadius.full),
-          boxShadow: GSShadow.card,
-          border: Border.all(color: GSColors.border, width: 1),
+          // DESIGN.md: los campos usan radio sm; las píldoras son solo filtros.
+          borderRadius: BorderRadius.circular(GSRadius.sm),
+          border: Border.all(color: GSColors.textMuted, width: 1.5),
         ),
         child: Row(
           children: [
@@ -120,7 +120,10 @@ class GSSearchBar extends StatelessWidget {
               child: readOnly
                   ? Text(hint,
                       style: const TextStyle(
-                          color: GSColors.textDisabled, fontSize: 15))
+                          fontFamily: GSFonts.sans,
+                          color: GSColors.textMuted,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600))
                   : TextField(
                       controller: controller,
                       onChanged: onChanged,

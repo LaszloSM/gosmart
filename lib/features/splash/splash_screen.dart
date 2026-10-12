@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../core/supabase_client.dart';
+import '../../router/app_router.dart';
 import '../../theme/design_tokens.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -43,16 +43,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     final prefs = await SharedPreferences.getInstance();
     final onboardingDone = prefs.getBool('onboarding_complete') ?? false;
-    final session = GoSmartSupabase.client.auth.currentSession;
 
     if (!mounted) return;
 
+    // Modo invitado (DS3): sin sesión también se entra al inicio.
     if (!onboardingDone) {
-      context.go('/intro');
-    } else if (session == null) {
-      context.go('/onboarding');
+      context.go(AppRoutes.intro);
     } else {
-      context.go('/home');
+      context.go(AppRoutes.home);
     }
   }
 

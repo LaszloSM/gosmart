@@ -91,8 +91,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final session = GoSmartSupabase.client.auth.currentSession;
       final isAuth = session != null;
-      // Rutas públicas (no requieren auth)
-      final isPublicPage = state.matchedLocation == AppRoutes.splash ||
+      // Rutas públicas. Modo invitado (DS3): el inicio, el planificador y el
+      // asistente funcionan sin cuenta; lo demás pide entrar.
+      final isPublicPage = state.matchedLocation == AppRoutes.home ||
+          state.matchedLocation == AppRoutes.routePlanner ||
+          state.matchedLocation == AppRoutes.routeDetail ||
+          state.matchedLocation == AppRoutes.aiChat ||
+          state.matchedLocation == AppRoutes.splash ||
           state.matchedLocation == AppRoutes.intro ||
           state.matchedLocation == AppRoutes.locationPermission ||
           state.matchedLocation == AppRoutes.login ||
