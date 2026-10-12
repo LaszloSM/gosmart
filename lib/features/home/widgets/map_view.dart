@@ -1,7 +1,8 @@
 // lib/features/home/widgets/map_view.dart
 // El mapa detrás de una sola interfaz (Fase 3): Google Maps cuando hay clave
 // (gestos nativos, rotar e inclinar con brújula, estilo nocturno propio,
-// cámara limitada a La Guajira); si no, flutter_map con Mapbox u OSM.
+// cámara limitada a La Guajira). Sin clave (pruebas, web del admin) queda
+// flutter_map con OpenStreetMap como respaldo.
 // Lo demás de la app no sabe cuál se usa.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -154,7 +155,7 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
   }
 }
 
-// ── flutter_map (Mapbox u OSM) ───────────────────────────────────────────────
+// ── flutter_map (OSM, respaldo) ───────────────────────────────────────────────
 class _FlutterMapView extends StatefulWidget {
   const _FlutterMapView({required this.view});
   final MapView view;
@@ -187,10 +188,6 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
   @override
   Widget build(BuildContext context) {
     final v = widget.view;
-    String token = '';
-    try {
-      token = Env.mapboxToken;
-    } catch (_) {}
     return fm.FlutterMap(
       mapController: _c,
       options: fm.MapOptions(
@@ -207,12 +204,7 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
       children: [
         // Estilo claro: DESIGN.md pide legibilidad al sol.
         fm.TileLayer(
-          urlTemplate: token.isNotEmpty
-              ? 'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}@2x'
-                  '?access_token=$token'
-              : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          tileSize: token.isNotEmpty ? 512 : 256,
-          zoomOffset: token.isNotEmpty ? -1 : 0,
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
           userAgentPackageName: 'com.gosmart.app',
           maxNativeZoom: 19,
         ),

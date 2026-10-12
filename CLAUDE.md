@@ -47,8 +47,7 @@ Optional:
 
 ```
 SENTRY_DSN=                    # empty = no error reporting (lib/core/telemetry.dart)
-MAP_PROVIDER=google            # 'google' (default) or 'osm'. Google only if GOOGLE_MAPS_API_KEY starts with AIza
-MAPBOX_PUBLIC_TOKEN=pk.eyJ... # Mapbox public token; if empty, map falls back to OSM
+MAP_PROVIDER=google            # 'google' (default) or 'osm'. Google only if GOOGLE_MAPS_API_KEY starts with AIza; else OSM tiles
 SHARE_BASE_URL=                # public_web on GitHub Pages; empty = share sends a Maps point
 ```
 
@@ -56,7 +55,8 @@ SHARE_BASE_URL=                # public_web on GitHub Pages; empty = share sends
 > Stripe was removed; recharges are simulated until Wompi (Fase 7).
 
 Edge Function secrets (Supabase Dashboard → Edge Functions → Secrets, never in `.env`):
-`GROQ_API_KEY` (ai-chat); `WOMPI_PUBLIC_KEY`, `WOMPI_INTEGRITY_SECRET`, `WOMPI_EVENTS_SECRET`
+`GROQ_API_KEY` (ai-chat); `GOOGLE_MAPS_SERVER_KEY` (maps: Places API New + Routes API; the deploy
+workflow falls back to `GOOGLE_MAPS_API_KEY`); `WOMPI_PUBLIC_KEY`, `WOMPI_INTEGRITY_SECRET`, `WOMPI_EVENTS_SECRET`
 (wompi, sandbox; deploy with `--no-verify-jwt` because Wompi's webhook has no JWT). Real top-ups
 only when `app_flags.wompi_enabled` is true; otherwise the simulated recharge stays. **Everything runs from GitHub (the user has no local setup):** Actions → `Supabase deploy` (`supabase-deploy.yml`) applies migrations (`supabase/piloto_bundle.sql`, regenerate with `tool/bundle_migrations.sh`; CI checks it is current), sets the admin by email, copies Edge Function secrets from GitHub secrets, deploys the functions and creates the push webhooks (`supabase/push_webhooks.sql`, pg_net). CI's APK gets `.env` from secrets via `tool/write_env.sh` and `GOOGLE_SERVICES_JSON`. GitHub Actions secrets for `supabase-maintenance.yml`:
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_DB_URL` (all optional; steps skip if absent).
@@ -147,7 +147,7 @@ lib/
 │   ├── transaction_model.dart    # TransactionModel
 │   ├── wallet_model.dart         # Wallet (table `wallets`; SEPARATE from CardModel)
 │   ├── wallet_transaction_model.dart # WalletTransactionModel, WalletTxType enum
-│   └── geocode_suggestion.dart   # Address suggestion from Mapbox Geocoding: placeName, fullAddress, latLng
+│   └── geocode_suggestion.dart   # Place suggestion: placeName, fullAddress, latLng (null until resolved for Google), placeId
 ├── planner/                      # Planificador en el celular (D6), Dart puro
 │   ├── graph.dart                # TransitMode, GraphNode/Edge, TransportGraph, haversineKm
 │   ├── fares.dart                # estimateFare → FareRange (referencia, ±25 %, recargo nocturno)
@@ -170,9 +170,9 @@ lib/
 │   ├── card_service.dart
 │   ├── profile_service.dart
 │   ├── location_service.dart     # GPS via geolocator — returns LatLng? (null if unavailable)
-│   ├── directions_service.dart   # Mapbox Directions API v5 — walking/driving/cycling polylines
-│   ├── geocoding_service.dart    # Mapbox Geocoding API v5 — search() never throws; searchStrict() throws GeocodingException
-│   ├── place_search.dart         # placeSearch: directory (places) first, then provider; result.limited = degraded (D8)
+│   ├── directions_service.dart   # Google Routes via Edge Function `maps` — walk/drive polylines
+│   ├── geocoding_service.dart    # Google Places (Autocomplete New + Details, session token) via `maps`; searchStrict() throws GeocodingException
+│   ├── place_search.dart         # placeSearch: directory (places) first, then Google; resolve(s) gets coords on pick; limited = degraded (D8)
 │   └── safety_service.dart       # emergency contacts, sos_events, trip_share_* RPCs
 ├── theme/
 │   ├── app_theme.dart            # MaterialApp ThemeData
@@ -239,6 +239,10 @@ Future<void> updateProfile({...}) async {
   - `push` — FCM HTTP v1 (JWT RS256 en `fcm.ts`, probado). Disparada por Database Webhooks en INSERT de
     `ride_requests` y `road_reports` con header `x-webhook-secret`. Secrets `FCM_SERVICE_ACCOUNT`,
     `PUSH_WEBHOOK_SECRET`. Sin ellos responde `skipped`.
+  - `maps` — Google Places (Autocomplete New + Place Details) and Routes API proxy; the key never ships
+    in the APK. Logic in `google.ts` (tested in `google_test.ts`, no remote imports). Deployed WITH JWT
+    verification (the app's anon key is enough). Only points inside Colombia; errors return 200 +
+    `{error}` so the app degrades with a notice. NOT verified against the real Google APIs from here.
   - `wompi` — checkout URL with integrity signature + webhook (checksum verified) → `wallet_topup_settle`.
     Signing in `signing.ts` (tested in `signing_test.ts`, no remote imports). NOT verified against the
     real sandbox from this environment.
@@ -470,9 +474,8 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 | `flutter_nfc_kit` | ^3.4.0 | NFC hardware access |
 | `qr_flutter` | ^4.1.0 | QR code rendering |
 | `google_maps_flutter` | ^2.18 | Map when a Google key is set (native gestures, night style) |
-| `flutter_map` | ^7.0.2 | Fallback map — Mapbox streets (with `MAPBOX_PUBLIC_TOKEN`) or OSM |
+| `flutter_map` | ^7.0.2 | Fallback map (OSM) when there is no Google key: tests, admin web |
 | `geolocator` | ^13.0.0 | Device GPS location (Android + Web) |
-| `http` | ^1.2.0 | Direct REST calls (Groq AI) |
 | `intl` | ^0.20.2 | Date formatting, localization |
 | `flutter_localizations` | sdk | Spanish date picker support |
 | `uuid` | ^4.3.3 | Idempotency keys for NFC |
@@ -495,6 +498,8 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 - **`GSButton` API**: Use `isLoading:` (not `loading:`), `isFullWidth:` (not `fullWidth:`). Variant: `GSButtonVariant.outline / .ghost / .primary`.
 - **Place search**: screens use `placeSearch.search(q, near:)` (returns `PlaceSearchResult` with
   `items` and `limited`), not `geocodingService` directly. Directory rows with `verified=false` show "aprox.".
+  Google suggestions come WITHOUT coordinates: call `placeSearch.resolve(s)` when the user picks one
+  (null = show a notice). That closes the Google session, so typing is billed once per pick.
 - **`GSChoicePlates<T>`** (`lib/widgets/gs_choice_plates.dart`): pick one of a few options as small
   plates (used by `ModeSelector` and driver signup). Prefer it over chips/radios.
 - **Driver status is server-only**: the client never writes `drivers.status`; a trigger rejects it and
@@ -518,7 +523,7 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 - **Map**: screens never import a map package; they use `MapView` + `MapViewController` (moveTo, fit).
   Google Maps when `useGoogleMaps` (key `AIza…` in `.env`, also read by Gradle into the manifest), with
   rotate/tilt/compass, `assets/map_styles/night.json` at night and camera bounds on La Guajira;
-  otherwise flutter_map (Mapbox or OSM). Neither was tried on a phone from this environment.
+  otherwise flutter_map with OSM tiles (no Mapbox anymore). Neither was tried on a phone from here.
 - **Money formatting**: always `formatCop()` and `GSFonts.mono` for amounts the user compares.
   No red/green for income/expense — the sign carries it (red/green are road-only).
 - **`DateFormat(..., 'es')` throws** unless `initializeDateFormatting` ran (it doesn't in this app).

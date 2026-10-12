@@ -86,6 +86,23 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     });
   }
 
+  /// Las sugerencias de Google traen coordenadas solo al elegirlas.
+  Future<void> _pickSuggestion(GeocodeSuggestion s) async {
+    if (s.latLng != null) return _setDest(s.placeName, s.latLng);
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _loading = true);
+    final place = await placeSearch.resolve(s);
+    if (!mounted) return;
+    setState(() => _loading = false);
+    if (place?.latLng == null) {
+      GSToast.showWithMessenger(messenger,
+          message: 'No pudimos ubicar ese lugar. Revisa tu conexión o elige otro.',
+          type: GSToastType.error);
+      return;
+    }
+    _setDest(place!.placeName, place.latLng);
+  }
+
   void _applyPendingDestination() {
     final pending = ref.read(pendingDestinationProvider);
     if (pending == null) return;
@@ -315,8 +332,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                 iconColor: GSColors.textMuted,
                 title: _suggestions[i].placeName,
                 subtitle: _suggestions[i].fullAddress,
-                onTap: () => _setDest(
-                    _suggestions[i].placeName, _suggestions[i].latLng),
+                onTap: () => _pickSuggestion(_suggestions[i]),
               ),
             ],
           if (typing && _searchedFor != null &&

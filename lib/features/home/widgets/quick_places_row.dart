@@ -426,12 +426,25 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
     if (_selected == null) return;
     setState(() => _saving = true);
 
+    final place = await placeSearch.resolve(_selected!);
+    if (place?.latLng == null) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text('No pudimos ubicar ese lugar. Revisa tu conexión '
+            'o elige otro.'),
+        backgroundColor: GSColors.error,
+      ));
+      return;
+    }
+    final at = place!.latLng!;
+
     final success = await ref.read(favoritesNotifierProvider.notifier)
         .addOrUpdatePlace(
           name: widget.type == FavoritePlaceType.home ? 'Casa' : 'Trabajo',
-          address: _selected!.fullAddress,
-          latitude: _selected!.latLng.latitude,
-          longitude: _selected!.latLng.longitude,
+          address: place.fullAddress,
+          latitude: at.latitude,
+          longitude: at.longitude,
           type: widget.type,
         );
 

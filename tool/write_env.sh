@@ -9,9 +9,9 @@ while IFS= read -r line; do
   key="${line%%=*}"
   if [[ "$line" =~ ^[A-Z_]+= ]] && [ -n "${!key:-}" ]; then
     printf '%s=%s\n' "$key" "${!key}"
-  elif [[ "$line" =~ ^(MAPBOX_PUBLIC_TOKEN|GOOGLE_MAPS_API_KEY|SENTRY_DSN|SHARE_BASE_URL)= ]]; then
-    # Sin secret, vacío: un token de ejemplo deja el mapa en blanco
-    # (Mapbox lo rechaza). Vacío = Google si hay clave, si no OpenStreetMap.
+  elif [[ "$line" =~ ^(GOOGLE_MAPS_API_KEY|SENTRY_DSN|SHARE_BASE_URL)= ]]; then
+    # Sin secret, vacío: una clave de ejemplo no sirve. Sin clave de Google,
+    # el mapa es OpenStreetMap.
     printf '%s=\n' "$key"
   else
     printf '%s\n' "$line"

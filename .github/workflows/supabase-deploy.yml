@@ -5,7 +5,7 @@ name: Supabase deploy
 #      + semilla (supabase/piloto_bundle.sql). Todo es seguro de re-ejecutar.
 #   2. Admin: si escribes tu correo, esa cuenta queda como admin.
 #   3. Secrets de las Edge Functions: copia los que existan en GitHub.
-#   4. Despliega ai-chat, wompi, push y delete-account.
+#   4. Despliega ai-chat, wompi, push, delete-account y maps (Google Places/Routes).
 #   5. Webhooks de push (ride_requests y road_reports → función push) si hay
 #      PUSH_WEBHOOK_SECRET.
 #
@@ -13,6 +13,8 @@ name: Supabase deploy
 #   SUPABASE_DB_URL        cadena "Session pooler" (Connect → Session pooler), con la contraseña.
 #                          La conexión directa es solo IPv6 y GitHub no llega a ella.
 #   SUPABASE_ACCESS_TOKEN  supabase.com/dashboard/account/tokens
+#   GOOGLE_MAPS_SERVER_KEY  clave de Google con Places API (New) y Routes API (si falta,
+#                           se usa GOOGLE_MAPS_API_KEY; mejor dos claves, ver docs/PILOTO.md)
 #   GROQ_API_KEY, FCM_SERVICE_ACCOUNT, PUSH_WEBHOOK_SECRET,
 #   WOMPI_PUBLIC_KEY, WOMPI_INTEGRITY_SECRET, WOMPI_EVENTS_SECRET  (opcionales)
 # Lo que falte se salta con un aviso.
@@ -96,10 +98,11 @@ jobs:
           WOMPI_PUBLIC_KEY: ${{ secrets.WOMPI_PUBLIC_KEY }}
           WOMPI_INTEGRITY_SECRET: ${{ secrets.WOMPI_INTEGRITY_SECRET }}
           WOMPI_EVENTS_SECRET: ${{ secrets.WOMPI_EVENTS_SECRET }}
+          GOOGLE_MAPS_SERVER_KEY: ${{ secrets.GOOGLE_MAPS_SERVER_KEY || secrets.GOOGLE_MAPS_API_KEY }}
         run: |
           if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then echo "::warning::Falta SUPABASE_ACCESS_TOKEN; secrets y funciones omitidos."; exit 0; fi
           args=()
-          for k in GROQ_API_KEY PUSH_WEBHOOK_SECRET WOMPI_PUBLIC_KEY WOMPI_INTEGRITY_SECRET WOMPI_EVENTS_SECRET; do
+          for k in GROQ_API_KEY GOOGLE_MAPS_SERVER_KEY PUSH_WEBHOOK_SECRET WOMPI_PUBLIC_KEY WOMPI_INTEGRITY_SECRET WOMPI_EVENTS_SECRET; do
             if [ -n "${!k}" ]; then args+=("$k=${!k}"); else echo "($k no está en GitHub; se deja como esté)"; fi
           done
           # El JSON de Firebase va en una sola línea.
@@ -120,6 +123,7 @@ jobs:
           deploy wompi --no-verify-jwt      # el webhook de Wompi no trae JWT
           deploy push --no-verify-jwt       # el webhook trae x-webhook-secret
           deploy delete-account
+          deploy maps                       # con JWT: el anon key de la app basta
 
       - name: Webhooks de push
         env:

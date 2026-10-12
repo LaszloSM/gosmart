@@ -139,6 +139,12 @@ jobs:
           deno test fcm_test.ts
           deno check index.ts
 
+      - name: Test and type-check maps
+        working-directory: backend/functions/maps
+        run: |
+          deno test google_test.ts
+          deno check index.ts
+
   build-android:
     name: Build APK (Android)
     runs-on: ubuntu-latest

@@ -16,7 +16,7 @@ const travelModes = [
 
 final selectedModeProvider = StateProvider<String>((ref) => 'Mototaxi');
 
-/// Modo → perfil de Mapbox Directions. Única fuente de este mapeo.
+/// Modo → perfil de ruta por calles (Google Routes). Única fuente de este mapeo.
 String routeProfileFor(String mode) => switch (mode) {
       'A pie' => RouteProfile.walking,
       _ => RouteProfile.driving, // mototaxi, taxi y carro van por la vía

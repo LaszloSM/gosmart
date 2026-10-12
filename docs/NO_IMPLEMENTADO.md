@@ -24,7 +24,6 @@ construcción. Cada punto dice por qué y qué haría falta.
 | Datos de campo (Fase 1) | Semilla aproximada | Levantar 300+ lugares por ciudad, tramos de la Troncal, rutas de TransPadilla, tarifas reales y tiempos de llenado de colectivos |
 | Responsable y contacto en la política de datos | `[PENDIENTE]` visible | Nombre o razón social, correo, revisión de un abogado |
 | drift (SQLite) para offline | Se usó SharedPreferences | Solo si el volumen crece (miles de lugares) |
-| Places Autocomplete y Routes API de Google | El buscador usa directorio + Mapbox | Pasar `ProviderPlaceSearch` a Places y el trazado calle a calle a Routes, con cuotas diarias |
 | Realtime en lugar de consultas cada 4–5 s | Consultas periódicas | Canales de Supabase Realtime en solicitudes y viajes |
 | Replaneo automático ante un tramo fallido | Manual (cancelar y planear de nuevo) | Al marcar `failed`, planear desde la posición actual y añadir tramos |
 | Historial del conductor en PDF | No hecho | Generar PDF de `leg_payments` del conductor |

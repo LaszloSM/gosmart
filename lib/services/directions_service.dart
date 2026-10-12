@@ -1,61 +1,38 @@
 // lib/services/directions_service.dart
-// Calls Mapbox Directions API v5 to get real route polylines.
-// Returns null on any error (empty token, network failure, non-200 response).
-import 'dart:convert';
+// Ruta por calles con Google Routes API, a través de la Edge Function `maps`.
+// Devuelve null ante cualquier error (sin clave, sin red, sin ruta).
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
-import '../core/env.dart';
 import '../models/route_result.dart';
+import 'geocoding_service.dart';
 
 class DirectionsService {
-  static const _baseUrl = 'https://api.mapbox.com/directions/v5/mapbox';
+  DirectionsService({MapsInvoke? invoke}) : _invoke = invoke ?? invokeMaps;
+  final MapsInvoke _invoke;
 
-  /// Fetches a route from Mapbox Directions API.
-  /// [profile]: 'walking' | 'driving' | 'cycling'
-  /// Returns null if token is missing, network fails, or API returns non-200.
+  /// [profile]: RouteProfile.walking (a pie) o driving (mototaxi, taxi, carro).
   Future<RouteResult?> getRoute({
     required LatLng origin,
     required LatLng destination,
     required String profile,
   }) async {
-    final token = Env.mapboxToken;
-    if (token.isEmpty) return null;
-
-    // Mapbox expects coordinates as "lng,lat" (longitude first).
-    final coords =
-        '${origin.longitude},${origin.latitude};${destination.longitude},${destination.latitude}';
-
-    final uri = Uri.parse(
-      '$_baseUrl/$profile/$coords'
-      '?geometries=geojson&overview=full&access_token=$token',
-    );
-
     try {
-      final response = await http.get(uri).timeout(const Duration(seconds: 15));
+      final data = await _invoke({
+        'action': 'route',
+        'from': {'lat': origin.latitude, 'lng': origin.longitude},
+        'to': {'lat': destination.latitude, 'lng': destination.longitude},
+        'mode': profile == RouteProfile.walking ? 'walk' : 'drive',
+      });
+      final r = data['route'] as Map? ?? const {};
+      final points = [
+        for (final p in r['points'] as List? ?? const [])
+          LatLng((p[0] as num).toDouble(), (p[1] as num).toDouble()),
+      ];
+      if (points.length < 2) return null;
 
-      if (response.statusCode != 200) {
-        debugPrint('[DirectionsService] ${response.statusCode}: ${response.body}');
-        return null;
-      }
-
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final routes = data['routes'] as List?;
-      if (routes == null || routes.isEmpty) return null;
-
-      final route = routes[0] as Map<String, dynamic>;
-      final geometry = route['geometry'] as Map<String, dynamic>;
-      final coords2 = geometry['coordinates'] as List;
-
-      // Mapbox returns [lng, lat] — convert to LatLng(lat, lng).
-      final points = coords2
-          .map((c) => LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble()))
-          .toList();
-
-      final distanceKm = ((route['distance'] as num).toDouble()) / 1000;
-      final durationMin = ((route['duration'] as num).toDouble() / 60).round();
-
+      final distanceKm = ((r['distance_m'] as num?) ?? 0).toDouble() / 1000;
+      final durationMin = (((r['duration_s'] as num?) ?? 0) / 60).round();
       final leg = RouteLeg(
         mode: RouteProfile.modeFor(profile),
         points: points,
@@ -63,7 +40,6 @@ class DirectionsService {
         durationMin: durationMin,
         distanceKm: distanceKm,
       );
-
       return RouteResult(
         legs: [leg],
         distanceKm: distanceKm,

@@ -7,7 +7,7 @@ import '../theme/design_tokens.dart';
 /// In Subsystem A, RouteResult always contains exactly one RouteLeg.
 class RouteLeg {
   final String mode;        // 'walk' | 'bus' | 'bike'
-  final List<LatLng> points; // polyline coords from Mapbox
+  final List<LatLng> points; // polyline coords from Google Routes
   final Color color;
   final int durationMin;
   final double distanceKm;
@@ -87,7 +87,7 @@ class RouteResult {
       );
 }
 
-/// Maps a Mapbox profile to a RouteLeg mode, color, and card label.
+/// Maps a route profile to a RouteLeg mode, color, and card label.
 /// Single source of truth — do not duplicate this mapping elsewhere.
 class RouteProfile {
   static const walking = 'walking';

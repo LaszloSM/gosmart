@@ -55,7 +55,7 @@ void main() {
     expect(p['from_node'], 'rio-terminal');
     expect(p['to_lat'], 11.38);
     expect(p['fare_max'], 15000);
-    // Una ruta de Mapbox sin modo del planificador se toma como mototaxi.
+    // Una ruta por calles sin modo del planificador se toma como mototaxi.
     const plain = RouteLeg(mode: 'bus', points: [], color: Colors.blue,
         durationMin: 10, distanceKm: 3);
     expect(DispatchService.legPayload(plain)['mode'], 'mototaxi');

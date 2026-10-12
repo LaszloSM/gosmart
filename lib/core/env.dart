@@ -10,8 +10,6 @@ class Env {
       dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
   static String get mapProvider => dotenv.env['MAP_PROVIDER'] ?? 'google';
 
-  static String get mapboxToken => dotenv.env['MAPBOX_PUBLIC_TOKEN'] ?? '';
-
   /// Sentry DSN (opcional). Vacío = sin reporte de errores.
   static String get sentryDsn => dotenv.env['SENTRY_DSN'] ?? '';
 

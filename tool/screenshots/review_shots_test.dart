@@ -73,7 +73,7 @@ Future<void> _save(WidgetTester t, String name) async {
 void main() {
   testWidgets('review shots', (t) async {
     phone(t);
-    dotenv.testLoad(fileInput: 'MAPBOX_PUBLIC_TOKEN=\n');
+    dotenv.testLoad(fileInput: 'GOOGLE_MAPS_API_KEY=\n');
     await t.runAsync(loadFonts);
     const a = LatLng(11.54, -72.90), b = LatLng(11.55, -72.91), c = LatLng(11.38, -72.24);
     final route = RouteResult(legs: [

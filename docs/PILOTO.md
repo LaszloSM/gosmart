@@ -21,6 +21,19 @@ Lista para pasar de "compila y pasa pruebas" a "funciona en la calle". En orden.
 4. En Wompi (sandbox), la URL de eventos apunta a `https://<ref>.supabase.co/functions/v1/wompi`.
    Activar `wompi_enabled` en `/admin → Ajustes` solo después de una recarga de prueba exitosa.
 
+### Google Maps (mapa, búsqueda y rutas)
+
+Todo el mapa es de Google. Mejor **dos claves** en Google Cloud (APIs y servicios → Credenciales):
+
+- **Clave de la app** → secret `GOOGLE_MAPS_API_KEY`. Restringida solo a *Maps SDK for Android*.
+  Va dentro del APK, así que no debe poder usar nada que cobre.
+- **Clave del servidor** → secret `GOOGLE_MAPS_SERVER_KEY`. Restringida a *Places API (New)* y
+  *Routes API*. Solo la usa la función `maps` en Supabase; nunca va en el APK.
+  Si no existe, el despliegue usa `GOOGLE_MAPS_API_KEY` (y esa clave necesita también esas dos APIs).
+- En Google Cloud → Cuotas, poner un tope diario a Places y Routes, y una alerta de presupuesto.
+- Búsqueda = Autocomplete + Place Details con token de sesión: se cobra una sesión por lugar
+  elegido, no cada letra. Rutas = Compute Routes sin tráfico en vivo (el nivel más barato).
+
 ### APK conectado
 
 Con los secrets `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `GOOGLE_MAPS_API_KEY`, `SHARE_BASE_URL` y
