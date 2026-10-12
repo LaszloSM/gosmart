@@ -2,28 +2,30 @@
 
 Lista para pasar de "compila y pasa pruebas" a "funciona en la calle". En orden.
 
-## 1. Backend (una tarde)
+## 1. Backend (todo desde GitHub, sin instalar nada)
 
-1. En el SQL Editor de Supabase, correr en orden: `008`, `009`, `010`, `011`, `012`, `013`,
-   `014`, `015`, `016`, `017`, `018` (todas son seguras de re-ejecutar).
-2. Revisar que existe el bucket privado `driver-docs` (lo crea `011` si hay `storage`).
-3. Nombrar el primer admin:
-   `UPDATE profiles SET role = 'admin' WHERE id = '<uuid de tu usuario>';`
-4. Secrets de Edge Functions: `GROQ_API_KEY`; para recargas reales en sandbox:
-   `WOMPI_PUBLIC_KEY`, `WOMPI_INTEGRITY_SECRET`, `WOMPI_EVENTS_SECRET`.
-5. Desplegar: `npx supabase functions deploy ai-chat --no-verify-jwt`,
-   `npx supabase functions deploy wompi --no-verify-jwt`, `delete-account`.
-6. En Wompi (sandbox), la URL de eventos apunta a `https://<ref>.supabase.co/functions/v1/wompi`.
+1. En GitHub → Settings → Secrets and variables → Actions, crear:
+   - `SUPABASE_DB_URL`: Supabase → Connect → **Session pooler** (la directa es solo IPv6 y
+     GitHub no llega), con la contraseña de la base puesta.
+   - `SUPABASE_ACCESS_TOKEN`: supabase.com/dashboard/account/tokens.
+   - `GROQ_API_KEY` (console.groq.com → API Keys).
+   - Opcionales: `FCM_SERVICE_ACCOUNT` (JSON de la cuenta de servicio de Firebase),
+     `PUSH_WEBHOOK_SECRET` (una contraseña larga inventada), `WOMPI_PUBLIC_KEY`,
+     `WOMPI_INTEGRITY_SECRET`, `WOMPI_EVENTS_SECRET`.
+2. Regístrate en la app con tu correo (para poder ser admin).
+3. Actions → **Supabase deploy** → Run workflow, con tu correo en "admin". Hace:
+   migraciones (001–007 si la base está vacía, luego `supabase/piloto_bundle.sql`), admin,
+   secrets de las funciones, despliegue de `ai-chat`, `wompi`, `push`, `delete-account` y los
+   webhooks de push (pg_net). Se puede correr las veces que quieras.
+   Sin GitHub: pegar `supabase/piloto_bundle.sql` en el SQL Editor hace solo las migraciones.
+4. En Wompi (sandbox), la URL de eventos apunta a `https://<ref>.supabase.co/functions/v1/wompi`.
    Activar `wompi_enabled` en `/admin → Ajustes` solo después de una recarga de prueba exitosa.
 
-### Push (opcional, recomendado)
+### APK conectado
 
-1. Crear proyecto en Firebase, app Android con el `applicationId`, bajar `google-services.json`
-   a `android/app/` (no se sube al repo).
-2. Cuenta de servicio de Firebase → JSON en el secret `FCM_SERVICE_ACCOUNT`; inventar un
-   `PUSH_WEBHOOK_SECRET`. Desplegar `push` con `--no-verify-jwt`.
-3. Database → Webhooks: INSERT en `ride_requests` y en `road_reports` → función `push`, con
-   el header `x-webhook-secret`.
+Con los secrets `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `GOOGLE_MAPS_API_KEY`, `SHARE_BASE_URL` y
+`GOOGLE_SERVICES_JSON` (el `google-services.json` de Firebase pegado entero), el APK que arma CI
+(Actions → GoSmart CI → artifact `gosmart-release-apk`) sale con tus claves y con push.
 
 ## 2. Páginas públicas (15 minutos)
 

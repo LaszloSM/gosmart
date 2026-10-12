@@ -159,8 +159,22 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Create .env (placeholder values)
-        run: cp .env.example .env
+      # Con los secrets del repo el APK sale conectado a tu Supabase, con mapa y push.
+      # Sin ellos sale con valores de ejemplo (compila igual).
+      - name: Create .env and google-services.json from secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          SHARE_BASE_URL: ${{ secrets.SHARE_BASE_URL }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          bash tool/write_env.sh > .env
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+            echo "Push activado (google-services.json desde secrets)."
+          fi
 
       - name: Build APK (release)
         run: flutter build apk --release

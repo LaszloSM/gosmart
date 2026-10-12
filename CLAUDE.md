@@ -58,7 +58,7 @@ SHARE_BASE_URL=                # public_web on GitHub Pages; empty = share sends
 Edge Function secrets (Supabase Dashboard → Edge Functions → Secrets, never in `.env`):
 `GROQ_API_KEY` (ai-chat); `WOMPI_PUBLIC_KEY`, `WOMPI_INTEGRITY_SECRET`, `WOMPI_EVENTS_SECRET`
 (wompi, sandbox; deploy with `--no-verify-jwt` because Wompi's webhook has no JWT). Real top-ups
-only when `app_flags.wompi_enabled` is true; otherwise the simulated recharge stays. GitHub Actions secrets for `supabase-maintenance.yml`:
+only when `app_flags.wompi_enabled` is true; otherwise the simulated recharge stays. **Everything runs from GitHub (the user has no local setup):** Actions → `Supabase deploy` (`supabase-deploy.yml`) applies migrations (`supabase/piloto_bundle.sql`, regenerate with `tool/bundle_migrations.sh`; CI checks it is current), sets the admin by email, copies Edge Function secrets from GitHub secrets, deploys the functions and creates the push webhooks (`supabase/push_webhooks.sql`, pg_net). CI's APK gets `.env` from secrets via `tool/write_env.sh` and `GOOGLE_SERVICES_JSON`. GitHub Actions secrets for `supabase-maintenance.yml`:
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_DB_URL` (all optional; steps skip if absent).
 
 ## Database Migrations
