@@ -110,15 +110,15 @@ En el **SQL Editor** de Supabase Dashboard, corre en orden:
 supabase db push
 
 # Opción B: Manual (copia-pega en SQL Editor)
-# 1. backend/migrations/001_schema.sql
-# 2. backend/migrations/002_rls.sql
-# 3. backend/migrations/003_functions.sql
-# 4. backend/migrations/004_ai_latency_log.sql
-# 5. backend/migrations/005_profile_extra_fields.sql
-# 6. backend/migrations/006_colombia_kg.sql
-# 7. backend/migrations/007_fix_embedding_dim.sql
-# 8. backend/migrations/008_wallet_mock.sql
-# 9. backend/migrations/009_favorites_history.sql
+# 1. supabase/migrations/001_schema.sql
+# 2. supabase/migrations/002_rls.sql
+# 3. supabase/migrations/003_functions.sql
+# 4. supabase/migrations/004_ai_latency_log.sql
+# 5. supabase/migrations/005_profile_extra_fields.sql
+# 6. supabase/migrations/006_colombia_kg.sql
+# 7. supabase/migrations/007_fix_embedding_dim.sql
+# 8. supabase/migrations/008_wallet_mock.sql
+# 9. supabase/migrations/009_favorites_history.sql
 
 ### 4. Configurar Variables de Entorno
 

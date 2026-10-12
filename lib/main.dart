@@ -1,13 +1,10 @@
 // lib/main.dart
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_stripe/flutter_stripe.dart';
 
-import 'core/env.dart';
 import 'core/supabase_client.dart';
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
@@ -20,12 +17,6 @@ Future<void> main() async {
 
   // Initialize Supabase
   await GoSmartSupabase.initialize();
-
-  // Initialize Stripe (mobile only — web uses stripe.js loaded in index.html)
-  if (!kIsWeb) {
-    Stripe.publishableKey = Env.stripePublishableKey;
-    await Stripe.instance.applySettings();
-  }
 
   // Portrait only
   await SystemChrome.setPreferredOrientations([

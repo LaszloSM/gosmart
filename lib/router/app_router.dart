@@ -1,5 +1,6 @@
 // lib/router/app_router.dart
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -246,15 +247,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           transitionsBuilder: _slideAndFade,
         ),
       ),
-      GoRoute(
-        path: AppRoutes.nfcSimulator,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const NfcAuthSimulatorScreen(),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
+      // Simulador local: solo en builds de depuración.
+      if (kDebugMode)
+        GoRoute(
+          path: AppRoutes.nfcSimulator,
+          pageBuilder: (context, state) => CustomTransitionPage(
+            key: state.pageKey,
+            child: const NfcAuthSimulatorScreen(),
+            transitionDuration: GSDuration.page,
+            transitionsBuilder: _slideAndFade,
+          ),
         ),
-      ),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: Center(child: Text('Page not found: ${state.error}')),
