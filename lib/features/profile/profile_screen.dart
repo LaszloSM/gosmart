@@ -271,6 +271,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             title: 'Cambiar contraseña',
             onTap: _showChangePassword,
           ),
+          if (profile?.isAdmin ?? false) ...[
+            const GSSectionTitle('Administración'),
+            GSListRow(
+              icon: Icons.admin_panel_settings_outlined,
+              title: 'Panel admin',
+              subtitle: 'Conductores, reportes, métricas y ajustes',
+              onTap: () => context.push(AppRoutes.admin),
+            ),
+          ],
           const GSSectionTitle('Tus datos y la ley'),
           GSListRow(
             icon: Icons.privacy_tip_outlined,

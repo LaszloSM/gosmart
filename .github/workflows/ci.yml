@@ -92,7 +92,7 @@ jobs:
           run supabase/migrations/010_wallet_hardening.sql
           # Cada migración dos veces: deben ser seguras de re-ejecutar.
           for m in 011_roles_safety 012_places_directory 013_corridor \
-                   014_transport_graph 015_dispatch 016_payments; do
+                   014_transport_graph 015_dispatch 016_payments 017_trust_admin; do
             run "supabase/migrations/$m.sql"
             run "supabase/migrations/$m.sql"
           done
@@ -104,6 +104,7 @@ jobs:
           # D7: dos conexiones a la vez compiten por el mismo viaje y el último cupo
           bash supabase/tests/015_race_test.sh gosmart_core
           run supabase/tests/016_payments_test.sql
+          run supabase/tests/017_trust_admin_test.sql
 
   edge-functions:
     name: Edge Functions (Deno)

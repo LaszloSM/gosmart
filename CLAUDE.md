@@ -82,6 +82,7 @@ All migrations live in `supabase/migrations/`. Run them in order in the Supabase
 | `014_transport_graph.sql` | `graph_nodes`, `graph_edges` (modo, minutos, espera, tarifa mín/máx, `segment_ids` de la Troncal, `night_ok`), `fare_rules`; RPC pública `graph_snapshot()`. Semilla aproximada = `test/planner/fixture_graph.dart`. |
 | `015_dispatch.sql` | `app_flags` (`dispatch_enabled`), `driver_locations`, `ride_requests` + `ride_offers` (InDrive), `colectivo_departures` + `seat_reservations`, `chained_trips` + `trip_legs` (la `trips` de 001 no se usa). RPCs atómicas con `FOR UPDATE` (D7): `accept_ride`, `accept_offer`, `reserve_seat`; además `request_ride`, `nearby_requests`, `counter_offer`, `ride_transition`, `ride_driver_view`, `publish_departure`, `create_trip`, `trip_leg_transition`, `cancel_trip`, `driver_ping`. Carrera real: `supabase/tests/015_race_test.sh`. |
 | `016_payments.sql` | Pago por tramo (D5): `charges` (QR del conductor), `leg_payments` (idempotente; un viaje se paga una vez), `wallet_topups` (Wompi). RPCs: `pay_ride` (saldo o efectivo), `confirm_cash`, `create_charge`, `charge_preview`, `pay_charge`, `trip_receipt`; solo servidor: `wallet_topup_create/settle`. Transferencias con `_wallet_transfer` (bloqueo en orden). Tipo de movimiento nuevo: `earning`. |
+| `017_trust_admin.sql` | `ride_ratings` (1–5 + etiquetas cerradas, sin texto libre), bloqueo por 2 impagos confirmados (trigger en `ride_requests`), `user_rating`, `ride_driver_view` con calificación; admin: `admin_driver_queue`, `admin_recent_reports`, `admin_remove_report`, `admin_metrics` (sin datos personales). |
 | `010_wallet_hardening.sql` | **Security fix for 008.** Drops user UPDATE on `wallets` and INSERT on `wallet_transactions`; revokes `recharge_wallet` from clients; adds `idempotency_key`; new RPC `wallet_recharge_simulated(p_amount, p_idempotency_key)` that uses `auth.uid()`. Backfills wallets for older users. |
 
 **SQL tests:** `supabase/tests/` runs on a plain Postgres 16 (CI job `sql-tests`). `_supabase_stub.sql`
@@ -116,6 +117,7 @@ lib/
 │   └── supabase_client.dart      # GoSmartSupabase.client singleton (initialized once in main)
 ├── features/                     # Screen-level UI (one folder per feature)
 │   ├── ai_chat/                  # AI assistant chat UI
+│   ├── admin/                    # /admin (Fase 8): conductores + documentos, moderación, métricas, interruptores
 │   ├── auth/                     # Login, register, SMS OTP
 │   ├── driver/                   # Modo conductor (DS6, 72 dp): registro, documentos, disponible,
 │   │                             #   driver_work_panel (solicitudes cercanas, viaje activo, salidas)
@@ -128,6 +130,8 @@ lib/
 │   ├── profile/                  # User profile + edit sheets
 │   ├── routes/                   # Route planner + route detail
 │   ├── safety/                   # SOS sheet (123/WhatsApp/SMS), emergency contacts, trip sharing
+│   ├── trust/                    # RateSheet: calificar después del viaje (pasajero y conductor)
+│   ├── payments/                 # ScanPayScreen (pagar QR), ChargeScreen (cobrar QR)
 │   ├── splash/                   # SplashScreen — animated logo, onboarding routing
 │   ├── trip/                     # Pestaña Viaje: viaje encadenado; leg_panels (a pie, mototaxi InDrive, colectivo)
 │   └── wallet/                   # Billetera: saldo, recargar/pagar, movimientos (ex-historial), tarjeta
@@ -306,6 +310,7 @@ AppRoutes.report           // '/report'  (pestaña Reportar; needs account)
 AppRoutes.receipt          // '/trip/receipt?id=<trip>'  recibo único (D5)
 AppRoutes.scanPay          // '/pay/scan?leg=<leg>'      pagar el QR del conductor
 AppRoutes.driverCharge     // '/driver/charge'           cobrar con QR
+AppRoutes.admin            // '/admin'   (solo role=admin; el servidor revalida con is_admin())
 AppRoutes.driver           // '/driver'  (modo conductor; needs account)
 AppRoutes.driverSignup     // '/driver/signup'
 AppRoutes.privacy / .terms // '/legal/privacy', '/legal/terms' (public)
@@ -500,6 +505,8 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 - **Payments**: a mototaxi/taxi leg closes only once paid (`pay_ride`, wallet or cash); QR charges are
   `gosmart:pay:<uuid>` (`chargeQrData` / `chargeIdFromQr`). Show `PaymentException.message`.
   The QR is always drawn on white (also at night) so any camera reads it.
+- **Admin**: `flutter build web` compiles (checked 2026-10-12); the panel caps at 1200 px for desktop.
+  First admin is set by SQL (`UPDATE profiles SET role='admin' WHERE id=…`); users can't self-promote.
 - **Money formatting**: always `formatCop()` and `GSFonts.mono` for amounts the user compares.
   No red/green for income/expense — the sign carries it (red/green are road-only).
 - **`DateFormat(..., 'es')` throws** unless `initializeDateFormatting` ran (it doesn't in this app).

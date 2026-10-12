@@ -24,13 +24,14 @@ class DispatchException implements Exception {
         'trip_in_progress' => 'Ya tienes un viaje en curso.',
         'too_far' => 'Es muy lejos para mototaxi o taxi.',
         'offer_gone' => 'Esa oferta ya no está.',
+        'blocked_unpaid' => 'Tienes viajes sin pagar. Págalos para volver a pedir.',
         _ => 'No se pudo. Revisa tu conexión e intenta de nuevo.',
       };
 
   static const _known = [
     'already_taken', 'no_seats', 'dispatch_disabled', 'request_already_open',
     'driver_busy', 'not_active_driver', 'trip_in_progress', 'too_far',
-    'offer_gone', 'invalid_transition', 'previous_leg_open', 'own_request',
+    'offer_gone', 'blocked_unpaid', 'invalid_transition', 'previous_leg_open', 'own_request',
   ];
 
   static Never rethrowFrom(Object e) {

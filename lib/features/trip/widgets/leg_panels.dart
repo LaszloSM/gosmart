@@ -11,6 +11,7 @@ import '../../../models/dispatch_models.dart';
 import '../../../providers/dispatch_provider.dart';
 import '../../../services/dispatch_service.dart';
 import '../../../services/payment_service.dart';
+import '../../trust/rate_sheet.dart';
 import '../../../providers/wallet_provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../router/app_router.dart';
@@ -333,7 +334,12 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
               ? 'Listo: paga ${formatCop(r.agreedFare ?? r.offeredFare)} en efectivo.'
               : 'Pagaste ${formatCop(r.agreedFare ?? r.offeredFare)} con tu saldo.',
           type: GSToastType.success);
-      if (r.status == RideStatus.completed) await _syncLeg(r);
+      if (r.status == RideStatus.completed) {
+        if (mounted) {
+          await showRateSheet(context, requestId: r.id, asDriver: false);
+        }
+        await _syncLeg(r);
+      }
     } on PaymentException catch (e) {
       GSToast.showWithMessenger(messenger,
           message: e.message, type: GSToastType.error);
@@ -528,6 +534,13 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
         if (d?.plate != null)
           Text('Placa ${d!.plate}${d.vehicle == null ? '' : ' · ${d.vehicle}'}',
               style: text.bodyLarge?.copyWith(fontFeatures: GSFonts.tabular)),
+        if (d != null)
+          Text(
+            d.rating == null
+                ? 'Conductor nuevo en GoSmart'
+                : '${d.rating!.toStringAsFixed(1)} de 5 · ${d.ratings} calificaciones',
+            style: text.bodyMedium?.copyWith(fontFeatures: GSFonts.tabular),
+          ),
         Text('Tarifa acordada: ${formatCop(r.agreedFare ?? r.offeredFare)}',
             style: text.bodyMedium),
         const SizedBox(height: GSSpacing.s2),

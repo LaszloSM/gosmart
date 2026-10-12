@@ -133,7 +133,13 @@ class AssignedDriver {
     this.vehicle,
     this.at,
     this.seenAt,
+    this.rating,
+    this.ratings = 0,
   });
+
+  /// Promedio de estrellas; null con menos de 3 calificaciones.
+  final double? rating;
+  final int ratings;
   final String firstName;
   final String service;
   final String? plate;
@@ -152,6 +158,8 @@ class AssignedDriver {
             ? null
             : LatLng((j['lat'] as num).toDouble(), (j['lng'] as num).toDouble()),
         seenAt: _ts(j['seen_at']),
+        rating: (j['rating'] as num?)?.toDouble(),
+        ratings: (j['ratings'] as num?)?.toInt() ?? 0,
       );
 }
 

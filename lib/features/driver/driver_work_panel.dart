@@ -19,6 +19,7 @@ import '../../providers/planner_provider.dart';
 import '../../services/dispatch_service.dart';
 import '../../services/location_service.dart';
 import '../../services/payment_service.dart';
+import '../trust/rate_sheet.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_choice_plates.dart';
@@ -218,9 +219,14 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
               isLoading: _busy == r.id,
               onPressed: _busy != null
                   ? null
-                  : () => _run(r.id, () => dispatchService.transitionRide(
-                      r.id, picked ? RideStatus.completed : RideStatus.inProgress),
-                      ok: picked ? 'Viaje terminado' : null),
+                  : () async {
+                      await _run(r.id, () => dispatchService.transitionRide(
+                          r.id, picked ? RideStatus.completed : RideStatus.inProgress),
+                          ok: picked ? 'Viaje terminado' : null);
+                      if (picked && mounted) {
+                        await showRateSheet(context, requestId: r.id, asDriver: true);
+                      }
+                    },
             ),
           ),
           if (!picked)

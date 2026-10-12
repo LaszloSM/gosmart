@@ -25,6 +25,7 @@ import '../features/legal/legal_screen.dart';
 import '../features/driver/driver_home_screen.dart';
 import '../features/corridor/report_screen.dart';
 import '../features/trip/trip_screen.dart';
+import '../features/admin/admin_screen.dart';
 import '../features/trip/receipt_screen.dart';
 import '../features/payments/scan_pay_screen.dart';
 import '../features/payments/charge_screen.dart';
@@ -105,6 +106,7 @@ abstract class AppRoutes {
   static const driver           = '/driver';
   static const report           = '/report';
   static const trip             = '/trip';
+  static const admin            = '/admin';
   static const receipt          = '/trip/receipt';   // ?id=<trip id>
   static const scanPay          = '/pay/scan';       // ?leg=<trip leg id> opcional
   static const driverCharge     = '/driver/charge';
@@ -231,6 +233,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.driverCharge,
         pageBuilder: (context, state) => _page(state, const ChargeScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.admin,
+        pageBuilder: (context, state) => _page(state, const AdminScreen()),
       ),
       GoRoute(
         path: AppRoutes.report,
