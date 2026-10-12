@@ -122,8 +122,8 @@ class _NfcAuthSimulatorScreenState
       backgroundColor: GSColors.bg,
       appBar: AppBar(
         title: const Text('Simulador NFC (Debug)'),
-        backgroundColor: Colors.orange,
-        foregroundColor: Colors.white,
+        backgroundColor: GSColors.text,
+        foregroundColor: GSColors.onBrand,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(GSSpacing.s5),
@@ -134,25 +134,25 @@ class _NfcAuthSimulatorScreenState
             Container(
               padding: const EdgeInsets.all(GSSpacing.s4),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                border: Border.all(color: Colors.orange),
+                color: GSColors.surfaceSunken,
+                border: Border.all(color: GSColors.textMuted),
                 borderRadius: BorderRadius.circular(GSRadius.md),
               ),
-              child: const Row(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.bug_report, color: Colors.orange),
-                  SizedBox(width: 8),
+                  Icon(Icons.bug_report, color: GSColors.text),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Pantalla de prueba — simula un tap en validador físico',
                           style: TextStyle(
                               fontSize: 13, fontWeight: FontWeight.w600),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
                           'Simulación local · No afecta el saldo real',
                           style: TextStyle(
@@ -176,12 +176,12 @@ class _NfcAuthSimulatorScreenState
                         _InfoRow('Tarjeta', card.numberMasked),
                         _InfoRow('Saldo actual', card.formattedBalance),
                         if (card.isLocked)
-                          const Padding(
-                            padding: EdgeInsets.only(top: 4),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
                             child: Row(
                               children: [
                                 Icon(Icons.lock, size: 14, color: GSColors.error),
-                                SizedBox(width: 4),
+                                const SizedBox(width: 4),
                                 Text(
                                   'Tarjeta bloqueada',
                                   style: TextStyle(
@@ -262,10 +262,10 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         children: [
           Text('$label: ',
-              style: const TextStyle(
+              style: TextStyle(
                   fontWeight: FontWeight.w600, color: GSColors.textSecondary)),
           Text(value,
-              style: const TextStyle(
+              style: TextStyle(
                   fontWeight: FontWeight.w700, color: GSColors.textPrimary)),
         ],
       ),
@@ -279,7 +279,7 @@ class _ResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = result.isAuthorized ? Colors.green : Colors.red;
+    final color = result.isAuthorized ? GSColors.brand : GSColors.textMuted;
     return Container(
       padding: const EdgeInsets.all(GSSpacing.s4),
       decoration: BoxDecoration(
@@ -300,7 +300,7 @@ class _ResultCard extends StatelessWidget {
           if (result.txId != null) ...[
             const SizedBox(height: 4),
             Text('TX: ${result.txId}',
-                style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                style: TextStyle(fontSize: 12, color: GSColors.textMuted)),
           ],
           if (result.remainingBalance != null) ...[
             const SizedBox(height: 4),
@@ -313,11 +313,11 @@ class _ResultCard extends StatelessWidget {
             const SizedBox(height: 6),
             Row(
               children: [
-                const Icon(Icons.eco_rounded, color: GSColors.eco, size: 14),
+                Icon(Icons.eco_rounded, color: GSColors.eco, size: 14),
                 const SizedBox(width: 4),
                 Text(
                   '+${EcoService.ecoPointsForTrip(profile: "bus", distanceKm: 2.5)} puntos ecológicos ganados',
-                  style: const TextStyle(color: GSColors.eco, fontSize: 12),
+                  style: TextStyle(color: GSColors.eco, fontSize: 12),
                 ),
               ],
             ),

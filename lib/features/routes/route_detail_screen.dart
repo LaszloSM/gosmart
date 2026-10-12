@@ -1,7 +1,17 @@
+// lib/features/routes/route_detail_screen.dart
+// Detalle de la ruta activa: resumen en placa, tramos encadenados y tarifa de
+// referencia. Iniciar el viaje llega en la Fase 6; aquí no se finge.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:uuid/uuid.dart';
+
+import '../../providers/auth_provider.dart';
+import '../../providers/dispatch_provider.dart';
+import '../../services/dispatch_service.dart';
+import '../../widgets/gs_toast.dart';
+import '../../core/money.dart';
 import '../../models/route_result.dart';
 import '../../providers/active_route_provider.dart';
 import '../../providers/selected_mode_provider.dart';
@@ -9,333 +19,274 @@ import '../../router/app_router.dart';
 import '../../services/eco_service.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
-import '../../widgets/gs_bottom_sheet.dart';
+import '../../widgets/gs_empty_state.dart';
+import '../../widgets/gs_list_row.dart';
+import '../../widgets/gs_route_plate.dart';
+import '../safety/trip_share_section.dart';
 
-class RouteDetailScreen extends ConsumerWidget {
+class RouteDetailScreen extends ConsumerStatefulWidget {
   const RouteDetailScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RouteDetailScreen> createState() => _RouteDetailScreenState();
+}
+
+class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen> {
+  bool _starting = false;
+  // Una llave por pantalla: tocar dos veces no crea dos viajes.
+  final _tripKey = const Uuid().v4();
+
+  Future<void> _startTrip(RouteResult route) async {
+    if (ref.read(isGuestProvider)) {
+      context.push(AppRoutes.login);
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+    setState(() => _starting = true);
+    try {
+      await dispatchService.createTrip(
+        route,
+        originLabel: route.legs.first.fromLabel ?? 'Tu ubicación',
+        destLabel:
+            route.destinationLabel ?? route.legs.last.toLabel ?? 'Tu destino',
+        idempotencyKey: _tripKey,
+      );
+      ref.invalidate(activeTripProvider);
+      router.go(AppRoutes.trip);
+    } on DispatchException catch (e) {
+      GSToast.showWithMessenger(messenger,
+          message: e.message, type: GSToastType.error);
+    } finally {
+      if (mounted) setState(() => _starting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final route = ref.watch(activeRouteProvider);
-    final mode  = ref.watch(selectedModeProvider);
+    final mode = ref.watch(selectedModeProvider);
 
     return Scaffold(
-      backgroundColor: GSColors.bg,
-      appBar: AppBar(
-        title: const Text('Detalle de ruta'),
-        leading: BackButton(onPressed: () => context.pop()),
-      ),
+      backgroundColor: GSColors.background,
+      appBar: AppBar(title: const Text('Tu ruta')),
       body: route == null
-          ? _EmptyRoute(onPlan: () => context.go(AppRoutes.routePlanner))
+          ? ListView(children: [
+              GSEmptyState(
+                icon: Icons.route_rounded,
+                title: 'Sin ruta todavía',
+                subtitle: 'Elige a dónde vas y en qué, y aquí verás los '
+                    'tramos, el tiempo y la tarifa.',
+                actionLabel: 'Planear una ruta',
+                onAction: () => context.pushReplacement(AppRoutes.routePlanner),
+              ),
+            ])
           : _RouteBody(route: route, mode: mode),
+      bottomNavigationBar: route == null
+          ? null
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    GSSpacing.s4, GSSpacing.s2, GSSpacing.s4, GSSpacing.s3),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    GSButton(
+                      label: 'Iniciar viaje',
+                      leadingIcon: Icons.play_arrow_rounded,
+                      isLoading: _starting,
+                      onPressed: _starting ? null : () => _startTrip(route),
+                    ),
+                    const SizedBox(height: GSSpacing.s2),
+                    GSButton(
+                      label: 'Ver en el mapa',
+                      leadingIcon: Icons.map_outlined,
+                      variant: GSButtonVariant.outline,
+                      onPressed: () => context.go(AppRoutes.home),
+                    ),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 }
-
-// ─── Empty state ─────────────────────────────────────────────────────────────
-
-class _EmptyRoute extends StatelessWidget {
-  final VoidCallback onPlan;
-  const _EmptyRoute({required this.onPlan});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.route_rounded, size: 56, color: GSColors.accent),
-          const SizedBox(height: GSSpacing.s4),
-          const Text('No hay ruta activa',
-              style: TextStyle(color: Colors.white70, fontSize: 16)),
-          const SizedBox(height: GSSpacing.s4),
-          GSButton(label: 'Planificar ruta', onPressed: onPlan),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Route body ──────────────────────────────────────────────────────────────
 
 class _RouteBody extends StatelessWidget {
+  const _RouteBody({required this.route, required this.mode});
   final RouteResult route;
   final String mode;
-  const _RouteBody({required this.route, required this.mode});
 
   @override
   Widget build(BuildContext context) {
-    final co2Saved = EcoService.co2SavedGrams(
-      profile: route.profile,
-      distanceKm: route.distanceKm,
-    );
-    final pts = EcoService.ecoPointsForTrip(
-      profile: route.profile,
-      distanceKm: route.distanceKm,
-    );
+    final text = Theme.of(context).textTheme;
+    final co2 = EcoService.co2SavedGrams(
+        profile: route.profile, distanceKm: route.distanceKm);
 
-    return Column(
+    return ListView(
+      padding: const EdgeInsets.only(bottom: GSSpacing.s6),
       children: [
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(GSSpacing.s4),
-            children: [
-              _SummaryCard(route: route, co2Saved: co2Saved, pts: pts),
-              const SizedBox(height: GSSpacing.s4),
-              const Text(
-                'Segmentos del viaje',
-                style: TextStyle(
-                    color: Colors.white70,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13),
-              ),
-              const SizedBox(height: GSSpacing.s3),
-              ...route.legs.map((leg) => _LegCard(leg: leg)),
-              if (route.estimatedCostCop > 0) ...[
-                const SizedBox(height: GSSpacing.s3),
-                _CostCard(costCop: route.estimatedCostCop),
-              ],
-              const SizedBox(height: GSSpacing.s4),
-            ],
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              GSSpacing.s4, GSSpacing.s4, GSSpacing.s4, 0),
+          child: GSRoutePlate(
+            text: 'En $mode',
+            leading: modeIconFor(mode),
+            isActive: true,
+            size: GSPlateSize.lg,
+            detail:
+                '${route.durationMin} min · ${route.distanceKm.toStringAsFixed(1)} km',
           ),
         ),
-        _BottomAction(route: route, mode: mode),
-      ],
-    );
-  }
-}
-
-// ─── Summary card ─────────────────────────────────────────────────────────────
-
-class _SummaryCard extends StatelessWidget {
-  final RouteResult route;
-  final double co2Saved;
-  final int pts;
-  const _SummaryCard(
-      {required this.route, required this.co2Saved, required this.pts});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(GSSpacing.s4),
-      decoration: BoxDecoration(
-        color: GSColors.surface,
-        borderRadius: BorderRadius.circular(GSRadius.lg),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _Stat(
-            icon: Icons.schedule_rounded,
-            label: 'Duración',
-            value: '${route.durationMin} min',
-            color: GSColors.accent,
+        const GSSectionTitle('Tramos'),
+        const SizedBox(height: GSSpacing.s2),
+        for (var i = 0; i < route.legs.length; i++)
+          _LegStep(
+            leg: route.legs[i],
+            routeMode: mode,
+            isLast: i == route.legs.length - 1,
           ),
-          _Stat(
-            icon: Icons.straighten_rounded,
-            label: 'Distancia',
-            value: '${route.distanceKm.toStringAsFixed(1)} km',
-            color: Colors.white70,
+        for (final note in route.notes)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                GSSpacing.s4, GSSpacing.s3, GSSpacing.s4, 0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline_rounded,
+                    size: 20, color: GSColors.brand),
+                const SizedBox(width: GSSpacing.s2),
+                Expanded(child: Text(note, style: text.bodyMedium)),
+              ],
+            ),
           ),
-          if (co2Saved > 0)
-            _Stat(
-              icon: Icons.eco_rounded,
-              label: 'CO₂ ahorrado',
-              value: EcoService.formatCo2Saved(co2Saved),
-              color: GSColors.eco,
-            ),
-          if (pts > 0)
-            _Stat(
-              icon: Icons.stars_rounded,
-              label: 'Eco-puntos',
-              value: '+$pts',
-              color: GSColors.accentAlt,
-            ),
+        if (route.estimatedCostCop > 0) ...[
+          const GSSectionTitle('Tarifa'),
+          GSListRow(
+            icon: Icons.payments_outlined,
+            title: 'Precio de referencia',
+            subtitle: 'Aún sin verificar en la calle; puede variar.',
+            value: route.fareMin != null &&
+                    route.fareMax != null &&
+                    route.fareMax! > route.fareMin!
+                ? '${formatCop(route.fareMin!)}–${formatCop(route.fareMax!)}'
+                : formatCop(route.estimatedCostCop),
+          ),
         ],
-      ),
-    );
-  }
-}
-
-class _Stat extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-  const _Stat(
-      {required this.icon,
-      required this.label,
-      required this.value,
-      required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 22),
-        const SizedBox(height: 4),
-        Text(value,
-            style: TextStyle(
-                color: color, fontWeight: FontWeight.bold, fontSize: 14)),
-        Text(label,
-            style: const TextStyle(color: Colors.white38, fontSize: 10)),
+        if (co2 > 0) ...[
+          const Divider(indent: GSSpacing.s4),
+          GSListRow(
+            icon: Icons.directions_walk_rounded,
+            title: 'Ahorras ${EcoService.formatCo2Saved(co2)} de CO₂',
+            subtitle: 'Frente a hacer el mismo trayecto en carro',
+          ),
+        ],
+        TripShareSection(
+          destination: route.destinationLabel ?? 'mi destino',
+          mode: mode,
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              GSSpacing.s4, GSSpacing.s4, GSSpacing.s4, 0),
+          child: Text(
+            'Al iniciar el viaje pides cada tramo: mototaxi o taxi con '
+            'conductores cercanos, o un cupo en el colectivo.',
+            style: text.bodySmall,
+          ),
+        ),
       ],
     );
   }
 }
 
-// ─── Leg card ─────────────────────────────────────────────────────────────────
-
-class _LegCard extends StatelessWidget {
+/// Un tramo como placa pequeña; las placas se encadenan con una línea del
+/// color del modo, como los rótulos de una ruta con transbordos.
+class _LegStep extends StatelessWidget {
+  const _LegStep({
+    required this.leg,
+    required this.routeMode,
+    required this.isLast,
+  });
   final RouteLeg leg;
-  const _LegCard({required this.leg});
+  final String routeMode;
+  final bool isLast;
+
+  String get _modeLabel => switch (leg.mode) {
+        'walk' => 'A pie',
+        'bus' => leg.lineId ?? routeMode,
+        'taxi' => 'Taxi',
+        _ => routeMode,
+      };
 
   IconData get _icon => switch (leg.mode) {
-        'bus'    => Icons.directions_bus_rounded,
-        'metro'  => Icons.subway_rounded,
-        'bike'   => Icons.pedal_bike_rounded,
-        'walk'   => Icons.directions_walk_rounded,
-        'taxi'   => Icons.local_taxi_rounded,
-        _        => Icons.directions_car_rounded,
+        'walk' => Icons.directions_walk_rounded,
+        'taxi' => Icons.local_taxi_rounded,
+        _ => modeIconFor(_modeLabel),
       };
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: GSSpacing.s3),
-      padding: const EdgeInsets.all(GSSpacing.s3),
-      decoration: BoxDecoration(
-        color: GSColors.surface,
-        borderRadius: BorderRadius.circular(GSRadius.md),
-        border: Border(left: BorderSide(color: leg.color, width: 4)),
-      ),
-      child: Row(
-        children: [
-          Icon(_icon, color: leg.color, size: 24),
-          const SizedBox(width: GSSpacing.s3),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  leg.instruction ?? leg.mode.toUpperCase(),
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (leg.lineId != null)
-                  Text('Línea ${leg.lineId}',
-                      style: TextStyle(color: leg.color, fontSize: 11)),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text('${leg.durationMin} min',
-                  style: const TextStyle(
-                      color: Colors.white70, fontWeight: FontWeight.bold)),
-              Text('${leg.distanceKm.toStringAsFixed(1)} km',
-                  style: const TextStyle(
-                      color: Colors.white38, fontSize: 11)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Cost card ────────────────────────────────────────────────────────────────
-
-class _CostCard extends StatelessWidget {
-  final int costCop;
-  const _CostCard({required this.costCop});
-
-  @override
-  Widget build(BuildContext context) {
-    final formatted = costCop
-        .toString()
-        .replaceAllMapped(
-            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.');
-    return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: GSSpacing.s4, vertical: GSSpacing.s3),
-      decoration: BoxDecoration(
-        color: GSColors.surface,
-        borderRadius: BorderRadius.circular(GSRadius.md),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.account_balance_wallet_rounded,
-              color: GSColors.accent, size: 20),
-          const SizedBox(width: GSSpacing.s3),
-          const Text('Costo estimado',
-              style: TextStyle(color: Colors.white70)),
-          const Spacer(),
-          Text(
-            '\$$formatted COP',
-            style: const TextStyle(
-                color: GSColors.accent, fontWeight: FontWeight.bold),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Bottom action ────────────────────────────────────────────────────────────
-
-class _BottomAction extends StatelessWidget {
-  final RouteResult route;
-  final String mode;
-  const _BottomAction({required this.route, required this.mode});
-
-  void _showConfirm(BuildContext context) {
-    GSBottomSheet.show(
-      context: context,
-      title: 'Iniciar viaje',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Modo: $mode · ${route.durationMin} min · '
-            '${route.distanceKm.toStringAsFixed(1)} km',
-            style: const TextStyle(color: Colors.white70),
-          ),
-          const SizedBox(height: GSSpacing.s5),
-          GSButton(
-            label: 'Confirmar viaje',
-            isFullWidth: true,
-            onPressed: () {
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Viaje iniciado — buen trayecto'),
-                  backgroundColor: GSColors.eco,
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        GSSpacing.s5,
-        0,
-        GSSpacing.s5,
-        MediaQuery.of(context).padding.bottom + GSSpacing.s4,
-      ),
-      child: GSButton(
-        label: 'Iniciar viaje',
-        isFullWidth: true,
-        leadingIcon: Icons.navigation_rounded,
-        onPressed: () => _showConfirm(context),
+      padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Conector de la cadena.
+            SizedBox(
+              width: 20,
+              child: Column(
+                children: [
+                  const SizedBox(height: 22),
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: leg.color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  if (!isLast)
+                    Expanded(child: Container(width: 4, color: leg.color)),
+                ],
+              ),
+            ),
+            const SizedBox(width: GSSpacing.s3),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: isLast ? 0 : GSSpacing.s4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    GSRoutePlate(
+                      text: _modeLabel,
+                      leading: _icon,
+                      size: GSPlateSize.sm,
+                      trailing: Text(
+                        '${leg.durationMin} min',
+                        style: TextStyle(
+                          fontFamily: GSFonts.mono,
+                          fontFeatures: GSFonts.tabular,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: GSColors.text,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: GSSpacing.s2),
+                    Text(
+                      '${leg.instruction ?? 'Sigue la ruta'} · '
+                      '${leg.distanceKm.toStringAsFixed(1)} km',
+                      style: text.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

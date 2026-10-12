@@ -1,5 +1,6 @@
 // lib/router/app_router.dart
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,37 +10,63 @@ import '../theme/design_tokens.dart';
 import '../features/splash/splash_screen.dart';
 import '../features/onboarding/intro_screen.dart';
 import '../features/onboarding/location_permission_screen.dart';
-import '../features/auth/onboarding_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/register_screen.dart';
 import '../features/auth/sms_verify_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/wallet/wallet_screen.dart';
-import '../features/history/history_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/routes/route_planner_screen.dart';
 import '../features/routes/route_detail_screen.dart';
 import '../features/ai_chat/ai_chat_screen.dart';
-import '../features/payment/payment_validation_screen.dart';
 import '../features/nfc_simulator/nfc_auth_simulator_screen.dart';
+import '../features/safety/emergency_contacts_screen.dart';
+import '../features/legal/legal_screen.dart';
+import '../features/driver/driver_home_screen.dart';
+import '../features/corridor/report_screen.dart';
+import '../features/trip/trip_screen.dart';
+import '../features/admin/admin_screen.dart';
+import '../features/trip/receipt_screen.dart';
+import '../features/payments/scan_pay_screen.dart';
+import '../features/payments/charge_screen.dart';
+import '../features/driver/driver_signup_screen.dart';
+import '../features/legal/legal_texts.dart';
 
+/// Transición de pantalla: fundido + 4 % de desplazamiento con ease-out
+/// fuerte (Emil). Con "quitar animaciones" queda solo el fundido.
 Widget _slideAndFade(
   BuildContext context,
   Animation<double> animation,
   Animation<double> secondaryAnimation,
   Widget child,
 ) {
-  return FadeTransition(
-    opacity: CurvedAnimation(parent: animation, curve: Curves.easeInOut),
-    child: SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(0.04, 0),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeInOut)),
-      child: child,
-    ),
+  final curved = CurvedAnimation(
+    parent: animation,
+    curve: GSCurve.enter,
+    reverseCurve: GSCurve.exit,
+  );
+  final faded = FadeTransition(opacity: curved, child: child);
+  if (MediaQuery.of(context).disableAnimations) return faded;
+  return SlideTransition(
+    position: Tween<Offset>(begin: const Offset(0.04, 0), end: Offset.zero)
+        .animate(curved),
+    child: faded,
   );
 }
+
+/// Pantalla con transición; volver es más rápido que entrar.
+CustomTransitionPage<void> _page(GoRouterState state, Widget child) =>
+    CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: child,
+      transitionDuration: GSDuration.page,
+      reverseTransitionDuration: GSDuration.sheetOut,
+      transitionsBuilder: _slideAndFade,
+    );
+
+/// Raíz de pestaña: cambiar de pestaña no se anima (acción repetida).
+NoTransitionPage<void> _tab(GoRouterState state, Widget child) =>
+    NoTransitionPage<void>(key: state.pageKey, child: child);
 
 /// Bridges a Stream to a [ChangeNotifier] so GoRouter's [refreshListenable]
 /// can trigger redirect re-evaluation on auth state changes.
@@ -74,6 +101,17 @@ abstract class AppRoutes {
   static const aiChat           = '/ai-chat';
   static const paymentValidation = '/payment-validation';
   static const nfcSimulator     = '/debug/nfc-simulator';
+  static const emergencyContacts = '/safety/contacts';
+  static const privacy          = '/legal/privacy';
+  static const driver           = '/driver';
+  static const report           = '/report';
+  static const trip             = '/trip';
+  static const admin            = '/admin';
+  static const receipt          = '/trip/receipt';   // ?id=<trip id>
+  static const scanPay          = '/pay/scan';       // ?leg=<trip leg id> opcional
+  static const driverCharge     = '/driver/charge';
+  static const driverSignup     = '/driver/signup';
+  static const terms            = '/legal/terms';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -90,8 +128,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final session = GoSmartSupabase.client.auth.currentSession;
       final isAuth = session != null;
-      // Rutas públicas (no requieren auth)
-      final isPublicPage = state.matchedLocation == AppRoutes.splash ||
+      // Rutas públicas. Modo invitado (DS3): el inicio, el planificador y el
+      // asistente funcionan sin cuenta; lo demás pide entrar.
+      final isPublicPage = state.matchedLocation == AppRoutes.home ||
+          state.matchedLocation == AppRoutes.routePlanner ||
+          state.matchedLocation == AppRoutes.routeDetail ||
+          state.matchedLocation == AppRoutes.aiChat ||
+          // Mirar sí, actuar con cuenta: la pantalla pide entrar al enviar.
+          state.matchedLocation == AppRoutes.trip ||
+          state.matchedLocation == AppRoutes.report ||
+          state.matchedLocation == AppRoutes.privacy ||
+          state.matchedLocation == AppRoutes.terms ||
+          state.matchedLocation == AppRoutes.splash ||
           state.matchedLocation == AppRoutes.intro ||
           state.matchedLocation == AppRoutes.locationPermission ||
           state.matchedLocation == AppRoutes.login ||
@@ -113,148 +161,125 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: AppRoutes.splash,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const SplashScreen(),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
-        ),
+        pageBuilder: (context, state) => _page(state, const SplashScreen()),
       ),
       GoRoute(
         path: AppRoutes.intro,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const IntroScreen(),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
-        ),
+        pageBuilder: (context, state) => _page(state, const IntroScreen()),
       ),
       GoRoute(
         path: AppRoutes.locationPermission,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const LocationPermissionScreen(),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
-        ),
+        pageBuilder: (context, state) => _page(state, const LocationPermissionScreen()),
       ),
+      // La bienvenida antigua se retiró: con el modo invitado se entra
+      // directo al inicio.
       GoRoute(
         path: AppRoutes.onboarding,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const OnboardingScreen(),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
-        ),
+        redirect: (_, __) => AppRoutes.home,
       ),
       GoRoute(
         path: AppRoutes.login,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const LoginScreen(),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
-        ),
+        pageBuilder: (context, state) => _page(state, const LoginScreen()),
       ),
       GoRoute(
         path: AppRoutes.register,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const RegisterScreen(),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
-        ),
+        pageBuilder: (context, state) => _page(state, const RegisterScreen()),
       ),
       GoRoute(
         path: AppRoutes.smsVerify,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: SmsVerifyScreen(phone: state.extra as String),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
-        ),
+        pageBuilder: (context, state) => _page(state, SmsVerifyScreen(phone: state.extra as String)),
       ),
       GoRoute(
         path: AppRoutes.home,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const HomeScreen(),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
-        ),
+        pageBuilder: (context, state) => _tab(state, const HomeScreen()),
       ),
       GoRoute(
         path: AppRoutes.wallet,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const WalletScreen(),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
-        ),
+        pageBuilder: (context, state) => _tab(state, const WalletScreen()),
       ),
+      // El historial vive ahora dentro de la Billetera.
       GoRoute(
         path: AppRoutes.history,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const HistoryScreen(),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
-        ),
+        redirect: (_, __) => AppRoutes.wallet,
       ),
       GoRoute(
         path: AppRoutes.profile,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const ProfileScreen(),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
-        ),
+        pageBuilder: (context, state) => _tab(state, const ProfileScreen()),
       ),
       GoRoute(
         path: AppRoutes.routePlanner,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const RoutePlannerScreen(),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
-        ),
+        pageBuilder: (context, state) => _page(state, const RoutePlannerScreen()),
       ),
       GoRoute(
         path: AppRoutes.routeDetail,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const RouteDetailScreen(),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
-        ),
+        pageBuilder: (context, state) => _page(state, const RouteDetailScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.emergencyContacts,
+        pageBuilder: (context, state) =>
+            _page(state, const EmergencyContactsScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.trip,
+        pageBuilder: (context, state) => _tab(state, const TripScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.receipt,
+        pageBuilder: (context, state) => _page(state,
+            ReceiptScreen(tripId: state.uri.queryParameters['id'] ?? '')),
+      ),
+      GoRoute(
+        path: AppRoutes.scanPay,
+        pageBuilder: (context, state) => _page(state,
+            ScanPayScreen(tripLegId: state.uri.queryParameters['leg'])),
+      ),
+      GoRoute(
+        path: AppRoutes.driverCharge,
+        pageBuilder: (context, state) => _page(state, const ChargeScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.admin,
+        pageBuilder: (context, state) => _page(state, const AdminScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.report,
+        pageBuilder: (context, state) => _tab(state, const ReportScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.driver,
+        pageBuilder: (context, state) => _page(state, const DriverHomeScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.driverSignup,
+        pageBuilder: (context, state) =>
+            _page(state, const DriverSignupScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.privacy,
+        pageBuilder: (context, state) =>
+            _page(state, const LegalScreen(doc: privacyPolicy)),
+      ),
+      GoRoute(
+        path: AppRoutes.terms,
+        pageBuilder: (context, state) =>
+            _page(state, const LegalScreen(doc: termsOfUse)),
       ),
       GoRoute(
         path: AppRoutes.aiChat,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const AiChatScreen(),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
-        ),
+        pageBuilder: (context, state) => _page(state, const AiChatScreen()),
       ),
+      // El pago real (QR del conductor) llega en la Fase 7; mientras tanto
+      // la ruta vieja de validación NFC lleva a la billetera.
       GoRoute(
         path: AppRoutes.paymentValidation,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const PaymentValidationScreen(),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
-        ),
+        redirect: (_, __) => AppRoutes.wallet,
       ),
-      GoRoute(
-        path: AppRoutes.nfcSimulator,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const NfcAuthSimulatorScreen(),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
+      // Simulador local: solo en builds de depuración.
+      if (kDebugMode)
+        GoRoute(
+          path: AppRoutes.nfcSimulator,
+          pageBuilder: (context, state) => _page(state, const NfcAuthSimulatorScreen()),
         ),
-      ),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: Center(child: Text('Page not found: ${state.error}')),

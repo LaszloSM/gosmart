@@ -25,17 +25,12 @@ dependencies:
   # Environment variables
   flutter_dotenv: ^5.1.0
 
-  # Payments
-  flutter_stripe: ^10.1.1
 
   # NFC
   flutter_nfc_kit: ^3.4.0
 
   # QR
   qr_flutter: ^4.1.0
-
-  # UI & fonts
-  google_fonts: ^6.2.1
 
   # UUID for idempotency keys
   uuid: ^4.3.3
@@ -59,6 +54,15 @@ dependencies:
   # Image picker (profile photo upload)
   image_picker: ^1.0.7
 
+  # Error reporting (optional, SENTRY_DSN)
+  sentry_flutter: ^9.0.0
+  url_launcher: ^6.3.3
+  collection: ^1.19.1
+  mobile_scanner: ^6.0.0
+  google_maps_flutter: ^2.18.2
+  firebase_core: ^4.15.0
+  firebase_messaging: ^16.7.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -76,3 +80,26 @@ flutter:
     - assets/images/
     - assets/animations/
     - .env
+    - assets/map_styles/
+
+  fonts:
+    # Mundo "rótulo de colectivo": Barlow (cuerpo, cifras tabulares) y
+    # Barlow Condensed (placas y títulos). OFL, empaquetadas para funcionar sin señal.
+    - family: Barlow
+      fonts:
+        - asset: assets/fonts/Barlow-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Barlow-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Barlow-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Barlow-Bold.ttf
+          weight: 700
+    - family: BarlowCondensed
+      fonts:
+        - asset: assets/fonts/BarlowCondensed-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/BarlowCondensed-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/BarlowCondensed-ExtraBold.ttf
+          weight: 800

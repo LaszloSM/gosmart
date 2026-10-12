@@ -1,6 +1,7 @@
 // lib/services/geocoding_service.dart
 // Mapbox Geocoding API v5 — address search for Colombia.
 // Uses the same MAPBOX_PUBLIC_TOKEN as DirectionsService and TileLayer.
+import '../core/region.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -17,7 +18,7 @@ class GeocodingService {
   /// [proximity]: optional LatLng to bias results toward user location.
   /// Returns [] if token is empty, query has fewer than 2 chars, or any error.
   /// Builds a tight bounding box around [proximity] (±0.35° ≈ 38 km).
-  /// Falls back to the full Colombia bbox when proximity is null.
+  /// Falls back to the La Guajira MVP bbox when proximity is null.
   String _buildBbox(LatLng? proximity) {
     if (proximity != null) {
       const d = 0.35;
@@ -27,17 +28,35 @@ class GeocodingService {
       final maxLat = (proximity.latitude + d).clamp(1.0, 13.4);
       return '$minLng,$minLat,$maxLng,$maxLat';
     }
-    return '-81.7,1.0,-66.8,13.4';
+    return GSRegion.bbox;
   }
 
+  /// true si hay token del proveedor configurado.
+  bool get isConfigured => Env.mapboxToken.isNotEmpty;
+
+  /// Igual que [searchStrict], pero nunca falla: devuelve [] ante cualquier error.
   Future<List<GeocodeSuggestion>> search(
     String query, {
     LatLng? proximity,
   }) async {
-    final token = Env.mapboxToken;
-    if (token.isEmpty || query.trim().length < 2) return [];
-
     try {
+      return await searchStrict(query, proximity: proximity);
+    } catch (e) {
+      debugPrint('[GeocodingService] search error: $e');
+      return [];
+    }
+  }
+
+  /// Lanza [GeocodingException] si el proveedor falla, para poder avisar (D8).
+  Future<List<GeocodeSuggestion>> searchStrict(
+    String query, {
+    LatLng? proximity,
+  }) async {
+    final token = Env.mapboxToken;
+    if (token.isEmpty) throw const GeocodingException('no_key');
+    if (query.trim().length < 2) return [];
+
+    {
       final encoded = Uri.encodeComponent(query.trim());
       var url = '$_base/$encoded.json'
           '?access_token=$token'
@@ -56,8 +75,7 @@ class GeocodingService {
           .timeout(const Duration(seconds: 10));
 
       if (res.statusCode != 200) {
-        debugPrint('[GeocodingService] ${res.statusCode}: ${res.body}');
-        return [];
+        throw GeocodingException('http_${res.statusCode}');
       }
 
       final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -78,9 +96,6 @@ class GeocodingService {
           featureType: featureType,
         );
       }).toList();
-    } catch (e) {
-      debugPrint('[GeocodingService] search error: $e');
-      return [];
     }
   }
 
@@ -95,3 +110,10 @@ class GeocodingService {
 }
 
 final geocodingService = GeocodingService();
+
+class GeocodingException implements Exception {
+  const GeocodingException(this.code);
+  final String code;
+  @override
+  String toString() => 'GeocodingException($code)';
+}

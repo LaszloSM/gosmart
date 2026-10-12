@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Bloqueos, retenes e inundaciones reportados por viajeros en la Troncal Riohacha–Maicao.">
+<title>Estado de la Troncal · GoSmart</title>
+<style>
+  /* Fuentes del repo (assets/fonts), copiadas a fonts/ al publicar. */
+  @font-face { font-family: Barlow; font-weight: 400; src: url(fonts/Barlow-Regular.ttf); font-display: swap; }
+  @font-face { font-family: Barlow; font-weight: 600; src: url(fonts/Barlow-SemiBold.ttf); font-display: swap; }
+  @font-face { font-family: "Barlow Condensed"; font-weight: 700; src: url(fonts/BarlowCondensed-Bold.ttf); font-display: swap; }
+  @font-face { font-family: "Barlow Condensed"; font-weight: 800; src: url(fonts/BarlowCondensed-ExtraBold.ttf); font-display: swap; }
+  /* Mundo "Rótulo de colectivo" (DESIGN.md): carrocería ultramar, placa blanca. */
+  :root { --shell:#1B3A8C; --on-shell:#FFFFFF; --bg:#EEF1F5; --surface:#FFFFFF;
+          --brand:#1B3A8C; --text:#141A28; --muted:#454E63; --line:#C9D0DC; --stripe:#C2185B; }
+  @media (prefers-color-scheme: dark) {
+    :root { --shell:#14295F; --bg:#0E1320; --surface:#171E2D; --brand:#9DB2F2;
+            --text:#EEF1F5; --muted:#AEB7CA; --line:#2E3850; --stripe:#FF6FA3; }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin:0; background:var(--bg); color:var(--text);
+         font: 17px/1.45 Barlow, "Roboto", system-ui, sans-serif; }
+  header { background:var(--shell); color:var(--on-shell); padding:20px 16px; }
+  header h1 { margin:0; font: 800 28px/1.1 "Barlow Condensed", "Roboto Condensed", sans-serif; }
+  main { padding:16px; max-width:560px; margin:0 auto; }
+  .plate { background:var(--surface); border:1.5px solid var(--line); border-radius:8px;
+           padding:16px; border-bottom:4px solid var(--stripe); }
+  .plate .dest { font: 800 26px/1.1 "Barlow Condensed", "Roboto Condensed", sans-serif;
+                 color:var(--brand); text-transform:uppercase; margin:0; }
+  .plate .detail { color:var(--muted); margin-top:4px; }
+  .num { font-variant-numeric: tabular-nums; }
+  a.btn { display:block; text-align:center; margin-top:16px; min-height:48px; line-height:48px;
+          background:var(--brand); color:var(--surface); border-radius:8px; text-decoration:none;
+          font: 700 18px/48px "Barlow Condensed", "Roboto Condensed", sans-serif; letter-spacing:.02em; }
+  p.note { color:var(--muted); font-size:15px; }
+  .call { color:var(--brand); font-weight:600; }
+
+  /* Estado de la vía: color SIEMPRE con ícono + palabra (DESIGN.md). */
+  :root { --open:#17602F; --caution:#6A3F00; --caution-tint:#FBE7C2; --closed:#9E1F18; --unknown:#50576A; }
+  @media (prefers-color-scheme: dark) {
+    :root { --open:#73D69C; --caution:#F2B65A; --caution-tint:#3A2A10; --closed:#FF8F85; --unknown:#A3ABBA; }
+  }
+  ul.segs { list-style:none; padding:0; margin:16px 0 0; }
+  ul.segs li { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); }
+  .ico { width:26px; height:26px; flex:none; }
+  .what { flex:1; }
+  .what b { display:block; font-family:"Barlow Condensed", sans-serif; font-size:20px; }
+  .km { font-variant-numeric: tabular-nums; font-weight:600; }
+  .s-open { color:var(--open); } .s-caution { color:var(--caution); }
+  .s-closed { color:var(--closed); } .s-unknown { color:var(--unknown); }
+</style>
+</head>
+<body>
+<header><h1>La Troncal · Riohacha – Maicao</h1></header>
+<main>
+  <p class="note" id="status">Cargando…</p>
+  <ul class="segs" id="segs"></ul>
+  <p class="note">Reportes de viajeros, confirmados por otros. Pueden no coincidir con lo que encuentres: sigue a las autoridades. Emergencias: <a class="call" href="tel:123">123</a>.</p>
+</main>
+<script src="config.js"></script>
+<script>
+(function () {
+  var cfg = window.GOSMART || {};
+  // Íconos SVG (no glifos de texto): mismos significados que en la app.
+  var SVG = {
+    open: '<path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    caution: '<path d="M12 3.5L2.5 20h19z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 10v4.5M12 17.2v.3" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+    closed: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M6 12h12" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>',
+    unknown: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.4M12 16.8v.3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>'
+  };
+  var lastOk = null;
+  var WORD = { open: 'Abierta', caution: 'Precaución', closed: 'Cerrada', unknown: 'Sin datos' };
+  function clock(iso) {
+    var d = new Date(iso), h = d.getHours() % 12 || 12, m = ('0' + d.getMinutes()).slice(-2);
+    return h + ':' + m + (d.getHours() < 12 ? ' a. m.' : ' p. m.');
+  }
+  // Hora sola si es de hoy; con fecha si no, para no hacer pasar un dato viejo por actual.
+  function when(iso) {
+    var d = new Date(iso), now = new Date();
+    var sameDay = d.toDateString() === now.toDateString();
+    return sameDay ? clock(iso) : d.getDate() + '/' + (d.getMonth() + 1) + ' a las ' + clock(iso);
+  }
+  function render(rows) {
+    var ul = document.getElementById('segs'); ul.innerHTML = '';
+    var newest = null;
+    rows.forEach(function (r) {
+      if (r.updated_at && (!newest || r.updated_at > newest)) newest = r.updated_at;
+      var li = document.createElement('li');
+      var ico = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      ico.setAttribute('viewBox', '0 0 24 24'); ico.setAttribute('width', '26'); ico.setAttribute('height', '26');
+      ico.setAttribute('class', 'ico s-' + r.state); ico.setAttribute('aria-hidden', 'true');
+      ico.innerHTML = SVG[r.state] || SVG.unknown;
+      var what = document.createElement('span'); what.className = 'what';
+      var b = document.createElement('b'); b.className = 's-' + r.state;
+      b.textContent = (WORD[r.state] || 'Sin datos') + (r.reason ? ' · ' + r.reason : '');
+      var name = document.createElement('span'); name.textContent = r.name;
+      what.append(b, name);
+      var km = document.createElement('span'); km.className = 'km';
+      km.textContent = r.is_branch ? 'desvío' : 'km ' + Math.round(r.km_from) + '–' + Math.round(r.km_to);
+      li.append(ico, what, km); ul.append(li);
+    });
+    lastOk = new Date();
+    document.getElementById('status').textContent = newest
+      ? 'Último reporte: ' + when(newest) + ' · se actualiza cada minuto.'
+      : 'Nadie ha reportado nada vigente. Sin datos no es lo mismo que despejada.';
+  }
+  function load() {
+    if (!cfg.supabaseUrl) { document.getElementById('status').textContent = 'Página sin configurar.'; return; }
+    fetch(cfg.supabaseUrl + '/rest/v1/rpc/road_status', {
+      method: 'POST',
+      headers: { 'apikey': cfg.supabaseAnonKey, 'Authorization': 'Bearer ' + cfg.supabaseAnonKey,
+                 'Content-Type': 'application/json' },
+      body: '{}'
+    }).then(function (r) { if (!r.ok) throw r; return r.json(); })
+      .then(render)
+      .catch(function () {
+        // Si ya había datos, se quedan en pantalla pero marcados como viejos.
+        document.getElementById('status').textContent = lastOk
+          ? 'Sin conexión. Esto es de las ' + clock(lastOk.toISOString()) + '; reintentamos en un minuto.'
+          : 'Sin conexión. Reintentamos en un minuto.';
+      });
+  }
+  load(); setInterval(load, 60000);
+})();
+</script>
+</body>
+</html>

@@ -1,18 +1,29 @@
 // backend/functions/ai-chat/index.ts
-// GoSmart AI — RAG Colombia v3
-// Flujo: Normalizer → City detect → Exact match → Semantic search → Groq
-// Keys: OPENAI_API_KEY + GROQ_API_KEY en Supabase Edge Functions secrets
+// GoSmart AI — proxy de Groq para Riohacha, Maicao y el corredor.
+// La key de Groq vive solo aquí (secret GROQ_API_KEY), nunca en el APK.
+// Flujo: lugares del KG (FTS sobre alias) → prompt corto → Groq 8b → (respaldo 70b)
+// Con herramientas (Fase 5): el modelo puede pedir el estado del corredor, buscar
+// lugares o tarifas (se resuelven aquí) o plan_trip, que se devuelve al celular:
+//   → { source: 'tool_call', tool_call, tool_messages }
+// y el celular vuelve a llamar con tool_messages + el resultado.
 
 import { serve }        from 'https://deno.land/std@0.208.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { normalize }    from './normalizer.ts'
-import { exactMatch, semanticSearch, embedQuery, KgEntity } from './retrieval.ts'
-import { buildContext, buildSystemPrompt, buildFallbackPrompt } from './context_builder.ts'
+import { exactMatch, KgEntity } from './retrieval.ts'
+import { buildContext, buildSystemPrompt } from './context_builder.ts'
+import {
+  ChatMessage, CLIENT_TOOLS, estimateFare, MAX_TOOL_ROUNDS, parseArgs,
+  sanitizeToolMessages, summarizeCorridor, ToolCall, TOOLS,
+} from './tools.ts'
 
-const GROQ_URL     = 'https://api.groq.com/openai/v1/chat/completions'
-const GROQ_MODEL   = 'llama-3.1-8b-instant'
-const GROQ_TIMEOUT = 12_000
-const SIM_THRESHOLD = 0.35
+const GROQ_URL      = 'https://api.groq.com/openai/v1/chat/completions'
+// El 8b tiene cuota diaria mucho mayor que el 70b en el plan gratis (E1).
+const PRIMARY_MODEL  = 'llama-3.1-8b-instant'
+const FALLBACK_MODEL = 'llama-3.3-70b-versatile'
+const GROQ_TIMEOUT   = 12_000
+const MAX_HISTORY    = 6
+const MAX_CLIENT_CONTEXT_CHARS = 1500
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
@@ -20,91 +31,141 @@ const CORS = {
   'Content-Type': 'application/json',
 }
 
+type Turn = { role: string; content: string }
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
   const t0 = Date.now()
 
   try {
-    const { query, city_hint, history = [] } = await req.json()
-    if (!query?.trim()) return json({ content: '¿En qué puedo ayudarte?', fallback: false })
+    const { query, history = [], client_context = '', tool_messages = [] } = await req.json()
+    if (typeof query !== 'string' || !query.trim()) {
+      return json({ content: '¿En qué te ayudo?', source: 'system', latency_ms: 0 })
+    }
 
-    // SERVICE_ROLE_KEY (no anon): necesario para escribir en rag_fallback_log
-    // que no tiene policy INSERT para anon. Las tablas colombia_kg tienen
-    // policy SELECT pública — service_role también puede leerlas sin RLS.
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
-    const groqKey = Deno.env.get('GROQ_API_KEY')!
-
-    // 1 + 2. Normalize + detect city (city_hint overrides auto-detect)
-    const nq = normalize(query, city_hint)
-
-    // Only block address/station/neighborhood/route queries that need a city context.
-    // General and fare queries can proceed without one.
-    const needsCity = ['address', 'station', 'neighborhood', 'route'].includes(nq.intent)
-    if (nq.city_confidence === 'none' && needsCity) {
+    const groqKey = Deno.env.get('GROQ_API_KEY')
+    if (!groqKey) {
       return json({
-        content: '¿En qué ciudad estás? Necesito saberlo para darte información precisa sobre transporte.',
+        content: 'El asistente no está configurado todavía. Usa el planificador mientras tanto.',
         source: 'system',
-        fallback: true,
+        error: 'missing_key',
         latency_ms: Date.now() - t0,
       })
     }
 
-    // 3. Exact match (siempre corre)
-    const exactHits = await exactMatch(supabase, nq.normalized, nq.city)
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+    )
 
-    // 4. Semantic search (solo si exact match vacío)
-    let semanticHits: KgEntity[] = []
-    let usedFallback = false
+    const nq = normalize(query)
+    const entities: KgEntity[] = await exactMatch(supabase, nq.normalized, nq.city)
 
-    if (exactHits.length === 0) {
-      try {
-        const embedding = await embedQuery(nq.normalized)
-        semanticHits = await semanticSearch(supabase, embedding, nq.city, SIM_THRESHOLD)
-      } catch (err) {
-        console.error('[RAG] embed/semantic failed:', err)
-        usedFallback = true
-        await logFallback(supabase, query, nq.normalized, nq.city, 0, 'no_match')
+    const systemPrompt = buildSystemPrompt(
+      buildContext(entities),
+      String(client_context).slice(0, MAX_CLIENT_CONTEXT_CHARS),
+    )
+    const turns: Turn[] = (Array.isArray(history) ? history : [])
+      .filter((t: Turn) => (t?.role === 'user' || t?.role === 'assistant') && typeof t.content === 'string')
+      .slice(-MAX_HISTORY)
+
+    // Conversación: sistema + historial + pregunta + (vuelta de una herramienta).
+    const messages: ChatMessage[] = [
+      { role: 'system', content: systemPrompt },
+      ...turns as ChatMessage[],
+      { role: 'user', content: query },
+      ...sanitizeToolMessages(tool_messages),
+    ]
+    // true = esta llamada trae el resultado de una herramienta del celular.
+    const continuing = messages.some((m) => m.role === 'tool')
+
+    let result: GroqResult = { ok: false, content: UNAVAILABLE, model: PRIMARY_MODEL, error: 'no_rounds' }
+    const added: ChatMessage[] = []
+    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+      result = await callGroqWithFallback([...messages, ...added], groqKey)
+      if (!result.ok || !result.toolCalls?.length) break
+
+      const assistant: ChatMessage = { role: 'assistant', content: null, tool_calls: result.toolCalls }
+      const clientCall = result.toolCalls.find((c) => CLIENT_TOOLS.has(c.function.name))
+      if (clientCall) {
+        // plan_trip corre en el celular (D6). Si ya trajo un resultado y el
+        // modelo lo vuelve a pedir, se corta: no hay vueltas infinitas.
+        if (continuing) {
+          return json({
+            content: 'Te dejé la ruta lista: tócala para verla en el mapa.',
+            source: 'groq',
+            model: result.model,
+            latency_ms: Date.now() - t0,
+          })
+        }
+        return json({
+          content: '',
+          source: 'tool_call',
+          model: result.model,
+          tool_call: { id: clientCall.id, name: clientCall.function.name, args: parseArgs(clientCall.function.arguments) },
+          // Lo que el celular debe devolver tal cual, más su respuesta 'tool'.
+          tool_messages: [...sanitizeToolMessages(tool_messages), ...added, assistant],
+          latency_ms: Date.now() - t0,
+        })
+      }
+      added.push(assistant)
+      for (const call of result.toolCalls) {
+        added.push({ role: 'tool', tool_call_id: call.id,
+                     content: JSON.stringify(await runServerTool(supabase, call)) })
       }
     }
 
-    // 5. Dedup + merge
-    const exactIds = new Set(exactHits.map(e => e.id))
-    const allEntities = dedup([...exactHits, ...semanticHits])
-
-    if (allEntities.length === 0 && !usedFallback) {
-      const topSim = semanticHits[0]?.similarity ?? 0
-      await logFallback(supabase, query, nq.normalized, nq.city, topSim, 'low_similarity')
-    }
-
-    // 6 + 7. Build context + call Groq
-    const contextBlock  = buildContext(allEntities, exactIds)
-    const systemPrompt  = buildSystemPrompt(contextBlock)
-    const groqContent   = allEntities.length === 0
-      ? buildFallbackPrompt(nq.intent)
-      : await callGroq(systemPrompt, history.slice(-5), nq.normalized, groqKey)
-
     return json({
-      content:       groqContent,
-      source:        'groq',
-      entities_used: allEntities.map(e => e.canonical_name),
-      fallback:      allEntities.length === 0,
+      content:       result.content,
+      source:        result.ok ? 'groq' : 'error',
+      model:         result.model,
+      error:         result.ok ? undefined : result.error,
+      entities_used: entities.map(e => e.canonical_name),
       latency_ms:    Date.now() - t0,
     })
-
   } catch (err) {
     console.error('[ai-chat] unhandled error:', err)
     return json({
-      content: 'Lo siento, el asistente no está disponible. Intenta de nuevo en un momento.',
+      content: 'El asistente no está disponible ahora. Puedes planear tu viaje desde el mapa.',
       source: 'error',
-      fallback: true,
+      error: 'unhandled',
       latency_ms: Date.now() - t0,
     }, 500)
   }
 })
+
+// ── Herramientas del servidor ────────────────────────────────────────────────
+
+// deno-lint-ignore no-explicit-any
+async function runServerTool(supabase: any, call: ToolCall): Promise<unknown> {
+  const args = parseArgs(call.function.arguments)
+  try {
+    switch (call.function.name) {
+      case 'get_corridor_status': {
+        const { data, error } = await supabase.rpc('road_status')
+        if (error) return { error: 'sin_conexion' }
+        return summarizeCorridor(data ?? [])
+      }
+      case 'search_place': {
+        const { data, error } = await supabase.rpc('search_places', {
+          p_query: String(args.query ?? '').slice(0, 80), p_limit: 3 })
+        if (error) return { error: 'sin_conexion' }
+        return { lugares: (data ?? []).map((p: Record<string, unknown>) => ({
+          nombre: p.name, ciudad: p.city, aproximado: !p.verified })) }
+      }
+      case 'estimate_fare': {
+        const hour = Number(new Intl.DateTimeFormat('en-US', {
+          hour: 'numeric', hour12: false, timeZone: 'America/Bogota' }).format(new Date()))
+        return estimateFare(String(args.mode ?? ''), Number(args.km), hour)
+      }
+      default:
+        return { error: 'herramienta_desconocida' }
+    }
+  } catch {
+    return { error: 'fallo_herramienta' }
+  }
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -112,18 +173,24 @@ function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { headers: CORS, status })
 }
 
-function dedup(entities: KgEntity[]): KgEntity[] {
-  const seen = new Set<string>()
-  return entities.filter(e => seen.has(e.id) ? false : (seen.add(e.id), true))
+type GroqResult = {
+  ok: boolean; content: string; model: string; error?: string; toolCalls?: ToolCall[]
 }
 
-async function callGroq(
-  systemPrompt: string,
-  history: Array<{ role: string; content: string }>,
-  query: string,
-  key: string
-): Promise<string> {
-  const FALLBACK = 'Lo siento, el asistente no está disponible. Intenta de nuevo en un momento.'
+const UNAVAILABLE =
+  'El asistente no está disponible ahora. Puedes planear tu viaje desde el mapa.'
+
+// Intenta el modelo principal; si Groq responde 429 (cuota) o 5xx, usa el 70b una vez.
+async function callGroqWithFallback(messages: ChatMessage[], key: string): Promise<GroqResult> {
+  const first = await callGroq(PRIMARY_MODEL, messages, key)
+  if (first.ok) return first
+  if (first.error === 'rate_limited' || first.error === 'server_error') {
+    return await callGroq(FALLBACK_MODEL, messages, key)
+  }
+  return first
+}
+
+async function callGroq(model: string, messages: ChatMessage[], key: string): Promise<GroqResult> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), GROQ_TIMEOUT)
   try {
@@ -131,37 +198,35 @@ async function callGroq(
       method: 'POST',
       headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: GROQ_MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...history,
-          { role: 'user', content: query },
-        ],
-        max_tokens: 512,
-        temperature: 0.7,
+        model,
+        messages,
+        tools: TOOLS,
+        tool_choice: 'auto',
+        max_tokens: 450,
+        temperature: 0.5,
       }),
       signal: controller.signal,
     })
-    if (!res.ok) { console.error('[Groq]', res.status, await res.text()); return FALLBACK }
+    if (!res.ok) {
+      console.error('[Groq]', model, res.status, await res.text())
+      const error = res.status === 429 ? 'rate_limited'
+        : res.status >= 500 ? 'server_error' : 'bad_request'
+      return { ok: false, content: UNAVAILABLE, model, error }
+    }
     const data = await res.json()
-    return data.choices?.[0]?.message?.content ?? FALLBACK
-  } catch {
-    return FALLBACK
+    const msg = data.choices?.[0]?.message
+    const toolCalls = Array.isArray(msg?.tool_calls) ? msg.tool_calls as ToolCall[] : undefined
+    if (toolCalls?.length) return { ok: true, content: '', model, toolCalls }
+    const content = msg?.content
+    if (typeof content !== 'string' || !content.trim()) {
+      return { ok: false, content: UNAVAILABLE, model, error: 'empty_response' }
+    }
+    return { ok: true, content, model }
+  } catch (err) {
+    const error = err instanceof DOMException && err.name === 'AbortError' ? 'timeout' : 'network'
+    console.error('[Groq]', model, error)
+    return { ok: false, content: UNAVAILABLE, model, error }
   } finally {
     clearTimeout(timer)
   }
-}
-
-async function logFallback(
-  supabase: ReturnType<typeof createClient>,
-  query: string,
-  normalized: string,
-  city: string | null,
-  similarity: number,
-  reason: string
-) {
-  await supabase.from('rag_fallback_log').insert({
-    query_original: query, query_normalized: normalized,
-    city_detected: city, top_similarity: similarity, fallback_reason: reason,
-  }).then(() => {/* fire and forget */}).catch(() => {/* never block */})
 }

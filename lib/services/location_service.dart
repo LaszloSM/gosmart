@@ -5,7 +5,7 @@ import 'package:latlong2/latlong.dart';
 class LocationService {
   /// Returns the device's current GPS position.
   /// Returns null if permission is denied, timed out, or any error occurs.
-  /// Callers are responsible for their own fallback (e.g. default to Bogotá).
+  /// Callers are responsible for their own fallback (e.g. default to GSRegion.riohacha).
   Future<LatLng?> getCurrentPosition() async {
     try {
       var permission = await Geolocator.checkPermission();

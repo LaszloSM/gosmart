@@ -6,16 +6,16 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class Env {
   static String get supabaseUrl => dotenv.env['SUPABASE_URL']!;
   static String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY']!;
-  static String get stripePublishableKey =>
-      dotenv.env['STRIPE_PUBLISHABLE_KEY']!;
   static String get googleMapsApiKey =>
       dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
   static String get mapProvider => dotenv.env['MAP_PROVIDER'] ?? 'google';
 
-  /// Gemini API key — kept for reference but no longer used by AiService.
-  static String get geminiApiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
-
-  static String get groqApiKey => dotenv.env['GROQ_API_KEY'] ?? '';
-
   static String get mapboxToken => dotenv.env['MAPBOX_PUBLIC_TOKEN'] ?? '';
+
+  /// Sentry DSN (opcional). Vacío = sin reporte de errores.
+  static String get sentryDsn => dotenv.env['SENTRY_DSN'] ?? '';
+
+  /// Página pública que muestra un viaje compartido (`public_web/viaje.html`
+  /// publicada en GitHub Pages). Vacío = el mensaje lleva solo el punto en el mapa.
+  static String get shareBaseUrl => dotenv.env['SHARE_BASE_URL'] ?? '';
 }

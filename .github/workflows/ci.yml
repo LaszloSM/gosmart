@@ -2,9 +2,15 @@ name: GoSmart CI
 
 on:
   push:
-    branches: [main]
+    # También las ramas de trabajo, para ver el APK compilar antes del PR.
+    branches: [main, 'claude/**']
   pull_request:
     branches: [main]
+
+# Un push nuevo en la misma rama cancela la corrida anterior.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint:
@@ -20,6 +26,9 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Create .env (placeholder values)
+        run: cp .env.example .env
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos
@@ -39,15 +48,96 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Create .env for tests
-        run: |
-          echo "SUPABASE_URL=https://placeholder.supabase.co" >> .env
-          echo "SUPABASE_ANON_KEY=placeholder-anon-key" >> .env
-          echo "STRIPE_PUBLISHABLE_KEY=pk_test_placeholder" >> .env
-          echo "GOOGLE_MAPS_API_KEY=placeholder" >> .env
+      - name: Create .env (placeholder values)
+        run: cp .env.example .env
 
       - name: Run tests
         run: flutter test --no-pub
+
+  sql-tests:
+    name: SQL tests (Postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run migration tests
+        run: |
+          set -e
+          psql -v ON_ERROR_STOP=1 -q -c 'create database gosmart_test'
+          for f in supabase/tests/_supabase_stub.sql \
+                   supabase/migrations/008_wallet_mock.sql \
+                   supabase/migrations/010_wallet_hardening.sql \
+                   supabase/tests/010_wallet_hardening_test.sql; do
+            psql -d gosmart_test -v ON_ERROR_STOP=1 -q -f "$f"
+          done
+          # 011+ en una base aparte: profiles sale de un fixture (001 pide PostGIS)
+          psql -v ON_ERROR_STOP=1 -q -c 'create database gosmart_core'
+          run() { psql -d gosmart_core -v ON_ERROR_STOP=1 -q -f "$1"; }
+          run supabase/tests/_supabase_stub.sql
+          run supabase/tests/_profiles_fixture.sql
+          run supabase/migrations/008_wallet_mock.sql
+          run supabase/migrations/010_wallet_hardening.sql
+          # Cada migración dos veces: deben ser seguras de re-ejecutar.
+          for m in 011_roles_safety 012_places_directory 013_corridor \
+                   014_transport_graph 015_dispatch 016_payments 017_trust_admin 018_push; do
+            run "supabase/migrations/$m.sql"
+            run "supabase/migrations/$m.sql"
+          done
+          run supabase/seed/places_seed.sql
+          # Y la secuencia completa otra vez (lo que se pega en el SQL Editor):
+          # el paquete debe estar al día y aguantar re-ejecución sobre todo lo anterior.
+          bash tool/bundle_migrations.sh | diff -q - supabase/piloto_bundle.sql
+          run supabase/piloto_bundle.sql
+          for t in 011_roles_safety 012_places_directory 013_corridor \
+                   014_transport_graph 015_dispatch; do
+            run "supabase/tests/${t}_test.sql"
+          done
+          # D7: dos conexiones a la vez compiten por el mismo viaje y el último cupo
+          bash supabase/tests/015_race_test.sh gosmart_core
+          run supabase/tests/016_payments_test.sql
+          run supabase/tests/017_trust_admin_test.sql
+          run supabase/tests/018_push_test.sql
+
+  edge-functions:
+    name: Edge Functions (Deno)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Test and type-check ai-chat
+        working-directory: backend/functions/ai-chat
+        run: |
+          deno test normalizer_test.ts tools_test.ts
+          deno check index.ts
+
+      - name: Test and type-check wompi
+        working-directory: backend/functions/wompi
+        run: |
+          deno test signing_test.ts
+          deno check index.ts
+
+      - name: Test and type-check push
+        working-directory: backend/functions/push
+        run: |
+          deno test fcm_test.ts
+          deno check index.ts
 
   build-android:
     name: Build APK (Android)
@@ -69,12 +159,22 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Create .env for build
+      # Con los secrets del repo el APK sale conectado a tu Supabase, con mapa y push.
+      # Sin ellos sale con valores de ejemplo (compila igual).
+      - name: Create .env and google-services.json from secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          SHARE_BASE_URL: ${{ secrets.SHARE_BASE_URL }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
-          echo "SUPABASE_URL=https://placeholder.supabase.co" >> .env
-          echo "SUPABASE_ANON_KEY=placeholder-anon-key" >> .env
-          echo "STRIPE_PUBLISHABLE_KEY=pk_test_placeholder" >> .env
-          echo "GOOGLE_MAPS_API_KEY=placeholder" >> .env
+          bash tool/write_env.sh > .env
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+            echo "Push activado (google-services.json desde secrets)."
+          fi
 
       - name: Build APK (release)
         run: flutter build apk --release

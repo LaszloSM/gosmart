@@ -1,11 +1,15 @@
 // lib/features/onboarding/location_permission_screen.dart
+// Pedir la ubicación diciendo para qué sirve hoy, sin prometer lo que
+// todavía no existe. Se puede seguir sin darla.
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../router/app_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
+import '../../widgets/gs_inline_error.dart';
 
 class LocationPermissionScreen extends StatefulWidget {
   const LocationPermissionScreen({super.key});
@@ -15,168 +19,75 @@ class LocationPermissionScreen extends StatefulWidget {
       _LocationPermissionScreenState();
 }
 
-class _LocationPermissionScreenState
-    extends State<LocationPermissionScreen> {
+class _LocationPermissionScreenState extends State<LocationPermissionScreen> {
   bool _loading = false;
   String? _error;
+  bool _blocked = false;
 
   @override
   Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
     return Scaffold(
-      backgroundColor: GSColors.bg,
+      backgroundColor: GSColors.background,
+      appBar: AppBar(
+        title: const Text('Tu ubicación'),
+        automaticallyImplyLeading: false,
+      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(GSSpacing.s6),
-          child: Column(
-            children: [
-              const Spacer(),
-              // Ilustración
-              _buildIllustration(),
-              const SizedBox(height: GSSpacing.s8),
-              // Título
-              const Text(
-                '¿Dónde estás?',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: GSColors.textPrimary,
-                ),
-                textAlign: TextAlign.center,
-              ),
+        child: ListView(
+          padding: const EdgeInsets.all(GSSpacing.s4),
+          children: [
+            Text('Para planear desde donde estás', style: text.titleLarge),
+            const SizedBox(height: GSSpacing.s3),
+            _Point(
+              icon: Icons.near_me_outlined,
+              text: 'La ruta empieza en tu punto, sin escribir la dirección.',
+              style: text.bodyLarge,
+            ),
+            _Point(
+              icon: Icons.map_outlined,
+              text: 'El mapa abre en tu barrio de Riohacha o Maicao.',
+              style: text.bodyLarge,
+            ),
+            _Point(
+              icon: Icons.visibility_off_outlined,
+              text: 'Solo se usa mientras tienes la app abierta. Si prefieres, '
+                  'escribe la dirección cada vez.',
+              style: text.bodyLarge,
+            ),
+            if (_error != null) ...[
               const SizedBox(height: GSSpacing.s4),
-              const Text(
-                'GoSmart necesita tu ubicación para mostrarte rutas '
-                'personalizadas, estaciones cercanas y tiempos de llegada precisos.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: GSColors.textSecondary,
-                  height: 1.6,
-                ),
-                textAlign: TextAlign.center,
+              GSInlineError(
+                message: _error!,
+                onRetry: _blocked
+                    ? () => Geolocator.openAppSettings()
+                    : _requestPermission,
               ),
-              const SizedBox(height: GSSpacing.s6),
-              // Beneficios
-              _buildBenefit(
-                Icons.near_me_rounded,
-                'Rutas desde tu ubicación actual',
-              ),
-              _buildBenefit(
-                Icons.access_time_rounded,
-                'Tiempos de llegada en tiempo real',
-              ),
-              _buildBenefit(
-                Icons.directions_bus_rounded,
-                'Paradas y estaciones cercanas',
-              ),
-              // Error
-              if (_error != null) ...[
-                const SizedBox(height: GSSpacing.s4),
-                Container(
-                  padding: const EdgeInsets.all(GSSpacing.s3),
-                  decoration: BoxDecoration(
-                    color: GSColors.error.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(GSRadius.md),
-                    border: Border.all(
-                      color: GSColors.error.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.error_outline_rounded,
-                        color: GSColors.error,
-                        size: 18,
-                      ),
-                      const SizedBox(width: GSSpacing.s2),
-                      Expanded(
-                        child: Text(
-                          _error!,
-                          style: const TextStyle(
-                            color: GSColors.error,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              const Spacer(),
-              // Botón principal
+            ],
+          ],
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+              GSSpacing.s4, GSSpacing.s2, GSSpacing.s4, GSSpacing.s3),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               GSButton(
-                label: 'Permitir ubicación',
+                label: 'Usar mi ubicación',
                 onPressed: _loading ? null : _requestPermission,
                 isLoading: _loading,
               ),
-              const SizedBox(height: GSSpacing.s3),
-              // Botón secundario
+              const SizedBox(height: GSSpacing.s2),
               GSButton(
                 label: 'Ahora no',
                 variant: GSButtonVariant.ghost,
-                onPressed: _loading ? null : _skip,
+                onPressed: _loading ? null : _completeOnboarding,
               ),
-              const SizedBox(height: GSSpacing.s4),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildIllustration() {
-    return Container(
-      width: 180,
-      height: 180,
-      decoration: BoxDecoration(
-        color: GSColors.accent.withValues(alpha: 0.08),
-        shape: BoxShape.circle,
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 130,
-            height: 130,
-            decoration: BoxDecoration(
-              color: GSColors.accent.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-          ),
-          const Icon(
-            Icons.location_on_rounded,
-            size: 64,
-            color: GSColors.accent,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBenefit(IconData icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: GSSpacing.s2),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: GSColors.accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(GSRadius.sm),
-            ),
-            child: Icon(icon, color: GSColors.accent, size: 16),
-          ),
-          const SizedBox(width: GSSpacing.s3),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                fontSize: 15,
-                color: GSColors.textPrimary,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -185,57 +96,68 @@ class _LocationPermissionScreenState
     setState(() {
       _loading = true;
       _error = null;
+      _blocked = false;
     });
-
     try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
+      if (!await Geolocator.isLocationServiceEnabled()) {
         setState(() {
-          _error =
-              'El GPS está desactivado. Actívalo en los ajustes del dispositivo.';
+          _error = 'El GPS está apagado. Actívalo y vuelve a intentar.';
           _loading = false;
         });
         return;
       }
-
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-
-      if (permission == LocationPermission.denied) {
-        setState(() {
-          _error = 'Permiso denegado. Puedes habilitarlo más tarde en Ajustes.';
-          _loading = false;
-        });
-        return;
-      }
-
       if (permission == LocationPermission.deniedForever) {
         setState(() {
-          _error =
-              'Permiso bloqueado. Ve a Ajustes → GoSmart → Permisos → Ubicación.';
+          _error = 'La ubicación está bloqueada para GoSmart. Actívala en '
+              'Ajustes del teléfono.';
+          _blocked = true;
           _loading = false;
         });
-        await Geolocator.openAppSettings();
         return;
       }
-
-      // Permiso concedido
+      if (permission == LocationPermission.denied) {
+        // Decidió que no: se respeta y se sigue.
+        await _completeOnboarding();
+        return;
+      }
       await _completeOnboarding();
-    } catch (e) {
+    } catch (_) {
       setState(() {
-        _error = 'Error al solicitar permiso: $e';
+        _error = 'No pudimos pedir el permiso. Intenta de nuevo.';
         _loading = false;
       });
     }
   }
 
-  void _skip() => _completeOnboarding();
-
   Future<void> _completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_complete', true);
-    if (mounted) context.go('/onboarding');
+    if (mounted) context.go(AppRoutes.home);
+  }
+}
+
+class _Point extends StatelessWidget {
+  const _Point({required this.icon, required this.text, this.style});
+  final IconData icon;
+  final String text;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: GSSpacing.s3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: GSColors.brand, size: 26),
+          const SizedBox(width: GSSpacing.s3),
+          Expanded(child: Text(text, style: style)),
+        ],
+      ),
+    );
   }
 }

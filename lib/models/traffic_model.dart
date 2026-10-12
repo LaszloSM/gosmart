@@ -9,14 +9,14 @@ import 'package:flutter/painting.dart';
 /// Zone classification for traffic density estimation.
 ///
 /// Colombian cities have distinct traffic patterns by zone:
-/// - [urban]: major corridors (Av. Boyacá, Autopista Norte in Bogotá, etc.)
+/// - [urban]: major corridors (Calle 15 in Riohacha, the Troncal entrances, etc.)
 /// - [center]: downtown / historical center (La Candelaria, El Poblado core)
 /// - [residential]: barrios with lower through-traffic
 enum ZoneType { urban, center, residential }
 
 /// Time-of-day traffic period, calibrated for Colombian cities.
 ///
-/// Peak hours based on Secretaría de Movilidad de Bogotá data:
+/// Peak hours (large-city reference until Riohacha/Maicao field data exists):
 /// - Morning rush: 6:00–9:00 (school + office commute)
 /// - Daytime: 9:00–17:00 (moderate, steady flow)
 /// - Evening rush: 17:00–20:00 (heaviest, return commute + commerce)
@@ -34,7 +34,7 @@ class TrafficFactor {
   final double durationMultiplier;
 
   /// How much more a trip costs compared to base fare.
-  /// Fixed-fare modes (metro, TransMilenio) are unaffected (multiplier = 1.0).
+  /// Fixed-fare modes (TransPadilla) are unaffected (multiplier = 1.0).
   /// Variable-fare modes (taxi, InDriver) increase with congestion.
   final double fareMultiplier;
 

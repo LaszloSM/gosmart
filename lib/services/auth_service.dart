@@ -1,6 +1,7 @@
 // lib/services/auth_service.dart
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/supabase_client.dart';
+import '../features/legal/legal_texts.dart' show legalVersion;
 
 class AuthService {
   final _client = GoSmartSupabase.client;
@@ -21,6 +22,9 @@ class AuthService {
         'name': name,
         'consent_geo': consentGeo,
         'consent_ai_data': consentAi,  // must match profiles.consent_ai_data column
+        // Prueba de la autorización (Ley 1581, art. 9): qué versión y cuándo.
+        'consent_data_version': legalVersion,
+        'consent_data_at': DateTime.now().toUtc().toIso8601String(),
       },
     );
     return response;
@@ -37,7 +41,12 @@ class AuthService {
     );
   }
 
-  /// Send OTP to phone number
+  /// Envía al correo un enlace para crear una contraseña nueva.
+  Future<void> resetPassword(String email) async {
+    await _client.auth.resetPasswordForEmail(email);
+  }
+
+  /// Send OTP to phone number (E.164, p. ej. +573001234567)
   Future<void> sendOtp(String phone) async {
     await _client.auth.signInWithOtp(phone: phone);
   }

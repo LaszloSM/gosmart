@@ -44,103 +44,58 @@ class GSTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: semanticLabel ?? label ?? hint,
-      child: TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        obscureText: obscureText,
-        onChanged: onChanged,
-        onFieldSubmitted: onSubmitted,
-        validator: validator,
-        inputFormatters: inputFormatters,
-        maxLength: maxLength,
-        maxLines: maxLines,
-        enabled: enabled,
-        autofocus: autofocus,
-        textCapitalization: textCapitalization,
-        style: const TextStyle(
-          fontSize: 15,
-          color: GSColors.textPrimary,
-          fontWeight: FontWeight.w400,
-        ),
-        decoration: InputDecoration(
-          hintText: hint,
-          labelText: label,
-          counterText: '',
-          prefixIcon: prefixIcon != null
-              ? Icon(prefixIcon, size: 20, color: GSColors.textSecondary)
-              : null,
-          suffixIcon: suffixIcon,
-        ),
+    // Etiqueta ARRIBA del campo, nunca flotante ni como placeholder
+    // (taste-skill 4.6); el error queda debajo.
+    final field = TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      onChanged: onChanged,
+      onFieldSubmitted: onSubmitted,
+      validator: validator,
+      inputFormatters: inputFormatters,
+      maxLength: maxLength,
+      maxLines: maxLines,
+      enabled: enabled,
+      autofocus: autofocus,
+      textCapitalization: textCapitalization,
+      style: TextStyle(
+        fontFamily: GSFonts.sans,
+        fontSize: 17,
+        color: GSColors.text,
+        fontWeight: FontWeight.w500,
+      ),
+      decoration: InputDecoration(
+        hintText: hint,
+        counterText: '',
+        prefixIcon: prefixIcon != null
+            ? Icon(prefixIcon, size: 22, color: GSColors.textMuted)
+            : null,
+        suffixIcon: suffixIcon,
       ),
     );
-  }
-}
 
-// ─── Search bar ───────────────────────────────────────────────────────────────
-
-class GSSearchBar extends StatelessWidget {
-  const GSSearchBar({
-    super.key,
-    required this.hint,
-    this.controller,
-    this.onChanged,
-    this.onTap,
-    this.readOnly = false,
-    this.trailing,
-  });
-
-  final String hint;
-  final TextEditingController? controller;
-  final ValueChanged<String>? onChanged;
-  final VoidCallback? onTap;
-  final bool readOnly;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: readOnly ? onTap : null,
-      child: Container(
-        height: 56,
-        padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
-        decoration: BoxDecoration(
-          color: GSColors.surface,
-          borderRadius: BorderRadius.circular(GSRadius.full),
-          boxShadow: GSShadow.card,
-          border: Border.all(color: GSColors.border, width: 1),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.search_rounded,
-                size: 22, color: GSColors.accent),
-            const SizedBox(width: GSSpacing.s3),
-            Expanded(
-              child: readOnly
-                  ? Text(hint,
-                      style: const TextStyle(
-                          color: GSColors.textDisabled, fontSize: 15))
-                  : TextField(
-                      controller: controller,
-                      onChanged: onChanged,
-                      decoration: InputDecoration(
-                        hintText: hint,
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        filled: false,
-                        contentPadding: EdgeInsets.zero,
-                        isDense: true,
-                      ),
-                      style: const TextStyle(
-                          fontSize: 15, color: GSColors.textPrimary),
-                    ),
+    return Semantics(
+      label: semanticLabel ?? label ?? hint,
+      child: label == null
+          ? field
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label!,
+                  style: TextStyle(
+                    fontFamily: GSFonts.sans,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: GSColors.text,
+                  ),
+                ),
+                const SizedBox(height: GSSpacing.s2),
+                field,
+              ],
             ),
-            if (trailing != null) trailing!,
-          ],
-        ),
-      ),
     );
   }
 }

@@ -2,7 +2,8 @@
 import 'package:flutter/material.dart';
 import '../theme/design_tokens.dart';
 
-/// Animated shimmer skeleton for loading states — dark edition.
+/// Esqueleto de carga con brillo lineal (movimiento constante = linear,
+/// Emil). Con "quitar animaciones" queda quieto.
 class GSSkeletonLoader extends StatefulWidget {
   const GSSkeletonLoader({
     super.key,
@@ -31,9 +32,7 @@ class _GSSkeletonLoaderState extends State<GSSkeletonLoader>
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     )..repeat();
-    _animation = Tween<double>(begin: -2, end: 2).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _animation = Tween<double>(begin: -2, end: 2).animate(_controller);
   }
 
   @override
@@ -44,6 +43,18 @@ class _GSSkeletonLoaderState extends State<GSSkeletonLoader>
 
   @override
   Widget build(BuildContext context) {
+    if (MediaQuery.of(context).disableAnimations) {
+      _controller.stop();
+      return Container(
+        width: widget.width,
+        height: widget.height,
+        decoration: BoxDecoration(
+          color: GSColors.surfaceSunken,
+          borderRadius: BorderRadius.circular(widget.radius),
+        ),
+      );
+    }
+    if (!_controller.isAnimating) _controller.repeat();
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, _) {
@@ -55,10 +66,10 @@ class _GSSkeletonLoaderState extends State<GSSkeletonLoader>
             gradient: LinearGradient(
               begin: Alignment(_animation.value - 1, 0),
               end: Alignment(_animation.value + 1, 0),
-              colors: const [
-                Color(0xFF141928), // surface
-                Color(0xFF202537), // surfaceContainerHighest
-                Color(0xFF141928), // surface
+              colors: [
+                GSColors.surfaceSunken,
+                GSColors.surface,
+                GSColors.surfaceSunken,
               ],
             ),
           ),
@@ -112,66 +123,6 @@ class GSCardSkeleton extends StatelessWidget {
       width: double.infinity,
       height: height,
       radius: GSRadius.xl,
-    );
-  }
-}
-
-/// Renders [itemCount] skeleton items with a staggered fade-in entrance.
-class StaggeredSkeletonList extends StatefulWidget {
-  const StaggeredSkeletonList({
-    super.key,
-    required this.itemCount,
-    required this.itemBuilder,
-  });
-
-  final int itemCount;
-  final Widget Function(int index) itemBuilder;
-
-  @override
-  State<StaggeredSkeletonList> createState() => _StaggeredSkeletonListState();
-}
-
-class _StaggeredSkeletonListState extends State<StaggeredSkeletonList>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final int _totalMs;
-
-  @override
-  void initState() {
-    super.initState();
-    _totalMs = 400 + widget.itemCount * GSAnimDuration.skeletonStagger;
-    _controller = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: _totalMs),
-    )..forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: List.generate(widget.itemCount, (i) {
-        final startFraction =
-            (i * GSAnimDuration.skeletonStagger) / _totalMs;
-        final endFraction =
-            ((i * GSAnimDuration.skeletonStagger) + 400) / _totalMs;
-        return FadeTransition(
-          opacity: CurvedAnimation(
-            parent: _controller,
-            curve: Interval(
-              startFraction.clamp(0.0, 1.0),
-              endFraction.clamp(0.0, 1.0),
-              curve: Curves.easeOut,
-            ),
-          ),
-          child: widget.itemBuilder(i),
-        );
-      }),
     );
   }
 }

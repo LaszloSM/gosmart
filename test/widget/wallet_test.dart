@@ -1,12 +1,17 @@
 // test/widget/wallet_test.dart
-// Tests WalletScreen renders balance states correctly
+// Billetera unificada: saldo único en mono, movimientos y tarjeta.
+
+import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:gosmart/features/wallet/wallet_screen.dart';
-import 'package:gosmart/providers/card_provider.dart';
 import 'package:gosmart/models/card_model.dart';
+import 'package:gosmart/models/wallet_model.dart';
+import 'package:gosmart/models/wallet_transaction_model.dart';
+import 'package:gosmart/providers/card_provider.dart';
+import 'package:gosmart/providers/wallet_provider.dart';
 import 'package:gosmart/theme/app_theme.dart';
 
 const _testCard = CardModel(
@@ -20,60 +25,80 @@ const _testCard = CardModel(
   expiresAt: '12/28',
 );
 
-Widget buildTestApp(Widget child, {List<Override>? overrides}) {
+final _testWallet = Wallet(
+  id: 'test-wallet-id',
+  userId: 'test-user-id',
+  balance: 37000,
+  cardNumber: 'GS-1234-5678-9012',
+  cardStatus: 'active',
+  createdAt: DateTime(2026, 10, 1),
+);
+
+final _recharge = WalletTransactionModel(
+  id: 'tx-1',
+  walletId: 'test-wallet-id',
+  type: WalletTxType.recharge,
+  amount: 10000,
+  createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+);
+
+Widget _app({
+  FutureOr<Wallet?> Function()? wallet,
+  List<WalletTransactionModel> txs = const [],
+}) {
   return ProviderScope(
-    overrides: overrides ?? [],
-    child: MaterialApp(
-      theme: AppTheme.light,
-      home: child,
-    ),
+    overrides: [
+      activeCardProvider.overrideWith((ref) => _MockCardNotifier(_testCard)),
+      walletProvider.overrideWith((ref) async => (wallet ?? () => _testWallet)()),
+      walletTransactionsProvider.overrideWith((ref, limit) async => txs),
+    ],
+    child: MaterialApp(theme: AppTheme.light, home: const WalletScreen()),
   );
 }
 
 void main() {
   group('WalletScreen', () {
-    testWidgets('shows loading indicator while card loads', (tester) async {
-      await tester.pumpWidget(buildTestApp(
-        const WalletScreen(),
-        overrides: [
-          activeCardProvider.overrideWith((ref) => _LoadingCardNotifier()),
-        ],
-      ));
+    testWidgets('muestra el saldo una sola vez, con separador de miles',
+        (tester) async {
+      await tester.pumpWidget(_app());
+      await tester.pumpAndSettle();
+      expect(find.textContaining('\$37.000', findRichText: true),
+          findsOneWidget);
+      expect(find.textContaining('GS-****-****-9012'), findsOneWidget);
+    });
+
+    testWidgets('mientras carga no se rompe', (tester) async {
+      final pending = Completer<Wallet?>();
+      await tester.pumpWidget(_app(wallet: () => pending.future));
       await tester.pump();
-      // Just verify it renders without crashing
       expect(find.byType(WalletScreen), findsOneWidget);
+      expect(find.textContaining('\$37.000', findRichText: true),
+          findsNothing);
+      pending.complete(_testWallet);
+      await tester.pumpAndSettle();
     });
 
-    testWidgets('shows balance when card is loaded', (tester) async {
-      await tester.pumpWidget(ProviderScope(
-        overrides: [
-          activeCardProvider
-              .overrideWith((ref) => _MockCardNotifier(_testCard)),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const WalletScreen(),
-        ),
-      ));
+    testWidgets('sin movimientos lo dice', (tester) async {
+      await tester.pumpWidget(_app());
       await tester.pumpAndSettle();
-
-      expect(find.textContaining('50000'), findsAtLeastNWidgets(1));
+      expect(find.textContaining('Aún no tienes movimientos'), findsOneWidget);
     });
 
-    testWidgets('shows lock card option', (tester) async {
-      await tester.pumpWidget(ProviderScope(
-        overrides: [
-          activeCardProvider
-              .overrideWith((ref) => _MockCardNotifier(_testCard)),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const WalletScreen(),
-        ),
-      ));
+    testWidgets('lista movimientos con signo y monto en pesos',
+        (tester) async {
+      await tester.pumpWidget(_app(txs: [_recharge]));
       await tester.pumpAndSettle();
+      expect(find.text('Recarga'), findsOneWidget);
+      expect(find.text('+\$10.000'), findsOneWidget);
+    });
 
-      expect(find.text('Bloquear'), findsAtLeastNWidgets(1));
+    testWidgets('ofrece bloquear la tarjeta', (tester) async {
+      await tester.pumpWidget(_app());
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+          find.text('Bloquear tarjeta'), 200,
+          scrollable: find.byType(Scrollable).first);
+      expect(find.text('Bloquear tarjeta'), findsOneWidget);
     });
   });
 }
@@ -83,22 +108,9 @@ class _MockCardNotifier extends ActiveCardNotifier {
     state = AsyncData(card);
   }
 
-  // Override public methods (not private) to prevent live Supabase calls in tests
+  // Métodos públicos sobrescritos para no llamar a Supabase en los tests.
   @override
   Future<void> load() async {}
-
-  @override
-  void subscribeRealtime() {}
-}
-
-/// Stays in AsyncLoading state — used to test the loading indicator UI
-class _LoadingCardNotifier extends ActiveCardNotifier {
-  _LoadingCardNotifier() {
-    state = const AsyncLoading();
-  }
-
-  @override
-  Future<void> load() async {} // no-op: keeps loading state
 
   @override
   void subscribeRealtime() {}

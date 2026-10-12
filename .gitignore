@@ -67,3 +67,8 @@ supabase/functions/
 
 # Claude Code settings
 .claude/settings.local.json
+
+# Capturas de revisión de diseño (se regeneran con tool/screenshots)
+.impeccable/review/
+public_web/config.js
+public_web/fonts/

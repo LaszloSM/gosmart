@@ -1,61 +1,55 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../router/app_router.dart';
 import '../theme/design_tokens.dart';
 
-/// Glass bottom navigation bar — dark edition.
-/// Active tab: kinetic green → cyan gradient pill with icon + label.
-/// Inactive tabs: icon + label (9sp, muted).
-class GSBottomNav extends StatelessWidget {
-  const GSBottomNav({
-    super.key,
-    required this.currentIndex,
-    required this.onTap,
-  });
+/// Destinos de la barra inferior (DS1). El historial vive en la Billetera.
+enum GSNavTab { home, trip, report, wallet, profile }
 
-  final int currentIndex;
-  final ValueChanged<int> onTap;
+/// Barra inferior en ultramar (la carrocería): ícono activo sobre una placa
+/// blanca con franja fucsia, etiqueta siempre debajo. Navega sola con
+/// `context.go`; cambiar de pestaña no se anima (acción repetida).
+class GSBottomNav extends StatelessWidget {
+  const GSBottomNav({super.key, required this.current});
+
+  final GSNavTab current;
 
   static const _items = [
-    _NavItem(icon: Icons.home_rounded, label: 'Inicio'),
-    _NavItem(icon: Icons.route_rounded, label: 'Viajes'),
-    _NavItem(icon: Icons.account_balance_wallet_rounded, label: 'Billetera'),
-    _NavItem(icon: Icons.person_rounded, label: 'Perfil'),
+    _NavItem(GSNavTab.home, Icons.home_rounded, 'Inicio', AppRoutes.home),
+    _NavItem(GSNavTab.trip, Icons.route_rounded, 'Viaje', AppRoutes.trip),
+    _NavItem(
+        GSNavTab.report, Icons.campaign_rounded, 'Reportar', AppRoutes.report),
+    _NavItem(GSNavTab.wallet, Icons.account_balance_wallet_rounded, 'Billetera',
+        AppRoutes.wallet),
+    _NavItem(
+        GSNavTab.profile, Icons.person_rounded, 'Perfil', AppRoutes.profile),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(
-          sigmaX: GSGlass.blur,
-          sigmaY: GSGlass.blur,
-        ),
-        child: Container(
-          height: GSSize.bottomNav + MediaQuery.of(context).padding.bottom,
-          decoration: BoxDecoration(
-            color: GSColors.primary.withValues(alpha: GSGlass.backgroundOpacity),
-            border: Border(
-              top: BorderSide(
-                color: GSColors.accent.withValues(alpha: GSGlass.borderOpacity),
-                width: GSGlass.borderWidth,
-              ),
-            ),
-          ),
-          child: SafeArea(
-            top: false,
+    // Alto mínimo de 72 dp que crece con el texto grande del sistema
+    // (PRODUCT.md: hasta 200 % sin cortar).
+    return ColoredBox(
+      color: GSColors.shell,
+      child: SafeArea(
+        top: false,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: GSSize.bottomNav),
+          child: IntrinsicHeight(
             child: Row(
-              children: List.generate(
-                _items.length,
-                (index) => Expanded(
-                  child: _NavTile(
-                    item: _items[index],
-                    isActive: currentIndex == index,
-                    onTap: () => onTap(index),
+              children: [
+                for (final item in _items)
+                  Expanded(
+                    child: _NavTile(
+                      item: item,
+                      isActive: item.tab == current,
+                      onTap: () {
+                        if (item.tab != current) context.go(item.route);
+                      },
+                    ),
                   ),
-                ),
-              ),
+              ],
             ),
           ),
         ),
@@ -82,67 +76,55 @@ class _NavTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(GSRadius.full),
-        splashColor: GSColors.accent.withValues(alpha: 0.10),
+        splashColor: GSColors.onShell.withValues(alpha: 0.12),
         highlightColor: Colors.transparent,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AnimatedContainer(
-              duration: GSAnimDuration.pillSlide,
-              curve: Curves.easeInOut,
+            // Pastilla de marca detrás del ícono activo; la etiqueta siempre
+            // debajo, para que quepa con texto grande y nombres largos.
+            // Sin animación: cambiar de pestaña es una acción repetida.
+            Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: GSSpacing.s3,
+                horizontal: GSSpacing.s4,
                 vertical: GSSpacing.s1,
               ),
-              decoration: isActive
-                  ? BoxDecoration(
-                      borderRadius: BorderRadius.circular(GSRadius.full),
-                      gradient: LinearGradient(
-                        colors: GSGradient.accentPill,
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: GSColors.accent.withValues(alpha: 0.20),
-                          blurRadius: 12,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    )
-                  : const BoxDecoration(),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    item.icon,
-                    size: GSSize.iconLg,
-                    color: isActive ? GSColors.primary : GSColors.textDisabled,
-                  ),
-                  if (isActive) ...[
-                    const SizedBox(width: GSSpacing.s1),
-                    Text(
-                      item.label,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: GSColors.primary,
-                      ),
-                    ),
-                  ],
-                ],
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(GSRadius.sm),
+                // De noche la pastilla en lámina oscura parecía un hueco.
+                color: isActive
+                    ? (GSColors.isDark ? GSColors.brandTint : GSColors.surface)
+                    : Colors.transparent,
+                border: isActive
+                    ? Border(
+                        bottom: BorderSide(color: GSColors.stripe, width: 4))
+                    : null,
+              ),
+              child: Icon(
+                item.icon,
+                size: GSSize.iconLg,
+                color: isActive ? GSColors.brand : GSColors.onShellMuted,
               ),
             ),
             const SizedBox(height: 2),
-            if (!isActive)
-              Text(
-                item.label,
-                style: const TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w400,
-                  color: GSColors.textDisabled,
+            // Cinco pestañas en 360 dp: la etiqueta crece hasta 1,6× y, si aun
+            // así no cabe, se reduce para caber entera (nunca "Bille…").
+            MediaQuery.withClampedTextScaling(
+              maxScaleFactor: 1.6,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  item.label,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontFamily: GSFonts.sans,
+                    fontSize: 13,
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                    color: isActive ? GSColors.onShell : GSColors.onShellMuted,
+                  ),
                 ),
               ),
+            ),
           ],
         ),
       ),
@@ -151,7 +133,9 @@ class _NavTile extends StatelessWidget {
 }
 
 class _NavItem {
+  final GSNavTab tab;
   final IconData icon;
   final String label;
-  const _NavItem({required this.icon, required this.label});
+  final String route;
+  const _NavItem(this.tab, this.icon, this.label, this.route);
 }

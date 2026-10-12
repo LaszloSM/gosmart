@@ -2,12 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
-/// A single address suggestion returned by the Mapbox Geocoding API.
+/// Una sugerencia de lugar: del directorio propio o del proveedor externo.
 class GeocodeSuggestion {
   /// Short display name, e.g. "Parque de la 93".
   final String placeName;
 
-  /// Full address string, e.g. "Parque de la 93, Bogotá, Colombia".
+  /// Full address string, e.g. "Parque Padilla, Riohacha, La Guajira".
   final String fullAddress;
 
   /// Geographic coordinates.
@@ -17,11 +17,19 @@ class GeocodeSuggestion {
   /// 'locality', 'place', 'region', 'country', etc.
   final String featureType;
 
+  /// true = viene del directorio propio (`places`), no del proveedor externo.
+  final bool fromDirectory;
+
+  /// true = coordenada aproximada, aún sin verificar en campo.
+  final bool approximate;
+
   const GeocodeSuggestion({
     required this.placeName,
     required this.fullAddress,
     required this.latLng,
     this.featureType = 'place',
+    this.fromDirectory = false,
+    this.approximate = false,
   });
 
   /// Returns an icon that represents the kind of place.

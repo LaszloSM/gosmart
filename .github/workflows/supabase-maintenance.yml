@@ -1,0 +1,68 @@
+name: Supabase maintenance
+
+# El plan gratis de Supabase pausa el proyecto tras 7 días sin actividad y no
+# hace backups automáticos. Este workflow:
+#   - hace una consulta liviana cada 3 días para mantenerlo activo;
+#   - los lunes guarda un pg_dump como artifact privado (30 días).
+# El dump NO se sube al repo: contiene datos personales (Ley 1581).
+#
+# Secrets necesarios (Settings → Secrets and variables → Actions):
+#   SUPABASE_URL, SUPABASE_ANON_KEY  → keep-alive
+#   SUPABASE_DB_URL                  → backup (cadena de conexión de Postgres)
+# Si faltan, el paso correspondiente se salta sin fallar.
+
+on:
+  schedule:
+    - cron: '17 11 */3 * *'   # keep-alive cada 3 días
+    - cron: '43 8 * * 1'      # backup los lunes
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "Secrets de Supabase no configurados; keep-alive omitido."
+            exit 0
+          fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' \
+            "$SUPABASE_URL/rest/v1/wallets?select=id&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+          echo "Supabase respondió $code"
+          [ "$code" -lt 500 ]
+
+  backup:
+    if: github.event.schedule == '43 8 * * 1' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install pg_dump 16
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q postgresql-client-16
+
+      - name: Dump database
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "SUPABASE_DB_URL no configurado; backup omitido."
+            exit 0
+          fi
+          mkdir -p backup
+          /usr/lib/postgresql/16/bin/pg_dump "$SUPABASE_DB_URL" \
+            --no-owner --no-privileges --schema=public --schema=auth \
+            -Fc -f "backup/gosmart-$(date -u +%Y%m%d).dump"
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-backup
+          path: backup/
+          retention-days: 30
+          if-no-files-found: ignore

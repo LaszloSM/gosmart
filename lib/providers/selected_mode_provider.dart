@@ -2,27 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/route_result.dart';
 
-/// Currently selected travel mode from the home screen mode chips.
-/// Values: 'Auto' | 'Taxi' | 'Bus' | 'Bici' | 'Metro'
-final selectedModeProvider = StateProvider<String>((ref) => 'Auto');
+/// Modos de transporte locales de Riohacha, Maicao y la Troncal.
+/// Se eligen en el planificador. Mototaxi por defecto: es el más usado.
+const travelModes = [
+  'Mototaxi',
+  'Taxi',
+  'Colectivo',
+  'TransPadilla',
+  'Intermunicipal',
+  'A pie',
+  'Carro',
+];
 
-/// Maps a home-screen travel mode to a Mapbox Directions profile.
-/// Single source of truth — do not duplicate this mapping elsewhere.
+final selectedModeProvider = StateProvider<String>((ref) => 'Mototaxi');
+
+/// Modo → perfil de Mapbox Directions. Única fuente de este mapeo.
 String routeProfileFor(String mode) => switch (mode) {
-      'Bici'  => RouteProfile.cycling,
       'A pie' => RouteProfile.walking,
-      _ => RouteProfile.driving, // Auto, Taxi, Bus, Metro all use driving
+      _ => RouteProfile.driving, // mototaxi, taxi y carro van por la vía
     };
 
-/// Returns true if the mode requires PublicTransportService (not Mapbox Directions directly).
+/// true si el modo se planea con PublicTransportService (paradas + tramos).
 bool isPublicTransport(String mode) =>
-    const {'Bus', 'Metro', 'BRT', 'Cable', 'Intermunicipal'}.contains(mode);
+    const {'Colectivo', 'TransPadilla', 'Intermunicipal'}.contains(mode);
 
-/// Returns the icon for a given travel mode label.
 IconData modeIconFor(String mode) => switch (mode) {
+      'Mototaxi' => Icons.two_wheeler_rounded,
       'Taxi' => Icons.local_taxi_rounded,
-      'Bus' => Icons.directions_bus_rounded,
-      'Bici' => Icons.pedal_bike_rounded,
-      'Metro' => Icons.subway_rounded,
+      'Colectivo' => Icons.airport_shuttle_rounded,
+      'TransPadilla' => Icons.directions_bus_rounded,
+      'Intermunicipal' => Icons.directions_bus_filled_rounded,
+      'A pie' => Icons.directions_walk_rounded,
       _ => Icons.directions_car_rounded,
     };

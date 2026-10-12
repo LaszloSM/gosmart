@@ -3,38 +3,43 @@ import { assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 import { normalize } from './normalizer.ts'
 
 Deno.test('expand Cra. to Carrera', () => {
-  const r = normalize('Cra. 7 con Cl. 45')
-  assertEquals(r.normalized, 'Carrera 7 con Calle 45')
+  const r = normalize('Cra. 7 con Cl. 15')
+  assertEquals(r.normalized, 'Carrera 7 con Calle 15')
 })
 
-Deno.test('detect city from TransMilenio', () => {
-  const r = normalize('¿dónde queda transmilenio calle 100?')
-  assertEquals(r.city, 'Bogotá')
+Deno.test('detect city from TransPadilla', () => {
+  const r = normalize('¿cuánto vale el TransPadilla?')
+  assertEquals(r.city, 'Riohacha')
   assertEquals(r.city_confidence, 'high')
 })
 
-Deno.test('detect city from MIO', () => {
-  const r = normalize('El MIO llega al barrio Aguablanca?')
-  assertEquals(r.city, 'Cali')
+Deno.test('detect Maicao from Paraguachón', () => {
+  const r = normalize('¿cómo llego a Paraguachon?')
+  assertEquals(r.city, 'Maicao')
+})
+
+Deno.test('explicit city mention', () => {
+  const r = normalize('colectivo de rio hacha al terminal')
+  assertEquals(r.city, 'Riohacha')
 })
 
 Deno.test('city_hint overrides auto-detect', () => {
-  const r = normalize('¿cuánto cuesta el bus?', 'Medellín')
-  assertEquals(r.city, 'Medellín')
+  const r = normalize('¿cuánto cuesta el mototaxi?', 'Maicao')
+  assertEquals(r.city, 'Maicao')
   assertEquals(r.city_confidence, 'high')
 })
 
 Deno.test('no city returns none confidence', () => {
-  const r = normalize('¿cuánto cuesta el bus?')
+  const r = normalize('¿cuánto cuesta el colectivo?')
   assertEquals(r.city_confidence, 'none')
 })
 
 Deno.test('intent address detected', () => {
-  const r = normalize('Carrera 13 con Calle 72 Bogotá')
+  const r = normalize('Calle 15 con Carrera 7 Riohacha')
   assertEquals(r.intent, 'address')
 })
 
 Deno.test('intent fare detected', () => {
-  const r = normalize('¿cuánto cuesta el metro?')
+  const r = normalize('¿cuánto cuesta el pasaje?')
   assertEquals(r.intent, 'fare')
 })

@@ -12,7 +12,17 @@ class RouteLeg {
   final int durationMin;
   final double distanceKm;
   final String? instruction; // e.g. "Toma el Metro Línea A hasta Industriales"
-  final String? lineId;      // e.g. "A", "B", "TransMilenio"
+  final String? lineId;      // e.g. "Ruta 1", "TransPadilla"
+
+  /// Del planificador: modo ('mototaxi', 'colectivo'…), lugares, puntos del
+  /// grafo y tarifa. Sirven para crear el viaje encadenado (Fase 6).
+  final String? transitMode;
+  final String? fromLabel;
+  final String? toLabel;
+  final String? fromNode;
+  final String? toNode;
+  final int fareMin;
+  final int fareMax;
 
   const RouteLeg({
     required this.mode,
@@ -22,6 +32,13 @@ class RouteLeg {
     required this.distanceKm,
     this.instruction,
     this.lineId,
+    this.transitMode,
+    this.fromLabel,
+    this.toLabel,
+    this.fromNode,
+    this.toNode,
+    this.fareMin = 0,
+    this.fareMax = 0,
   });
 }
 
@@ -33,6 +50,15 @@ class RouteResult {
   final String profile; // 'walking' | 'driving' | 'cycling'
   final int estimatedCostCop;  // estimated cost in Colombian pesos
   final String category;       // 'private' or 'public'
+  /// Nombre del destino tal como lo eligió el usuario (para compartir el viaje).
+  final String? destinationLabel;
+
+  /// Rango de tarifa de referencia (planificador). null = sin rango.
+  final int? fareMin;
+  final int? fareMax;
+
+  /// Avisos del planificador: desvío por bloqueo, tramos en precaución.
+  final List<String> notes;
 
   const RouteResult({
     required this.legs,
@@ -41,7 +67,24 @@ class RouteResult {
     required this.profile,
     this.estimatedCostCop = 0,
     this.category = 'private',
+    this.destinationLabel,
+    this.fareMin,
+    this.fareMax,
+    this.notes = const [],
   });
+
+  RouteResult withDestination(String? label) => RouteResult(
+        legs: legs,
+        distanceKm: distanceKm,
+        durationMin: durationMin,
+        profile: profile,
+        estimatedCostCop: estimatedCostCop,
+        category: category,
+        destinationLabel: label,
+        fareMin: fareMin,
+        fareMax: fareMax,
+        notes: notes,
+      );
 }
 
 /// Maps a Mapbox profile to a RouteLeg mode, color, and card label.
@@ -58,9 +101,9 @@ class RouteProfile {
       };
 
   static Color colorFor(String profile) => switch (profile) {
-        driving => const Color(0xFFFF8C00), // orange
-        cycling => GSColors.eco,            // green
-        _ => GSColors.accent,              // teal
+        driving => GSColors.bus,
+        cycling => GSColors.bike,
+        _ => GSColors.walk,
       };
 
   static IconData iconFor(String profile) => switch (profile) {
@@ -70,8 +113,8 @@ class RouteProfile {
       };
 
   static String labelFor(String profile) => switch (profile) {
-        driving => 'En bus · más rápida',
-        cycling => 'En bici · eco',
+        driving => 'Por la vía',
+        cycling => 'En bici',
         _ => 'A pie · más barata',
       };
 }

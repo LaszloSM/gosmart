@@ -2,13 +2,17 @@
 // Fila horizontal de accesos rápidos: Casa, Trabajo y favoritos frecuentes
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../models/favorite_place.dart';
 import '../../../models/geocode_suggestion.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../providers/favorites_provider.dart';
-import '../../../services/geocoding_service.dart';
+import '../../../router/app_router.dart';
+import '../../../services/place_search.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_button.dart';
+import '../../../widgets/gs_route_plate.dart';
 
 class QuickPlacesRow extends ConsumerWidget {
   final Function(FavoritePlace) onPlaceSelected;
@@ -33,7 +37,7 @@ class QuickPlacesRow extends ConsumerWidget {
         children: [
           // Casa
           _QuickChip(
-            label: home != null ? 'Casa' : 'Agregar casa',
+            label: 'Casa',
             icon: Icons.home_rounded,
             color: GSColors.accent,
             isSet: home != null,
@@ -51,7 +55,7 @@ class QuickPlacesRow extends ConsumerWidget {
 
           // Trabajo
           _QuickChip(
-            label: work != null ? 'Trabajo' : 'Agregar trabajo',
+            label: 'Trabajo',
             icon: Icons.work_rounded,
             color: GSColors.accentAlt,
             isSet: work != null,
@@ -91,8 +95,17 @@ class QuickPlacesRow extends ConsumerWidget {
     WidgetRef ref,
     FavoritePlaceType type,
   ) {
+    // Modo invitado: guardar un lugar necesita cuenta (DS3).
+    if (ref.read(isGuestProvider)) {
+      context.push(AppRoutes.login);
+      return;
+    }
     showModalBottomSheet(
       context: context,
+      // Con "quitar animaciones" la hoja aparece sin deslizarse.
+      sheetAnimationStyle: MediaQuery.of(context).disableAnimations
+          ? AnimationStyle.noAnimation
+          : null,
       isScrollControlled: true,
       backgroundColor: GSColors.surface,
       shape: const RoundedRectangleBorder(
@@ -122,44 +135,15 @@ class _QuickChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(
-          horizontal: GSSpacing.s3,
-          vertical: GSSpacing.s2,
-        ),
-        decoration: BoxDecoration(
-          color: isSet
-              ? color.withValues(alpha: 0.15)
-              : GSColors.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(GSRadius.full),
-          border: Border.all(
-            color: isSet
-                ? color.withValues(alpha: 0.35)
-                : GSColors.border.withValues(alpha: 0.4),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 15,
-              color: isSet ? color : GSColors.textSecondary,
-            ),
-            const SizedBox(width: GSSpacing.s2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isSet ? color : GSColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
+    // Placa pequeña; sin lugar guardado es una placa en blanco con "+".
+    return IntrinsicWidth(
+      child: GSRoutePlate(
+        text: label,
+        size: GSPlateSize.sm,
+        leading: isSet ? icon : Icons.add_rounded,
+        isPlaceholder: !isSet,
+        onTap: onTap,
+        semanticLabel: isSet ? label : 'Agregar ${label.toLowerCase()}',
       ),
     );
   }
@@ -206,9 +190,9 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
       ),
       child: Container(
         padding: const EdgeInsets.all(GSSpacing.s5),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: GSColors.surface,
-          borderRadius: BorderRadius.vertical(
+          borderRadius: const BorderRadius.vertical(
             top: Radius.circular(GSRadius.xxl),
           ),
         ),
@@ -243,7 +227,7 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
                 const SizedBox(width: GSSpacing.s3),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: GSColors.textPrimary,
@@ -263,22 +247,22 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
               ),
               child: TextField(
                 controller: _ctrl,
-                style: const TextStyle(
+                style: TextStyle(
                   color: GSColors.textPrimary,
                   fontSize: 14,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Buscar dirección...',
                   hintStyle:
-                      const TextStyle(color: GSColors.textSecondary, fontSize: 14),
-                  prefixIcon: const Icon(
+                      TextStyle(color: GSColors.textSecondary, fontSize: 14),
+                  prefixIcon: Icon(
                     Icons.search_rounded,
                     color: GSColors.textSecondary,
                     size: 20,
                   ),
                   suffixIcon: _searching
-                      ? const Padding(
-                          padding: EdgeInsets.all(12),
+                      ? Padding(
+                          padding: const EdgeInsets.all(12),
                           child: SizedBox(
                             width: 18,
                             height: 18,
@@ -329,7 +313,7 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
                       ),
                       title: Text(
                         s.placeName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           color: GSColors.textPrimary,
                           fontWeight: FontWeight.w500,
@@ -337,7 +321,7 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
                       ),
                       subtitle: Text(
                         s.fullAddress,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           color: GSColors.textSecondary,
                         ),
@@ -385,7 +369,7 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
                           ),
                           Text(
                             _selected!.fullAddress,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               color: GSColors.textSecondary,
                             ),
@@ -396,7 +380,7 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.close_rounded,
                         color: GSColors.textSecondary,
                         size: 16,
@@ -429,7 +413,7 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
       return;
     }
     setState(() => _searching = true);
-    final results = await geocodingService.search(query);
+    final results = (await placeSearch.search(query)).items;
     if (mounted) {
       setState(() {
         _suggestions = results;
