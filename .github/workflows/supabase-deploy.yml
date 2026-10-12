@@ -49,6 +49,10 @@ jobs:
         run: |
           if [ -z "$DB" ]; then echo "::warning::Falta SUPABASE_DB_URL; migraciones omitidas."; exit 0; fi
           psql() { /usr/lib/postgresql/16/bin/psql "$DB" -v ON_ERROR_STOP=1 -q "$@"; }
+          if ! err=$(psql -tAc 'select 1' 2>&1); then
+            echo "::error::No se pudo entrar a la base. Revisa SUPABASE_DB_URL: cadena del Session pooler (usuario postgres.$PROJECT_REF), sin [YOUR-PASSWORD] y con la contraseña real; si la contraseña tiene @ # / % : ? o espacios, cámbiala en Supabase por una solo de letras y números. Detalle: $(echo "$err" | tail -1)"
+            exit 1
+          fi
           if [ "$(psql -tAc "select to_regclass('public.profiles') is null")" = "t" ]; then
             echo "Base vacía: aplicando 001–007."
             for f in supabase/migrations/00{1,2,3,4,5,6,7}_*.sql; do echo "→ $f"; psql -f "$f"; done
