@@ -105,7 +105,7 @@ class _ScanPayScreenState extends ConsumerState<ScanPayScreen> {
                         padding: const EdgeInsets.all(GSSpacing.s4),
                         child: Text(
                           'No pudimos abrir la cámara. Revisa el permiso en '
-                          'Ajustes → Apps → GoSmart.',
+                          'los Ajustes del teléfono, en Apps, GoSmart.',
                           textAlign: TextAlign.center,
                           style: text.bodyMedium,
                         ),
@@ -116,6 +116,15 @@ class _ScanPayScreenState extends ConsumerState<ScanPayScreen> {
               ),
             ),
           ],
+          if (_chargeId != null && _preview == null && _problem == null)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: GSSpacing.s6),
+              child: Column(children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: GSSpacing.s3),
+                Text('Revisando el cobro…', style: text.bodyLarge),
+              ]),
+            ),
           if (_problem != null) ...[
             const SizedBox(height: GSSpacing.s3),
             Text(_problem!, style: text.bodyLarge),

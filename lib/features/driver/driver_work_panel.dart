@@ -144,7 +144,7 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
       else ...[
         if (_offlineSince != null)
           _note(text, 'Sin señal · reintentando. Último dato a las '
-              '${_hhmm(_offlineSince!)}.'),
+              '${_hhmm(_offlineSince!)}'),
         if (_cash.isNotEmpty) ...[
           const GSSectionTitle('Efectivo por confirmar'),
           for (final c in _cash)
@@ -321,12 +321,13 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           GSRoutePlate(
-            from: r.originLabel,
             text: r.destLabel ?? 'Destino',
             leading: Icons.route_rounded,
             isActive: true,
             maxLines: 3,
-            detail: 'Tarifa acordada ${formatCop(r.agreedFare ?? r.offeredFare)}',
+            detailMaxLines: 4,
+            detail: '${r.originLabel == null ? '' : 'Desde ${r.originLabel} · '}'
+                'Tarifa acordada ${formatCop(r.agreedFare ?? r.offeredFare)}',
           ),
           const SizedBox(height: GSSpacing.s3),
           Text(
@@ -484,6 +485,7 @@ class _PublishDepartureSheetState extends ConsumerState<PublishDepartureSheet> {
   Widget build(BuildContext context) {
     final nodes = ref.watch(transportGraphProvider).valueOrNull?.graph.nodes;
     final text = Theme.of(context).textTheme;
+    final noGraph = nodes == null || nodes.isEmpty;
     final options = <String, String>{
       for (final n in nodes?.values ?? const <GraphNode>[]) n.id: n.name
     };
@@ -496,6 +498,10 @@ class _PublishDepartureSheetState extends ConsumerState<PublishDepartureSheet> {
           children: [
             Text('Publicar salida', style: text.titleLarge),
             const SizedBox(height: GSSpacing.s3),
+            if (noGraph)
+              Text('Sin señal no podemos cargar los puntos de salida. '
+                  'Vuelve a intentarlo cuando tengas conexión.',
+                  style: text.bodyLarge),
             Text('Desde', style: text.titleSmall),
             const SizedBox(height: GSSpacing.s2),
             GSChoicePlates<String>(

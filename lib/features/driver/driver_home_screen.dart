@@ -36,7 +36,8 @@ class DriverHomeScreen extends ConsumerWidget {
       backgroundColor: GSColors.background,
       // Lo secundario va arriba; la zona del pulgar queda para lo que toca ahora (DS6).
       appBar: AppBar(
-        title: const Text('Modo conductor'),
+        // Título corto: con texto grande comparte la barra con tres acciones.
+        title: const Text('Conductor'),
         actions: [
           if (approved)
             IconButton(
@@ -51,8 +52,9 @@ class DriverHomeScreen extends ConsumerWidget {
               onPressed: () => context.push(AppRoutes.driverSignup),
             ),
           if (approved && d!.available)
-            TextButton(
-              style: TextButton.styleFrom(foregroundColor: GSColors.onShell),
+            IconButton(
+              tooltip: 'Pausar: dejar de recibir solicitudes',
+              icon: const Icon(Icons.pause_circle_outline_rounded),
               onPressed: () async {
                 final messenger = ScaffoldMessenger.of(context);
                 try {
@@ -64,7 +66,6 @@ class DriverHomeScreen extends ConsumerWidget {
                       type: GSToastType.error);
                 }
               },
-              child: const Text('Pausar'),
             ),
         ],
       ),
@@ -153,8 +154,8 @@ class _DriverBodyState extends ConsumerState<_DriverBody> {
 
     final (statusTitle, statusDetail) = switch (d.status) {
       DriverStatus.approved => d.available
-          ? ('Disponible', 'Las solicitudes cercanas aparecen abajo mientras '
-              'esta pantalla esté abierta.')
+          ? ('Disponible', 'Te llegan solicitudes mientras esta pantalla '
+              'esté abierta.')
           : ('No disponible', 'Nadie te ve. Ponte disponible cuando '
               'quieras trabajar.'),
       DriverStatus.pending => d.isComplete

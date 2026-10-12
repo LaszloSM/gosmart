@@ -114,11 +114,14 @@ class _ChargeScreenState extends State<ChargeScreen> {
           ] else ...[
             Text(formatCop(c.amount), textAlign: TextAlign.center, style: big),
             const SizedBox(height: GSSpacing.s3),
-            if (_status == 'paid')
+            if (_status != 'open' && _status != 'paid')
+              Icon(Icons.timer_off_outlined, size: 96, color: GSColors.textMuted)
+            else if (_status == 'paid')
               Column(children: [
                 Icon(Icons.check_circle_rounded, size: 96, color: GSColors.brand),
                 Text('Pagado', style: text.headlineSmall),
-                Text('Ya está en tu billetera.', style: text.bodyMedium),
+                Text('Ya está en tu billetera (saldo de prueba, aún no se puede retirar).',
+                    textAlign: TextAlign.center, style: text.bodyMedium),
               ])
             else
               Center(
@@ -139,7 +142,7 @@ class _ChargeScreenState extends State<ChargeScreen> {
             const SizedBox(height: GSSpacing.s3),
             Text(
               _status == 'open'
-                  ? 'Que el pasajero lo escanee en GoSmart → Billetera → Pagar con QR. '
+                  ? 'Que el pasajero lo escanee en GoSmart, en Billetera, con Pagar con QR. '
                       'Vence en 15 minutos.'
                   : _status == 'paid'
                       ? ''

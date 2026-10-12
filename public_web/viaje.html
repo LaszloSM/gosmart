@@ -76,6 +76,8 @@
     $('plate').hidden = false;
     $('dest').textContent = v.destination_label || 'Destino sin nombre';
     $('detail').textContent = v.mode_label ? 'En ' + v.mode_label : '';
+    // La franja fucsia es de lo vigente: un link detenido o vencido la pierde.
+    $('plate').style.borderBottomColor = v.state === 'active' ? '' : 'var(--line)';
     if (v.state === 'stopped') { $('map').hidden = true; $('status').textContent = who + ' dejó de compartir este viaje.'; return; }
     if (v.state === 'expired') { $('map').hidden = true; $('status').textContent = 'Este link venció a las ' + clock(v.expires_at); return; }
     if (v.last_lat != null && v.last_lng != null) {

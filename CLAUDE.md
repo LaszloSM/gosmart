@@ -324,7 +324,8 @@ AppRoutes.privacy / .terms // '/legal/privacy', '/legal/terms' (public)
 - First launch: `/splash` → `/intro` → `/location-permission` → `/home` (guest)
 - Returning user: `/splash` → `/home` (with or without session)
 - **Guest mode (DS3):** public pages are splash, intro, location-permission, auth pages,
-  `/home`, `/routes`, `/routes/detail` and `/ai-chat`. Anything else redirects to login.
+  `/home`, `/routes`, `/routes/detail`, `/ai-chat`, `/trip`, `/report` and `/legal/*`. Anything else
+  redirects to login.
   Actions that need an account (saving Casa/Trabajo, eco-points, wallet, reports, rides)
   check `isGuestProvider` and send the user to `AppRoutes.login`.
 

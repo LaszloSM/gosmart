@@ -107,6 +107,7 @@ class _RateSheetState extends State<RateSheet> {
                   GSChoicePlate(
                     label: e.value,
                     selected: _tags.contains(e.key),
+                    stripe: false,
                     onTap: () => setState(() =>
                         _tags.contains(e.key) ? _tags.remove(e.key) : _tags.add(e.key)),
                   ),

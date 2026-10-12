@@ -105,15 +105,33 @@ class CorridorService {
     }
   }
 
+  static const _segmentsKey = 'road_segments_v1';
+
+  /// Tramos con su trazado. Se guardan: reportar en la Troncal sin señal es
+  /// el caso principal, y la cola offline necesita poder elegir el tramo.
   Future<List<RoadSegmentGeo>> fetchSegments() async {
-    final rows = await GoSmartSupabase.client
-        .from('road_segments')
-        .select('id, name, is_branch, lat_from, lng_from, lat_to, lng_to')
-        .order('is_branch')
-        .order('km_from');
-    return [
-      for (final r in rows as List) RoadSegmentGeo.fromMap(r as Map<String, dynamic>)
-    ];
+    try {
+      final rows = await GoSmartSupabase.client
+          .from('road_segments')
+          .select('id, name, is_branch, lat_from, lng_from, lat_to, lng_to')
+          .order('is_branch')
+          .order('km_from');
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_segmentsKey, jsonEncode(rows));
+      } catch (_) {}
+      return [
+        for (final r in rows as List) RoadSegmentGeo.fromMap(r as Map<String, dynamic>)
+      ];
+    } catch (_) {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_segmentsKey);
+      if (raw == null) rethrow;
+      return [
+        for (final r in jsonDecode(raw) as List)
+          RoadSegmentGeo.fromMap(Map<String, dynamic>.from(r as Map))
+      ];
+    }
   }
 
   /// Envía el reporte; sin señal lo encola. true = ya llegó al servidor.

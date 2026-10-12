@@ -51,8 +51,8 @@ const privacyPolicy = LegalDoc(
             '• Autoridades, solo si la ley lo exige.'),
     LegalSection('Tus derechos',
         'Conocer, actualizar, rectificar y suprimir tus datos, y revocar esta '
-            'autorización. Desde la app: Perfil → Tus datos para corregir, y '
-            'Perfil → Eliminar mi cuenta para borrarlo todo. También puedes '
+            'autorización. Desde la app: en Perfil, "Tus datos" para corregir, y '
+            '"Eliminar mi cuenta" para borrarlo todo. También puedes '
             'quejarte ante la Superintendencia de Industria y Comercio.'),
     LegalSection('Cuánto tiempo',
         'Mientras tengas cuenta. Al eliminarla se borran tus datos; los '

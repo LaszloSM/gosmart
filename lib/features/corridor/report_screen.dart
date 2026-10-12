@@ -7,7 +7,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:go_router/go_router.dart';
+
+import '../../providers/auth_provider.dart';
 import '../../providers/corridor_provider.dart';
+import '../../router/app_router.dart';
 import '../../services/corridor_service.dart';
 import '../../services/location_service.dart';
 import '../../theme/design_tokens.dart';
@@ -71,6 +75,12 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
 
   Future<void> _send() async {
     final messenger = ScaffoldMessenger.of(context);
+    if (ref.read(isGuestProvider)) {
+      GSToast.showWithMessenger(messenger,
+          message: 'Para reportar necesitas una cuenta: así otros confían en tu aviso.');
+      context.push(AppRoutes.login);
+      return;
+    }
     setState(() => _sending = true);
     try {
       final delivered = await corridorService.report(

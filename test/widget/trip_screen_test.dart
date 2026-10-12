@@ -4,11 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gosmart/features/trip/trip_screen.dart';
 import 'package:gosmart/models/dispatch_models.dart';
+import 'package:gosmart/providers/auth_provider.dart';
 import 'package:gosmart/providers/dispatch_provider.dart';
 import 'package:gosmart/theme/app_theme.dart';
 
 Widget _app(ChainedTrip? t) => ProviderScope(
-      overrides: [activeTripProvider.overrideWith((ref) async => t)],
+      overrides: [
+        activeTripProvider.overrideWith((ref) async => t),
+        isGuestProvider.overrideWithValue(false),
+        recentTripsProvider.overrideWith((ref) async => const []),
+      ],
       child: MaterialApp(theme: AppTheme.light, home: const TripScreen()),
     );
 
@@ -33,7 +38,7 @@ void main() {
     await tester.pumpWidget(_app(t));
     await tester.pumpAndSettle();
     expect(find.text('CENTRO DE MAICAO'), findsOneWidget);
-    expect(find.text('Hasta Terminal de Riohacha · Hecho'), findsOneWidget);
+    expect(find.text('Hecho · hasta Terminal de Riohacha'), findsOneWidget);
     expect(find.textContaining('Camina hasta Punto de colectivos'), findsOneWidget);
     expect(find.text('Ya llegué'), findsOneWidget);
   });

@@ -12,6 +12,7 @@ import '../../../providers/dispatch_provider.dart';
 import '../../../services/dispatch_service.dart';
 import '../../../services/payment_service.dart';
 import '../../trust/rate_sheet.dart';
+import '../trip_screen.dart' show legModeLabel;
 import '../../../providers/wallet_provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../router/app_router.dart';
@@ -143,7 +144,7 @@ class _ScheduledLegPanelState extends ConsumerState<ScheduledLegPanel> {
       children: [
         Text(
           onBoard
-              ? 'Vas en ${l.mode == 'transpadilla' ? 'TransPadilla' : l.mode} hacia ${l.toLabel ?? 'tu parada'}.'
+              ? 'Vas en ${legModeLabel(l.mode)} hacia ${l.toLabel ?? 'tu parada'}.'
               : 'Sube en ${l.fromLabel ?? 'el punto'} hacia ${l.toLabel ?? 'tu parada'}.',
           style: text.bodyLarge,
         ),
@@ -155,6 +156,22 @@ class _ScheduledLegPanelState extends ConsumerState<ScheduledLegPanel> {
                 return const Padding(
                   padding: EdgeInsets.all(GSSpacing.s3),
                   child: Center(child: CircularProgressIndicator()),
+                );
+              }
+              // Sin señal no es lo mismo que "no hay salidas".
+              if (snap.hasError) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: GSSpacing.s2),
+                  child: Row(children: [
+                    Expanded(
+                      child: Text('Sin señal: no pudimos ver las salidas.',
+                          style: text.bodyMedium),
+                    ),
+                    TextButton(
+                      onPressed: () => setState(() => _deps = _load()),
+                      child: const Text('Reintentar'),
+                    ),
+                  ]),
                 );
               }
               final deps = snap.data ?? const [];
@@ -261,10 +278,17 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
     super.dispose();
   }
 
+  /// true si no se pudo saber si ya hay una solicitud: no se ofrece pedir
+  /// otra (con llave nueva podría quedar doble).
+  bool _unknown = false;
+
   Future<void> _resume() async {
     try {
       _request = await dispatchService.requestForLeg(widget.leg.id);
-    } catch (_) {}
+      _unknown = false;
+    } catch (_) {
+      _unknown = true;
+    }
     if (!mounted) return;
     setState(() => _loaded = true);
     if (_request != null) _startPolling();
@@ -332,7 +356,7 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
       GSToast.showWithMessenger(messenger,
           message: method == 'cash'
               ? 'Listo: paga ${formatCop(r.agreedFare ?? r.offeredFare)} en efectivo.'
-              : 'Pagaste ${formatCop(r.agreedFare ?? r.offeredFare)} con tu saldo.',
+              : 'Pagaste ${formatCop(r.agreedFare ?? r.offeredFare)} con tu saldo de prueba.',
           type: GSToastType.success);
       if (r.status == RideStatus.completed) {
         if (mounted) {
@@ -417,6 +441,22 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
     final label = _service == 'taxi' ? 'taxi' : 'mototaxi';
     if (!_loaded) {
       return const Center(child: CircularProgressIndicator());
+    }
+    if (_unknown) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Sin señal: no sabemos si ya pediste este tramo.',
+              style: text.bodyLarge),
+          TextButton(
+            onPressed: () {
+              setState(() => _loaded = false);
+              _resume();
+            },
+            child: const Text('Reintentar'),
+          ),
+        ],
+      );
     }
 
     // 1. Sin pedir: elegir tarifa y pedir.
@@ -560,7 +600,7 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
           const SizedBox(height: GSSpacing.s2),
           GSButton(
             label:
-                'Pagar ${formatCop(r.agreedFare ?? r.offeredFare)} con saldo',
+                'Pagar ${formatCop(r.agreedFare ?? r.offeredFare)} con saldo de prueba',
             leadingIcon: Icons.account_balance_wallet_outlined,
             isLoading: _busy,
             onPressed: _busy ? null : () => _pay('wallet'),

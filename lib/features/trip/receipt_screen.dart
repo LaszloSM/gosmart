@@ -64,14 +64,15 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                 padding: const EdgeInsets.fromLTRB(
                     GSSpacing.s4, GSSpacing.s4, GSSpacing.s4, 0),
                 child: GSRoutePlate(
-                  from: r.origin,
                   text: r.destination ?? 'Viaje',
                   leading: Icons.receipt_long_rounded,
-                  isActive: true,
-                  maxLines: 2,
-                  detail: r.createdAt == null
-                      ? null
-                      : '${r.createdAt!.day}/${r.createdAt!.month}/${r.createdAt!.year}',
+                  maxLines: 3,
+                  detailMaxLines: 3,
+                  detail: [
+                    if (r.origin != null) 'Desde ${r.origin}',
+                    if (r.createdAt != null)
+                      '${r.createdAt!.day}/${r.createdAt!.month}/${r.createdAt!.year}',
+                  ].join(' · '),
                 ),
               ),
               const GSSectionTitle('Tramos'),
@@ -82,7 +83,9 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                       '${l.to == null ? '' : ' hasta ${l.to}'}',
                   subtitle: l.mode == 'walk'
                       ? 'A pie'
-                      : 'Pagado con ${paymentMethodLabel(l.methods)}',
+                      : l.methods.isEmpty
+                          ? 'Sin pago registrado'
+                          : 'Pagado con ${paymentMethodLabel(l.methods)}',
                   value: l.paid > 0 ? formatCop(l.paid) : '—',
                 ),
                 const Divider(indent: GSSpacing.s4),

@@ -46,8 +46,11 @@ class GSChoicePlate extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.icon,
+    this.stripe = true,
   });
 
+  /// false en selección múltiple: la franja fucsia es una por grupo (Regla de la Franja).
+  final bool stripe;
   final String label;
   final IconData? icon;
   final bool selected;
@@ -78,7 +81,7 @@ class GSChoicePlate extends StatelessWidget {
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: selected ? GSColors.stripe : Colors.transparent,
+                  color: selected && stripe ? GSColors.stripe : Colors.transparent,
                   width: 4,
                 ),
               ),

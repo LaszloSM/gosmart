@@ -222,7 +222,10 @@ class _SegmentSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final color = roadColor(segment.state);
-    final title = segment.reason ?? segment.state.label;
+    // La palabra del estado siempre va, con el motivo al lado (Regla del Semáforo).
+    final title = segment.reason == null
+        ? segment.state.label
+        : '${segment.state.label} · ${segment.reason}';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: GSSpacing.s3),
       child: Row(

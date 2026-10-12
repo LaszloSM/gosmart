@@ -134,6 +134,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == AppRoutes.routePlanner ||
           state.matchedLocation == AppRoutes.routeDetail ||
           state.matchedLocation == AppRoutes.aiChat ||
+          // Mirar sí, actuar con cuenta: la pantalla pide entrar al enviar.
+          state.matchedLocation == AppRoutes.trip ||
+          state.matchedLocation == AppRoutes.report ||
           state.matchedLocation == AppRoutes.privacy ||
           state.matchedLocation == AppRoutes.terms ||
           state.matchedLocation == AppRoutes.splash ||

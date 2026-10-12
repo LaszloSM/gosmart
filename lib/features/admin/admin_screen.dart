@@ -14,6 +14,8 @@ import '../../core/money.dart';
 import '../../providers/profile_provider.dart';
 import '../../services/trust_service.dart';
 import '../../theme/design_tokens.dart';
+import '../../providers/corridor_provider.dart';
+import '../../widgets/gs_button.dart';
 import '../../widgets/gs_empty_state.dart';
 import '../../widgets/gs_inline_error.dart';
 import '../../widgets/gs_list_row.dart';
@@ -26,7 +28,15 @@ class AdminScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profile = ref.watch(profileProvider).valueOrNull;
+    final profileAsync = ref.watch(profileProvider);
+    // Mientras carga no se dice "solo administradores" (parecería un rechazo).
+    if (profileAsync.isLoading && !profileAsync.hasValue) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Administración')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    final profile = profileAsync.valueOrNull;
     if (profile == null || !profile.isAdmin) {
       return Scaffold(
         appBar: AppBar(title: const Text('Administración')),
@@ -246,16 +256,18 @@ class _DriverReviewState extends State<_DriverReview> {
             const SizedBox(height: GSSpacing.s2),
             Row(children: [
               Expanded(
-                child: OutlinedButton(
+                child: GSButton(
+                  label: 'Rechazar',
+                  variant: GSButtonVariant.outline,
                   onPressed: _busy ? null : () => _decide('rejected'),
-                  child: const Text('Rechazar'),
                 ),
               ),
               const SizedBox(width: GSSpacing.s3),
               Expanded(
-                child: FilledButton(
+                child: GSButton(
+                  label: 'Aprobar',
+                  isLoading: _busy,
                   onPressed: _busy ? null : () => _decide('approved'),
-                  child: const Text('Aprobar'),
                 ),
               ),
             ]),
@@ -272,11 +284,15 @@ class _DriverReviewState extends State<_DriverReview> {
 }
 
 // ── Reportes ─────────────────────────────────────────────────────────────────
-class _ReportsTab extends StatelessWidget {
+class _ReportsTab extends ConsumerWidget {
   const _ReportsTab();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final names = {
+      for (final s in ref.watch(roadSegmentsProvider).valueOrNull ?? const [])
+        s.id: s.name,
+    };
     return _Loader<List<AdminReportRow>>(
       what: 'los reportes',
       load: trustService.recentReports,
@@ -288,7 +304,8 @@ class _ReportsTab extends StatelessWidget {
               for (final r in rows) ...[
                 GSListRow(
                   icon: r.removed ? Icons.delete_outline_rounded : Icons.campaign_outlined,
-                  title: '${roadReportKinds[r.kind] ?? r.kind} · ${r.segmentId}',
+                  title: '${roadReportKinds[r.kind] ?? r.kind} · '
+                      '${names[r.segmentId] ?? r.segmentId}',
                   subtitle: '${r.happenedAt.day}/${r.happenedAt.month} '
                       '${r.happenedAt.hour}:${r.happenedAt.minute.toString().padLeft(2, '0')} · '
                       '${r.confirmations} confirman, ${r.denials} desmienten'

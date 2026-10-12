@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/dispatch_models.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/dispatch_provider.dart';
 import '../../router/app_router.dart';
 import '../../services/dispatch_service.dart';
@@ -101,8 +102,11 @@ class TripScreen extends ConsumerWidget {
                 GSEmptyState(
                   icon: Icons.route_rounded,
                   title: 'Sin viaje en curso',
-                  subtitle: 'Planea a dónde vas y toca "Iniciar viaje". Aquí '
-                      'pides cada tramo y ves a tu conductor.',
+                  subtitle: ref.watch(isGuestProvider)
+                      ? 'Planea a dónde vas sin cuenta. Para iniciar el viaje, '
+                          'pedir mototaxi o reservar cupo, entra a tu cuenta.'
+                      : 'Planea a dónde vas y toca "Iniciar viaje". Aquí '
+                          'pides cada tramo y ves a tu conductor.',
                   actionLabel: 'Planear un viaje',
                   onAction: () => context.push(AppRoutes.routePlanner),
                 ),
@@ -116,13 +120,17 @@ class TripScreen extends ConsumerWidget {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(
                           GSSpacing.s4, GSSpacing.s4, GSSpacing.s4, 0),
+                      // Destino en la placa y el origen debajo: con texto
+                      // grande, "desde → hasta" en una línea se partía.
                       child: GSRoutePlate(
-                        from: t.originLabel,
                         text: t.destLabel ?? 'Tu destino',
+                        detail: t.originLabel == null
+                            ? null
+                            : 'Desde ${t.originLabel}',
+                        detailMaxLines: 3,
                         leading: Icons.route_rounded,
-                        isActive: true,
                         size: GSPlateSize.md,
-                        maxLines: 2,
+                        maxLines: 3,
                       ),
                     ),
                     const GSSectionTitle('Tramos'),
@@ -182,8 +190,9 @@ class _LegRow extends StatelessWidget {
         leading: legModeIcon(leg.mode),
         size: GSPlateSize.sm,
         isActive: isCurrent,
-        detail: '${leg.toLabel == null ? '' : 'Hasta ${leg.toLabel} · '}$word',
-        detailMaxLines: 2,
+        // El estado primero: es lo que se busca de un vistazo.
+        detail: '$word${leg.toLabel == null ? '' : ' · hasta ${leg.toLabel}'}',
+        detailMaxLines: 4,
         trailing: Icon(icon, color: GSColors.brand),
       ),
     );

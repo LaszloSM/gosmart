@@ -44,7 +44,7 @@
   }
   ul.segs { list-style:none; padding:0; margin:16px 0 0; }
   ul.segs li { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); }
-  .ico { width:28px; text-align:center; font-weight:800; font-size:20px; }
+  .ico { width:26px; height:26px; flex:none; }
   .what { flex:1; }
   .what b { display:block; font-family:"Barlow Condensed", sans-serif; font-size:20px; }
   .km { font-variant-numeric: tabular-nums; font-weight:600; }
@@ -63,11 +63,24 @@
 <script>
 (function () {
   var cfg = window.GOSMART || {};
-  var ICON = { open: '✓', caution: '!', closed: '✕', unknown: '?' };
+  // Íconos SVG (no glifos de texto): mismos significados que en la app.
+  var SVG = {
+    open: '<path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    caution: '<path d="M12 3.5L2.5 20h19z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 10v4.5M12 17.2v.3" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+    closed: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M6 12h12" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>',
+    unknown: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.4M12 16.8v.3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>'
+  };
+  var lastOk = null;
   var WORD = { open: 'Abierta', caution: 'Precaución', closed: 'Cerrada', unknown: 'Sin datos' };
   function clock(iso) {
     var d = new Date(iso), h = d.getHours() % 12 || 12, m = ('0' + d.getMinutes()).slice(-2);
     return h + ':' + m + (d.getHours() < 12 ? ' a. m.' : ' p. m.');
+  }
+  // Hora sola si es de hoy; con fecha si no, para no hacer pasar un dato viejo por actual.
+  function when(iso) {
+    var d = new Date(iso), now = new Date();
+    var sameDay = d.toDateString() === now.toDateString();
+    return sameDay ? clock(iso) : d.getDate() + '/' + (d.getMonth() + 1) + ' a las ' + clock(iso);
   }
   function render(rows) {
     var ul = document.getElementById('segs'); ul.innerHTML = '';
@@ -75,8 +88,10 @@
     rows.forEach(function (r) {
       if (r.updated_at && (!newest || r.updated_at > newest)) newest = r.updated_at;
       var li = document.createElement('li');
-      var ico = document.createElement('span'); ico.className = 'ico s-' + r.state; ico.textContent = ICON[r.state] || '?';
-      ico.setAttribute('aria-hidden', 'true');
+      var ico = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      ico.setAttribute('viewBox', '0 0 24 24'); ico.setAttribute('width', '26'); ico.setAttribute('height', '26');
+      ico.setAttribute('class', 'ico s-' + r.state); ico.setAttribute('aria-hidden', 'true');
+      ico.innerHTML = SVG[r.state] || SVG.unknown;
       var what = document.createElement('span'); what.className = 'what';
       var b = document.createElement('b'); b.className = 's-' + r.state;
       b.textContent = (WORD[r.state] || 'Sin datos') + (r.reason ? ' · ' + r.reason : '');
@@ -86,8 +101,9 @@
       km.textContent = r.is_branch ? 'desvío' : 'km ' + Math.round(r.km_from) + '–' + Math.round(r.km_to);
       li.append(ico, what, km); ul.append(li);
     });
+    lastOk = new Date();
     document.getElementById('status').textContent = newest
-      ? 'Último reporte: ' + clock(newest) + ' · se actualiza cada minuto.'
+      ? 'Último reporte: ' + when(newest) + ' · se actualiza cada minuto.'
       : 'Nadie ha reportado nada vigente. Sin datos no es lo mismo que despejada.';
   }
   function load() {
@@ -99,7 +115,12 @@
       body: '{}'
     }).then(function (r) { if (!r.ok) throw r; return r.json(); })
       .then(render)
-      .catch(function () { document.getElementById('status').textContent = 'Sin conexión. Reintentamos en un minuto.'; });
+      .catch(function () {
+        // Si ya había datos, se quedan en pantalla pero marcados como viejos.
+        document.getElementById('status').textContent = lastOk
+          ? 'Sin conexión. Esto es de las ' + clock(lastOk.toISOString()) + '; reintentamos en un minuto.'
+          : 'Sin conexión. Reintentamos en un minuto.';
+      });
   }
   load(); setInterval(load, 60000);
 })();
