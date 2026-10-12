@@ -2,7 +2,8 @@
 import 'package:flutter/material.dart';
 import '../theme/design_tokens.dart';
 
-/// Animated shimmer skeleton for loading states — dark edition.
+/// Esqueleto de carga con brillo lineal (movimiento constante = linear,
+/// Emil). Con "quitar animaciones" queda quieto.
 class GSSkeletonLoader extends StatefulWidget {
   const GSSkeletonLoader({
     super.key,
@@ -31,9 +32,7 @@ class _GSSkeletonLoaderState extends State<GSSkeletonLoader>
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     )..repeat();
-    _animation = Tween<double>(begin: -2, end: 2).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _animation = Tween<double>(begin: -2, end: 2).animate(_controller);
   }
 
   @override
@@ -44,6 +43,18 @@ class _GSSkeletonLoaderState extends State<GSSkeletonLoader>
 
   @override
   Widget build(BuildContext context) {
+    if (MediaQuery.of(context).disableAnimations) {
+      _controller.stop();
+      return Container(
+        width: widget.width,
+        height: widget.height,
+        decoration: BoxDecoration(
+          color: GSColors.surfaceSunken,
+          borderRadius: BorderRadius.circular(widget.radius),
+        ),
+      );
+    }
+    if (!_controller.isAnimating) _controller.repeat();
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, _) {
