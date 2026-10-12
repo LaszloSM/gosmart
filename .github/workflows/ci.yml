@@ -7,6 +7,11 @@ on:
   pull_request:
     branches: [main]
 
+# Un push nuevo en la misma rama cancela la corrida anterior.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     name: Lint (flutter analyze)
