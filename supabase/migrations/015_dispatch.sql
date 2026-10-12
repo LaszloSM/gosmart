@@ -288,7 +288,10 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Dónde viene mi conductor: solo para el pasajero de ese viaje aceptado.
-CREATE OR REPLACE FUNCTION ride_driver_view(p_request_id UUID)
+-- DROP primero: 017 le agrega columnas y CREATE OR REPLACE no puede quitarlas
+-- al volver a correr todo en orden.
+DROP FUNCTION IF EXISTS ride_driver_view(UUID);
+CREATE FUNCTION ride_driver_view(p_request_id UUID)
 RETURNS TABLE (first_name TEXT, service TEXT, plate TEXT, vehicle TEXT,
                lat DOUBLE PRECISION, lng DOUBLE PRECISION, seen_at TIMESTAMPTZ) AS $$
   SELECT split_part(d.full_name, ' ', 1), d.service, v.plate,

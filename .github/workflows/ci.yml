@@ -97,6 +97,10 @@ jobs:
             run "supabase/migrations/$m.sql"
           done
           run supabase/seed/places_seed.sql
+          # Y la secuencia completa otra vez (lo que se pega en el SQL Editor):
+          # el paquete debe estar al día y aguantar re-ejecución sobre todo lo anterior.
+          bash tool/bundle_migrations.sh | diff -q - supabase/piloto_bundle.sql
+          run supabase/piloto_bundle.sql
           for t in 011_roles_safety 012_places_directory 013_corridor \
                    014_transport_graph 015_dispatch; do
             run "supabase/tests/${t}_test.sql"
