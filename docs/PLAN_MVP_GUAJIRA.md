@@ -12,7 +12,7 @@ El diagnóstico (17 problemáticas) muestra que el problema central del corredor
 - M1 Estado del corredor
 - M2 IA + planificador
 - M3 Viaje encadenado + seguridad
-- M4 Pago (QR/NFC)
+- M4 Pago (QR; NFC a futuro para transporte público)
 - M5 Confianza
 
 La visión de largo plazo sigue siendo la **tarjeta universal de transporte** del país.
@@ -29,11 +29,11 @@ La visión de largo plazo sigue siendo la **tarjeta universal de transporte** de
 | Mapa | **Google Maps** (`google_maps_flutter`). El mapa móvil es gratis e ilimitado, los gestos y la fluidez son los que todos conocen, y es el mejor buscando direcciones colombianas. La búsqueda (Places Autocomplete New) y las rutas (Routes API) cobran pasado un tope gratis mensual, así que se ponen cuotas diarias en Google Cloud para no pagar. Lo que se pierde: el mapa no se descarga offline; solo queda en caché lo ya visto. El viaje, el estado del corredor y el directorio sí funcionan offline con datos locales. |
 | Ampliaciones | Compartir a WhatsApp; directorio de referencias; SOS y compartir viaje en el núcleo; `PRODUCT.md` + `DESIGN.md`. |
 | Stripe | Se retira. Las recargas se hacen con **Wompi en sandbox** (gratis). En producción cobra comisión, lo cual se declara. |
-| NFC | Se mantiene como vitrina de la visión, en **circuito cerrado**: HCE en el teléfono del pasajero y lectura en el teléfono del conductor, solo con saldo interno. El camino principal es el **QR**, porque muchos teléfonos de conductores no tienen NFC. Tap to Pay bancario queda documentado y no se implementa. |
+| NFC | **Pospuesto (D3).** El cobro va por **QR**. Queda como visión: **NFC para transporte público** (TransPadilla, metro y validadores en general). La tabla `cards` se conserva como abstracción para esos validadores. NFC entre celulares y Tap to Pay bancario: no se implementan. |
 | IA | Groq gratis con function calling, desde la Edge Function `ai-chat`. La key sale del APK. |
 
 ## Verdades declaradas para la sustentación
-- El pago único repartido entre 3 conductores retiene dinero de terceros. En el MVP es **saldo simulado**; operarlo en real exige figura regulada (Superfinanciera).
+- **Pago (D5):** cada tramo se paga al cerrarse y el viaje entrega **un solo recibo** con desglose. El pago único con retención se pospone, porque retener dinero de terceros exige figura regulada (Superfinanciera).
 - El conductor completo es lo más caro del semestre por el arranque en frío. Mitigación: piloto con 10–20 conductores reclutados en campo y zonas acotadas.
 - Las skills gstack, impeccable, Emil Kowalski y taste no estaban instaladas. Se leyó su método público y se aplicó a mano. Si se instalan, la Fase 2 debe correr `/impeccable critique` y `/plan-design-review`.
 
@@ -94,7 +94,7 @@ Se aplica el método de impeccable, taste y Emil Kowalski.
 
 **Arquitectura de información:**
 - **Pasajero:** Inicio (mapa + barra de estado del corredor + "¿A dónde vas?"), Viaje, Reportar, Billetera y Perfil.
-- **Conductor:** Disponible/No, Solicitud entrante, Viaje activo, Cobrar (QR/NFC), Ingresos e historial. En colectivos se suma "Puestos ocupados".
+- **Conductor:** Disponible/No, Solicitud entrante, Viaje activo, Cobrar (QR), Ingresos e historial. En colectivos se suma "Puestos ocupados".
 - **Patrón central:** "el chat se transforma en mapa". El selector de origen y destino acepta texto libre, referencia, pin, ubicación actual y ubicación recibida por WhatsApp.
 
 **Modos de transporte:**
@@ -141,7 +141,8 @@ Se aplica el método de impeccable, taste y Emil Kowalski.
   - Términos y condiciones.
   - Declaración en Play de ubicación en segundo plano.
 - **Push:** FCM.
-- **Manifiesto:** agregar permisos de NFC, cámara (QR), notificaciones y ubicación en segundo plano.
+- **Degradación con aviso (D8):** si Groq agota su cuota o falla, la app sigue con el planificador y el buscador normal. Si Google falla o agota su cuota, se usa el directorio propio y el pin. En ambos casos hay un aviso claro al usuario y el error se registra en Sentry con el servicio y el código.
+- **Manifiesto:** agregar permisos de cámara (QR), notificaciones y ubicación en segundo plano.
 
 ## Fase 4 · M1 Estado del corredor + WhatsApp (semanas 7–10)
 - **Tablas:**
@@ -162,7 +163,8 @@ Se aplica el método de impeccable, taste y Emil Kowalski.
   - El primer y el último tramo se resuelven a pie o en mototaxi/taxi, con la ruta calle a calle de Directions.
 - **Planificador:**
   - Dijkstra/A* con costo ponderado y penalizaciones por bloqueos, noche, lluvia y vías deterioradas.
-  - Corre en una Edge Function, con una copia en Dart para el modo offline.
+  - **Corre solo en el celular (D6)**, en Dart, sobre el grafo cacheado en `drift`. Es un solo planificador, igual con o sin señal.
+  - La IA en `ai-chat` devuelve la llamada a la herramienta `plan_trip`; el celular la ejecuta y le devuelve el resultado a la IA.
   - Reemplaza a `public_transport_service.dart`.
 - **Tarifa justa:** rango por distancia × zona × hora para los tramos informales. En el intermunicipal, la tarifa publicada.
 - **Predicción de despacho:** ocupación reportada + reservas + histórico. Se muestra como rango y calcula hacia atrás la hora de salida.
@@ -180,6 +182,7 @@ Se aplica el método de impeccable, taste y Emil Kowalski.
   - El pasajero solicita, con una tarifa sugerida por el estimador.
   - Se avisa por Realtime/push a los conductores disponibles en radio (`ST_DWithin`).
   - El conductor acepta o contraoferta; el pasajero confirma.
+  - **Aceptar una solicitud y reservar un cupo de colectivo son RPCs atómicas con bloqueo de fila (D7)**, siguiendo el patrón de `recharge_wallet`. Gana uno solo. Hay un test que simula dos aceptaciones o reservas simultáneas.
   - Timeouts y reasignación.
 - **Colectivo:** el conductor publica su salida y sus puestos, y los pasajeros reservan un cupo.
 - **Viaje encadenado:**
@@ -194,12 +197,9 @@ Se aplica el método de impeccable, taste y Emil Kowalski.
 - **Billetera real:** recarga con Wompi sandbox (Edge Function + webhook) y bono de bienvenida.
 - **Cobro del conductor:**
   1. QR del conductor: el pasajero paga con saldo o con deep link a Nequi/Bre-B.
-  2. NFC (HCE ↔ lector) reutilizando `flutter_nfc_kit`, `backend/functions/authorize` y el `idempotency_key`.
-  3. Efectivo confirmado al cerrar.
-- **Pago único encadenado:**
-  - Se retiene el total y se libera por tramo; si un tramo no ocurre, se reembolsa.
-  - Se emite un solo recibo con desglose.
-  - Todo con RPCs que bloquean filas, siguiendo el patrón de `recharge_wallet`.
+  2. Efectivo confirmado al cerrar.
+  - NFC: pospuesto (D3). Se reutilizará la lógica de `backend/functions/authorize` cuando lleguen los validadores de transporte público.
+- **Pago por tramo + recibo único (D5):** cada tramo se cobra al cerrarse, con una RPC atómica y su `idempotency_key`. El viaje genera un solo recibo con el desglose.
 
 ## Fase 8 · M5 Confianza + panel admin (semanas 15–17)
 - **Reputación:**
@@ -261,5 +261,79 @@ Se aplica el método de impeccable, taste y Emil Kowalski.
 - Pruebas SQL de las RPCs: doble cobro, concurrencia y RLS entre usuarios.
 - Prueba offline: modo avión a mitad del viaje y sincronización correcta.
 - Prueba de gestos del mapa en un Android de gama media: pellizcar, arrastrar, rotar, el pin central y el modo seguir, sin saltos visibles.
-- Demo end-to-end con 2 Android (pasajero + conductor): los 3 casos de referencia, el cobro QR y NFC, y un link de WhatsApp abierto en un teléfono sin la app.
+- Demo end-to-end con 2 Android (pasajero + conductor): los 3 casos de referencia, el cobro QR, un choque simulado de despacho, y un link de WhatsApp abierto en un teléfono sin la app.
 - Al cerrar cada fase se actualiza `CLAUDE.md`.
+
+
+## Revisión CEO (gstack /plan-ceo-review) · 2026-10-12
+**Modo:** SCOPE REDUCTION (D1). Revisión a nivel de estrategia. No hubo voz externa: Codex no está instalado y por eso no hay cobertura cruzada.
+
+**Decisiones**
+
+| ID | Decisión | Respuesta |
+|---|---|---|
+| D2 | Despacho InDrive | Se mantiene |
+| D3 | NFC entre celulares | Pospuesto; NFC queda para transporte público a futuro |
+| D4 | Panel admin Flutter Web | Se mantiene |
+| D5 | Pago único con retención | Pospuesto; pago por tramo + recibo único |
+| D6 | Planificador | Solo en el celular |
+| D7 | Choques en despacho y cupos | RPC atómica + test de choque |
+| D8 | Cuotas Groq/Google agotadas | Degradar con aviso + registro |
+
+**Verificado contra el repo**
+- El mapa arranca en Bogotá: `home_screen.dart:681`.
+- La key de Groq va dentro del cliente: `env.dart:18`.
+- La billetera es local en SharedPreferences: `wallet_mock_provider.dart:3`. `CLAUDE.md` dice lo contrario y hay que corregirlo.
+- `trips` y `trip_history` no se usan en `lib/`.
+- Las migraciones están partidas en dos carpetas.
+- No hay permisos de cámara ni de notificaciones.
+- Solo hay 6 tests en `test/`.
+
+**Hallazgos por sección**
+1. **Arquitectura.** Supabase es el punto único de falla: se pausa a los 7 días y no tiene backups; ya está mitigado en el plan. La duplicación del planificador se resolvió con D6. Realtime del plan gratis aguanta unas 200 conexiones, suficiente para el piloto.
+2. **Errores.** Faltaba qué pasa cuando se agotan las cuotas; resuelto con D8. Falta definir errores para: webhook de Wompi, push fallido, conflicto de sincronización offline y proyecto Supabase pausado. Todos deben mostrar un aviso y quedar en Sentry.
+3. **Seguridad.**
+   - RLS en cada tabla nueva.
+   - Documentos de conductores en un bucket privado.
+   - Links de viaje compartido con token que expira.
+   - Páginas públicas de WhatsApp con límite de peticiones.
+   - Keys de Google restringidas al paquete de la app.
+   - La ubicación del conductor solo es visible para el pasajero de su viaje.
+   - Un reporte falso de "retén" puede estigmatizar; por eso hay categorías cerradas y confirmación cruzada.
+4. **Datos y bordes.**
+   - Choques en despacho y cupos: resuelto con D7.
+   - La cola offline puede reenviar reportes y cobros; se previene con `idempotency_key` en todo lo que escribe.
+5. **Calidad.** Hay que partir las pantallas gigantes antes de tocarlas (ya está en la Fase 0).
+6. **Tests.** Se agregan los tests de choque de D7 y los de degradación de D8.
+7. **Rendimiento.** Hay que cachear las respuestas de Places y Routes para no gastar cuota. El planificador local responde en milisegundos.
+8. **Observabilidad.**
+   - Sentry desde la Fase 0.
+   - El panel admin muestra: reportes confirmados, éxito del despacho, fallas de la IA y cuota usada.
+9. **Despliegue.**
+   - Migraciones en orden.
+   - Track de prueba interna en Google Play.
+   - El despacho detrás de un interruptor (flag) para apagarlo si falla en el piloto.
+10. **Trayectoria.** Se conserva `cards` para el futuro NFC de transporte público. Cambiar de mapa más adelante se facilita si todo el código del mapa vive en un solo widget.
+11. **Diseño.** Falta el mapa de estados (cargando, vacío, error, offline) por pantalla. Se recomienda correr `/plan-design-review` antes de codificar.
+
+**Diferenciación frente a Waze.** Waze ya tiene reportes de vías cerradas. GoSmart se diferencia por:
+- Colectivos y TransPadilla.
+- Seguridad (retenes, SOS, compartir viaje).
+- El patrón de bloqueos del corredor.
+- WhatsApp.
+
+Hay que decirlo en la sustentación.
+
+**Riesgo abierto.** Con el despacho y el admin dentro, el plan sigue apretado para 18 semanas. Si en la semana 10 no está el caso de referencia 1, se recorta el admin primero.
+
+## GSTACK REVIEW REPORT
+| Revisión | Estado | Hallazgos |
+|---|---|---|
+| CEO (estrategia, SCOPE REDUCTION) | issues_open | 11 secciones; 7 decisiones tomadas; quedan errores por definir en la sección 2 |
+| Diseño | pendiente | correr /plan-design-review |
+| Ingeniería | pendiente | correr /plan-eng-review |
+| Voz externa | no disponible | Codex no instalado |
+
+VERDICT: plan aprobable en estrategia; faltan las revisiones de diseño e ingeniería antes de codificar.
+
+NO UNRESOLVED DECISIONS
