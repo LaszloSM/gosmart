@@ -11,6 +11,9 @@ class ProfileModel {
   final String? city;
   final DateTime? birthDate;
 
+  /// 'passenger' | 'driver' | 'admin' (migración 011; solo el servidor lo cambia).
+  final String role;
+
   const ProfileModel({
     required this.id,
     required this.name,
@@ -21,7 +24,11 @@ class ProfileModel {
     this.cedula,
     this.city,
     this.birthDate,
+    this.role = 'passenger',
   });
+
+  bool get isDriver => role == 'driver';
+  bool get isAdmin => role == 'admin';
 
   factory ProfileModel.fromMap(
     Map<String, dynamic> map, {
@@ -43,6 +50,7 @@ class ProfileModel {
       cedula: map['cedula'] as String?,
       city: map['city'] as String?,
       birthDate: parsedBirthDate,
+      role: map['role'] as String? ?? 'passenger',
     );
   }
 
@@ -65,6 +73,7 @@ class ProfileModel {
       cedula: cedula ?? this.cedula,
       city: city ?? this.city,
       birthDate: birthDate ?? this.birthDate,
+      role: role,
     );
   }
 

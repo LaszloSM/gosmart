@@ -1,10 +1,10 @@
 // lib/features/routes/widgets/mode_selector.dart
-// "¿En qué vas?": los modos locales como placas pequeñas. La elegida va en
-// ultramar con la franja fucsia. Sin animación: es una acción repetida.
+// "¿En qué vas?": los modos locales como placas pequeñas (GSChoicePlates).
 import 'package:flutter/material.dart';
 
 import '../../../providers/selected_mode_provider.dart';
 import '../../../theme/design_tokens.dart';
+import '../../../widgets/gs_choice_plates.dart';
 
 class ModeSelector extends StatelessWidget {
   const ModeSelector({super.key, required this.selected, required this.onChanged});
@@ -14,88 +14,13 @@ class ModeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // En varias filas: todos los modos a la vista, sin scroll escondido,
-    // y caben con texto grande.
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
-      child: Wrap(
-        spacing: GSSpacing.s2,
-        runSpacing: GSSpacing.s2,
-        children: [
-          for (final m in travelModes)
-            _ModeOption(
-              label: m,
-              icon: modeIconFor(m),
-              selected: m == selected,
-              onTap: () => onChanged(m),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ModeOption extends StatelessWidget {
-  const _ModeOption({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final fg = selected ? GSColors.onBrand : GSColors.text;
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: label,
-      excludeSemantics: true,
-      child: Material(
-        color: selected ? GSColors.brand : GSColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(GSRadius.sm),
-          side: BorderSide(
-              color: selected ? GSColors.brand : GSColors.line, width: 1.5),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Container(
-            constraints:
-                const BoxConstraints(minHeight: GSSize.touchTarget + 4),
-            padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s3),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: selected ? GSColors.stripe : Colors.transparent,
-                  width: 4,
-                ),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 22, color: fg),
-                const SizedBox(width: GSSpacing.s2),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontFamily: GSFonts.display,
-                    fontSize: 19,
-                    fontWeight: FontWeight.w700,
-                    color: fg,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+      child: GSChoicePlates<String>(
+        options: {for (final m in travelModes) m: m},
+        icons: modeIconFor,
+        selected: selected,
+        onChanged: onChanged,
       ),
     );
   }

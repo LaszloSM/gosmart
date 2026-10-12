@@ -247,6 +247,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             subtitle: 'Los sumas cuando eliges ir a pie',
             value: profile?.formattedEcoPoints ?? '0',
           ),
+          const GSSectionTitle('Conducir'),
+          GSListRow(
+            icon: Icons.two_wheeler_rounded,
+            title: (profile?.isDriver ?? false)
+                ? 'Modo conductor'
+                : 'Quiero ser conductor',
+            subtitle: (profile?.isDriver ?? false)
+                ? 'Tu disponibilidad y tus datos'
+                : 'Mototaxi, taxi, colectivo o intermunicipal',
+            onTap: () => context.push(AppRoutes.driver),
+          ),
           const GSSectionTitle('Seguridad'),
           GSListRow(
             icon: Icons.group_outlined,

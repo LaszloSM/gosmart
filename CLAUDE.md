@@ -108,6 +108,8 @@ lib/
 ├── features/                     # Screen-level UI (one folder per feature)
 │   ├── ai_chat/                  # AI assistant chat UI
 │   ├── auth/                     # Login, register, SMS OTP
+│   ├── driver/                   # Modo conductor (DS6, 72 dp): registro, documentos, disponible
+│   ├── legal/                    # Política Ley 1581 y términos (borrador con [PENDIENTE] visible)
 │   ├── home/                     # Inicio: Línea del corredor → mapa → hoja "¿A dónde vas?"
 │   │   └── widgets/              # HomeMap, HomeSheetContent, CorridorDetailSheet, QuickPlacesRow
 │   ├── nfc_simulator/            # Debug NFC simulator (LOCAL MOCK — no Edge Function)
@@ -184,6 +186,7 @@ All providers in `lib/providers/`. Pattern: `StateNotifierProvider<Notifier, Asy
 | `workPlaceProvider` | `Provider<FavoritePlace?>` | Derived — filters favoritePlaces by type=work |
 | `emergencyContactsProvider` | `FutureProvider<List<EmergencyContact>>` | Empty for guests |
 | `tripShareProvider` | `StateNotifierProvider<…, TripShare?>` | start()/stop(); pushes location every minute while the app is open |
+| `myDriverProvider` | `FutureProvider<DriverProfile?>` | Own driver row + vehicle + uploaded doc kinds; null = never registered |
 | `topFavoritePlacesProvider` | `Provider<List<FavoritePlace>>` | Top 3 by use_count |
 
 **Critical state pattern** — `updateProfile()` preserves previous state on error:
@@ -269,6 +272,9 @@ AppRoutes.routeDetail      // '/routes/detail'
 AppRoutes.paymentValidation // '/payment-validation'
 AppRoutes.nfcSimulator     // '/debug/nfc-simulator'
 AppRoutes.emergencyContacts // '/safety/contacts'  (needs account)
+AppRoutes.driver           // '/driver'  (modo conductor; needs account)
+AppRoutes.driverSignup     // '/driver/signup'
+AppRoutes.privacy / .terms // '/legal/privacy', '/legal/terms' (public)
 ```
 
 **Onboarding flow** (controlled by `SharedPreferences` key `onboarding_complete`):
@@ -384,7 +390,7 @@ final date = await showDatePicker(
 
 ### ProfileModel (`lib/models/profile_model.dart`)
 
-Fields: `id`, `name`, `email`, `phone?`, `avatarUrl?`, `ecoPoints`, `cedula?`, `city?`, `birthDate?`
+Fields: `id`, `name`, `email`, `phone?`, `avatarUrl?`, `ecoPoints`, `cedula?`, `city?`, `birthDate?`, `role` (`isDriver`/`isAdmin`)
 
 > **Cédula is immutable once set.** Check `(profile.cedula ?? '').isNotEmpty` before allowing edit.
 > Pass `cedula: null` to `updateProfile()` when the field is locked to avoid overwriting.
@@ -442,6 +448,10 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 - **`GSButton` API**: Use `isLoading:` (not `loading:`), `isFullWidth:` (not `fullWidth:`). Variant: `GSButtonVariant.outline / .ghost / .primary`.
 - **Place search**: screens use `placeSearch.search(q, near:)` (returns `PlaceSearchResult` with
   `items` and `limited`), not `geocodingService` directly. Directory rows with `verified=false` show "aprox.".
+- **`GSChoicePlates<T>`** (`lib/widgets/gs_choice_plates.dart`): pick one of a few options as small
+  plates (used by `ModeSelector` and driver signup). Prefer it over chips/radios.
+- **Driver status is server-only**: the client never writes `drivers.status`; a trigger rejects it and
+  editing reviewed fields sends an approved driver back to `pending`.
 - **Money formatting**: always `formatCop()` and `GSFonts.mono` for amounts the user compares.
   No red/green for income/expense — the sign carries it (red/green are road-only).
 - **`DateFormat(..., 'es')` throws** unless `initializeDateFormatting` ran (it doesn't in this app).
