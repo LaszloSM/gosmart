@@ -6,13 +6,14 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import '../../theme/design_tokens.dart';
-import '../../widgets/gs_card.dart';
 import '../../providers/ai_conversation_provider.dart';
 import '../../models/ai_models.dart';
 import '../../providers/active_route_provider.dart';
 import '../../providers/selected_mode_provider.dart';
 import '../../router/app_router.dart';
+import '../../core/money.dart';
 import '../../widgets/gs_button.dart';
+import '../../widgets/gs_route_plate.dart';
 import '../../widgets/gs_toast.dart';
 
 class AiChatScreen extends ConsumerStatefulWidget {
@@ -82,7 +83,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         _scrollCtrl.animateTo(
           _scrollCtrl.position.maxScrollExtent,
           duration: GSDuration.normal,
-          curve: Curves.easeOut,
+          curve: GSCurve.move,
         );
       }
     });
@@ -93,47 +94,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     final state = ref.watch(aiConversationProvider);
 
     return Scaffold(
-      backgroundColor: GSColors.bg,
-      appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: const BoxDecoration(
-                color: GSColors.accentLight,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.auto_awesome_rounded,
-                  color: GSColors.accent, size: 18),
-            ),
-            const SizedBox(width: GSSpacing.s2),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('GoSmart AI',
-                    style: TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w700)),
-                Text('Siempre disponible',
-                    style: TextStyle(
-                        fontSize: 11,
-                        color: GSColors.eco,
-                        fontWeight: FontWeight.w500)),
-              ],
-            ),
-          ],
-        ),
-        leading: const BackButton(),
-      ),
+      backgroundColor: GSColors.background,
+      appBar: AppBar(title: const Text('Asistente')),
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
               controller: _scrollCtrl,
-              padding: const EdgeInsets.all(GSSpacing.s5),
-              itemCount:
-                  state.messages.length + (state.isTyping ? 1 : 0),
+              padding: const EdgeInsets.all(GSSpacing.s4),
+              itemCount: state.messages.length + (state.isTyping ? 1 : 0),
               itemBuilder: (_, i) {
                 if (i == state.messages.length && state.isTyping) {
                   return const _TypingIndicator();
@@ -142,40 +111,34 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               },
             ),
           ),
-
-          // Suggestion chips — only when few messages
           if (state.messages.length <= 2)
             SizedBox(
-              height: 44,
+              height: GSSize.touchTarget,
               child: ListView.separated(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: GSSpacing.s5),
+                padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
                 scrollDirection: Axis.horizontal,
                 itemCount: _suggestions.length,
-                separatorBuilder: (_, __) =>
-                    const SizedBox(width: GSSpacing.s2),
+                separatorBuilder: (_, __) => const SizedBox(width: GSSpacing.s2),
                 itemBuilder: (_, i) => _SuggestionChip(
                   label: _suggestions[i],
                   onTap: () => _send(_suggestions[i]),
                 ),
               ),
             ),
-
           const SizedBox(height: GSSpacing.s2),
           _ChatInput(
             ctrl: _ctrl,
             onSend: _send,
             canSend: _ctrl.text.trim().isNotEmpty,
           ),
-          SizedBox(
-              height: MediaQuery.of(context).padding.bottom + 8),
+          SizedBox(height: MediaQuery.of(context).padding.bottom + GSSpacing.s2),
         ],
       ),
     );
   }
 }
 
-// ── Message bubble ────────────────────────────────────────────────────────────
+// ── Burbuja ───────────────────────────────────────────────────────────────────
 
 class _MessageBubble extends ConsumerStatefulWidget {
   const _MessageBubble({required this.message});
@@ -186,185 +149,136 @@ class _MessageBubble extends ConsumerStatefulWidget {
 }
 
 class _MessageBubbleState extends ConsumerState<_MessageBubble> {
-  /// Index into message.routeResults: 0=walking, 1=driving, 2=cycling.
-  /// Defaults to 1 (driving/bus) as the most common urban mode.
+  /// Índice en message.routeResults: 0 = a pie, 1 = por la vía, 2 = en bici.
   int _selectedRouteIdx = 1;
+
+  static const _routeLabels = ['A pie', 'Por la vía', 'En bici'];
+  static const _routeIcons = [
+    Icons.directions_walk_rounded,
+    Icons.two_wheeler_rounded,
+    Icons.pedal_bike_rounded,
+  ];
 
   @override
   Widget build(BuildContext context) {
     final message = widget.message;
     final isUser = message.role == 'user';
-    final isEstimated = message.source == 'heuristic' ||
-        message.source == 'cache';
+    final isEstimated =
+        message.source == 'heuristic' || message.source == 'cache';
+    final maxWidth = MediaQuery.of(context).size.width * 0.82;
+    const r = Radius.circular(GSRadius.lg);
+    const tail = Radius.circular(GSRadius.sm);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: GSSpacing.s4),
-      child: Row(
-        mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (!isUser) ...[
-            Container(
-              width: 30,
-              height: 30,
-              margin: const EdgeInsets.only(right: GSSpacing.s2),
-              decoration: const BoxDecoration(
-                color: GSColors.accentLight,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.auto_awesome_rounded,
-                  color: GSColors.accent, size: 16),
-            ),
-          ],
-          Flexible(
-            child: Column(
-              crossAxisAlignment: isUser
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
-              children: [
-                GestureDetector(
-                  onLongPress: !isUser
-                      ? () async {
-                          await Clipboard.setData(
-                            ClipboardData(text: message.content),
-                          );
-                          if (context.mounted) {
-                            GSToast.show(
-                              context,
-                              message: 'Copiado al portapapeles',
-                              type: GSToastType.info,
-                            );
-                          }
-                        }
-                      : null,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: GSSpacing.s4,
-                        vertical: GSSpacing.s3),
-                    decoration: BoxDecoration(
-                      color: isUser
-                          ? GSColors.brand
-                          : GSColors.surface,
-                      borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(GSRadius.lg),
-                        topRight: const Radius.circular(GSRadius.lg),
-                        bottomLeft: Radius.circular(
-                            isUser ? GSRadius.lg : 4),
-                        bottomRight: Radius.circular(
-                            isUser ? 4 : GSRadius.lg),
-                      ),
-                      boxShadow: GSShadow.sm,
+      child: Align(
+        alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: Column(
+            crossAxisAlignment:
+                isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            children: [
+              GestureDetector(
+                onLongPress: isUser
+                    ? null
+                    : () async {
+                        final messenger = ScaffoldMessenger.of(context);
+                        await Clipboard.setData(
+                            ClipboardData(text: message.content));
+                        GSToast.showWithMessenger(messenger,
+                            message: 'Copiado', type: GSToastType.info);
+                      },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: GSSpacing.s4, vertical: GSSpacing.s3),
+                  decoration: BoxDecoration(
+                    color: isUser ? GSColors.brand : GSColors.surface,
+                    border: isUser ? null : Border.all(color: GSColors.line),
+                    borderRadius: BorderRadius.only(
+                      topLeft: r,
+                      topRight: r,
+                      bottomLeft: isUser ? r : tail,
+                      bottomRight: isUser ? tail : r,
                     ),
-                    child: Text(
-                      message.content,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isUser
-                            ? Colors.white
-                            : GSColors.textPrimary,
-                        height: 1.5,
-                      ),
+                  ),
+                  child: Text(
+                    message.content,
+                    style: TextStyle(
+                      fontFamily: GSFonts.sans,
+                      fontSize: 17,
+                      height: 1.45,
+                      color: isUser ? GSColors.onBrand : GSColors.text,
                     ),
                   ),
                 ),
-                // Heuristic / cache source badge
-                if (isEstimated) ...[
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: GSColors.warning.withValues(alpha: 0.12),
-                      borderRadius:
-                          BorderRadius.circular(GSRadius.full),
-                      border: Border.all(
-                          color: GSColors.warning
-                              .withValues(alpha: 0.4)),
+              ),
+              if (isEstimated) ...[
+                const SizedBox(height: GSSpacing.s1),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.info_outline_rounded,
+                        size: 16, color: GSColors.textMuted),
+                    const SizedBox(width: GSSpacing.s1),
+                    Text(
+                      message.source == 'cache'
+                          ? 'Respuesta guardada, sin conexión'
+                          : 'Estimado, sin el asistente en línea',
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.info_outline_rounded,
-                            size: 11, color: GSColors.warning),
-                        const SizedBox(width: 4),
-                        Text(
-                          message.source == 'cache'
-                              ? 'Sin conexión'
-                              : 'Estimado',
-                          style: const TextStyle(
-                              fontSize: 11,
-                              color: GSColors.warning,
-                              fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                // Route card
-                if (message.routes != null &&
-                    message.routes!.isNotEmpty) ...[
-                  const SizedBox(height: GSSpacing.s2),
-                  _RouteQuickCard(
-                      routes: message.routes!,
-                      isEstimated: isEstimated),
-                ],
-                // Real route chips + "Ver en mapa" button
-                if (message.routeResults != null) ...[
-                  const SizedBox(height: GSSpacing.s3),
-                  Wrap(
-                    spacing: GSSpacing.s2,
-                    runSpacing: GSSpacing.s2,
-                    children: List.generate(3, (i) {
-                      final r = message.routeResults![i];
-                      const labels = ['Caminando', 'Auto/Bus', 'Bici'];
-                      const icons = [
-                        Icons.directions_walk_rounded,
-                        Icons.directions_bus_rounded,
-                        Icons.pedal_bike_rounded,
-                      ];
-                      final label = r != null
-                          ? '${labels[i]} · ${r.durationMin} min'
-                          : '${labels[i]} · N/D';
-                      return ChoiceChip(
-                        avatar: Icon(icons[i], size: 14),
-                        label: Text(label,
-                            style: const TextStyle(fontSize: 12)),
-                        selected: _selectedRouteIdx == i,
-                        onSelected: r != null
-                            ? (_) => setState(() => _selectedRouteIdx = i)
-                            : null,
-                      );
-                    }),
-                  ),
-                  const SizedBox(height: GSSpacing.s2),
-                  GSButton(
-                    label: 'Ver en mapa',
-                    leadingIcon: Icons.map_rounded,
-                    onPressed: message.routeResults![_selectedRouteIdx] != null
-                        ? () {
-                            ref.read(activeRouteProvider.notifier).state =
-                                message.routeResults![_selectedRouteIdx];
-                            context.go(AppRoutes.home);
-                          }
-                        : null,
-                  ),
-                ],
+                  ],
+                ),
               ],
-            ),
+              if (message.routes != null && message.routes!.isNotEmpty) ...[
+                const SizedBox(height: GSSpacing.s2),
+                _RoutePlate(routes: message.routes!, isEstimated: isEstimated),
+              ],
+              if (message.routeResults != null) ...[
+                const SizedBox(height: GSSpacing.s3),
+                Wrap(
+                  spacing: GSSpacing.s2,
+                  runSpacing: GSSpacing.s2,
+                  children: [
+                    for (var i = 0; i < 3; i++)
+                      if (message.routeResults![i] != null)
+                        ChoiceChip(
+                          avatar: Icon(_routeIcons[i], size: 18),
+                          label: Text(
+                              '${_routeLabels[i]} · ${message.routeResults![i]!.durationMin} min'),
+                          selected: _selectedRouteIdx == i,
+                          showCheckmark: false,
+                          onSelected: (_) =>
+                              setState(() => _selectedRouteIdx = i),
+                        ),
+                  ],
+                ),
+                const SizedBox(height: GSSpacing.s2),
+                GSButton(
+                  label: 'Ver en el mapa',
+                  leadingIcon: Icons.map_outlined,
+                  isFullWidth: false,
+                  onPressed: message.routeResults![_selectedRouteIdx] != null
+                      ? () {
+                          ref.read(activeRouteProvider.notifier).state =
+                              message.routeResults![_selectedRouteIdx];
+                          context.go(AppRoutes.home);
+                        }
+                      : null,
+                ),
+              ],
+            ],
           ),
-          if (isUser) const SizedBox(width: 8),
-        ],
+        ),
       ),
     );
   }
 }
 
-// ── Route quick card ──────────────────────────────────────────────────────────
+// ── Ruta sugerida como placa ─────────────────────────────────────────────────
 
-class _RouteQuickCard extends StatelessWidget {
-  const _RouteQuickCard(
-      {required this.routes, required this.isEstimated});
+class _RoutePlate extends StatelessWidget {
+  const _RoutePlate({required this.routes, required this.isEstimated});
   final List<RouteOption> routes;
   final bool isEstimated;
 
@@ -374,48 +288,17 @@ class _RouteQuickCard extends StatelessWidget {
       (r) => r.type == 'fastest',
       orElse: () => routes.first,
     );
-
-    return GSCard(
-      padding: const EdgeInsets.all(GSSpacing.s3),
-      shadow: GSShadow.md,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: GSColors.accentLight,
-              borderRadius: BorderRadius.circular(GSRadius.sm),
-            ),
-            child: const Icon(Icons.route_rounded,
-                color: GSColors.accent, size: 18),
-          ),
-          const SizedBox(width: GSSpacing.s3),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${fastest.totalDurationMin} min · \$${fastest.totalCostCop} COP',
-                style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                    color: GSColors.accent),
-              ),
-              Text(
-                isEstimated ? 'Tiempo estimado' : 'Ver en el mapa',
-                style: const TextStyle(
-                    fontSize: 11,
-                    color: GSColors.textSecondary),
-              ),
-            ],
-          ),
-        ],
-      ),
+    return GSRoutePlate(
+      text: '${fastest.totalDurationMin} min',
+      leading: Icons.route_rounded,
+      size: GSPlateSize.sm,
+      detail: '${formatCop(fastest.totalCostCop)}'
+          '${isEstimated ? ' · estimado' : ''}',
     );
   }
 }
 
-// ── Typing indicator ──────────────────────────────────────────────────────────
+// ── Escribiendo… ─────────────────────────────────────────────────────────────
 
 class _TypingIndicator extends StatefulWidget {
   const _TypingIndicator();
@@ -426,15 +309,9 @@ class _TypingIndicator extends StatefulWidget {
 
 class _TypingIndicatorState extends State<_TypingIndicator>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl =
-        AnimationController(vsync: this, duration: const Duration(seconds: 1))
-          ..repeat();
-  }
+  late final AnimationController _ctrl = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 900))
+    ..repeat();
 
   @override
   void dispose() {
@@ -444,56 +321,47 @@ class _TypingIndicatorState extends State<_TypingIndicator>
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 30,
-          height: 30,
-          margin: const EdgeInsets.only(right: 8),
-          decoration: const BoxDecoration(
-              color: GSColors.accentLight, shape: BoxShape.circle),
-          child: const Icon(Icons.auto_awesome_rounded,
-              color: GSColors.accent, size: 16),
-        ),
-        Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    final still = MediaQuery.of(context).disableAnimations;
+    if (still) _ctrl.stop();
+    return Semantics(
+      label: 'El asistente está escribiendo',
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+              horizontal: GSSpacing.s4, vertical: GSSpacing.s4),
           decoration: BoxDecoration(
             color: GSColors.surface,
+            border: Border.all(color: GSColors.line),
             borderRadius: BorderRadius.circular(GSRadius.lg),
-            boxShadow: GSShadow.sm,
           ),
           child: AnimatedBuilder(
             animation: _ctrl,
-            builder: (_, __) {
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(3, (i) {
-                  final delay = i * 0.33;
-                  final val =
-                      ((_ctrl.value - delay) % 1.0).clamp(0.0, 1.0);
-                  return Container(
-                    margin:
-                        const EdgeInsets.symmetric(horizontal: 2),
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: Color.lerp(
-                          GSColors.border, GSColors.accent, val),
-                      shape: BoxShape.circle,
-                    ),
-                  );
-                }),
-              );
-            },
+            builder: (_, __) => Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(3, (i) {
+                final v = still
+                    ? 0.5
+                    : ((_ctrl.value - i * 0.33) % 1.0).clamp(0.0, 1.0);
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: Color.lerp(GSColors.line, GSColors.brand, v),
+                    shape: BoxShape.circle,
+                  ),
+                );
+              }),
+            ),
           ),
         ),
-      ],
+      ),
     );
   }
 }
 
-// ── Suggestion chip ───────────────────────────────────────────────────────────
+// ── Sugerencia ───────────────────────────────────────────────────────────────
 
 class _SuggestionChip extends StatelessWidget {
   const _SuggestionChip({required this.label, required this.onTap});
@@ -502,25 +370,35 @@ class _SuggestionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: GSColors.surface,
-          borderRadius: BorderRadius.circular(GSRadius.full),
-          border: Border.all(color: GSColors.border),
+    return Material(
+      color: GSColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(GSRadius.sm),
+        side: const BorderSide(color: GSColors.line, width: 1.5),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s3),
+          child: Center(
+            widthFactor: 1,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontFamily: GSFonts.sans,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: GSColors.brand,
+              ),
+            ),
+          ),
         ),
-        child: Text(label,
-            style: const TextStyle(
-                fontSize: 13, color: GSColors.textPrimary)),
       ),
     );
   }
 }
 
-// ── Chat input ────────────────────────────────────────────────────────────────
+// ── Campo de mensaje ─────────────────────────────────────────────────────────
 
 class _ChatInput extends StatelessWidget {
   const _ChatInput({
@@ -534,50 +412,39 @@ class _ChatInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
-      padding: const EdgeInsets.symmetric(
-          horizontal: GSSpacing.s4, vertical: GSSpacing.s2),
-      decoration: BoxDecoration(
-        color: GSColors.surface,
-        borderRadius: BorderRadius.circular(GSRadius.full),
-        boxShadow: GSShadow.md,
-        border: Border.all(color: GSColors.border),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: ctrl,
+              minLines: 1,
+              maxLines: 4,
+              textCapitalization: TextCapitalization.sentences,
+              style: const TextStyle(fontFamily: GSFonts.sans, fontSize: 17),
               decoration: const InputDecoration(
-                hintText: 'Pregunta sobre rutas y transporte...',
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                filled: false,
-                contentPadding: EdgeInsets.zero,
-                isDense: true,
+                hintText: 'Escribe tu pregunta',
               ),
-              style: const TextStyle(fontSize: 15),
               onSubmitted: (_) {
                 if (canSend) onSend();
               },
             ),
           ),
           const SizedBox(width: GSSpacing.s2),
-          GestureDetector(
-            onTap: canSend ? onSend : null,
-            child: Container(
-              width: GSSize.touchTarget,
-              height: GSSize.touchTarget,
-              decoration: BoxDecoration(
-                color: canSend ? GSColors.brand : GSColors.surfaceSunken,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.send_rounded,
-                  color: canSend ? GSColors.onBrand : GSColors.textDisabled,
-                  size: 20),
+          IconButton.filled(
+            tooltip: 'Enviar',
+            onPressed: canSend ? onSend : null,
+            style: IconButton.styleFrom(
+              backgroundColor: GSColors.brand,
+              foregroundColor: GSColors.onBrand,
+              disabledBackgroundColor: GSColors.surfaceSunken,
+              disabledForegroundColor: GSColors.textDisabled,
+              minimumSize: const Size(52, 52),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(GSRadius.md)),
             ),
+            icon: const Icon(Icons.send_rounded),
           ),
         ],
       ),

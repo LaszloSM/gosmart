@@ -5,8 +5,8 @@ import 'package:latlong2/latlong.dart';
 import '../services/ai_service.dart';
 import '../models/ai_models.dart';
 
-const _welcomeMessage = 'Hola! Soy tu asistente GoSmart. '
-    'Dime a dónde quieres ir y te planearé la mejor ruta.';
+const _welcomeMessage = '¡Hola! Soy tu asistente GoSmart. '
+    'Dime a dónde vas y te digo cómo llegar y cuánto cuesta.';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 

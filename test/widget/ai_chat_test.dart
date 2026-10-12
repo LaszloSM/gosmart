@@ -16,11 +16,11 @@ Widget buildTestApp(Widget child) {
 
 void main() {
   group('AiChatScreen', () {
-    testWidgets('renders GoSmart AI title', (tester) async {
+    testWidgets('muestra el título Asistente', (tester) async {
       await tester.pumpWidget(buildTestApp(const AiChatScreen()));
       await tester.pump();
 
-      expect(find.text('GoSmart AI'), findsOneWidget);
+      expect(find.text('Asistente'), findsOneWidget);
     });
 
     testWidgets('shows welcome message from notifier', (tester) async {
