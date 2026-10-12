@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/supabase_client.dart';
+import 'core/telemetry.dart';
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
 
@@ -30,12 +31,14 @@ Future<void> main() async {
     statusBarIconBrightness: Brightness.dark,
   ));
 
-  runApp(
-    // ProviderScope enables Riverpod throughout the app
-    const ProviderScope(
-      child: GoSmartApp(),
-    ),
-  );
+  await Telemetry.init(() async {
+    runApp(
+      // ProviderScope enables Riverpod throughout the app
+      const ProviderScope(
+        child: GoSmartApp(),
+      ),
+    );
+  });
 }
 
 class GoSmartApp extends ConsumerWidget {

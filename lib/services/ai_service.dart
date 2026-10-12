@@ -3,12 +3,12 @@
 // Flujo: query → [ubicación + tráfico + ruta real como contexto] → ai-chat → respuesta + route cards
 
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:latlong2/latlong.dart';
 
 import '../core/supabase_client.dart';
+import '../core/telemetry.dart';
 import '../models/ai_models.dart';
 import '../models/route_result.dart';
 import '../models/traffic_model.dart';
@@ -304,8 +304,7 @@ Al final de tu respuesta agrega exactamente esta línea: "Toca 'Ver en mapa' par
       final ok = data is Map && data['source'] == 'groq';
 
       if (!ok) {
-        debugPrint('[AiService] ai-chat sin respuesta de Groq: '
-            '${data is Map ? data['error'] : data}');
+        Telemetry.degraded('groq', '${data is Map ? data['error'] : 'bad_payload'}');
       }
 
       // Route cards only for routing queries, not pure traffic questions
@@ -322,12 +321,13 @@ Al final de tu respuesta agrega exactamente esta línea: "Toca 'Ver en mapa' par
         routeResults: routeResults,
       );
     } on FunctionException catch (e) {
-      debugPrint('[AiService] ai-chat ${e.status}: ${e.details}');
+      Telemetry.degraded('ai-chat', 'http_${e.status}');
       return _unavailable();
     } on TimeoutException {
+      Telemetry.degraded('ai-chat', 'timeout');
       return _unavailable();
     } catch (e) {
-      debugPrint('[AiService] error: $e');
+      Telemetry.degraded('ai-chat', e.runtimeType.toString());
       return _unavailable();
     }
   }

@@ -29,7 +29,7 @@
 - Cálculo de emisiones CO₂
 
 ✅ **Billetera Digital**
-- Recarga de saldo vía Stripe
+- Recarga de saldo simulada (Wompi en la Fase 7)
 - Historial de transacciones pagado
 - Eco-puntos por viajes sostenibles
 - Control de métodos de pago
@@ -62,8 +62,8 @@
 | Realtime | Suscripciones en vivo | Supabase Realtime |
 | Edge Functions | Serverless Deno | Supabase Edge Functions |
 | Storage | Archivos de usuario | Supabase Storage |
-| Pagos | Transacciones monetarias | Stripe API |
-| IA | LLM + Embeddings | Groq (llama-3.3-70b) + pgvector |
+| Pagos | Billetera interna (recarga simulada; Wompi en Fase 7) | Supabase RPC |
+| IA | LLM vía Edge Function | Groq (llama-3.1-8b-instant, respaldo 70b) |
 | Mapas | Tiles + Geocoding | Mapbox + OpenStreetMap |
 | Localización | GPS | Geolocator |
 | NFC | Lectura de tarjetas | flutter_nfc_kit |
@@ -85,7 +85,6 @@
 - **Android Studio** (para Android) o **Xcode** (para iOS)
 - **Proyecto Supabase** — [supabase.com](https://supabase.com)
 - **Claves API**:
-  - Stripe (test/prod)
   - Google Maps (opcional, fallback a OSM)
   - Mapbox (geocoding + directions)
   - Groq (IA, free tier)
@@ -119,6 +118,7 @@ supabase db push
 # 7. supabase/migrations/007_fix_embedding_dim.sql
 # 8. supabase/migrations/008_wallet_mock.sql
 # 9. supabase/migrations/009_favorites_history.sql
+# 10. supabase/migrations/010_wallet_hardening.sql
 
 ### 4. Configurar Variables de Entorno
 
@@ -128,10 +128,9 @@ cp .env.example .env
 Edita `.env` con tus valores reales:
 SUPABASE_URL=https://xyzabcdef.supabase.co
 SUPABASE_ANON_KEY=eyJhbGci...
-STRIPE_PUBLISHABLE_KEY=pk_test_...
 GOOGLE_MAPS_API_KEY=AIza...
 MAPBOX_PUBLIC_TOKEN=pk.eyJ...
-GROQ_API_KEY=gsk_...
+SENTRY_DSN=            # opcional
 
 **⚠️ Nunca commits `.env` — está en `.gitignore`**
 
@@ -139,9 +138,7 @@ GROQ_API_KEY=gsk_...
 
 En Supabase Dashboard → **Edge Functions → Secrets**, añade:
 
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-GROQ_API_KEY=gsk_...
+GROQ_API_KEY=gsk_...   # la IA solo se llama desde la Edge Function ai-chat
 
 ### 6. Desplegar Edge Functions
 
@@ -151,17 +148,9 @@ supabase link --project-ref your-project-ref
 
 supabase functions deploy authorize
 supabase functions deploy ai-chat
-supabase functions deploy stripe-webhook
 supabase functions deploy delete-account
 
-### 7. Configurar Webhook de Stripe
-
-En [Stripe Dashboard](https://dashboard.stripe.com/test/webhooks):
-- Añade endpoint → URL: `https://your-project-ref.supabase.co/functions/v1/stripe-webhook`
-- Eventos: `payment_intent.succeeded`
-- Copia el signing secret → set como `STRIPE_WEBHOOK_SECRET`
-
-### 8. Ejecutar la App
+### 7. Ejecutar la App
 
 # Android (emulador o dispositivo conectado)
 flutter run
@@ -215,7 +204,7 @@ adb kill-server && adb start-server   # reinicia el demonio ADB si hace falta
 
 **4. Asegúrate de tener el `.env` configurado**
 
-Sin las 4 claves obligatorias (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `STRIPE_PUBLISHABLE_KEY`, `GOOGLE_MAPS_API_KEY`) la app crashea al iniciar. Copia y edita:
+Sin las 3 claves obligatorias (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `GOOGLE_MAPS_API_KEY`) la app crashea al iniciar. Copia y edita:
 ```bash
 cp .env.example .env
 ```
@@ -272,9 +261,9 @@ Ya queda instalada como cualquier otra app en el cajón de aplicaciones.
 |----------|----------|
 | El teléfono aparece como `unauthorized` en `adb devices` | Desconecta/reconecta el cable y acepta el diálogo de depuración USB en el teléfono |
 | `flutter devices` no muestra el teléfono | Verifica que la Depuración USB esté activa y que el cable sea de datos (no solo de carga) |
-| La app crashea al abrir | Falta alguna de las 4 claves obligatorias en `.env` |
+| La app crashea al abrir | Falta alguna de las 3 claves obligatorias en `.env` |
 | El mapa no carga | Revisa `GOOGLE_MAPS_API_KEY` (o configura `MAPBOX_PUBLIC_TOKEN` para usar Mapbox/OSM) |
-| El asistente AI dice "no configurado" | Falta `GROQ_API_KEY` en el `.env` |
+| El asistente AI dice "no configurado" | Falta el secret `GROQ_API_KEY` en Supabase → Edge Functions, o `ai-chat` no está desplegada |
 | Error de NFC al instalar | Normal si el teléfono no tiene hardware NFC — el simulador local funciona igual sin NFC |
 
 > El `minSdkVersion` del proyecto es **21** (Android 5.0 Lollipop), así que funciona en prácticamente cualquier teléfono Android moderno.
@@ -422,7 +411,7 @@ CREATE POLICY "Usuarios ven sus tarjetas"
 | Método | Path | Descripción |
 |--------|------|-------------|
 | `GET` | `/wallet` | Obtener estado de billetera |
-| `POST` | `/wallet/recharge` | Recargar vía Stripe |
+| `RPC` | `wallet_recharge_simulated` | Recarga simulada (Wompi en Fase 7) |
 | `GET` | `/wallet/transactions` | Historial (paginated) |
 
 ### IA
@@ -610,7 +599,6 @@ flutter test --coverage
 
 - ✅ `.env` está en `.gitignore` (nunca commitear)
 - ✅ Supabase `service_role` key solo en Edge Function secrets
-- ✅ Stripe secret key solo en Supabase secrets
 - ✅ `GROQ_API_KEY` solo en Supabase secrets
 - ✅ RLS habilitado en todas las tablas de usuario
 
@@ -622,15 +610,8 @@ flutter test --coverage
 3. Re-desplegar Edge Functions
 4. Informar a todos los devs
 
-#### Claves Stripe
-1. Stripe Dashboard → Developers → API keys → Roll key
-2. Actualizar `STRIPE_SECRET_KEY` en Supabase Secrets
-3. Actualizar `STRIPE_PUBLISHABLE_KEY` en `.env`
-4. Re-desplegar `stripe-webhook` function
-5. Probar webhook en sandbox
-
 #### API Key Groq
-1. Google AI Studio → Manage API keys → Revoke → Create new
+1. console.groq.com → API Keys → Revoke → Create new
 2. Actualizar `GROQ_API_KEY` en Supabase Secrets
 3. Re-desplegar `ai-chat` function
 4. Probar chat en la app
@@ -696,7 +677,6 @@ flutter build web --release
 | `supabase_flutter` | ^2.5.0 | Backend + Auth + Realtime |
 | `flutter_riverpod` | ^2.5.1 | State management |
 | `go_router` | ^13.2.0 | Navegación |
-| `flutter_stripe` | ^10.1.1 | Pagos |
 | `flutter_nfc_kit` | ^3.4.0 | NFC |
 | `flutter_map` | ^7.0.2 | Mapas |
 | `geolocator` | ^13.0.0 | GPS |
@@ -740,7 +720,6 @@ Ver `pubspec.yaml` para lista completa.
 - [Supabase Docs](https://supabase.com/docs)
 - [Riverpod Guide](https://riverpod.dev)
 - [GoRouter Docs](https://pub.dev/packages/go_router)
-- [Stripe Flutter SDK](https://pub.dev/packages/flutter_stripe)
 - [Groq API](https://console.groq.com)
 - [Mapbox API](https://docs.mapbox.com)
 

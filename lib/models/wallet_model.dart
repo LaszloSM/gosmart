@@ -1,8 +1,8 @@
 // lib/models/wallet_model.dart
 import 'package:intl/intl.dart';
 
-/// Modelo del wallet simulado (sin pagos reales — proyecto académico).
-class WalletMock {
+/// Billetera GoSmart (tabla `wallets`). Saldo en COP enteros.
+class Wallet {
   final String id;
   final String userId;
   final int balance; // En COP (enteros)
@@ -11,7 +11,7 @@ class WalletMock {
   final DateTime createdAt;
   final DateTime? updatedAt;
 
-  const WalletMock({
+  const Wallet({
     required this.id,
     required this.userId,
     required this.balance,
@@ -21,8 +21,8 @@ class WalletMock {
     this.updatedAt,
   });
 
-  factory WalletMock.fromJson(Map<String, dynamic> json) {
-    return WalletMock(
+  factory Wallet.fromJson(Map<String, dynamic> json) {
+    return Wallet(
       id: json['id'] as String,
       userId: json['user_id'] as String,
       balance: json['balance'] as int,

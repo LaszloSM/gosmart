@@ -22,8 +22,9 @@ void main() {
       await tester.pumpWidget(buildTestApp(const LoginScreen()));
       await tester.pumpAndSettle();
 
-      expect(find.text('Welcome\nback!'), findsOneWidget);
-      expect(find.text('Phone number'), findsOneWidget);
+      expect(find.text('Bienvenido\nde nuevo'), findsOneWidget);
+      expect(find.text('Teléfono'), findsOneWidget);
+      expect(find.text('Contraseña'), findsNothing);
     });
 
     testWidgets('shows email and password fields when email tab selected',
@@ -31,30 +32,35 @@ void main() {
       await tester.pumpWidget(buildTestApp(const LoginScreen()));
       await tester.pumpAndSettle();
 
-      // Tap the Email tab
-      await tester.tap(find.text('Email'));
+      await tester.tap(find.text('Correo').first);
       await tester.pumpAndSettle();
 
-      expect(find.text('Email'), findsWidgets);
-      expect(find.text('Password'), findsOneWidget);
+      expect(find.text('Contraseña'), findsOneWidget);
+      expect(find.text('Teléfono'), findsNothing);
     });
 
     testWidgets('shows validation error when phone is empty', (tester) async {
       await tester.pumpWidget(buildTestApp(const LoginScreen()));
       await tester.pumpAndSettle();
 
-      // Tap send button without filling phone
-      await tester.tap(find.text('Send verification code'));
+      await tester.tap(find.text('Enviar código'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Enter a valid number'), findsOneWidget);
+      expect(find.text('Ingresa un número válido'), findsOneWidget);
     });
 
-    testWidgets('Try Demo button is present', (tester) async {
+    testWidgets('shows validation errors for empty email login',
+        (tester) async {
       await tester.pumpWidget(buildTestApp(const LoginScreen()));
       await tester.pumpAndSettle();
 
-      expect(find.text('Try Demo'), findsOneWidget);
+      await tester.tap(find.text('Correo').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Iniciar sesión'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Ingresa un correo válido'), findsOneWidget);
+      expect(find.text('Contraseña muy corta'), findsOneWidget);
     });
   });
 }

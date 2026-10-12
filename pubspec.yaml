@@ -57,6 +57,9 @@ dependencies:
   # Image picker (profile photo upload)
   image_picker: ^1.0.7
 
+  # Error reporting (optional, SENTRY_DSN)
+  sentry_flutter: ^8.14.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

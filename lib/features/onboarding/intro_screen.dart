@@ -165,7 +165,7 @@ class _Slide {
 
 class _SlideContent extends StatelessWidget {
   final _Slide slide;
-  const _SlideContent({super.key, required this.slide});
+  const _SlideContent({required this.slide});
 
   @override
   Widget build(BuildContext context) {

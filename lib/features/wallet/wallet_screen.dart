@@ -2,12 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../models/transaction_model.dart';
 import '../../providers/card_provider.dart';
 import '../../providers/transaction_provider.dart';
-import '../../providers/wallet_mock_provider.dart';
+import '../../providers/wallet_provider.dart';
 import '../../router/app_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
@@ -73,14 +72,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           Navigator.pop(context);
           final messenger = ScaffoldMessenger.of(context);
           final success = await ref
-              .read(walletMockNotifierProvider.notifier)
-              .recharge(
-                amount.toInt(),
-                description: 'Recarga de \$${amount.toStringAsFixed(0)} COP',
-              );
-          if (success) {
-            ref.invalidate(walletMockProvider);
-          }
+              .read(walletNotifierProvider.notifier)
+              .recharge(amount.toInt());
           GSToast.showWithMessenger(
             messenger,
             message: success
@@ -201,8 +194,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             _buildCardControls(theme),
             const SizedBox(height: GSSpacing.s4),
 
-            // ── Section 5: Wallet mock saldo ──────────────────────────────────
-            _buildMockWalletSection(theme),
+            // ── Section 5: Saldo de la billetera ──────────────────────────────
+            _buildWalletSection(theme),
             const SizedBox(height: GSSpacing.s6),
           ],
         ),
@@ -334,9 +327,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                         children: [
                           Builder(
                             builder: (context) {
-                              final mockWallet = ref.watch(walletMockProvider);
-                              final balance = mockWallet.valueOrNull?.balance ??
-                                  ref.watch(walletMockBalanceProvider);
+                              final balance = ref.watch(walletBalanceProvider);
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -350,7 +341,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                                   ),
                                   _AnimatedBalance(
                                     key: ValueKey(balance),
-                                    amount: (balance ?? 0).toDouble(),
+                                    amount: balance.toDouble(),
                                   ),
                                 ],
                               );
@@ -646,9 +637,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     );
   }
   // ── Section 5 ───────────────────────────────────────────────────────────────
-  Widget _buildMockWalletSection(ThemeData theme) {
-    final walletAsync = ref.watch(walletMockProvider);
-    final txAsync = ref.watch(walletMockTransactionsProvider(8));
+  Widget _buildWalletSection(ThemeData theme) {
+    final walletAsync = ref.watch(walletProvider);
+    final txAsync = ref.watch(walletTransactionsProvider(8));
 
     return walletAsync.when(
       data: (wallet) {

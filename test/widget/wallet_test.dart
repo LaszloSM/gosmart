@@ -7,6 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gosmart/features/wallet/wallet_screen.dart';
 import 'package:gosmart/providers/card_provider.dart';
 import 'package:gosmart/models/card_model.dart';
+import 'package:gosmart/models/wallet_model.dart';
+import 'package:gosmart/providers/transaction_provider.dart';
+import 'package:gosmart/providers/wallet_provider.dart';
 import 'package:gosmart/theme/app_theme.dart';
 
 const _testCard = CardModel(
@@ -19,6 +22,24 @@ const _testCard = CardModel(
   nfcEnabled: true,
   expiresAt: '12/28',
 );
+
+final _testWallet = Wallet(
+  id: 'test-wallet-id',
+  userId: 'test-user-id',
+  balance: 37000, // distinto al saldo de la tarjeta (50000)
+  cardNumber: 'GS-1234-5678-9012',
+  cardStatus: 'active',
+  createdAt: DateTime(2026, 10, 1),
+);
+
+/// Evita llamadas reales a Supabase: billetera fija y listas vacías.
+List<Override> _walletOverrides(CardModel? card) => [
+      if (card != null)
+        activeCardProvider.overrideWith((ref) => _MockCardNotifier(card)),
+      walletProvider.overrideWith((ref) async => _testWallet),
+      walletTransactionsProvider.overrideWith((ref, limit) async => []),
+      transactionListProvider.overrideWith((ref) => _EmptyTxNotifier()),
+    ];
 
 Widget buildTestApp(Widget child, {List<Override>? overrides}) {
   return ProviderScope(
@@ -45,31 +66,20 @@ void main() {
     });
 
     testWidgets('shows balance when card is loaded', (tester) async {
-      await tester.pumpWidget(ProviderScope(
-        overrides: [
-          activeCardProvider
-              .overrideWith((ref) => _MockCardNotifier(_testCard)),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const WalletScreen(),
-        ),
+      await tester.pumpWidget(buildTestApp(
+        const WalletScreen(),
+        overrides: _walletOverrides(_testCard),
       ));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('50000'), findsAtLeastNWidgets(1));
+      // El saldo viene de la billetera (wallets), no de la tarjeta.
+      expect(find.text('\$37000 COP'), findsOneWidget);
     });
 
     testWidgets('shows lock card option', (tester) async {
-      await tester.pumpWidget(ProviderScope(
-        overrides: [
-          activeCardProvider
-              .overrideWith((ref) => _MockCardNotifier(_testCard)),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.light,
-          home: const WalletScreen(),
-        ),
+      await tester.pumpWidget(buildTestApp(
+        const WalletScreen(),
+        overrides: _walletOverrides(_testCard),
       ));
       await tester.pumpAndSettle();
 
@@ -102,4 +112,12 @@ class _LoadingCardNotifier extends ActiveCardNotifier {
 
   @override
   void subscribeRealtime() {}
+}
+
+/// Historial vacío, sin consultar Supabase.
+class _EmptyTxNotifier extends TransactionListNotifier {
+  @override
+  Future<void> load({bool refresh = false}) async {
+    state = const AsyncData([]);
+  }
 }

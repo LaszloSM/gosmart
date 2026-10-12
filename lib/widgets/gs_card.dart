@@ -38,7 +38,13 @@ class GSCard extends StatelessWidget {
         border: border,
       ),
       clipBehavior: clip,
-      child: padding != null ? Padding(padding: padding!, child: child) : child,
+      // Material transparente: los ListTile internos pintan su ripple sobre
+      // la tarjeta y no detrás del fondo de color.
+      child: Material(
+        type: MaterialType.transparency,
+        child:
+            padding != null ? Padding(padding: padding!, child: child) : child,
+      ),
     );
 
     if (onTap != null) {

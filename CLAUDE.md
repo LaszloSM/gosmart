@@ -1,7 +1,8 @@
 # CLAUDE.md — GoSmart
 
-GoSmart is a Colombian urban-mobility app (Flutter/Dart) backed by Supabase.
-Universal transport card with NFC, AI assistant, route planning, and Stripe recharges.
+GoSmart is a mobility app (Flutter/Dart) backed by Supabase, scoped to the MVP for
+Riohacha, Maicao and the Troncal del Caribe corridor (La Guajira, Colombia).
+Plan and decisions: `docs/PLAN_MVP_GUAJIRA.md`. Long-term vision: universal transport card.
 
 ## Commands
 
@@ -33,39 +34,33 @@ dart run build_runner build --delete-conflicting-outputs
 
 ## Environment Setup
 
-Copy `.env.example` to `.env`. **All four keys are required at startup** (app crashes if missing):
+Copy `.env.example` to `.env` (it is also declared as an asset, so `flutter test` needs it).
+Required at startup (app crashes if missing):
 
 ```
 SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_ANON_KEY=eyJ...
-STRIPE_PUBLISHABLE_KEY=pk_test_...
 GOOGLE_MAPS_API_KEY=AIza...
-```
-
-Required for AI assistant (app shows "not configured" if absent):
-
-```
-GROQ_API_KEY=gsk_...          # AI — free tier at https://console.groq.com (no credit card)
 ```
 
 Optional:
 
 ```
+SENTRY_DSN=                    # empty = no error reporting (lib/core/telemetry.dart)
 MAP_PROVIDER=google            # 'google' (default) or 'osm' for OpenStreetMap
-MAPBOX_PUBLIC_TOKEN=pk.eyJ... # Mapbox public token — free, 50k loads/month
-                               # Get from https://account.mapbox.com → Tokens
-                               # If empty, map falls back to OpenStreetMap
+MAPBOX_PUBLIC_TOKEN=pk.eyJ... # Mapbox public token; if empty, map falls back to OSM
 ```
 
-> **Gemini is NOT used.** The AI uses Groq `llama-3.3-70b-versatile` directly from Flutter —
-> free, no credit card, 1,000 req/day. `GEMINI_API_KEY` kept in env for reference only.
+> **No AI key in the app.** Groq is called only from the Edge Function `ai-chat`.
+> Stripe was removed; recharges are simulated until Wompi (Fase 7).
 
 Edge Function secrets (Supabase Dashboard → Edge Functions → Secrets, never in `.env`):
-`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `GROQ_API_KEY` (para la Edge Function ai-chat)
+`GROQ_API_KEY` (ai-chat). GitHub Actions secrets for `supabase-maintenance.yml`:
+`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_DB_URL` (all optional; steps skip if absent).
 
 ## Database Migrations
 
-Run all migrations in order in Supabase SQL Editor. Each is safe to re-run (IF NOT EXISTS guards).
+All migrations live in `supabase/migrations/`. Run them in order in the Supabase SQL Editor. Each is safe to re-run (IF NOT EXISTS guards).
 
 | File | Description |
 |------|-------------|
@@ -78,6 +73,11 @@ Run all migrations in order in Supabase SQL Editor. Each is safe to re-run (IF N
 | `007_fix_embedding_dim.sql` | Cambia `colombia_kg_embeddings.embedding` de `vector(1536)` a `vector(384)` y recrea RPC `match_colombia_kg`. Correr **antes** de `load_supabase.py`. |
 | `008_wallet_mock.sql` | Tables: `wallets` (balance INTEGER, card_number, card_status), `wallet_transactions`. RPCs: `recharge_wallet` (row-locking), `generate_gosmart_card_number`. Trigger: `create_wallet_for_new_user` (auto-creates wallet with $10,000 COP welcome balance on signup). |
 | `009_favorites_history.sql` | Tables: `favorite_places` (unique partial index per home/work per user), `trip_history`. RPC: `increment_favorite_use`. |
+| `010_wallet_hardening.sql` | **Security fix for 008.** Drops user UPDATE on `wallets` and INSERT on `wallet_transactions`; revokes `recharge_wallet` from clients; adds `idempotency_key`; new RPC `wallet_recharge_simulated(p_amount, p_idempotency_key)` that uses `auth.uid()`. Backfills wallets for older users. |
+
+**SQL tests:** `supabase/tests/` runs on a plain Postgres 16 (CI job `sql-tests`). `_supabase_stub.sql`
+fakes roles, `auth.users` and `auth.uid()` (read from `request.jwt.claim.sub`).
+Locally: apply the stub, then the migrations, then the `*_test.sql` file with `psql -v ON_ERROR_STOP=1`.
 
 After running 005+, PostgREST reloads automatically via `NOTIFY pgrst, 'reload schema'`.
 
@@ -92,6 +92,8 @@ After running 005+, PostgREST reloads automatically via `NOTIFY pgrst, 'reload s
 lib/
 ├── core/
 │   ├── env.dart                  # Typed access to .env via flutter_dotenv
+│   ├── region.dart               # GSRegion: Riohacha/Maicao centers + La Guajira bbox
+│   ├── telemetry.dart            # Optional Sentry; Telemetry.degraded(service, code)
 │   └── supabase_client.dart      # GoSmartSupabase.client singleton (initialized once in main)
 ├── features/                     # Screen-level UI (one folder per feature)
 │   ├── ai_chat/                  # AI assistant chat UI
@@ -105,7 +107,7 @@ lib/
 │   ├── profile/                  # User profile + edit sheets
 │   ├── routes/                   # Route planner + route detail
 │   ├── splash/                   # SplashScreen — animated logo, onboarding routing
-│   └── wallet/                   # Wallet / recharge screen (uses wallet mock)
+│   └── wallet/                   # Wallet / recharge screen (Supabase `wallets`)
 ├── models/                       # Pure data classes (no Flutter dependencies)
 │   ├── ai_models.dart            # AiMessage, ConversationTurn, RouteOption, Leg
 │   ├── authorize_result.dart     # NFC authorization result
@@ -113,7 +115,7 @@ lib/
 │   ├── favorite_place.dart       # FavoritePlace, FavoritePlaceType (home/work/custom)
 │   ├── profile_model.dart        # ProfileModel (includes cedula, city, birthDate)
 │   ├── transaction_model.dart    # TransactionModel
-│   ├── wallet_model.dart         # WalletMock (SEPARATE from CardModel — mock wallet)
+│   ├── wallet_model.dart         # Wallet (table `wallets`; SEPARATE from CardModel)
 │   ├── wallet_transaction_model.dart # WalletTransactionModel, WalletTxType enum
 │   └── geocode_suggestion.dart   # Address suggestion from Mapbox Geocoding: placeName, fullAddress, latLng
 ├── providers/                    # Riverpod StateNotifierProviders
@@ -123,11 +125,11 @@ lib/
 │   ├── favorites_provider.dart   # FavoritePlace CRUD + home/work/top derived providers
 │   ├── profile_provider.dart
 │   ├── transaction_provider.dart
-│   └── wallet_mock_provider.dart # Mock wallet balance + recharge (uses wallets table)
+│   └── wallet_provider.dart      # Wallet balance, transactions, simulated recharge RPC
 ├── router/
 │   └── app_router.dart           # GoRouter config + AppRoutes constants
 ├── services/                     # Plain Dart classes (each has a top-level singleton)
-│   ├── ai_service.dart           # Groq REST API calls
+│   ├── ai_service.dart           # Thin client of the ai-chat Edge Function
 │   ├── auth_service.dart
 │   ├── card_service.dart
 │   ├── profile_service.dart
@@ -138,7 +140,7 @@ lib/
 │   ├── app_theme.dart            # MaterialApp ThemeData
 │   └── design_tokens.dart        # GSColors, GSSpacing, GSRadius, GSShadow, GSSize, etc.
 ├── widgets/                      # Reusable GS* components
-└── main.dart                     # App entry point — initializes Supabase, dotenv, Stripe
+└── main.dart                     # App entry point — initializes dotenv, Supabase, Sentry (optional)
 ```
 
 ### State Management — Riverpod 2.x (manual, no code gen)
@@ -156,9 +158,10 @@ All providers in `lib/providers/`. Pattern: `StateNotifierProvider<Notifier, Asy
 | `locationProvider` | `FutureProvider<LatLng?>` | One-shot GPS position for initial map center |
 | `activeRouteProvider` | `StateProvider<RouteResult?>` | Route currently drawn on home map |
 | `selectedModeProvider` | `StateProvider<String>` | Travel mode selected on home ('Auto' default) |
-| `walletMockProvider` | `FutureProvider<WalletMock?>` | Mock wallet balance — `lib/providers/wallet_mock_provider.dart` |
-| `walletMockNotifierProvider` | `AsyncNotifierProvider` | recharge(amount) calls `recharge_wallet` RPC |
-| `walletMockTransactionsProvider` | `FutureProvider.family<..., int>` | Paginated mock transactions (pass limit) |
+| `walletProvider` | `FutureProvider<Wallet?>` | Wallet row from Supabase (RLS: own wallet only) |
+| `walletBalanceProvider` | `Provider<int>` | Current balance, 0 if unavailable |
+| `walletNotifierProvider` | `AsyncNotifierProvider` | recharge(amount) calls `wallet_recharge_simulated` with a fresh idempotency key |
+| `walletTransactionsProvider` | `FutureProvider.family<..., int>` | Latest wallet transactions (pass limit) |
 | `favoritesNotifierProvider` | `AsyncNotifierProvider` | addOrUpdatePlace(), removePlace(), incrementUseCount() |
 | `homePlaceProvider` | `Provider<FavoritePlace?>` | Derived — filters favoritePlaces by type=home |
 | `workPlaceProvider` | `Provider<FavoritePlace?>` | Derived — filters favoritePlaces by type=work |
@@ -184,27 +187,23 @@ Future<void> updateProfile({...}) async {
 - **RLS**: All user tables (`profiles`, `cards`, `transactions`, `trips`) filter by `auth.uid()` — never add manual user ID filters in queries.
 - **Edge Functions** (Deno/TypeScript in `backend/functions/`):
   - `authorize` — NFC payment authorization (NOT currently deployed; simulator uses local mock)
-  - `ai-chat` — Legacy Gemini Edge Function (NOT used; AI service calls Groq directly from Flutter)
-  - `stripe-webhook` — Stripe payment webhook
-  - `delete-account` — GDPR account deletion
+  - `ai-chat` — Groq proxy used by `AiService` (model `llama-3.1-8b-instant`, falls back to 70b on 429/5xx)
+  - `delete-account` — account deletion
 - **Realtime**: `activeCardProvider` subscribes to `cards` table changes for live balance updates.
 
-### AI Service — Groq + RAG Colombia
-
-`lib/services/ai_service.dart` flujo completo (sin Edge Function):
+### AI Service — Edge Function `ai-chat`
 
 ```
-1. _fetchKgContext(query) → ilike search en colombia_kg → top 5 entidades relevantes
-2. Inyectar entidades como contexto en el system prompt
-3. POST https://api.groq.com/openai/v1/chat/completions
-   Model: llama-3.3-70b-versatile | Max tokens: 600 | Temperature: 0.65 | Timeout: 20s
-4. Devuelve AiMessage con source: 'groq'
+Flutter AiService                       Edge Function ai-chat (Deno)
+  query + history + client_context  ──▶  normalize (Riohacha/Maicao) → FTS on colombia_kg_aliases
+  (location, traffic, Mapbox route)      → short system prompt → Groq 8b (70b fallback)
+  ◀── { content, source: 'groq'|'error'|'system', model, error, latency_ms }
 ```
 
-- **Topic-restricted**: system prompt prohíbe responder temas ajenos a transporte/GoSmart
-- **KG context**: busca barrios, estaciones, municipios relevantes antes de llamar a Groq
-- Si `GROQ_API_KEY` está vacío → mensaje "no configurado" (sin crash)
-- Sin `ai_latency_log` (el check constraint de source no incluye 'groq'; se puede ampliar si se necesita telemetría)
+- The Groq key never ships in the APK. On any failure the app shows a fallback and calls
+  `Telemetry.degraded(service, code)`; the planner keeps working (decision D8).
+- No embeddings: HuggingFace/pgvector search was removed from ai-chat (decision E3).
+- Tests: `cd backend/functions/ai-chat && deno test normalizer_test.ts` (CI job `edge-functions`).
 
 ### RAG Colombia — Knowledge Graph
 
@@ -361,7 +360,7 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 
 ## Android Requirements
 
-- `MainActivity.kt` must extend `FlutterFragmentActivity` (required by `flutter_stripe`)
+- `MainActivity.kt` extends `FlutterFragmentActivity` (was required by `flutter_stripe`; kept for future payment SDKs)
 - Both `values/styles.xml` and `values-night/styles.xml` must use `Theme.MaterialComponents` parent
 - `INTERNET` permission must be present in `AndroidManifest.xml`
 
@@ -373,7 +372,6 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 | `flutter_riverpod` | ^2.5.1 | State management |
 | `go_router` | ^13.2.0 | Navigation |
 | `flutter_dotenv` | ^5.1.0 | `.env` loading |
-| `flutter_stripe` | ^10.1.1 | Stripe payments |
 | `flutter_nfc_kit` | ^3.4.0 | NFC hardware access |
 | `qr_flutter` | ^4.1.0 | QR code rendering |
 | `google_fonts` | ^6.2.1 | Typography |
@@ -384,6 +382,7 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 | `flutter_localizations` | sdk | Spanish date picker support |
 | `uuid` | ^4.3.3 | Idempotency keys for NFC |
 | `shared_preferences` | ^2.2.2 | Persist `onboarding_complete` flag across launches |
+| `sentry_flutter` | ^8.14.2 | Optional error reporting (`SENTRY_DSN`) |
 
 ## Common Gotchas
 
@@ -397,4 +396,5 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 - **`idempotency_key` on transactions**: Always generate a UUID before NFC tap, not after — the key must be sent with the authorization request, not generated from the response.
 - **`GSButton` API**: Use `isLoading:` (not `loading:`), `isFullWidth:` (not `fullWidth:`). Variant: `GSButtonVariant.outline / .ghost / .primary`.
 - **`GeocodingService`**: Method is `.search(query)` (not `.suggest()`). Returns `List<GeocodeSuggestion>`.
-- **Wallet Mock isolation**: The `wallets` / `wallet_transactions` tables and `walletMockProvider` are SEPARATE from the existing `cards` table and `activeCardProvider`. Never mix them.
+- **Wallet vs cards**: `wallets` / `wallet_transactions` (`walletProvider`) is the money model. `cards` / `activeCardProvider` is only the card UI (lock/NFC, future public-transport validators). Never write balances from the client; use RPCs.
+- **`GSCard` wraps its child in a transparent `Material`** so `ListTile`s inside it render ripples (newer Flutter asserts otherwise).

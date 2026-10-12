@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Create .env (placeholder values)
+        run: cp .env.example .env
+
       - name: Analyze
         run: flutter analyze --no-fatal-infos
 
@@ -39,15 +42,57 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Create .env for tests
-        run: |
-          echo "SUPABASE_URL=https://placeholder.supabase.co" >> .env
-          echo "SUPABASE_ANON_KEY=placeholder-anon-key" >> .env
-          echo "STRIPE_PUBLISHABLE_KEY=pk_test_placeholder" >> .env
-          echo "GOOGLE_MAPS_API_KEY=placeholder" >> .env
+      - name: Create .env (placeholder values)
+        run: cp .env.example .env
 
       - name: Run tests
         run: flutter test --no-pub
+
+  sql-tests:
+    name: SQL tests (Postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run migration tests
+        run: |
+          set -e
+          psql -v ON_ERROR_STOP=1 -q -c 'create database gosmart_test'
+          for f in supabase/tests/_supabase_stub.sql \
+                   supabase/migrations/008_wallet_mock.sql \
+                   supabase/migrations/010_wallet_hardening.sql \
+                   supabase/tests/010_wallet_hardening_test.sql; do
+            psql -d gosmart_test -v ON_ERROR_STOP=1 -q -f "$f"
+          done
+
+  edge-functions:
+    name: Edge Functions (Deno)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Test and type-check ai-chat
+        working-directory: backend/functions/ai-chat
+        run: |
+          deno test normalizer_test.ts
+          deno check index.ts
 
   build-android:
     name: Build APK (Android)
@@ -69,12 +114,8 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Create .env for build
-        run: |
-          echo "SUPABASE_URL=https://placeholder.supabase.co" >> .env
-          echo "SUPABASE_ANON_KEY=placeholder-anon-key" >> .env
-          echo "STRIPE_PUBLISHABLE_KEY=pk_test_placeholder" >> .env
-          echo "GOOGLE_MAPS_API_KEY=placeholder" >> .env
+      - name: Create .env (placeholder values)
+        run: cp .env.example .env
 
       - name: Build APK (release)
         run: flutter build apk --release
