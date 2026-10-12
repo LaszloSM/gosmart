@@ -85,28 +85,25 @@ jobs:
           done
           # 011+ en una base aparte: profiles sale de un fixture (001 pide PostGIS)
           psql -v ON_ERROR_STOP=1 -q -c 'create database gosmart_core'
-          for f in supabase/tests/_supabase_stub.sql \
-                   supabase/tests/_profiles_fixture.sql \
-                   supabase/migrations/011_roles_safety.sql \
-                   supabase/migrations/011_roles_safety.sql \
-                   supabase/migrations/012_places_directory.sql \
-                   supabase/migrations/012_places_directory.sql \
-                   supabase/seed/places_seed.sql \
-                   supabase/migrations/013_corridor.sql \
-                   supabase/migrations/013_corridor.sql \
-                   supabase/migrations/014_transport_graph.sql \
-                   supabase/migrations/014_transport_graph.sql \
-                   supabase/migrations/015_dispatch.sql \
-                   supabase/migrations/015_dispatch.sql \
-                   supabase/tests/011_roles_safety_test.sql \
-                   supabase/tests/012_places_directory_test.sql \
-                   supabase/tests/013_corridor_test.sql \
-                   supabase/tests/014_transport_graph_test.sql \
-                   supabase/tests/015_dispatch_test.sql; do
-            psql -d gosmart_core -v ON_ERROR_STOP=1 -q -f "$f"
+          run() { psql -d gosmart_core -v ON_ERROR_STOP=1 -q -f "$1"; }
+          run supabase/tests/_supabase_stub.sql
+          run supabase/tests/_profiles_fixture.sql
+          run supabase/migrations/008_wallet_mock.sql
+          run supabase/migrations/010_wallet_hardening.sql
+          # Cada migración dos veces: deben ser seguras de re-ejecutar.
+          for m in 011_roles_safety 012_places_directory 013_corridor \
+                   014_transport_graph 015_dispatch 016_payments; do
+            run "supabase/migrations/$m.sql"
+            run "supabase/migrations/$m.sql"
+          done
+          run supabase/seed/places_seed.sql
+          for t in 011_roles_safety 012_places_directory 013_corridor \
+                   014_transport_graph 015_dispatch; do
+            run "supabase/tests/${t}_test.sql"
           done
           # D7: dos conexiones a la vez compiten por el mismo viaje y el último cupo
           bash supabase/tests/015_race_test.sh gosmart_core
+          run supabase/tests/016_payments_test.sql
 
   edge-functions:
     name: Edge Functions (Deno)
