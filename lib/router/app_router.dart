@@ -10,7 +10,6 @@ import '../theme/design_tokens.dart';
 import '../features/splash/splash_screen.dart';
 import '../features/onboarding/intro_screen.dart';
 import '../features/onboarding/location_permission_screen.dart';
-import '../features/auth/onboarding_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/register_screen.dart';
 import '../features/auth/sms_verify_screen.dart';
@@ -143,14 +142,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           transitionsBuilder: _slideAndFade,
         ),
       ),
+      // La bienvenida antigua se retiró: con el modo invitado se entra
+      // directo al inicio.
       GoRoute(
         path: AppRoutes.onboarding,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const OnboardingScreen(),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
-        ),
+        redirect: (_, __) => AppRoutes.home,
       ),
       GoRoute(
         path: AppRoutes.login,

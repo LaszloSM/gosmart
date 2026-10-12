@@ -37,7 +37,12 @@ class AuthService {
     );
   }
 
-  /// Send OTP to phone number
+  /// Envía al correo un enlace para crear una contraseña nueva.
+  Future<void> resetPassword(String email) async {
+    await _client.auth.resetPasswordForEmail(email);
+  }
+
+  /// Send OTP to phone number (E.164, p. ej. +573001234567)
   Future<void> sendOtp(String phone) async {
     await _client.auth.signInWithOtp(phone: phone);
   }

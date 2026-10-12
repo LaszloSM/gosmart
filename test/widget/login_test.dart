@@ -22,8 +22,8 @@ void main() {
       await tester.pumpWidget(buildTestApp(const LoginScreen()));
       await tester.pumpAndSettle();
 
-      expect(find.text('Bienvenido\nde nuevo'), findsOneWidget);
-      expect(find.text('Teléfono'), findsOneWidget);
+      expect(find.text('Entra a GoSmart'), findsOneWidget);
+      expect(find.text('Número de celular'), findsOneWidget);
       expect(find.text('Contraseña'), findsNothing);
     });
 
@@ -36,7 +36,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Contraseña'), findsOneWidget);
-      expect(find.text('Teléfono'), findsNothing);
+      expect(find.text('Número de celular'), findsNothing);
     });
 
     testWidgets('shows validation error when phone is empty', (tester) async {

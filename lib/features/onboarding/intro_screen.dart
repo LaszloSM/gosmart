@@ -1,141 +1,127 @@
 // lib/features/onboarding/intro_screen.dart
-// Pantallas de introducción — 3 slides con PageView animado
+// Primera vez: una sola pantalla que muestra el mecanismo en vez de
+// prometerlo (impeccable onboard: llegar rápido al valor). La Línea del
+// corredor de ejemplo está marcada como ejemplo: no es un dato real.
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../models/corridor_status.dart';
+import '../../router/app_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
+import '../../widgets/gs_corridor_line.dart';
+import '../../widgets/gs_route_plate.dart';
 
-class IntroScreen extends StatefulWidget {
+class IntroScreen extends StatelessWidget {
   const IntroScreen({super.key});
 
-  @override
-  State<IntroScreen> createState() => _IntroScreenState();
-}
-
-class _IntroScreenState extends State<IntroScreen> {
-  final _pageCtrl = PageController();
-  int _currentPage = 0;
-
-  static const _slides = [
-    _Slide(
-      icon: Icons.map_rounded,
-      title: 'Planifica tu ruta',
-      description:
-          'Encuentra la mejor manera de llegar a tu destino. '
-          'Compara transporte público y privado en tiempo real con IA.',
-      gradientColors: [GSColors.brand, GSColors.brand],
-    ),
-    _Slide(
-      icon: Icons.account_balance_wallet_rounded,
-      title: 'Paga fácil',
-      description:
-          'Recarga tu tarjeta GoSmart y paga en cualquier sistema '
-          'de transporte con un solo toque. Sin efectivo.',
-      gradientColors: [GSColors.brand, GSColors.brand],
-    ),
-    _Slide(
-      icon: Icons.smart_toy_rounded,
-      title: 'Asistente IA',
-      description:
-          'Pregúntale a GoSmart AI sobre rutas, tarifas y horarios. '
-          'Tu experto en movilidad urbana en Colombia.',
-      gradientColors: [GSColors.brand, GSColors.brand],
-    ),
-  ];
-
-  @override
-  void dispose() {
-    _pageCtrl.dispose();
-    super.dispose();
-  }
-
-  void _next() {
-    if (_currentPage < _slides.length - 1) {
-      _pageCtrl.nextPage(
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeInOut,
-      );
-    } else {
-      _continue();
-    }
-  }
-
-  void _skip() => _continue();
-
-  void _continue() => context.go('/location-permission');
+  static final _example = CorridorStatus(
+    segments: const [
+      CorridorSegment(kmFrom: 0, kmTo: 40, state: RoadState.open),
+      CorridorSegment(
+          kmFrom: 40, kmTo: 44, state: RoadState.closed, reason: 'Bloqueo'),
+      CorridorSegment(kmFrom: 44, kmTo: 75, state: RoadState.open),
+    ],
+    updatedAt: DateTime.now().subtract(const Duration(minutes: 8)),
+  );
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: GSColors.bg,
-      body: SafeArea(
-        child: Column(
+    final text = Theme.of(context).textTheme;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: GSColors.background,
+        body: Column(
           children: [
-            // Skip button
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.only(
-                  top: GSSpacing.s3,
-                  right: GSSpacing.s4,
-                ),
-                child: TextButton(
-                  onPressed: _skip,
-                  child: const Text(
-                    'Omitir',
-                    style: TextStyle(
-                      color: GSColors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
-                    ),
+            // Carrocería: el nombre y la Línea de ejemplo.
+            ColoredBox(
+              color: GSColors.brand,
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(GSSpacing.s4,
+                      GSSpacing.s6, GSSpacing.s4, GSSpacing.s5),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'GoSmart',
+                        style: TextStyle(
+                          fontFamily: GSFonts.display,
+                          fontSize: 40,
+                          fontWeight: FontWeight.w800,
+                          height: 1,
+                          color: GSColors.onBrand,
+                        ),
+                      ),
+                      const SizedBox(height: GSSpacing.s2),
+                      const Text(
+                        'Antes de salir, ya sabes cómo está la vía.',
+                        style: TextStyle(
+                          fontFamily: GSFonts.sans,
+                          fontSize: 19,
+                          fontWeight: FontWeight.w500,
+                          color: GSColors.onBrand,
+                        ),
+                      ),
+                      const SizedBox(height: GSSpacing.s5),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(GSRadius.md),
+                        child: ExcludeSemantics(
+                          child: GSCorridorLine(status: _example),
+                        ),
+                      ),
+                      const SizedBox(height: GSSpacing.s2),
+                      const Text(
+                        'Ejemplo: así se ve un bloqueo en la Troncal.',
+                        style: TextStyle(
+                          fontFamily: GSFonts.sans,
+                          fontSize: 14,
+                          color: GSColors.onBrandMuted,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
-            // Slides
             Expanded(
-              child: PageView.builder(
-                controller: _pageCtrl,
-                itemCount: _slides.length,
-                onPageChanged: (i) => setState(() => _currentPage = i),
-                itemBuilder: (_, i) => _SlideContent(slide: _slides[i]),
+              child: ListView(
+                padding: const EdgeInsets.all(GSSpacing.s4),
+                children: [
+                  const GSRoutePlate(
+                    from: 'Riohacha',
+                    text: 'Maicao',
+                    leading: Icons.airport_shuttle_rounded,
+                    detail: 'Escribe a dónde vas',
+                  ),
+                  const SizedBox(height: GSSpacing.s4),
+                  _Point(
+                    icon: Icons.two_wheeler_rounded,
+                    text: 'Mototaxi, taxi, colectivo o TransPadilla, con '
+                        'el tiempo y un precio de referencia.',
+                    style: text.bodyLarge,
+                  ),
+                  _Point(
+                    icon: Icons.person_outline_rounded,
+                    text: 'Sin cuenta puedes mirar y planear. La cuenta se '
+                        'pide para reportar, pedir o pagar.',
+                    style: text.bodyLarge,
+                  ),
+                ],
               ),
             ),
-            // Dots indicator
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: GSSpacing.s4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_slides.length, (i) {
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    width: _currentPage == i ? 24 : 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: _currentPage == i
-                          ? GSColors.accent
-                          : GSColors.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(GSRadius.full),
-                    ),
-                  );
-                }),
-              ),
-            ),
-            // Button
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                GSSpacing.s5,
-                0,
-                GSSpacing.s5,
-                GSSpacing.s5,
-              ),
-              child: GSButton(
-                label: _currentPage == _slides.length - 1
-                    ? 'Comenzar'
-                    : 'Siguiente',
-                onPressed: _next,
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    GSSpacing.s4, 0, GSSpacing.s4, GSSpacing.s4),
+                child: GSButton(
+                  label: 'Empezar',
+                  onPressed: () => context.go(AppRoutes.locationPermission),
+                ),
               ),
             ),
           ],
@@ -145,78 +131,22 @@ class _IntroScreenState extends State<IntroScreen> {
   }
 }
 
-// ── Slide data class ──────────────────────────────────────────────────────────
-
-class _Slide {
+class _Point extends StatelessWidget {
+  const _Point({required this.icon, required this.text, this.style});
   final IconData icon;
-  final String title;
-  final String description;
-  final List<Color> gradientColors;
-
-  const _Slide({
-    required this.icon,
-    required this.title,
-    required this.description,
-    required this.gradientColors,
-  });
-}
-
-// ── Slide content widget ──────────────────────────────────────────────────────
-
-class _SlideContent extends StatelessWidget {
-  final _Slide slide;
-  const _SlideContent({required this.slide});
+  final String text;
+  final TextStyle? style;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s6),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      padding: const EdgeInsets.symmetric(vertical: GSSpacing.s3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icono con gradiente circular
-          Container(
-            width: 160,
-            height: 160,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: slide.gradientColors,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: slide.gradientColors[0].withValues(alpha: 0.35),
-                  blurRadius: 36,
-                  offset: const Offset(0, 12),
-                ),
-              ],
-            ),
-            child: Icon(slide.icon, size: 72, color: GSColors.onBrand),
-          ),
-          const SizedBox(height: GSSpacing.s8),
-          // Título
-          Text(
-            slide.title,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              color: GSColors.textPrimary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: GSSpacing.s4),
-          // Descripción
-          Text(
-            slide.description,
-            style: const TextStyle(
-              fontSize: 16,
-              color: GSColors.textSecondary,
-              height: 1.6,
-            ),
-            textAlign: TextAlign.center,
-          ),
+          Icon(icon, color: GSColors.brand, size: 26),
+          const SizedBox(width: GSSpacing.s3),
+          Expanded(child: Text(text, style: style)),
         ],
       ),
     );

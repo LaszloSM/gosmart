@@ -1,13 +1,17 @@
-import 'package:flutter/gestures.dart';
+// lib/features/auth/register_screen.dart
+// Crear cuenta con correo. El tratamiento de datos (Ley 1581) se acepta de
+// forma explícita; ubicación y asistente son consentimientos aparte y
+// opcionales, y se guardan en el perfil (consent_geo, consent_ai_data).
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../core/auth_errors.dart';
+import '../../router/app_router.dart';
+import '../../services/auth_service.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_text_field.dart';
 import '../../widgets/gs_toast.dart';
-import '../../router/app_router.dart';
-import '../../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -19,61 +23,45 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
-  final _phoneCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   bool _isLoading = false;
-  bool _termsAccepted = false;
+  bool _dataConsent = false;
+  bool _geoConsent = true;
+  bool _aiConsent = false;
   bool _showPassword = false;
-
-  late final TapGestureRecognizer _termsTap;
-  late final TapGestureRecognizer _privacyTap;
-
-  @override
-  void initState() {
-    super.initState();
-    _termsTap = TapGestureRecognizer()
-      ..onTap = () => ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Próximamente')));
-    _privacyTap = TapGestureRecognizer()
-      ..onTap = () => ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Próximamente')));
-  }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
-    _phoneCtrl.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
-    _termsTap.dispose();
-    _privacyTap.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (!_termsAccepted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Debes aceptar los términos para continuar')),
-      );
-      return;
-    }
     setState(() => _isLoading = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await authService.signUp(
+      final res = await authService.signUp(
         email: _emailCtrl.text.trim(),
         password: _passCtrl.text,
         name: _nameCtrl.text.trim(),
-        consentGeo: false,
-        consentAi: false,
+        consentGeo: _geoConsent,
+        consentAi: _aiConsent,
       );
-      // GoRouter auto-redirects after successful signup via auth stream
+      // Con confirmación de correo activa no hay sesión todavía.
+      if (res.session == null) {
+        GSToast.showWithMessenger(messenger,
+            message: 'Te enviamos un correo para confirmar tu cuenta.',
+            type: GSToastType.success,
+            duration: const Duration(seconds: 5));
+      }
+      // Con sesión, el router lleva al inicio solo.
     } catch (e) {
       GSToast.showWithMessenger(messenger,
-          message: 'Error: ${e.toString()}', type: GSToastType.error);
+          message: friendlyAuthError(e), type: GSToastType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -81,232 +69,144 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final tt = Theme.of(context).textTheme;
-
+    final text = Theme.of(context).textTheme;
     return Scaffold(
       backgroundColor: GSColors.background,
+      appBar: AppBar(
+        title: const Text('Crear cuenta'),
+        leading: IconButton(
+          tooltip: 'Volver',
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => context.canPop()
+              ? context.pop()
+              : context.go(AppRoutes.login),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(GSSpacing.s6),
+          padding: const EdgeInsets.all(GSSpacing.s4),
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ── Back button ──────────────────────────────────────────
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_rounded,
-                          color: GSColors.textPrimary),
-                      onPressed: () {
-                        if (context.canPop()) {
-                          context.pop();
-                        } else {
-                          context.go(AppRoutes.login);
-                        }
-                      },
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: GSSize.touchTarget,
-                        minHeight: GSSize.touchTarget,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: GSSpacing.s4),
-
-                // ── Heading ──────────────────────────────────────────────
-                Text(
-                  'Crear cuenta',
-                  style: tt.displayMedium?.copyWith(
-                    color: GSColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: GSSpacing.s2),
-                Text(
-                  'Únete a GoSmart hoy',
-                  style: tt.bodyLarge?.copyWith(
-                    color: GSColors.textSecondary,
-                  ),
-                ),
-
-                const SizedBox(height: GSSpacing.s8),
-
-                // ── Fields ───────────────────────────────────────────────
                 GSTextField(
-                  hint: 'Nombre completo',
                   label: 'Nombre',
+                  hint: 'Como quieres que te llamen',
                   controller: _nameCtrl,
                   keyboardType: TextInputType.name,
                   prefixIcon: Icons.person_outline_rounded,
                   textCapitalization: TextCapitalization.words,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty)
-                          ? 'Nombre es requerido'
-                          : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Escribe tu nombre'
+                      : null,
                 ),
-
-                const SizedBox(height: GSSpacing.s3),
-
+                const SizedBox(height: GSSpacing.s4),
                 GSTextField(
-                  hint: '+57 300 000 0000',
-                  label: 'Teléfono',
-                  controller: _phoneCtrl,
-                  keyboardType: TextInputType.phone,
-                  prefixIcon: Icons.phone_android_rounded,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                ),
-
-                const SizedBox(height: GSSpacing.s3),
-
-                GSTextField(
-                  hint: 'correo@ejemplo.com',
                   label: 'Correo',
+                  hint: 'tucorreo@ejemplo.com',
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
-                  prefixIcon: Icons.email_outlined,
-                  validator: (v) =>
-                      (v == null || !v.contains('@'))
-                          ? 'Correo inválido'
-                          : null,
+                  prefixIcon: Icons.mail_outline_rounded,
+                  validator: (v) => (v == null || !v.contains('@'))
+                      ? 'Ingresa un correo válido'
+                      : null,
                 ),
-
-                const SizedBox(height: GSSpacing.s3),
-
+                const SizedBox(height: GSSpacing.s4),
                 GSTextField(
-                  hint: '••••••••',
                   label: 'Contraseña',
+                  hint: 'Mínimo 8 caracteres',
                   controller: _passCtrl,
                   obscureText: !_showPassword,
                   prefixIcon: Icons.lock_outline_rounded,
                   suffixIcon: IconButton(
-                    icon: Icon(
-                      _showPassword
-                          ? Icons.visibility_off_rounded
-                          : Icons.visibility_rounded,
-                      color: GSColors.textSecondary,
-                      size: 20,
-                    ),
+                    tooltip: _showPassword
+                        ? 'Ocultar contraseña'
+                        : 'Mostrar contraseña',
+                    icon: Icon(_showPassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined),
                     onPressed: () =>
                         setState(() => _showPassword = !_showPassword),
                   ),
-                  validator: (v) =>
-                      (v == null || v.length < 8)
-                          ? 'Mínimo 8 caracteres'
-                          : null,
+                  validator: (v) => (v == null || v.length < 8)
+                      ? 'Usa al menos 8 caracteres'
+                      : null,
                 ),
-
-                const SizedBox(height: GSSpacing.s4),
-
-                // ── Terms checkbox ───────────────────────────────────────
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: Checkbox(
-                        value: _termsAccepted,
-                        onChanged: (v) =>
-                            setState(() => _termsAccepted = v ?? false),
-                        activeColor: GSColors.accent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        materialTapTargetSize:
-                            MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ),
-                    const SizedBox(width: GSSpacing.s3),
-                    Expanded(
-                      child: RichText(
-                        text: TextSpan(
-                          style: const TextStyle(
-                            color: GSColors.textSecondary,
-                            fontSize: 13,
-                            height: 1.4,
-                          ),
-                          children: [
-                            const TextSpan(text: 'Acepto los '),
-                            TextSpan(
-                              text: 'Términos',
-                              style: const TextStyle(
-                                color: GSColors.accent,
-                                fontWeight: FontWeight.w600,
-                                decoration: TextDecoration.underline,
-                                decorationColor: GSColors.accent,
-                              ),
-                              recognizer: _termsTap,
-                            ),
-                            const TextSpan(text: ' y la '),
-                            TextSpan(
-                              text: 'Política de Privacidad',
-                              style: const TextStyle(
-                                color: GSColors.accent,
-                                fontWeight: FontWeight.w600,
-                                decoration: TextDecoration.underline,
-                                decorationColor: GSColors.accent,
-                              ),
-                              recognizer: _privacyTap,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
                 const SizedBox(height: GSSpacing.s6),
-
-                // ── Submit button ────────────────────────────────────────
+                Text('Tus datos', style: text.titleLarge),
+                const SizedBox(height: GSSpacing.s2),
+                _ConsentTile(
+                  value: _dataConsent,
+                  onChanged: (v) => setState(() => _dataConsent = v),
+                  title: 'Autorizo el tratamiento de mis datos personales',
+                  subtitle: 'Obligatorio (Ley 1581). Los usamos solo para tu '
+                      'cuenta, tus viajes y tus pagos.',
+                ),
+                _ConsentTile(
+                  value: _geoConsent,
+                  onChanged: (v) => setState(() => _geoConsent = v),
+                  title: 'Usar mi ubicación para planear rutas',
+                  subtitle: 'Opcional. Puedes cambiarlo después.',
+                ),
+                _ConsentTile(
+                  value: _aiConsent,
+                  onChanged: (v) => setState(() => _aiConsent = v),
+                  title: 'Usar mis preguntas para mejorar el asistente',
+                  subtitle: 'Opcional.',
+                ),
+                const SizedBox(height: GSSpacing.s6),
                 GSButton(
                   label: 'Crear cuenta',
-                  onPressed: _termsAccepted ? _submit : null,
+                  onPressed: _dataConsent ? _submit : null,
                   isLoading: _isLoading,
-                  leadingIcon: Icons.person_add_rounded,
                 ),
-
-                const SizedBox(height: GSSpacing.s6),
-
-                // ── Sign in link ─────────────────────────────────────────
-                Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '¿Ya tienes cuenta? ',
-                        style: tt.bodyMedium?.copyWith(
-                          color: GSColors.textSecondary,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => context.go(AppRoutes.login),
-                        style: TextButton.styleFrom(
-                          foregroundColor: GSColors.accent,
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          textStyle: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        child: const Text('Inicia sesión'),
-                      ),
-                    ],
+                if (!_dataConsent) ...[
+                  const SizedBox(height: GSSpacing.s2),
+                  Text(
+                    'Marca la autorización de datos para continuar.',
+                    style: text.bodySmall,
+                    textAlign: TextAlign.center,
                   ),
-                ),
-
+                ],
                 const SizedBox(height: GSSpacing.s4),
+                TextButton(
+                  onPressed: () => context.canPop()
+                      ? context.pop()
+                      : context.go(AppRoutes.login),
+                  child: const Text('Ya tengo cuenta'),
+                ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ConsentTile extends StatelessWidget {
+  const _ConsentTile({
+    required this.value,
+    required this.onChanged,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return CheckboxListTile(
+      value: value,
+      onChanged: (v) => onChanged(v ?? false),
+      controlAffinity: ListTileControlAffinity.leading,
+      contentPadding: EdgeInsets.zero,
+      title: Text(title),
+      subtitle: Text(subtitle),
     );
   }
 }

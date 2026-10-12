@@ -219,6 +219,39 @@ class AppTheme {
         ),
       ),
 
+      // Selector segmentado nativo: lo elegido en ultramar, sin animación
+      // de deslizamiento (acción repetida).
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          minimumSize: const WidgetStatePropertyAll(Size(0, GSSize.touchTarget)),
+          shape: WidgetStatePropertyAll(RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(GSRadius.md))),
+          side: const WidgetStatePropertyAll(
+              BorderSide(color: GSColors.brand, width: 1.5)),
+          backgroundColor: WidgetStateProperty.resolveWith((s) =>
+              s.contains(WidgetState.selected)
+                  ? GSColors.brand
+                  : GSColors.surface),
+          foregroundColor: WidgetStateProperty.resolveWith((s) =>
+              s.contains(WidgetState.selected)
+                  ? GSColors.onBrand
+                  : GSColors.brand),
+          textStyle: const WidgetStatePropertyAll(TextStyle(
+            fontFamily: GSFonts.display,
+            fontSize: 19,
+            fontWeight: FontWeight.w700,
+          )),
+        ),
+      ),
+
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((s) =>
+            s.contains(WidgetState.selected) ? GSColors.brand : null),
+        side: const BorderSide(color: GSColors.textMuted, width: 2),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(GSRadius.sm)),
+      ),
+
       dividerTheme: const DividerThemeData(
         color: GSColors.line,
         thickness: 1,
