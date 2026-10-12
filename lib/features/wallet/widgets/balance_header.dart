@@ -62,7 +62,7 @@ class BalanceHeader extends ConsumerWidget {
                         ),
                       ),
                     ]),
-                    style: const TextStyle(fontFamily: GSFonts.mono),
+                    style: const TextStyle(fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular),
                     semanticsLabel:
                         'Saldo ${formatCop(wallet.balance)} pesos',
                   ),
@@ -70,7 +70,7 @@ class BalanceHeader extends ConsumerWidget {
                   Text(
                     'Tarjeta ${wallet.maskedCardNumber}'
                     '${wallet.cardStatus == 'active' ? '' : ' · bloqueada'}',
-                    style: text.bodySmall?.copyWith(fontFamily: GSFonts.mono),
+                    style: text.bodySmall?.copyWith(fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular),
                   ),
                 ],
               );

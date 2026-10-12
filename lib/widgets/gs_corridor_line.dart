@@ -178,7 +178,7 @@ class _SummaryTag extends StatelessWidget {
           Text(
             detail!,
             style: const TextStyle(
-              fontFamily: GSFonts.mono,
+              fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: GSColors.textMuted,

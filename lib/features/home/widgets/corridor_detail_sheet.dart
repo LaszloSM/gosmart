@@ -46,7 +46,7 @@ class CorridorDetailSheet extends StatelessWidget {
                   : status.isStale
                       ? 'Sin señal. Último dato ${corridorAge(status.updatedAt!)}'
                       : 'Actualizado ${corridorAge(status.updatedAt!)}',
-              style: text.bodySmall?.copyWith(fontFamily: GSFonts.mono),
+              style: text.bodySmall?.copyWith(fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular),
             ),
             const SizedBox(height: GSSpacing.s4),
             if (!status.hasData)
@@ -130,7 +130,7 @@ class _SegmentRow extends StatelessWidget {
           Text(
             'km ${segment.kmFrom.round()}–${segment.kmTo.round()}',
             style: const TextStyle(
-              fontFamily: GSFonts.mono,
+              fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: GSColors.text,

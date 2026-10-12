@@ -2,32 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'design_tokens.dart';
 
-/// Tema de GoSmart según DESIGN.md: claro primero (legible al sol),
-/// Atkinson Hyperlegible Next empaquetada, una sola marca ("mar profundo").
+/// Tema de GoSmart, mundo "rótulo de colectivo": shell en ultramar, placas
+/// blancas, títulos en letra condensada de rótulo y cuerpo en Barlow.
 class AppTheme {
   AppTheme._();
 
   static ThemeData get light {
     const ink = GSColors.text;
     const muted = GSColors.textMuted;
+    const disp = GSFonts.display;
 
-    // Escala DESIGN.md: 28 / 20 / 17 / 14, con saltos de más de un peso.
+    // Títulos en Barlow Condensed (rótulo); cuerpo y etiquetas en Barlow.
     const textTheme = TextTheme(
-      displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, height: 1.2, letterSpacing: -0.32, color: ink),
-      displayMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, height: 1.2, letterSpacing: -0.28, color: ink),
-      displaySmall: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, height: 1.25, color: ink),
-      headlineLarge: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, height: 1.25, color: ink),
-      headlineMedium: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, height: 1.3, color: ink),
-      headlineSmall: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, height: 1.3, color: ink),
-      titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: ink),
-      titleMedium: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: ink),
-      titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: muted),
+      displayLarge: TextStyle(fontFamily: disp, fontSize: 40, fontWeight: FontWeight.w800, height: 1.05, color: ink),
+      displayMedium: TextStyle(fontFamily: disp, fontSize: 34, fontWeight: FontWeight.w800, height: 1.05, color: ink),
+      displaySmall: TextStyle(fontFamily: disp, fontSize: 28, fontWeight: FontWeight.w800, height: 1.1, color: ink),
+      headlineLarge: TextStyle(fontFamily: disp, fontSize: 28, fontWeight: FontWeight.w700, height: 1.1, color: ink),
+      headlineMedium: TextStyle(fontFamily: disp, fontSize: 24, fontWeight: FontWeight.w700, height: 1.15, color: ink),
+      headlineSmall: TextStyle(fontFamily: disp, fontSize: 22, fontWeight: FontWeight.w700, height: 1.15, color: ink),
+      titleLarge: TextStyle(fontFamily: disp, fontSize: 24, fontWeight: FontWeight.w700, height: 1.15, color: ink),
+      titleMedium: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, height: 1.3, color: ink),
+      titleSmall: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: muted),
       bodyLarge: TextStyle(fontSize: 17, fontWeight: FontWeight.w400, height: 1.45, color: ink),
-      bodyMedium: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, height: 1.45, color: muted),
-      bodySmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, height: 1.4, color: muted),
+      bodyMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, height: 1.45, color: muted),
+      bodySmall: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, height: 1.4, color: muted),
       labelLarge: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: ink),
-      labelMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.14, color: muted),
-      labelSmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.12, color: muted),
+      labelMedium: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: 0.15, color: muted),
+      labelSmall: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.2, color: muted),
     );
 
     final buttonShape = RoundedRectangleBorder(
@@ -38,9 +39,9 @@ class AppTheme {
       fontSize: 17,
       fontWeight: FontWeight.w600,
     );
-    final inputRadius = BorderRadius.circular(GSRadius.sm);
+    final inputRadius = BorderRadius.circular(GSRadius.md);
 
-    return ThemeData(
+    final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       fontFamily: GSFonts.sans,
@@ -81,24 +82,28 @@ class AppTheme {
       scaffoldBackgroundColor: GSColors.background,
       textTheme: textTheme,
 
+      // Shell en ultramar: la barra superior es la carrocería.
       appBarTheme: const AppBarTheme(
-        backgroundColor: GSColors.background,
-        foregroundColor: GSColors.text,
+        backgroundColor: GSColors.brand,
+        foregroundColor: GSColors.onBrand,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
+        toolbarHeight: GSSize.topBar,
         systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark,
-          statusBarBrightness: Brightness.light,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
         ),
         titleTextStyle: TextStyle(
-          fontFamily: GSFonts.sans,
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-          color: GSColors.text,
+          fontFamily: GSFonts.display,
+          fontSize: 26,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.2,
+          color: GSColors.onBrand,
         ),
-        iconTheme: IconThemeData(color: GSColors.text, size: 24),
+        iconTheme: IconThemeData(color: GSColors.onBrand, size: 24),
+        actionsIconTheme: IconThemeData(color: GSColors.onBrand, size: 24),
       ),
 
       // DESIGN.md: sin tarjetas por defecto; cuando existen, planas con línea.
@@ -207,7 +212,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(GSRadius.sm),
         ),
-        side: BorderSide.none,
+        side: const BorderSide(color: GSColors.line),
         padding: const EdgeInsets.symmetric(
           horizontal: GSSpacing.s3,
           vertical: GSSpacing.s1,
@@ -240,6 +245,18 @@ class AppTheme {
         iconColor: GSColors.textMuted,
         textColor: GSColors.text,
         minVerticalPadding: GSSpacing.s3,
+        titleTextStyle: TextStyle(
+          fontFamily: GSFonts.sans,
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+          color: GSColors.text,
+        ),
+        subtitleTextStyle: TextStyle(
+          fontFamily: GSFonts.sans,
+          fontSize: 15,
+          height: 1.35,
+          color: GSColors.textMuted,
+        ),
       ),
 
       snackBarTheme: const SnackBarThemeData(
@@ -271,6 +288,12 @@ class AppTheme {
           TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
         },
       ),
+    );
+
+    // ThemeData(fontFamily:) pisa la familia de todo el textTheme; los
+    // títulos condensados se reponen aquí, después de construir el tema.
+    return base.copyWith(
+      textTheme: base.textTheme.merge(textTheme),
     );
   }
 

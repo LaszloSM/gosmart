@@ -8,7 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../router/app_router.dart';
 import '../../../theme/design_tokens.dart';
-import '../../../widgets/gs_text_field.dart';
+import '../../../widgets/gs_route_plate.dart';
 import 'quick_places_row.dart';
 
 class HomeSheetContent extends ConsumerWidget {
@@ -39,9 +39,11 @@ class HomeSheetContent extends ConsumerWidget {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
-          child: GSSearchBar(
-            hint: '¿A dónde vas?',
-            readOnly: true,
+          // La placa en blanco: el destino se "pinta" en el planificador.
+          child: GSRoutePlate(
+            text: '¿A dónde vas?',
+            isPlaceholder: true,
+            leading: Icons.search_rounded,
             onTap: () => context.push(AppRoutes.routePlanner),
           ),
         ),

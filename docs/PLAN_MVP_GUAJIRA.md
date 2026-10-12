@@ -35,7 +35,7 @@ La visión de largo plazo sigue siendo la **tarjeta universal de transporte** de
 ## Verdades declaradas para la sustentación
 - **Pago (D5):** cada tramo se paga al cerrarse y el viaje entrega **un solo recibo** con desglose. El pago único con retención se pospone, porque retener dinero de terceros exige figura regulada (Superfinanciera).
 - El conductor completo es lo más caro del semestre por el arranque en frío. Mitigación: piloto con 10–20 conductores reclutados en campo y zonas acotadas.
-- Las skills gstack, impeccable, Emil Kowalski y taste no estaban instaladas. Se leyó su método público y se aplicó a mano. Si se instalan, la Fase 2 debe correr `/impeccable critique` y `/plan-design-review`.
+- Las skills de diseño **impeccable** (pbakaus, Apache 2.0), **taste-skill** (Leonxlnx, MIT) y **Emil Kowalski** (emilkowalski/skills, MIT) están instaladas en `.claude/skills/` desde el 2026-10-12 y gobiernan la Fase 2. El primer sistema de diseño (arena + mar, Atkinson) se descartó por plano: taste-skill lo marca como paleta "cream + espresso" por defecto e impeccable como "pantalla gris con un acento".
 
 ## Fase 0 · Limpieza y cimientos (semanas 1–2)
 - **Migraciones:** unificarlas en `supabase/migrations/`, moviendo `backend/migrations/001–007`.
@@ -73,43 +73,54 @@ La visión de largo plazo sigue siendo la **tarjeta universal de transporte** de
 - **Pipeline:** `pipeline/ingest_osm.py` pasa a un bbox de La Guajira e incluye `bus_stop` y la red vial, solo para el grafo de transporte.
 - **Herramienta de captura:** una pantalla interna de admin o un formulario que exporte a CSV, más un script de carga.
 
-## Fase 2 · Diseño UI/UX (semanas 2–5)
-Se aplica el método de impeccable, taste y Emil Kowalski.
+## Fase 2 · Rediseño total de la interfaz (corregida 2026-10-12)
+**Decisión del usuario:** rediseño desde cero de toda la app: colores, tipografía, botones, componentes e interfaz. No queda nada visual protegido; se conservan la función, el contenido, el modo invitado y las reglas de accesibilidad de `PRODUCT.md`.
 
-**Documentos fuente de verdad:**
-- `PRODUCT.md`: audiencia, propósito, restricciones, voz y evidencia.
-- `DESIGN.md`: tokens, tipografía, color, movimiento y componentes. **Es la única fuente (DS5):** `design_tokens.dart` la refleja 1 a 1. Se borran `design-tokens.json` y `design/quickwins/` y se corrige `CLAUDE.md`. La paleta exacta se define corriendo `/design-consultation` de gstack al inicio de la Fase 2.
+**Las tres skills y qué aporta cada una:**
+| Skill | Para qué se usa | Cuándo |
+|---|---|---|
+| **impeccable** | Proceso: `PRODUCT.md` → mundo visual (tirada de direcciones) → contrato de dirección → construcción → revisión final → `DESIGN.md` escrito desde lo construido. Reglas Android/Material 3 y el piso de calidad (`craft-floor`). Comandos: `critique`, `audit`, `polish`, `harden`, `onboard`, `clarify`. | Antes, durante y al cierre de cada pantalla |
+| **taste-skill** (+ `redesign-skill`) | Lista de "AI tells" prohibidos: paleta crema+espresso, un solo acento sobre gris, tarjetas iguales, etiquetas pequeñas sobre títulos, CTA duplicados, botones que se parten, placeholder como etiqueta. Protocolo de rediseño "overhaul" y estados completos (cargando, vacío, error, presión). | Auditoría antes de tocar cada pantalla y chequeo previo al commit |
+| **Emil Kowalski** (`emil-design-eng`, `animate`, `review-animations`) | Movimiento y sensación: ¿debe animarse?, ease-out fuerte `cubic(0.23,1,0.32,1)`, menos de 300 ms, presión a 0.97, nunca desde escala 0, salidas más rápidas que entradas, nada en acciones repetidas, "quitar animaciones" del sistema. Revisión en tabla Antes/Después/Por qué. | Cada componente interactivo y una revisión de movimiento por pantalla |
 
-**Dirección visual:**
-- **Modo claro primero**, legible a pleno sol, con neutros cálidos tintados del paisaje: arena, sal, mar.
-- El **rojo, ámbar y verde se reservan para el estado de la vía**. La marca nunca los usa.
-- **Tipografía: Atkinson Hyperlegible Next (DS4)**, con números tabulares para precios y horas. Se retiran Plus Jakarta Sans e Inter.
-- Áreas táctiles de 48 px o más para el pasajero. **Modo conductor de una mano (DS6):** botones de 72 px o más en la mitad inferior, 2 acciones por pantalla, sonido y vibración fuertes, y precio y distancia en 32 px.
-- **Accesibilidad (DS7):** texto hasta 200% sin cortes, contraste 7:1 en el texto principal, etiquetas TalkBack, y el estado de la vía siempre con color + ícono + texto.
-- **Tono (DS8):** tuteo, frases cortas y palabras locales (mototaxi, colectivo, la Troncal, el terminal). Avisos de seguridad serenos y sin señalar comunidades. El panel admin usa usted.
-- Sin tarjetas dentro de tarjetas, sin degradados morados y sin iconos decorativos en baldosa. No usar iconografía wayuu como decoración.
+**Hecho (2026-10-12):**
+- `PRODUCT.md` escrito y confirmado (impeccable init).
+- Tirada de direcciones en modo Operate. Corrió **degradada**: el servidor de impeccable no se alcanza desde el contenedor, así que no hubo rivales del catálogo ni tableros de calidad. Se presentaron 3 opciones por chat y el usuario eligió **"Rótulo de colectivo"**.
+- Contrato de dirección en `.impeccable/surfaces/lib-main-dart.md` (seed `f3f70ca1`).
 
-**Movimiento:**
-- Hojas de 200–300 ms con ease-out fuerte; las salidas, más rápidas que las entradas.
-- Al presionar, escala a 0.97.
-- Nada animado en acciones repetidas, como cambiar de pestaña o marcar el mapa.
-- Respetar "reducir movimiento".
+**Mundo "Rótulo de colectivo":**
+- Los letreros de ruta pintados en el parabrisas de colectivos y busetas de la costa.
+- **Paleta:** shell en ultramar de carrocería `#1B3A8C`, fondo lámina fría `#EEF1F5`, placas blancas, tinta `#111827`. Una franja fucsia `#C2185B` marca solo lo seleccionado. Rojo, ámbar y verde siguen siendo solo para el estado de la vía. Todo el texto principal pasa de 7:1.
+- **Tipografía:** Barlow Condensed 700/800 para placas y títulos; Barlow 400–700 para el cuerpo; cifras tabulares en precios, km y horas. OFL, empaquetadas.
+- **Gesto distintivo:** `GSRoutePlate`. Cada destino, tramo, viaje y movimiento es una placa de ruta legible a cinco metros. "¿A dónde vas?" es una placa en blanco que se "pinta" con el destino.
+- **Controles:** los nativos de Material 3. El mundo aporta solo tipografía, paleta, densidad y la placa; nunca disfraz de bus.
+- **Radios:** 4/8/12. Sin degradados, sin vidrio, sin tarjetas por defecto.
+- **Movimiento:** presión 0.97 en 120 ms; cambio de texto de placa con fundido y desplazamiento de 8 dp en 200 ms; hojas de 250 ms al entrar y 200 ms al salir; nada al cambiar de pestaña.
 
-**Arquitectura de información:**
-- **Pasajero:** Inicio, Viaje, Reportar, Billetera y Perfil. **Inicio (DS1):** arriba la franja de estado del corredor, en el centro "¿A dónde vas?" y el mapa de fondo.
-- **Modo invitado (DS3):** se puede ver el corredor, buscar lugares y planear un viaje sin cuenta. La cuenta se pide justo al reportar, pedir mototaxi, reservar cupo o pagar. Para eso cambian el redirect de `app_router.dart` y la RLS (lectura pública de `road_status`, `places` y el grafo).
-- **Conductor:** Disponible/No, Solicitud entrante, Viaje activo, Cobrar (QR), Ingresos e historial. En colectivos se suma "Puestos ocupados".
-- **Patrón central:** "el chat se transforma en mapa". El selector de origen y destino acepta texto libre, referencia, pin, ubicación actual y ubicación recibida por WhatsApp.
+**Orden de construcción (code-led, una pantalla por entrega):**
+1. **Base:** tokens, tema, fuentes, `GSRoutePlate`, `GSButton`, barra inferior, campos y hojas.
+2. **Perfil** (partir sus 1.115 líneas).
+3. **Inicio:** Línea del corredor sobre la barra ultramar y la placa "¿A dónde vas?".
+4. **Planificador y detalle de ruta:** tramos como placas encadenadas (`GSLegTimeline`, `GSFareRange`).
+5. **Billetera:** recibo y movimientos como placas.
+6. **Asistente de IA.**
+7. **Login, registro, intro y permiso de ubicación** (`impeccable onboard`).
+8. **Estados DS2** de cada pantalla (`impeccable harden`).
+9. **Modo nocturno** como esquema propio, no invertido.
 
-**Modos de transporte:**
-- Se agregan mototaxi, colectivo, transpadilla, intermunicipal, taxi y a pie.
-- Se quitan metro y bici de `GSColors` y de `selected_mode_provider`.
+**Cierre de cada entrega:**
+- `flutter analyze` y tests.
+- Capturas renderizadas: teléfono a 360 dp, texto al 130% y prueba de "quitar animaciones".
+- Revisión final de impeccable en un agente nuevo, sin el historial de la construcción.
+- Revisión de movimiento de Emil.
+- Chequeo previo de taste-skill.
+- Al terminar el mundo, el documentador de impeccable reescribe `DESIGN.md` desde lo construido. El `DESIGN.md` actual describe el mundo descartado y queda **obsoleto hasta entonces**.
 
-**Componentes:**
-- Se reutilizan los `GS*`.
-- Nuevos: `GSCorridorStatusBar`, `GSPlacePicker`, `GSLegTimeline`, `GSFareRange`, `GSSosButton`, `GSReportSheet`, `GSOfflineBanner` y `GSDriverRequestCard`.
+**Se mantiene de la versión anterior de esta fase:** arquitectura de información (DS1), modo invitado (DS3), modo conductor de una mano (DS6: 72 dp, 2 acciones por pantalla), accesibilidad (DS7), tono (DS8), modos de transporte locales y los componentes nuevos (`GSPlacePicker`, `GSLegTimeline`, `GSFareRange`, `GSSosButton`, `GSReportSheet`, `GSOfflineBanner`, `GSDriverRequestCard`).
 
-**Entregable:** prototipo en Figma de las ~15 pantallas clave, con estados vacíos, de error y offline, antes de codificar.
+**Se elimina:** la paleta arena/mar y Atkinson Hyperlegible (DS4). El prototipo en Figma ya no es requisito: el mundo es code-led y se verifica con capturas y la revisión final.
+
+**Pendiente de verificar:** la legibilidad real de Barlow al sol y en un teléfono de gama media.
 
 ## Fase 3 · Núcleo: roles, mapa, offline, seguridad básica (semanas 5–8)
 - **Esquema:**
@@ -406,7 +417,7 @@ Por retirar o reescribir: test/widget/wallet_test.dart (mock), test/widget_test.
 | DS1 | Arquitectura de información (6→9) | Inicio: corredor → ¿A dónde vas? → mapa |
 | DS2 | Estados (2→9) | Tabla completa de estados (abajo) |
 | DS3 | Recorrido (5→9) | Modo invitado; la cuenta se pide al actuar |
-| DS4 | Riesgo de diseño genérico (5→8) | Atkinson Hyperlegible Next; sin el tema oscuro neón |
+| DS4 | Riesgo de diseño genérico (5→8) | ~~Atkinson Hyperlegible Next~~ → reemplazada el 2026-10-12 por el mundo "Rótulo de colectivo" (Barlow + Barlow Condensed) |
 | DS5 | Sistema de diseño (2→8) | `DESIGN.md` único + `/design-consultation` |
 | DS6 | Accesibilidad (4→9) | Modo conductor de una mano |
 | DS7 | Accesibilidad | Texto 200%, contraste 7:1, TalkBack, color+ícono |

@@ -85,6 +85,11 @@ components:
     backgroundColor: "{colors.surface}"
 ---
 
+> **OBSOLETO (2026-10-12).** Este documento describe el mundo "arena + mar / Atkinson", descartado en el
+> rediseño total. Mientras se construye el nuevo mundo "Rótulo de colectivo", la autoridad visual es el
+> contrato `.impeccable/surfaces/lib-main-dart.md` y `lib/theme/design_tokens.dart`. Al cerrar el rediseño,
+> el documentador de impeccable reescribe este archivo desde lo construido.
+
 # GoSmart
 
 ## Overview

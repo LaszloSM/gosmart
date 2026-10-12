@@ -263,7 +263,7 @@ class _GoHereCard extends StatelessWidget {
                   '${point.latitude.toStringAsFixed(4)}, '
                   '${point.longitude.toStringAsFixed(4)}',
                   style: const TextStyle(
-                    fontFamily: GSFonts.mono,
+                    fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: GSColors.textMuted,

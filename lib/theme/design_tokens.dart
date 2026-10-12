@@ -1,48 +1,57 @@
 import 'package:flutter/material.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GoSmart Design Tokens — refleja DESIGN.md (fuente de verdad).
-// Claro primero, legible al sol. Un solo color de marca ("mar profundo").
-// Rojo / ámbar / verde existen SOLO para el estado de la vía (road*).
+// GoSmart Design Tokens — mundo "rótulo de colectivo" (rediseño 2026-10).
+// Contrato: .impeccable/surfaces/lib-main-dart.md. Shell en ultramar de
+// carrocería, placas blancas con letras condensadas, franja fucsia solo en lo
+// seleccionado. Rojo / ámbar / verde existen SOLO para el estado de la vía.
 // ─────────────────────────────────────────────────────────────────────────────
 
 abstract class GSColors {
-  // ── DESIGN.md: marca y neutros ─────────────────────────────────────────────
-  /// Mar profundo: marca, acciones, selección. Blanco encima 9.8:1.
-  static const brand = Color(0xFF0B4A57);
-  static const brandPressed = Color(0xFF093D48);
+  // ── Marca y shell ──────────────────────────────────────────────────────────
+  /// Ultramar de carrocería: barras, botón primario, letras de las placas.
+  /// Blanco encima 10.3:1.
+  static const brand = Color(0xFF1B3A8C);
+  static const brandPressed = Color(0xFF142C6B);
 
   /// Texto e íconos sobre [brand].
   static const onBrand = Color(0xFFFFFFFF);
 
-  /// Tinte de marca para fondos seleccionados (texto [brand] encima > 7:1).
-  static const brandTint = Color(0xFFDCEBEE);
+  /// Texto secundario sobre [brand] (7:1).
+  static const onBrandMuted = Color(0xFFCCD7F2);
 
-  /// Arena: fondo de pantalla.
-  static const background = Color(0xFFF6F1E7);
+  /// Tinte de ultramar para fondos seleccionados (ultramar encima 8.5:1).
+  static const brandTint = Color(0xFFE3E9F6);
 
-  /// Sal: hojas, superficies, campos.
-  static const surface = Color(0xFFFFFDF8);
+  /// Franja fucsia: marca lo seleccionado y la placa activa. Nunca relleno.
+  static const stripe = Color(0xFFC2185B);
 
-  /// Arena un tono más oscura: agrupar secciones, chips sin seleccionar.
-  static const surfaceSunken = Color(0xFFEFE8DA);
+  // ── Neutros fríos (lámina y placa) ─────────────────────────────────────────
+  /// Lámina: fondo de pantalla.
+  static const background = Color(0xFFEEF1F5);
 
-  /// Tinta: texto principal (15.6:1 sobre arena).
-  static const text = Color(0xFF1B1915);
+  /// Placa: hojas, superficies, campos.
+  static const surface = Color(0xFFFFFFFF);
 
-  /// Tinta suave: texto secundario (8.4:1 sobre arena).
-  static const textMuted = Color(0xFF4A453C);
+  /// Lámina un tono más oscura: agrupar, chips sin seleccionar.
+  static const surfaceSunken = Color(0xFFE2E7EE);
 
-  /// Solo divisores; nunca texto encima.
-  static const line = Color(0xFFCFC4B1);
+  /// Tinta: texto principal (15.7:1 sobre lámina).
+  static const text = Color(0xFF111827);
 
-  // ── DESIGN.md: estado de la vía (siempre con ícono + texto) ────────────────
+  /// Tinta suave: texto secundario (7.1:1 sobre lámina).
+  static const textMuted = Color(0xFF465066);
+
+  /// Solo divisores y bordes de placa; nunca texto encima.
+  static const line = Color(0xFFC9D0DC);
+
+  // ── Estado de la vía (siempre con ícono + texto) ───────────────────────────
   static const roadOpen = Color(0xFF17602F);
   static const roadCaution = Color(0xFF6A3F00);
   static const roadCautionTint = Color(0xFFFBE7C2);
   static const roadClosed = Color(0xFF9E1F18);
   static const roadClosedTint = Color(0xFFF6DAD6);
-  static const roadUnknown = Color(0xFF55514A);
+  static const roadUnknown = Color(0xFF545B69);
 
   // ── Nombres anteriores (alias). Código nuevo: usar los de arriba. ──────────
   /// Antes "fondo más oscuro"; ahora el fondo arena.
@@ -73,7 +82,7 @@ abstract class GSColors {
   static const textSecondary = textMuted;
 
   /// Texto deshabilitado (exento del mínimo de contraste).
-  static const textDisabled = Color(0xFF8A8275);
+  static const textDisabled = Color(0xFF8A93A6);
 
   // Semánticos de formulario / avisos. El éxito usa la marca, no el verde.
   static const success = brand;
@@ -111,16 +120,16 @@ abstract class GSSpacing {
 }
 
 abstract class GSRadius {
-  /// Inputs y chips.
-  static const double sm = 6;
+  /// Chips y placas pequeñas.
+  static const double sm = 4;
 
-  /// Botones.
-  static const double md = 10;
+  /// Botones, campos y placas.
+  static const double md = 8;
 
   /// Hojas y la solicitud del conductor.
-  static const double lg = 16;
+  static const double lg = 12;
 
-  // Alias anteriores: DESIGN.md no pasa de 16.
+  // Alias anteriores: el sistema no pasa de 12.
   static const double xl = lg;
   static const double xxl = lg;
 
@@ -136,7 +145,8 @@ abstract class GSRadius {
 
 /// Profundidad = desplazamiento + desenfoque suave en tinta. Sin brillos.
 abstract class GSShadow {
-  static const _ink = Color(0xFF1B1915);
+  // Sombras teñidas del ultramar, no negro puro.
+  static const _ink = Color(0xFF0E1A3A);
 
   static List<BoxShadow> get sm => [
         BoxShadow(
@@ -249,6 +259,15 @@ abstract class GSAnimDuration {
 
 /// Familias tipográficas empaquetadas en assets/fonts (OFL), sin red.
 abstract class GSFonts {
-  static const sans = 'AtkinsonHyperlegibleNext';
-  static const mono = 'AtkinsonHyperlegibleMono';
+  /// Cuerpo, etiquetas y controles.
+  static const sans = 'Barlow';
+
+  /// Placas de ruta y títulos: letra condensada de rótulo.
+  static const display = 'BarlowCondensed';
+
+  /// Números que el usuario compara (precios, km, horas). Barlow con cifras
+  /// tabulares: usar siempre junto a [tabular].
+  static const mono = 'Barlow';
+
+  static const tabular = [FontFeature.tabularFigures()];
 }

@@ -266,43 +266,42 @@ AppRoutes.nfcSimulator     // '/debug/nfc-simulator'
 
 ### Design System
 
-**`DESIGN.md` (repo root) is the source of truth** for color, type, spacing and motion.
-Read it before any visual or UI work and ask the user before departing from it; when
-reviewing or QA-ing UI, flag code that doesn't match it. Key rules: light theme first
-(readable in sun), one brand color `primary` #0B4A57, `road-*` colors only for road
-status (always with icon + text), Atkinson Hyperlegible Next/Mono bundled offline,
-48px touch targets (72px in driver mode), no cards by default.
+**Rediseño total en curso (2026-10-12), mundo "Rótulo de colectivo".** `DESIGN.md` describe el
+mundo anterior y está marcado OBSOLETO hasta que el documentador de impeccable lo reescriba al
+cerrar el rediseño. Mientras tanto la autoridad visual es:
+1. `.impeccable/surfaces/lib-main-dart.md` — contrato de dirección (THESIS, OWN-WORLD, FIRST VIEWPORT…).
+2. `lib/theme/design_tokens.dart` + `lib/theme/app_theme.dart`.
+3. `PRODUCT.md` — verdad del producto (usuarios, contexto, accesibilidad).
 
-`lib/theme/design_tokens.dart` mirrors DESIGN.md. Never hardcode colors, spacing, or radii.
-New code uses the DESIGN.md names; the old names (`accent`, `primary`, `eco`, `success`…)
-are aliases kept so existing screens compile — `GSColors.primary` is now the **sand
-background**, not a dark color, so never put it behind white text.
+**Skills de diseño instaladas en `.claude/skills/`** (úsalas en todo trabajo de UI):
+`impeccable` (proceso, `critique`/`audit`/`polish`/`harden`, reglas Android, `reference/craft-floor.md`),
+`taste-skill` + `redesign-skill` (AI tells prohibidos, estados completos), `emil-design-eng` +
+`animate` + `review-animations` (movimiento). Plan de la fase: `docs/PLAN_MVP_GUAJIRA.md` → Fase 2.
+
+Reglas del mundo: shell en ultramar (`GSColors.brand` #1B3A8C: AppBar, barra inferior, botón
+primario); fondo lámina fría; placas blancas con letras Barlow Condensed en ultramar
+(`GSRoutePlate`, el gesto distintivo); franja fucsia `GSColors.stripe` SOLO en lo seleccionado;
+rojo/ámbar/verde (`road*`) solo para el estado de la vía, siempre con ícono + palabra; radios
+4/8/12; sin degradados, vidrio ni tarjetas por defecto; 48 dp (72 en conductor); contraste 7:1.
+Movimiento: presión 0.97 en 120 ms `GSCurve.enter`; nada animado al cambiar de pestaña; respetar
+`MediaQuery.disableAnimations`.
+
+`GSColors.primary` es un alias del fondo (lámina), nunca detrás de texto blanco. Código nuevo usa
+los nombres nuevos.
 
 ```dart
-GSColors.brand / .onBrand / .brandTint      // mar profundo #0B4A57 + white text
-GSColors.background / .surface / .surfaceSunken
-GSColors.text / .textMuted / .line
+GSColors.brand / .brandPressed / .onBrand / .onBrandMuted / .brandTint / .stripe
+GSColors.background / .surface / .surfaceSunken / .text / .textMuted / .line
 GSColors.roadOpen / .roadCaution(+Tint) / .roadClosed(+Tint) / .roadUnknown  // road status ONLY
-GSFonts.sans / GSFonts.mono                 // bundled in assets/fonts (OFL)
-GSCurve.enter / .exit / .move               // DESIGN.md motion
-GSSize.touchTarget=48  GSSize.touchTargetDriver=72  GSSize.corridorLine=56
-
-// Transport mode colors (current code; Fase 2 replaces metro/bike with local modes)
-GSColors.bus / .metro / .bike / .walk / .taxi / .car
-
-// Spacing scale (use these, never raw numbers)
-GSSpacing.s1=4  s2=8  s3=12  s4=16  s5=20  s6=24  s8=32
-
-// Radii (DESIGN.md caps at 16; xl/xxl are aliases of lg)
-GSRadius.sm=6  .md=10  .lg=16  .full=9999
-GSRadius.cardRadius / .buttonRadius / .sheetRadius
-
-// Sizes
-GSSize.bottomNav=72   GSSize.topBar=56
+GSFonts.sans ('Barlow') / .display ('BarlowCondensed') / .mono + .tabular (cifras tabulares)
+GSCurve.enter / .exit / .move    GSDuration.press / .fast / .sheetIn / .sheetOut
+GSSpacing.s1=4 s2=8 s3=12 s4=16 s5=20 s6=24 s8=32    GSRadius.sm=4 .md=8 .lg=12
+GSSize.touchTarget=48 .touchTargetDriver=72 .corridorLine=56 .bottomNav=72 .topBar=56
 ```
 
 **Reusable widgets** (all in `lib/widgets/`, prefixed `GS*`):
-- `GSButton`, `GSIconButton`
+- `GSRoutePlate(text:, from:, detail:, leading:, isActive:, isPlaceholder:, size:)` — placa de ruta
+- `GSButton` (etiqueta condensada, presión 0.97, mín. 48 dp), `GSIconButton`
 - `GSCard`, `GSInfoCard`, `GSOptionCard`, `GSModeChip`
 - `GSCorridorLine` — DESIGN.md corridor line (56 px); state always icon + word, time in mono
 - `GSTextField`, `GSSearchBar`
@@ -426,5 +425,8 @@ Currency: `'cop'` | `'usd'` | `'eur'`
   kept for trips (Fase 6). Money movements come from `walletTransactionsProvider`.
 - **Wallet vs cards**: `wallets` / `wallet_transactions` (`walletProvider`) is the money model. `cards` / `activeCardProvider` is only the card UI (lock/NFC, future public-transport validators). Never write balances from the client; use RPCs.
 - **`AnimatedDefaultTextStyle` / `DefaultTextStyle` replace the inherited style**: always set `fontFamily: GSFonts.sans`, or the text falls back to Roboto.
-- **Fonts are bundled** (`pubspec.yaml` → `fonts:`); there is no `google_fonts` package and no runtime font download.
+- **Fonts are bundled** (`pubspec.yaml` → `fonts:` Barlow + BarlowCondensed); no `google_fonts`, no runtime download.
+- **`ThemeData(fontFamily:)` overrides every textTheme family**: condensed titles are re-applied with
+  `base.copyWith(textTheme: base.textTheme.merge(textTheme))` in `app_theme.dart`. Keep that.
+- **Barlow has no → glyph**: draw arrows with `Icons.arrow_forward_rounded`, never the character.
 - **`GSCard` wraps its child in a transparent `Material`** so `ListTile`s inside it render ripples (newer Flutter asserts otherwise).

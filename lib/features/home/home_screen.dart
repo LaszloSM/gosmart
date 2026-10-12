@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/corridor_status.dart';
@@ -56,11 +57,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: Column(
         children: [
           // ── Línea del corredor: el estado de la vía en 1 segundo ──────────
-          ColoredBox(
-            color: GSColors.surface,
-            child: SafeArea(
-              bottom: false,
-              child: _CorridorHeader(corridor: corridor),
+          // Shell ultramar con la Línea sobre una placa blanca.
+          AnnotatedRegion<SystemUiOverlayStyle>(
+            value: SystemUiOverlayStyle.light,
+            child: ColoredBox(
+              color: GSColors.brand,
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(GSSpacing.s3,
+                      GSSpacing.s2, GSSpacing.s3, GSSpacing.s3),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(GSRadius.md),
+                    child: _CorridorHeader(corridor: corridor),
+                  ),
+                ),
+              ),
             ),
           ),
 
@@ -143,7 +155,7 @@ class _RouteBanner extends ConsumerWidget {
             child: Text(
               '${route.durationMin} min · ${route.distanceKm.toStringAsFixed(1)} km',
               style: const TextStyle(
-                fontFamily: GSFonts.mono,
+                fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
                 color: GSColors.onBrand,
                 fontWeight: FontWeight.w600,
                 fontSize: 17,

@@ -12,6 +12,7 @@ import '../../../router/app_router.dart';
 import '../../../services/geocoding_service.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_button.dart';
+import '../../../widgets/gs_route_plate.dart';
 
 class QuickPlacesRow extends ConsumerWidget {
   final Function(FavoritePlace) onPlaceSelected;
@@ -36,7 +37,7 @@ class QuickPlacesRow extends ConsumerWidget {
         children: [
           // Casa
           _QuickChip(
-            label: home != null ? 'Casa' : 'Agregar casa',
+            label: 'Casa',
             icon: Icons.home_rounded,
             color: GSColors.accent,
             isSet: home != null,
@@ -54,7 +55,7 @@ class QuickPlacesRow extends ConsumerWidget {
 
           // Trabajo
           _QuickChip(
-            label: work != null ? 'Trabajo' : 'Agregar trabajo',
+            label: 'Trabajo',
             icon: Icons.work_rounded,
             color: GSColors.accentAlt,
             isSet: work != null,
@@ -130,44 +131,15 @@ class _QuickChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(
-          horizontal: GSSpacing.s3,
-          vertical: GSSpacing.s2,
-        ),
-        decoration: BoxDecoration(
-          color: isSet
-              ? color.withValues(alpha: 0.15)
-              : GSColors.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(GSRadius.full),
-          border: Border.all(
-            color: isSet
-                ? color.withValues(alpha: 0.35)
-                : GSColors.border.withValues(alpha: 0.4),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 15,
-              color: isSet ? color : GSColors.textSecondary,
-            ),
-            const SizedBox(width: GSSpacing.s2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isSet ? color : GSColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
+    // Placa pequeña; sin lugar guardado es una placa en blanco con "+".
+    return IntrinsicWidth(
+      child: GSRoutePlate(
+        text: label,
+        size: GSPlateSize.sm,
+        leading: isSet ? icon : Icons.add_rounded,
+        isPlaceholder: !isSet,
+        onTap: onTap,
+        semanticLabel: isSet ? label : 'Agregar ${label.toLowerCase()}',
       ),
     );
   }

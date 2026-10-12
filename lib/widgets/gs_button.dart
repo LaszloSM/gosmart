@@ -4,8 +4,10 @@ import '../theme/design_tokens.dart';
 enum GSButtonVariant { primary, secondary, outline, ghost, eco, danger }
 enum GSButtonSize { sm, md, lg }
 
-/// GoSmart reusable button with AnimatedScale press feedback.
-/// Primary variant uses a kinetic green → cyan gradient.
+/// Botón GoSmart (mundo "rótulo de colectivo"): plano, radio md, etiqueta en
+/// letra condensada de rótulo. Al presionar baja a 0.97 en 120 ms ease-out
+/// (Emil Kowalski); con "quitar animaciones" del sistema no escala.
+/// Toda talla mide al menos 48 dp de alto (área táctil de Android).
 class GSButton extends StatefulWidget {
   const GSButton({
     super.key,
@@ -37,111 +39,93 @@ class GSButton extends StatefulWidget {
 class _GSButtonState extends State<GSButton> {
   bool _pressed = false;
 
-  void _onTapDown(TapDownDetails _) => setState(() => _pressed = true);
-  void _onTapUp(TapUpDetails _) => setState(() => _pressed = false);
-  void _onTapCancel() => setState(() => _pressed = false);
+  void _setPressed(bool v) {
+    if (_pressed != v) setState(() => _pressed = v);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final colors = _variantColors;
-    final dims = _sizeDims;
+    final c = _variantColors;
+    final d = _sizeDims;
     final isDisabled = widget.isLoading || widget.onPressed == null;
-    final isPrimary = widget.variant == GSButtonVariant.primary;
-    final isEco = widget.variant == GSButtonVariant.eco;
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    final radius = BorderRadius.circular(GSRadius.md);
+
+    final button = Material(
+      color: c.bg,
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: c.border == null
+            ? BorderSide.none
+            : BorderSide(color: c.border!, width: 2),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: isDisabled ? null : widget.onPressed,
+        onHighlightChanged: isDisabled ? null : _setPressed,
+        // La escala es la respuesta; sin salpicadura encima.
+        splashFactory: NoSplash.splashFactory,
+        highlightColor: c.fg.withValues(alpha: 0.08),
+        child: Container(
+          height: d.height,
+          width: widget.isFullWidth ? double.infinity : null,
+          padding: EdgeInsets.symmetric(horizontal: d.hPad),
+          alignment: Alignment.center,
+          child: _content(c.fg, d),
+        ),
+      ),
+    );
 
     return Semantics(
       label: widget.semanticLabel ?? widget.label,
       button: true,
-      child: AnimatedScale(
-        scale: (_pressed && !isDisabled) ? 0.97 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.easeIn,
-        child: GestureDetector(
-          onTapDown: isDisabled ? null : _onTapDown,
-          onTapUp: isDisabled ? null : _onTapUp,
-          onTapCancel: isDisabled ? null : _onTapCancel,
-          onTap: isDisabled ? null : widget.onPressed,
-          child: SizedBox(
-            width: widget.isFullWidth ? double.infinity : null,
-            height: dims.height,
-            child: DecoratedBox(
-              // DESIGN.md: botones planos (sin sombra), radio md.
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(GSRadius.md),
-              ),
-              child: Container(
-                height: dims.height,
-                padding: EdgeInsets.symmetric(horizontal: dims.hPad),
-                decoration: BoxDecoration(
-                  // Gradient for primary & eco; solid color for others
-                  gradient: !isDisabled && (isPrimary || isEco)
-                      ? LinearGradient(
-                          colors: isPrimary
-                              ? GSGradient.primaryButton
-                              : [GSColors.eco, GSColors.eco],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        )
-                      : null,
-                  color: isDisabled
-                      ? GSColors.surfaceContainerHigh
-                      : (!isPrimary && !isEco) ? colors.bg : null,
-                  borderRadius: BorderRadius.circular(GSRadius.md),
-                  border: widget.variant == GSButtonVariant.outline
-                      ? Border.all(color: GSColors.textMuted, width: 2)
-                      : widget.variant == GSButtonVariant.danger
-                          ? Border.all(color: GSColors.error, width: 1.5)
-                          : null,
-                ),
-                child: _buildChild(dims, colors, isDisabled),
-              ),
-            ),
-          ),
+      enabled: !isDisabled,
+      excludeSemantics: true,
+      child: Opacity(
+        opacity: isDisabled && !widget.isLoading ? 0.38 : 1,
+        child: AnimatedScale(
+          scale: _pressed && !reduceMotion ? 0.97 : 1,
+          duration: GSDuration.press,
+          curve: GSCurve.enter,
+          child: button,
         ),
       ),
     );
   }
 
-  Widget _buildChild(_SizeDims dims, _VariantColors colors, bool isDisabled) {
-    final effectiveFg = isDisabled
-        ? GSColors.textDisabled
-        : (widget.variant == GSButtonVariant.primary ||
-                widget.variant == GSButtonVariant.eco)
-            ? GSColors.onBrand
-            : colors.fg;
-
+  Widget _content(Color fg, _SizeDims d) {
     if (widget.isLoading) {
-      return Center(
-        child: SizedBox(
-          width: dims.iconSize,
-          height: dims.iconSize,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: effectiveFg,
-          ),
-        ),
+      return SizedBox(
+        width: d.iconSize,
+        height: d.iconSize,
+        child: CircularProgressIndicator(strokeWidth: 2.5, color: fg),
       );
     }
     return Row(
       mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (widget.leadingIcon != null) ...[
-          Icon(widget.leadingIcon, size: dims.iconSize, color: effectiveFg),
+          Icon(widget.leadingIcon, size: d.iconSize, color: fg),
           const SizedBox(width: GSSpacing.s2),
         ],
-        Text(
-          widget.label,
-          style: TextStyle(
-            fontSize: dims.fontSize,
-            fontWeight: FontWeight.w700,
-            color: effectiveFg,
-            letterSpacing: 0.2,
+        Flexible(
+          child: Text(
+            widget.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: GSFonts.display,
+              fontSize: d.fontSize,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
+              height: 1.1,
+              color: fg,
+            ),
           ),
         ),
         if (widget.trailingIcon != null) ...[
           const SizedBox(width: GSSpacing.s2),
-          Icon(widget.trailingIcon, size: dims.iconSize, color: effectiveFg),
+          Icon(widget.trailingIcon, size: d.iconSize, color: fg),
         ],
       ],
     );
@@ -150,28 +134,29 @@ class _GSButtonState extends State<GSButton> {
   _VariantColors get _variantColors {
     switch (widget.variant) {
       case GSButtonVariant.primary:
-        return const _VariantColors(GSColors.brand, GSColors.onBrand);
-      case GSButtonVariant.secondary:
-        return const _VariantColors(GSColors.accentLight, GSColors.accent);
-      case GSButtonVariant.outline:
-        return const _VariantColors(Colors.transparent, GSColors.accent);
-      case GSButtonVariant.ghost:
-        return const _VariantColors(Colors.transparent, GSColors.textSecondary);
       case GSButtonVariant.eco:
         return const _VariantColors(GSColors.brand, GSColors.onBrand);
+      case GSButtonVariant.secondary:
+        return const _VariantColors(GSColors.brandTint, GSColors.brand);
+      case GSButtonVariant.outline:
+        return const _VariantColors(
+            GSColors.surface, GSColors.brand, GSColors.brand);
+      case GSButtonVariant.ghost:
+        return const _VariantColors(Colors.transparent, GSColors.brand);
       case GSButtonVariant.danger:
-        return const _VariantColors(Colors.transparent, GSColors.error);
+        return const _VariantColors(
+            GSColors.surface, GSColors.roadClosed, GSColors.roadClosed);
     }
   }
 
   _SizeDims get _sizeDims {
     switch (widget.size) {
       case GSButtonSize.sm:
-        return const _SizeDims(height: 36, hPad: 16, fontSize: 13, iconSize: 16);
+        return const _SizeDims(height: 48, hPad: 16, fontSize: 17, iconSize: 18);
       case GSButtonSize.md:
-        return const _SizeDims(height: 52, hPad: 24, fontSize: 15, iconSize: 20);
+        return const _SizeDims(height: 52, hPad: 20, fontSize: 20, iconSize: 22);
       case GSButtonSize.lg:
-        return const _SizeDims(height: 60, hPad: 32, fontSize: 17, iconSize: 22);
+        return const _SizeDims(height: 60, hPad: 24, fontSize: 22, iconSize: 24);
     }
   }
 }
@@ -179,7 +164,8 @@ class _GSButtonState extends State<GSButton> {
 class _VariantColors {
   final Color bg;
   final Color fg;
-  const _VariantColors(this.bg, this.fg);
+  final Color? border;
+  const _VariantColors(this.bg, this.fg, [this.border]);
 }
 
 class _SizeDims {
@@ -204,9 +190,9 @@ class GSIconButton extends StatelessWidget {
     required this.onPressed,
     this.backgroundColor = GSColors.surface,
     this.iconColor = GSColors.textPrimary,
-    this.size = 44,
+    this.size = GSSize.touchTarget,
     this.tooltip,
-    this.hasShadow = true,
+    this.hasShadow = false,
   });
 
   final IconData icon;

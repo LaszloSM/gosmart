@@ -8,8 +8,9 @@ import '../theme/design_tokens.dart';
 /// existan (Fases 4 y 6); el historial vive dentro de la Billetera.
 enum GSNavTab { home, wallet, profile }
 
-/// Barra inferior: superficie sal, ícono activo en pastilla de marca y la
-/// etiqueta siempre debajo. Navega sola con `context.go`.
+/// Barra inferior en ultramar (la carrocería): ícono activo sobre una placa
+/// blanca con franja fucsia, etiqueta siempre debajo. Navega sola con
+/// `context.go`; cambiar de pestaña no se anima (acción repetida).
 class GSBottomNav extends StatelessWidget {
   const GSBottomNav({super.key, required this.current});
 
@@ -27,10 +28,7 @@ class GSBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: GSSize.bottomNav + MediaQuery.of(context).padding.bottom,
-      decoration: const BoxDecoration(
-        color: GSColors.surface,
-        border: Border(top: BorderSide(color: GSColors.line)),
-      ),
+      color: GSColors.brand,
       child: SafeArea(
         top: false,
         child: Row(
@@ -70,7 +68,7 @@ class _NavTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(GSRadius.full),
-        splashColor: GSColors.brand.withValues(alpha: 0.10),
+        splashColor: GSColors.onBrand.withValues(alpha: 0.12),
         highlightColor: Colors.transparent,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -84,13 +82,17 @@ class _NavTile extends StatelessWidget {
                 vertical: GSSpacing.s1,
               ),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(GSRadius.full),
-                color: isActive ? GSColors.brand : Colors.transparent,
+                borderRadius: BorderRadius.circular(GSRadius.sm),
+                color: isActive ? GSColors.surface : Colors.transparent,
+                border: isActive
+                    ? const Border(
+                        bottom: BorderSide(color: GSColors.stripe, width: 3))
+                    : null,
               ),
               child: Icon(
                 item.icon,
                 size: GSSize.iconLg,
-                color: isActive ? GSColors.onBrand : GSColors.textMuted,
+                color: isActive ? GSColors.brand : GSColors.onBrandMuted,
               ),
             ),
             const SizedBox(height: 2),
@@ -99,9 +101,10 @@ class _NavTile extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isActive ? GSColors.brand : GSColors.textMuted,
+                fontFamily: GSFonts.sans,
+                fontSize: 13,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                color: isActive ? GSColors.onBrand : GSColors.onBrandMuted,
               ),
             ),
           ],
