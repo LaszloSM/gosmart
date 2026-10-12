@@ -18,32 +18,38 @@ class GSBottomNav extends StatelessWidget {
 
   static const _items = [
     _NavItem(GSNavTab.home, Icons.home_rounded, 'Inicio', AppRoutes.home),
-    _NavItem(GSNavTab.wallet, Icons.account_balance_wallet_rounded,
-        'Billetera', AppRoutes.wallet),
-    _NavItem(GSNavTab.profile, Icons.person_rounded, 'Perfil',
-        AppRoutes.profile),
+    _NavItem(GSNavTab.wallet, Icons.account_balance_wallet_rounded, 'Billetera',
+        AppRoutes.wallet),
+    _NavItem(
+        GSNavTab.profile, Icons.person_rounded, 'Perfil', AppRoutes.profile),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: GSSize.bottomNav + MediaQuery.of(context).padding.bottom,
+    // Alto mínimo de 72 dp que crece con el texto grande del sistema
+    // (PRODUCT.md: hasta 200 % sin cortar).
+    return ColoredBox(
       color: GSColors.brand,
       child: SafeArea(
         top: false,
-        child: Row(
-          children: [
-            for (final item in _items)
-              Expanded(
-                child: _NavTile(
-                  item: item,
-                  isActive: item.tab == current,
-                  onTap: () {
-                    if (item.tab != current) context.go(item.route);
-                  },
-                ),
-              ),
-          ],
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: GSSize.bottomNav),
+          child: IntrinsicHeight(
+            child: Row(
+              children: [
+                for (final item in _items)
+                  Expanded(
+                    child: _NavTile(
+                      item: item,
+                      isActive: item.tab == current,
+                      onTap: () {
+                        if (item.tab != current) context.go(item.route);
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );

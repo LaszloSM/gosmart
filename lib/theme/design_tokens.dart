@@ -195,8 +195,10 @@ abstract class GSDuration {
   static const press = Duration(milliseconds: 120);
   static const fast = Duration(milliseconds: 150);
   static const normal = Duration(milliseconds: 250);
-  static const slow = Duration(milliseconds: 400);
   static const page = Duration(milliseconds: 250);
+
+  /// Cambio de rótulo de una placa (contrato: 200 ms).
+  static const plate = Duration(milliseconds: 200);
 
   /// Hojas: entrada 250 ms, salida 200 ms.
   static const sheetIn = Duration(milliseconds: 250);
@@ -206,7 +208,9 @@ abstract class GSDuration {
 abstract class GSCurve {
   /// Entrada: ease-out fuerte, cubic-bezier(0.23, 1, 0.32, 1).
   static const enter = Cubic(0.23, 1, 0.32, 1);
-  static const exit = Curves.easeIn;
+  /// Salida: la misma curva invertida. Úsala solo como reverseCurve o
+  /// switchOutCurve; un movimiento hacia adelante usa [enter].
+  static const exit = FlippedCurve(enter);
   static const move = Curves.easeInOut;
 }
 
@@ -247,14 +251,6 @@ abstract class GSGradient {
   static List<Color> get avatarRing => const [GSColors.brand, GSColors.brand];
   static List<Color> get primaryButton => const [GSColors.brand, GSColors.brand];
   static List<Color> get smartCard => const [GSColors.brand, GSColors.brand];
-}
-
-abstract class GSAnimDuration {
-  static const countUp = Duration(milliseconds: 600);
-  static const checkmarkStroke = Duration(milliseconds: 400);
-  static const particleBurst = Duration(milliseconds: 500);
-  static const int skeletonStagger = 60;
-  static const pillSlide = Duration(milliseconds: 200);
 }
 
 /// Familias tipográficas empaquetadas en assets/fonts (OFL), sin red.

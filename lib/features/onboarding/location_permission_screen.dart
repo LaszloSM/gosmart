@@ -10,7 +10,6 @@ import '../../router/app_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_inline_error.dart';
-import '../../widgets/gs_route_plate.dart';
 
 class LocationPermissionScreen extends StatefulWidget {
   const LocationPermissionScreen({super.key});
@@ -38,12 +37,6 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen> {
         child: ListView(
           padding: const EdgeInsets.all(GSSpacing.s4),
           children: [
-            const GSRoutePlate(
-              text: 'Mi ubicación',
-              leading: Icons.my_location_rounded,
-              detail: 'Punto de partida de tus rutas',
-            ),
-            const SizedBox(height: GSSpacing.s6),
             Text('Para planear desde donde estás', style: text.titleLarge),
             const SizedBox(height: GSSpacing.s3),
             _Point(

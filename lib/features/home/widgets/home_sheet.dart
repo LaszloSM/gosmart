@@ -52,7 +52,14 @@ class HomeSheetContent extends ConsumerWidget {
         QuickPlacesRow(
           onPlaceSelected: (_) => context.push(AppRoutes.routePlanner),
         ),
-        const SizedBox(height: GSSpacing.s3),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              GSSpacing.s4, GSSpacing.s2, GSSpacing.s4, GSSpacing.s3),
+          child: Text(
+            'También puedes mantener presionado el mapa para elegir un punto.',
+            style: text.bodySmall,
+          ),
+        ),
         const Divider(),
         GSListRow(
           icon: Icons.chat_bubble_outline_rounded,
@@ -69,18 +76,8 @@ class HomeSheetContent extends ConsumerWidget {
             onTap: () => context.push(AppRoutes.login),
           ),
         ],
-        const Divider(),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-              GSSpacing.s4, GSSpacing.s3, GSSpacing.s4, 0),
-          child: Text(
-            'Mantén presionado el mapa para elegir un punto.',
-            style: text.bodySmall,
-          ),
-        ),
         SizedBox(
-          height: GSSize.bottomNav +
-              MediaQuery.of(context).padding.bottom +
+          height: MediaQuery.of(context).padding.bottom +
               GSSpacing.s4,
         ),
       ],

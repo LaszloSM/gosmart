@@ -40,7 +40,7 @@ class _GSButtonState extends State<GSButton> {
   bool _pressed = false;
 
   void _setPressed(bool v) {
-    if (_pressed != v) setState(() => _pressed = v);
+    if (_pressed != v && mounted) setState(() => _pressed = v);
   }
 
   @override
@@ -62,7 +62,6 @@ class _GSButtonState extends State<GSButton> {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: isDisabled ? null : widget.onPressed,
-        onHighlightChanged: isDisabled ? null : _setPressed,
         // La escala es la respuesta; sin salpicadura encima.
         splashFactory: NoSplash.splashFactory,
         highlightColor: c.fg.withValues(alpha: 0.08),
@@ -83,11 +82,18 @@ class _GSButtonState extends State<GSButton> {
       excludeSemantics: true,
       child: Opacity(
         opacity: isDisabled && !widget.isLoading ? 0.38 : 1,
-        child: AnimatedScale(
-          scale: _pressed && !reduceMotion ? 0.97 : 1,
-          duration: GSDuration.press,
-          curve: GSCurve.enter,
-          child: button,
+        // Listener: la respuesta llega al tocar, sin esperar al arbitraje
+        // de gestos de las listas con scroll.
+        child: Listener(
+          onPointerDown: isDisabled ? null : (_) => _setPressed(true),
+          onPointerUp: (_) => _setPressed(false),
+          onPointerCancel: (_) => _setPressed(false),
+          child: AnimatedScale(
+            scale: _pressed && !reduceMotion ? 0.97 : 1,
+            duration: GSDuration.press,
+            curve: GSCurve.enter,
+            child: button,
+          ),
         ),
       ),
     );

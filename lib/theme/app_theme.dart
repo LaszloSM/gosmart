@@ -315,12 +315,6 @@ class AppTheme {
         linearTrackColor: GSColors.line,
       ),
 
-      // Movimiento DESIGN.md: entradas ease-out fuertes, sin rebotes.
-      pageTransitionsTheme: const PageTransitionsTheme(
-        builders: {
-          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-        },
-      ),
     );
 
     // ThemeData(fontFamily:) pisa la familia de todo el textTheme; los

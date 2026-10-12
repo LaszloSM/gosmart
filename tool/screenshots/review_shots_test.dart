@@ -124,5 +124,15 @@ void main() {
     await shot(const LocationPermissionScreen(), 'phone-location', settle: false);
     await shot(const LoginScreen(), 'phone-login', settle: false);
     await shot(const RegisterScreen(), 'phone-register', settle: false);
+
+    // Texto grande del sistema (PRODUCT.md: hasta 200 % sin cortar).
+    for (final scale in [1.3, 2.0]) {
+      phone(t, scale: scale);
+      final tag = (scale * 100).round();
+      await shot(const WalletScreen(), 'phone-wallet-text$tag');
+      await shot(const RoutePlannerScreen(), 'phone-planner-text$tag', settle: false);
+      await shot(const ProfileScreen(), 'phone-profile-text$tag');
+      await shot(const LoginScreen(), 'phone-login-text$tag', settle: false);
+    }
   });
 }

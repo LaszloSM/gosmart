@@ -246,8 +246,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 style: Theme.of(context).textTheme.bodySmall),
           ),
           SizedBox(
-            height: GSSize.bottomNav +
-                MediaQuery.of(context).padding.bottom +
+            height: MediaQuery.of(context).padding.bottom +
                 GSSpacing.s4,
           ),
         ],

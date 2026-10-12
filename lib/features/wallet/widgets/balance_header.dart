@@ -67,6 +67,22 @@ class BalanceHeader extends ConsumerWidget {
                         'Saldo ${formatCop(wallet.balance)} pesos',
                   ),
                   const SizedBox(height: GSSpacing.s1),
+                  // PRODUCT.md: las recargas simuladas nunca se presentan
+                  // como dinero real.
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.science_outlined,
+                          size: 18, color: GSColors.textMuted),
+                      const SizedBox(width: GSSpacing.s1),
+                      Expanded(
+                        child: Text(
+                          'Saldo de prueba: las recargas aún son simuladas',
+                          style: text.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
                   Text(
                     'Tarjeta ${wallet.maskedCardNumber}'
                     '${wallet.cardStatus == 'active' ? '' : ' · bloqueada'}',

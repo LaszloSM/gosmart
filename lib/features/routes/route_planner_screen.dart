@@ -25,9 +25,8 @@ import '../../services/public_transport_service.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_list_row.dart';
-import '../../widgets/gs_route_plate.dart';
-import '../../widgets/gs_text_field.dart';
 import '../../widgets/gs_toast.dart';
+import 'widgets/destination_plate.dart';
 import 'widgets/mode_selector.dart';
 
 class RoutePlannerScreen extends ConsumerStatefulWidget {
@@ -38,11 +37,12 @@ class RoutePlannerScreen extends ConsumerStatefulWidget {
 }
 
 class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
-  final _originCtrl = TextEditingController();
   final _destCtrl = TextEditingController();
 
+  String _originLabel = 'Mi ubicación';
   LatLng? _originLatLng;
   LatLng? _destLatLng;
+  String? _destLabel; // destino elegido (placa pintada)
   List<GeocodeSuggestion> _suggestions = [];
   Timer? _debounce;
   bool _loading = false;
@@ -62,17 +62,18 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   void dispose() {
     _debounce?.cancel();
     _destCtrl.removeListener(_onDestChanged);
-    _originCtrl.dispose();
     _destCtrl.dispose();
     super.dispose();
   }
 
+  /// Elegir destino (placa pintada) o, con latLng null, volver a escribir.
   void _setDest(String text, LatLng? latLng) {
     _destCtrl.removeListener(_onDestChanged);
-    _destCtrl.text = text;
+    _destCtrl.text = latLng == null ? '' : text;
     _destCtrl.addListener(_onDestChanged);
     setState(() {
       _destLatLng = latLng;
+      _destLabel = latLng == null ? null : text;
       _suggestions = [];
     });
   }
@@ -85,11 +86,14 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   }
 
   void _swap() {
-    final text = _originCtrl.text;
+    if (_destLatLng == null || _originLatLng == null) return;
+    final label = _originLabel;
     final latLng = _originLatLng;
-    _originCtrl.text = _destCtrl.text;
-    _originLatLng = _destLatLng;
-    _setDest(text, latLng);
+    setState(() {
+      _originLabel = _destLabel!;
+      _originLatLng = _destLatLng;
+    });
+    _setDest(label, latLng);
   }
 
   Future<void> _resolveOrigin() async {
@@ -97,17 +101,13 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     if (!mounted) return;
     setState(() {
       _locating = false;
-      if (pos != null) {
-        _originLatLng = pos;
-        _originCtrl.text = 'Mi ubicación';
-      }
+      if (pos != null) _originLatLng = pos;
     });
   }
 
   void _onDestChanged() {
     final text = _destCtrl.text.trim();
-    // Al editar a mano se pierde el punto elegido antes.
-    if (_destLatLng != null) setState(() => _destLatLng = null);
+    setState(() {}); // botón de borrar en el campo
     _debounce?.cancel();
     if (text.length < 3) {
       setState(() => _suggestions = []);
@@ -175,18 +175,18 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     final mode = ref.watch(selectedModeProvider);
     final home = ref.watch(homePlaceProvider);
     final work = ref.watch(workPlaceProvider);
-    final showFavorites =
-        _destCtrl.text.trim().length < 3 && (home != null || work != null);
-
-    final originLabel = _originCtrl.text.isEmpty
-        ? (_locating ? 'Buscando…' : 'Desde')
-        : _originCtrl.text;
-    final destChosen = _destLatLng != null;
+    final typing = _destLabel == null;
+    final showFavorites = typing &&
+        _destCtrl.text.trim().length < 3 &&
+        (home != null || work != null);
+    final originText = _originLatLng != null
+        ? _originLabel
+        : (_locating ? 'Buscando tu ubicación…' : 'Sin ubicación: activa el GPS');
 
     return Scaffold(
       backgroundColor: GSColors.background,
       appBar: AppBar(
-        title: const Text('¿A dónde vas?'),
+        title: const Text('Planear ruta'),
         actions: [
           IconButton(
             icon: const Icon(Icons.chat_bubble_outline_rounded),
@@ -198,64 +198,47 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       body: ListView(
         padding: const EdgeInsets.only(bottom: GSSpacing.s6),
         children: [
-          // La placa de ruta, pintada con lo que se va eligiendo.
           Padding(
             padding: const EdgeInsets.fromLTRB(
                 GSSpacing.s4, GSSpacing.s4, GSSpacing.s4, 0),
-            child: GSRoutePlate(
-              from: destChosen ? originLabel : null,
-              text: destChosen ? _destCtrl.text : '¿Hasta dónde?',
-              isPlaceholder: !destChosen,
-              isActive: destChosen,
-              detail: destChosen ? 'En $mode' : 'Desde $originLabel · en $mode',
-              leading: modeIconFor(mode),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(GSSpacing.s4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: Column(
-                    children: [
-                      GSTextField(
-                        label: 'Desde',
-                        hint: 'Tu ubicación',
-                        controller: _originCtrl,
-                        prefixIcon: Icons.my_location_rounded,
+                // Desde: tu ubicación (o el destino anterior tras intercambiar).
+                Row(
+                  children: [
+                    const Icon(Icons.my_location_rounded,
+                        color: GSColors.textMuted),
+                    const SizedBox(width: GSSpacing.s3),
+                    Expanded(
+                      child: Text(
+                        'Desde: $originText',
+                        style: Theme.of(context).textTheme.titleMedium,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: GSSpacing.s3),
-                      GSTextField(
-                        label: 'Hasta',
-                        hint: 'Dirección o sitio',
-                        controller: _destCtrl,
-                        prefixIcon: Icons.place_outlined,
-                        autofocus: _destCtrl.text.isEmpty,
-                        suffixIcon: _destCtrl.text.isEmpty
-                            ? null
-                            : IconButton(
-                                tooltip: 'Borrar destino',
-                                icon: const Icon(Icons.close_rounded),
-                                onPressed: () => _setDest('', null),
-                              ),
-                      ),
-                    ],
-                  ),
+                    ),
+                    IconButton(
+                      tooltip: 'Intercambiar origen y destino',
+                      onPressed: _destLatLng != null && _originLatLng != null
+                          ? _swap
+                          : null,
+                      icon: const Icon(Icons.swap_vert_rounded),
+                      color: GSColors.brand,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: GSSpacing.s2),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 34),
-                  child: IconButton(
-                    tooltip: 'Intercambiar desde y hasta',
-                    icon: const Icon(Icons.swap_vert_rounded,
-                        color: GSColors.brand),
-                    onPressed: _swap,
-                  ),
+                const SizedBox(height: GSSpacing.s2),
+                DestinationPlate(
+                  controller: _destCtrl,
+                  chosenLabel: _destLabel,
+                  autofocus: _destLabel == null,
+                  onClear: () => _setDest('', null),
                 ),
               ],
             ),
           ),
+          const SizedBox(height: GSSpacing.s2),
           if (showFavorites) ...[
             if (home != null)
               GSListRow(
@@ -274,17 +257,18 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                 onTap: () => _setDest(work.name, work.latLng),
               ),
           ],
-          for (var i = 0; i < _suggestions.length; i++) ...[
-            if (i > 0) const Divider(indent: GSSpacing.s4),
-            GSListRow(
-              icon: _suggestions[i].icon,
-              iconColor: GSColors.textMuted,
-              title: _suggestions[i].placeName,
-              subtitle: _suggestions[i].fullAddress,
-              onTap: () => _setDest(
-                  _suggestions[i].placeName, _suggestions[i].latLng),
-            ),
-          ],
+          if (typing)
+            for (var i = 0; i < _suggestions.length; i++) ...[
+              if (i > 0) const Divider(indent: GSSpacing.s4),
+              GSListRow(
+                icon: _suggestions[i].icon,
+                iconColor: GSColors.textMuted,
+                title: _suggestions[i].placeName,
+                subtitle: _suggestions[i].fullAddress,
+                onTap: () => _setDest(
+                    _suggestions[i].placeName, _suggestions[i].latLng),
+              ),
+            ],
           const GSSectionTitle('¿En qué vas?'),
           const SizedBox(height: GSSpacing.s2),
           ModeSelector(
@@ -297,7 +281,8 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: EdgeInsets.fromLTRB(GSSpacing.s4, GSSpacing.s2,
-              GSSpacing.s4, GSSpacing.s3 + MediaQuery.of(context).viewInsets.bottom),
+              GSSpacing.s4,
+              GSSpacing.s3 + MediaQuery.of(context).viewInsets.bottom),
           child: GSButton(
             label: 'Ver ruta',
             leadingIcon: Icons.route_rounded,

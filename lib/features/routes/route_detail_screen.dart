@@ -83,25 +83,12 @@ class _RouteBody extends StatelessWidget {
                 '${route.durationMin} min · ${route.distanceKm.toStringAsFixed(1)} km',
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-              GSSpacing.s4, GSSpacing.s5, GSSpacing.s4, 0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              _BigNumber(value: '${route.durationMin}', unit: 'min'),
-              const SizedBox(width: GSSpacing.s6),
-              _BigNumber(
-                  value: route.distanceKm.toStringAsFixed(1), unit: 'km'),
-            ],
-          ),
-        ),
         const GSSectionTitle('Tramos'),
         const SizedBox(height: GSSpacing.s2),
         for (var i = 0; i < route.legs.length; i++)
           _LegStep(
             leg: route.legs[i],
-            isFirst: i == 0,
+            routeMode: mode,
             isLast: i == route.legs.length - 1,
           ),
         if (route.estimatedCostCop > 0) ...[
@@ -135,132 +122,90 @@ class _RouteBody extends StatelessWidget {
   }
 }
 
-class _BigNumber extends StatelessWidget {
-  const _BigNumber({required this.value, required this.unit});
-  final String value;
-  final String unit;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text.rich(
-      TextSpan(children: [
-        TextSpan(
-          text: value,
-          style: const TextStyle(
-            fontFamily: GSFonts.display,
-            fontFeatures: GSFonts.tabular,
-            fontSize: 44,
-            fontWeight: FontWeight.w800,
-            height: 1,
-            color: GSColors.text,
-          ),
-        ),
-        TextSpan(
-          text: ' $unit',
-          style: const TextStyle(
-            fontFamily: GSFonts.sans,
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-            color: GSColors.textMuted,
-          ),
-        ),
-      ]),
-    );
-  }
-}
-
-/// Un tramo de la cadena: punto y línea del color del modo a la izquierda,
-/// instrucción y minutos a la derecha.
+/// Un tramo como placa pequeña; las placas se encadenan con una línea del
+/// color del modo, como los rótulos de una ruta con transbordos.
 class _LegStep extends StatelessWidget {
-  const _LegStep({required this.leg, required this.isFirst, required this.isLast});
+  const _LegStep({
+    required this.leg,
+    required this.routeMode,
+    required this.isLast,
+  });
   final RouteLeg leg;
-  final bool isFirst;
+  final String routeMode;
   final bool isLast;
 
-  IconData get _icon => switch (leg.mode) {
-        'bus' => Icons.directions_bus_rounded,
-        'walk' => Icons.directions_walk_rounded,
-        'taxi' => Icons.local_taxi_rounded,
-        _ => Icons.directions_car_rounded,
+  String get _modeLabel => switch (leg.mode) {
+        'walk' => 'A pie',
+        'bus' => leg.lineId ?? routeMode,
+        'taxi' => 'Taxi',
+        _ => routeMode,
       };
 
-  String get _fallback => switch (leg.mode) {
-        'walk' => 'Camina',
-        'bus' => 'Ve en el vehículo',
-        _ => 'Sigue la ruta',
+  IconData get _icon => switch (leg.mode) {
+        'walk' => Icons.directions_walk_rounded,
+        'taxi' => Icons.local_taxi_rounded,
+        _ => modeIconFor(_modeLabel),
       };
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return IntrinsicHeight(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
+      child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Conector de la cadena.
             SizedBox(
-              width: 40,
+              width: 20,
               child: Column(
                 children: [
-                  Expanded(
-                    child: Container(
-                        width: 4,
-                        color: isFirst ? Colors.transparent : leg.color),
-                  ),
+                  const SizedBox(height: 22),
                   Container(
-                    width: 36,
-                    height: 36,
+                    width: 12,
+                    height: 12,
                     decoration: BoxDecoration(
-                      color: GSColors.surface,
+                      color: leg.color,
                       shape: BoxShape.circle,
-                      border: Border.all(color: leg.color, width: 3),
                     ),
-                    child: Icon(_icon, size: 20, color: GSColors.text),
                   ),
-                  Expanded(
-                    child: Container(
-                        width: 4,
-                        color: isLast ? Colors.transparent : leg.color),
-                  ),
+                  if (!isLast)
+                    Expanded(child: Container(width: 4, color: leg.color)),
                 ],
               ),
             ),
             const SizedBox(width: GSSpacing.s3),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: GSSpacing.s3),
+                padding: EdgeInsets.only(bottom: isLast ? 0 : GSSpacing.s4),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(leg.instruction ?? _fallback,
-                        style: text.titleMedium,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis),
-                    if (leg.lineId != null)
-                      Text('Línea ${leg.lineId}', style: text.bodySmall),
+                    GSRoutePlate(
+                      text: _modeLabel,
+                      leading: _icon,
+                      size: GSPlateSize.sm,
+                      trailing: Text(
+                        '${leg.durationMin} min',
+                        style: const TextStyle(
+                          fontFamily: GSFonts.mono,
+                          fontFeatures: GSFonts.tabular,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: GSColors.text,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: GSSpacing.s2),
+                    Text(
+                      '${leg.instruction ?? 'Sigue la ruta'} · '
+                      '${leg.distanceKm.toStringAsFixed(1)} km',
+                      style: text.bodyMedium,
+                    ),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(width: GSSpacing.s3),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text('${leg.durationMin} min',
-                    style: const TextStyle(
-                      fontFamily: GSFonts.mono,
-                      fontFeatures: GSFonts.tabular,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: GSColors.text,
-                    )),
-                Text('${leg.distanceKm.toStringAsFixed(1)} km',
-                    style: text.bodySmall
-                        ?.copyWith(fontFeatures: GSFonts.tabular)),
-              ],
             ),
           ],
         ),

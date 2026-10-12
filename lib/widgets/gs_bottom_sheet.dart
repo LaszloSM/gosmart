@@ -34,6 +34,10 @@ class GSBottomSheet extends StatelessWidget {
   }) {
     return showModalBottomSheet<T>(
       context: context,
+      // Con "quitar animaciones" la hoja aparece sin deslizarse.
+      sheetAnimationStyle: MediaQuery.of(context).disableAnimations
+          ? AnimationStyle.noAnimation
+          : null,
       isScrollControlled: true,
       isDismissible: isDismissible,
       enableDrag: true,

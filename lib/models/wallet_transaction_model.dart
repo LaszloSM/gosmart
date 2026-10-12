@@ -55,7 +55,8 @@ class WalletTransactionModel {
 
   IconData get icon => switch (type) {
         WalletTxType.recharge => Icons.add_circle_outline_rounded,
-        WalletTxType.trip => Icons.directions_bus_rounded,
+        // El movimiento no guarda el modo: ícono genérico de ruta, no un bus.
+        WalletTxType.trip => Icons.route_rounded,
         WalletTxType.refund => Icons.replay_rounded,
         WalletTxType.bonus => Icons.card_giftcard_rounded,
       };

@@ -42,12 +42,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Con una ruta activa la hoja baja para dejar ver el mapa.
     ref.listen<RouteResult?>(activeRouteProvider, (prev, next) {
       if (!_sheetCtrl.isAttached) return;
-      if (next != null && prev == null) {
-        _sheetCtrl.animateTo(_sheetMin,
-            duration: GSDuration.sheetOut, curve: GSCurve.exit);
-      } else if (next == null && prev != null) {
-        _sheetCtrl.animateTo(_sheetInitial,
-            duration: GSDuration.sheetIn, curve: GSCurve.enter);
+      final double? target = next != null && prev == null
+          ? _sheetMin
+          : next == null && prev != null
+              ? _sheetInitial
+              : null;
+      if (target == null) return;
+      if (MediaQuery.of(context).disableAnimations) {
+        _sheetCtrl.jumpTo(target);
+      } else {
+        _sheetCtrl.animateTo(target,
+            duration: target == _sheetMin
+                ? GSDuration.sheetOut
+                : GSDuration.sheetIn,
+            curve: GSCurve.enter);
       }
     });
 
@@ -103,8 +111,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 if (route != null)
                   Positioned(
-                    bottom: GSSize.bottomNav +
-                        MediaQuery.of(context).padding.bottom,
+                    bottom: MediaQuery.of(context).padding.bottom,
                     left: 0,
                     right: 0,
                     child: _RouteBanner(route: route),

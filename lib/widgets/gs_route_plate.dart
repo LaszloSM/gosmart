@@ -56,6 +56,10 @@ class GSRoutePlate extends StatefulWidget {
 class _GSRoutePlateState extends State<GSRoutePlate> {
   bool _pressed = false;
 
+  void _setPressed(bool v) {
+    if (_pressed != v && mounted) setState(() => _pressed = v);
+  }
+
   ({double minHeight, double font, double pad, double icon}) get _dims =>
       switch (widget.size) {
         GSPlateSize.sm => (minHeight: 48, font: 18, pad: 12, icon: 18),
@@ -86,8 +90,7 @@ class _GSRoutePlateState extends State<GSRoutePlate> {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s2),
-            child: Icon(Icons.arrow_forward_rounded,
-                size: d.icon, color: GSColors.stripe),
+            child: Icon(Icons.arrow_forward_rounded, size: d.icon, color: ink),
           ),
         ],
         Flexible(
@@ -99,27 +102,31 @@ class _GSRoutePlateState extends State<GSRoutePlate> {
       ],
     );
 
-    // Cambio de rótulo: fundido + 8 dp en 200 ms, ease-out fuerte (Emil).
+    // Cambio de rótulo: el nuevo entra con fundido + 8 dp en 200 ms y
+    // ease-out fuerte; el que sale solo se desvanece (Emil). Con "quitar
+    // animaciones" queda un fundido corto, sin desplazamiento.
+    final currentKey = ValueKey('${widget.from}|${widget.text}');
     final lettering = AnimatedSwitcher(
-      duration: reduceMotion ? Duration.zero : GSDuration.fast,
+      duration: reduceMotion ? GSDuration.fast : GSDuration.plate,
       switchInCurve: GSCurve.enter,
       switchOutCurve: GSCurve.exit,
       layoutBuilder: (current, previous) => Stack(
         alignment: Alignment.centerLeft,
         children: [...previous, if (current != null) current],
       ),
-      transitionBuilder: (child, anim) => FadeTransition(
-        opacity: anim,
-        child: SlideTransition(
-          position: Tween(begin: const Offset(0, 0.25), end: Offset.zero)
-              .animate(anim),
-          child: child,
-        ),
-      ),
-      child: KeyedSubtree(
-        key: ValueKey('${widget.from}|${widget.text}'),
-        child: main,
-      ),
+      transitionBuilder: (child, anim) {
+        final fade = FadeTransition(opacity: anim, child: child);
+        if (reduceMotion || child.key != currentKey) return fade;
+        return AnimatedBuilder(
+          animation: anim,
+          builder: (_, c) => Transform.translate(
+            offset: Offset(0, 8 * (1 - anim.value)),
+            child: c,
+          ),
+          child: fade,
+        );
+      },
+      child: KeyedSubtree(key: currentKey, child: main),
     );
 
     final body = Container(
@@ -176,8 +183,6 @@ class _GSRoutePlateState extends State<GSRoutePlate> {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: widget.onTap,
-        onHighlightChanged:
-            widget.onTap == null ? null : (v) => setState(() => _pressed = v),
         splashFactory: NoSplash.splashFactory,
         highlightColor: GSColors.brandTint.withValues(alpha: 0.6),
         child: Column(
@@ -199,11 +204,18 @@ class _GSRoutePlateState extends State<GSRoutePlate> {
       selected: widget.isActive,
       label: label,
       excludeSemantics: true,
-      child: AnimatedScale(
-        scale: _pressed && !reduceMotion ? 0.97 : 1,
-        duration: GSDuration.press,
-        curve: GSCurve.enter,
-        child: plate,
+      // Listener y no onHighlightChanged: dentro de listas con scroll el
+      // resaltado espera al arbitraje de gestos y la respuesta llega tarde.
+      child: Listener(
+        onPointerDown: widget.onTap == null ? null : (_) => _setPressed(true),
+        onPointerUp: (_) => _setPressed(false),
+        onPointerCancel: (_) => _setPressed(false),
+        child: AnimatedScale(
+          scale: _pressed && !reduceMotion ? 0.97 : 1,
+          duration: GSDuration.press,
+          curve: GSCurve.enter,
+          child: plate,
+        ),
       ),
     );
   }

@@ -101,8 +101,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             _SectionTitle('Tarjeta GoSmart', style: text.titleLarge),
             const CardControls(),
             SizedBox(
-              height: GSSize.bottomNav +
-                  MediaQuery.of(context).padding.bottom +
+              height: MediaQuery.of(context).padding.bottom +
                   GSSpacing.s4,
             ),
           ],

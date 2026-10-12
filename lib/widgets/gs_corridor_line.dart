@@ -1,6 +1,6 @@
 // lib/widgets/gs_corridor_line.dart
 // Línea del corredor (DESIGN.md): diagrama tipo metro de la Troncal,
-// Riohacha (km 0) → Maicao, con el desvío Albania–Cuestecitas como ramal.
+// Riohacha (km 0) → Maicao. El desvío Albania–Cuestecitas va en el detalle.
 // El estado va siempre con ícono + palabra; el color nunca va solo.
 import 'package:flutter/material.dart';
 
@@ -129,10 +129,10 @@ class _EndLabel extends StatelessWidget {
       maxLines: 1,
       style: const TextStyle(
         fontFamily: GSFonts.sans,
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: FontWeight.w600,
         color: GSColors.textMuted,
-        height: 1.2,
+        height: 1.15,
       ),
     );
   }
@@ -200,13 +200,9 @@ class _CorridorPainter extends CustomPainter {
   static const _stroke = 6.0;
   static const _stop = 4.0;
 
-  /// Punto del ramal Albania–Cuestecitas sobre la línea (fracción del largo).
-  /// Esquemático hasta tener `road_segments` con los km reales (Fase 4).
-  static const _branchAt = 0.55;
-
   @override
   void paint(Canvas canvas, Size size) {
-    final y = size.height * 0.35;
+    final y = size.height / 2;
     const left = _stop + 1;
     final right = size.width - _stop - 1;
     final width = right - left;
@@ -219,18 +215,8 @@ class _CorridorPainter extends CustomPainter {
       ..strokeWidth = _stroke
       ..strokeCap = StrokeCap.butt;
 
-    // Ramal: un trazo corto hacia abajo, más delgado que la línea principal.
-    final branch = status.segments.where((s) => s.isBranch);
-    final branchState =
-        branch.isEmpty ? RoadState.unknown : branch.first.state;
-    final bx = left + width * _branchAt;
-    canvas.drawLine(
-      Offset(bx, y),
-      Offset(bx + size.height * 0.6, size.height),
-      linePaint(branchState)
-        ..strokeWidth = _stroke / 2
-        ..strokeCap = StrokeCap.round,
-    );
+    // El ramal Albania–Cuestecitas no se dibuja a 56 dp: sin sus km reales
+    // (Fase 4) un trazo sin etiqueta se lee como un error. Va en el detalle.
 
     // Tramos principales.
     final main = status.mainSegments.toList()

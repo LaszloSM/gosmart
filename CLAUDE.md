@@ -328,9 +328,11 @@ await someAsyncOperation();
 GSToast.showWithMessenger(messenger, message: 'Done');
 ```
 
-**Bottom nav scroll padding** — always add nav + safe area below scrollable content:
+**Bottom nav scroll padding** — screens use `Scaffold(extendBody: true, bottomNavigationBar: GSBottomNav…)`,
+so the body's `MediaQuery.padding.bottom` ALREADY includes the nav height (it grows with large text).
+Don't add `GSSize.bottomNav` again:
 ```dart
-SizedBox(height: GSSize.bottomNav + MediaQuery.of(context).padding.bottom + GSSpacing.s4)
+SizedBox(height: MediaQuery.of(context).padding.bottom + GSSpacing.s4)
 ```
 
 **Layout overflow prevention** — in Row children with dynamic text, wrap the text Column in `Expanded` and add `maxLines + overflow`:

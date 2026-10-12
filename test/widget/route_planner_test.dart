@@ -26,7 +26,7 @@ void main() {
     ));
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.text('¿HASTA DÓNDE?'), findsOneWidget);
+    expect(find.text('¿A DÓNDE VAS?'), findsOneWidget);
     expect(find.text('Mototaxi'), findsOneWidget);
     expect(find.text('Metro'), findsNothing);
     expect(find.text('Bici'), findsNothing);

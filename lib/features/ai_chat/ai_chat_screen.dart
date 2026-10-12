@@ -1,4 +1,6 @@
 // lib/features/ai_chat/ai_chat_screen.dart
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -79,12 +81,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollCtrl.hasClients) {
-        _scrollCtrl.animateTo(
-          _scrollCtrl.position.maxScrollExtent,
-          duration: GSDuration.normal,
-          curve: GSCurve.move,
-        );
+      if (!_scrollCtrl.hasClients || !mounted) return;
+      final end = _scrollCtrl.position.maxScrollExtent;
+      if (MediaQuery.of(context).disableAnimations) {
+        _scrollCtrl.jumpTo(end);
+      } else {
+        _scrollCtrl.animateTo(end,
+            duration: GSDuration.normal, curve: GSCurve.enter);
       }
     });
   }
@@ -322,7 +325,11 @@ class _TypingIndicatorState extends State<_TypingIndicator>
   @override
   Widget build(BuildContext context) {
     final still = MediaQuery.of(context).disableAnimations;
-    if (still) _ctrl.stop();
+    if (still) {
+      _ctrl.stop();
+    } else if (!_ctrl.isAnimating) {
+      _ctrl.repeat();
+    }
     return Semantics(
       label: 'El asistente está escribiendo',
       child: Align(
@@ -340,9 +347,10 @@ class _TypingIndicatorState extends State<_TypingIndicator>
             builder: (_, __) => Row(
               mainAxisSize: MainAxisSize.min,
               children: List.generate(3, (i) {
+                // Onda suave (sin el salto de un diente de sierra).
                 final v = still
                     ? 0.5
-                    : ((_ctrl.value - i * 0.33) % 1.0).clamp(0.0, 1.0);
+                    : 0.5 - 0.5 * math.cos(2 * math.pi * ((_ctrl.value - i / 3) % 1));
                 return Container(
                   margin: const EdgeInsets.symmetric(horizontal: 3),
                   width: 8,
