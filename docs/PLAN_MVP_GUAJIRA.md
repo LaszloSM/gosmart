@@ -30,7 +30,7 @@ La visión de largo plazo sigue siendo la **tarjeta universal de transporte** de
 | Ampliaciones | Compartir a WhatsApp; directorio de referencias; SOS y compartir viaje en el núcleo; `PRODUCT.md` + `DESIGN.md`. |
 | Stripe | Se retira. Las recargas se hacen con **Wompi en sandbox** (gratis). En producción cobra comisión, lo cual se declara. |
 | NFC | **Pospuesto (D3).** El cobro va por **QR**. Queda como visión: **NFC para transporte público** (TransPadilla, metro y validadores en general). La tabla `cards` se conserva como abstracción para esos validadores. NFC entre celulares y Tap to Pay bancario: no se implementan. |
-| IA | Groq gratis con function calling, desde la Edge Function `ai-chat`. La key sale del APK. |
+| IA | Groq gratis con function calling, desde la Edge Function `ai-chat`. La key sale del APK. **Modelo `llama-3.1-8b-instant`** para elegir herramientas, y el 70B solo como respaldo (E1). Prompt corto: el contexto del mapa no se mete en cada mensaje; la IA lo pide con `search_place`. |
 
 ## Verdades declaradas para la sustentación
 - **Pago (D5):** cada tramo se paga al cerrarse y el viaje entrega **un solo recibo** con desglose. El pago único con retención se pospone, porque retener dinero de terceros exige figura regulada (Superfinanciera).
@@ -67,7 +67,8 @@ La visión de largo plazo sigue siendo la **tarjeta universal de transporte** de
   - Km críticos del corredor (tabla de bloqueos) y zonas de inundación.
 - **Directorio de referencias (gazetteer):**
   - Más de 300 lugares por ciudad: nombre popular, alias y coordenada. Ejemplos: "la playa", "el muelle", "frente al Éxito", "Palacio de Justicia".
-  - Se cargan en una tabla `places` con búsqueda difusa (`pg_trgm`) y como entidades del KG para la IA.
+  - Se cargan en una tabla `places` con búsqueda difusa (`pg_trgm`) y alias.
+  - **Se eliminan pgvector, los embeddings de HuggingFace (`retrieval.ts`) y `pipeline/embed.py` (E3).**
 - **Prueba rápida de Google:** 30 direcciones y referencias reales. Lo que Google no encuentre entra al directorio propio.
 - **Pipeline:** `pipeline/ingest_osm.py` pasa a un bbox de La Guajira e incluye `bus_stop` y la red vial, solo para el grafo de transporte.
 - **Herramienta de captura:** una pantalla interna de admin o un formulario que exporte a CSV, más un script de carga.
@@ -77,13 +78,15 @@ Se aplica el método de impeccable, taste y Emil Kowalski.
 
 **Documentos fuente de verdad:**
 - `PRODUCT.md`: audiencia, propósito, restricciones, voz y evidencia.
-- `DESIGN.md`: tokens, tipografía, color, movimiento y componentes.
+- `DESIGN.md`: tokens, tipografía, color, movimiento y componentes. **Es la única fuente (DS5):** `design_tokens.dart` la refleja 1 a 1. Se borran `design-tokens.json` y `design/quickwins/` y se corrige `CLAUDE.md`. La paleta exacta se define corriendo `/design-consultation` de gstack al inicio de la Fase 2.
 
 **Dirección visual:**
 - **Modo claro primero**, legible a pleno sol, con neutros cálidos tintados del paisaje: arena, sal, mar.
 - El **rojo, ámbar y verde se reservan para el estado de la vía**. La marca nunca los usa.
-- Una tipografía legible (no Inter). Precios y tiempos en números grandes.
-- Áreas táctiles de 48 px o más.
+- **Tipografía: Atkinson Hyperlegible Next (DS4)**, con números tabulares para precios y horas. Se retiran Plus Jakarta Sans e Inter.
+- Áreas táctiles de 48 px o más para el pasajero. **Modo conductor de una mano (DS6):** botones de 72 px o más en la mitad inferior, 2 acciones por pantalla, sonido y vibración fuertes, y precio y distancia en 32 px.
+- **Accesibilidad (DS7):** texto hasta 200% sin cortes, contraste 7:1 en el texto principal, etiquetas TalkBack, y el estado de la vía siempre con color + ícono + texto.
+- **Tono (DS8):** tuteo, frases cortas y palabras locales (mototaxi, colectivo, la Troncal, el terminal). Avisos de seguridad serenos y sin señalar comunidades. El panel admin usa usted.
 - Sin tarjetas dentro de tarjetas, sin degradados morados y sin iconos decorativos en baldosa. No usar iconografía wayuu como decoración.
 
 **Movimiento:**
@@ -93,7 +96,8 @@ Se aplica el método de impeccable, taste y Emil Kowalski.
 - Respetar "reducir movimiento".
 
 **Arquitectura de información:**
-- **Pasajero:** Inicio (mapa + barra de estado del corredor + "¿A dónde vas?"), Viaje, Reportar, Billetera y Perfil.
+- **Pasajero:** Inicio, Viaje, Reportar, Billetera y Perfil. **Inicio (DS1):** arriba la franja de estado del corredor, en el centro "¿A dónde vas?" y el mapa de fondo.
+- **Modo invitado (DS3):** se puede ver el corredor, buscar lugares y planear un viaje sin cuenta. La cuenta se pide justo al reportar, pedir mototaxi, reservar cupo o pagar. Para eso cambian el redirect de `app_router.dart` y la RLS (lectura pública de `road_status`, `places` y el grafo).
 - **Conductor:** Disponible/No, Solicitud entrante, Viaje activo, Cobrar (QR), Ingresos e historial. En colectivos se suma "Puestos ocupados".
 - **Patrón central:** "el chat se transforma en mapa". El selector de origen y destino acepta texto libre, referencia, pin, ubicación actual y ubicación recibida por WhatsApp.
 
@@ -181,6 +185,7 @@ Se aplica el método de impeccable, taste y Emil Kowalski.
 - **Despacho estilo InDrive:**
   - El pasajero solicita, con una tarifa sugerida por el estimador.
   - Se avisa por Realtime/push a los conductores disponibles en radio (`ST_DWithin`).
+  - **Ubicación del conductor (E2):** si está libre, cada 30 s y solo a la base de datos, para buscar por cercanía. En viaje, cada 5 s por Broadcast, solo al canal privado de ese viaje. Con eso cabe en los 2M de mensajes/mes del plan gratis.
   - El conductor acepta o contraoferta; el pasajero confirma.
   - **Aceptar una solicitud y reservar un cupo de colectivo son RPCs atómicas con bloqueo de fila (D7)**, siguiendo el patrón de `recharge_wallet`. Gana uno solo. Hay un test que simula dos aceptaciones o reservas simultáneas.
   - Timeouts y reasignación.
@@ -191,7 +196,7 @@ Se aplica el método de impeccable, taste y Emil Kowalski.
 - **Trazabilidad:**
   - Cada tramo registra conductor, ruta, hora y tarifa.
   - Historial del conductor exportable a PDF como prueba de ingresos.
-- **Offline:** el estado del viaje vive local y se sincroniza al volver la señal.
+- **Offline (E6):** el servidor manda. Cada acción offline lleva un `idempotency_key` y se envía al volver la señal. Si el servidor la rechaza por estado inválido, el celular descarta su versión, muestra el estado real y avisa.
 
 ## Fase 7 · M4 Pago unificado (semanas 13–16)
 - **Billetera real:** recarga con Wompi sandbox (Edge Function + webhook) y bono de bienvenida.
@@ -244,9 +249,8 @@ Se aplica el método de impeccable, taste y Emil Kowalski.
 
 **Nuevos:**
 - `supabase/migrations/010+`
-- `lib/features/driver/`
+- `lib/features/rides/`: despacho, cupos de colectivo y tramos del viaje, con vistas de pasajero y conductor y una sola máquina de estados (E4).
 - `lib/features/corridor/`
-- `lib/features/trip/`
 - `lib/features/admin/`
 - `lib/data/local/` (drift)
 - `PRODUCT.md` y `DESIGN.md`
@@ -258,7 +262,7 @@ Se aplica el método de impeccable, taste y Emil Kowalski.
   - La confianza de los reportes.
   - La distribución y el reembolso del pago.
   - El despacho, con timeouts y contraoferta.
-- Pruebas SQL de las RPCs: doble cobro, concurrencia y RLS entre usuarios.
+- **Pruebas SQL (E5):** Supabase local + pgTAP en GitHub Actions en cada push. Cubren doble cobro, concurrencia (dos aceptaciones o reservas simultáneas) y RLS entre usuarios.
 - Prueba offline: modo avión a mitad del viaje y sincronización correcta.
 - Prueba de gestos del mapa en un Android de gama media: pellizcar, arrastrar, rotar, el pin central y el modo seguir, sin saltos visibles.
 - Demo end-to-end con 2 Android (pasajero + conductor): los 3 casos de referencia, el cobro QR, un choque simulado de despacho, y un link de WhatsApp abierto en un teléfono sin la app.
@@ -326,14 +330,138 @@ Hay que decirlo en la sustentación.
 
 **Riesgo abierto.** Con el despacho y el admin dentro, el plan sigue apretado para 18 semanas. Si en la semana 10 no está el caso de referencia 1, se recorta el admin primero.
 
-## GSTACK REVIEW REPORT
-| Revisión | Estado | Hallazgos |
-|---|---|---|
-| CEO (estrategia, SCOPE REDUCTION) | issues_open | 11 secciones; 7 decisiones tomadas; quedan errores por definir en la sección 2 |
-| Diseño | pendiente | correr /plan-design-review |
-| Ingeniería | pendiente | correr /plan-eng-review |
-| Voz externa | no disponible | Codex no instalado |
+## Revisión de ingeniería (gstack /plan-eng-review) · 2026-10-12
+**Alcance:** se acepta tal cual, con la estructura más pequeña (E4). La revisión fue a nivel de plan. No hubo voz externa porque Codex no está instalado.
 
-VERDICT: plan aprobable en estrategia; faltan las revisiones de diseño e ingeniería antes de codificar.
+**Decisiones**
+
+| ID | Decisión | Respuesta |
+|---|---|---|
+| E1 | Cuota Groq gratis (~100K tokens/día en el 70B, según fuentes de terceros; verificar en la consola) | `llama-3.1-8b-instant` + prompt corto; el 70B solo como respaldo |
+| E2 | Mensajes de Realtime (2M/mes gratis) | Conductor libre: cada 30 s a la DB. En viaje: cada 5 s por Broadcast privado |
+| E3 | Embeddings de HuggingFace + pgvector | Se eliminan; se usa `pg_trgm` + alias |
+| E4 | Estructura del código | `features/rides` reúne despacho, cupos y tramos |
+| E5 | Tests SQL | Supabase local + pgTAP en CI |
+| E6 | Conflictos offline | El servidor manda + idempotency_key + aviso |
+
+**Arquitectura**
+```
+ Celular (Flutter)                                  Supabase (gratis)
+ ┌───────────────────────────────┐   HTTPS/RPC   ┌──────────────────────────────┐
+ │ UI pasajero / conductor / admin│──────────────▶│ Postgres+PostGIS + RLS        │
+ │ PlannerService (Dart, D6)      │◀──Broadcast── │  RPC atómicas (D7, E6)        │
+ │ drift: grafo, places, corredor │               │  road_reports / trips / legs  │
+ │        viaje activo, SyncQueue │──Edge Fn────▶ │ ai-chat ──▶ Groq 8b (E1)      │
+ │ google_maps_flutter            │               │ share-page (HTML WhatsApp)    │
+ └──────┬─────────────────────────┘               │ wompi-webhook                 │
+        │ Places / Routes (cuota diaria)          └──────────────────────────────┘
+        ▼
+   Google Maps Platform        Sentry (errores)        FCM (push)
+```
+**Ciclo de la IA (D6 + E1):** el celular envía los mensajes a `ai-chat`. `ai-chat` devuelve las llamadas a herramientas. El celular ejecuta `plan_trip` localmente y reenvía el resultado. `ai-chat` redacta la respuesta. La key nunca sale del servidor. Si Groq responde 429 o falla, el celular muestra el planificador manual (D8).
+
+**Hallazgos**
+- [P1] (9/10) `backend/functions/ai-chat/retrieval.ts:67`: los embeddings dependen de la API de HuggingFace, que en el plan gratis tiene arranque en frío. Resuelto con E3.
+- [P1] (7/10) Cuota de Groq: el plan original no cabía en el límite diario. Resuelto con E1. Verificar el límite real en console.groq.com.
+- [P1] (8/10) Realtime: 20 conductores cada 5 s suman ~3,4M mensajes/mes, más que los 2M gratis. Resuelto con E2.
+- [P2] (9/10) `lib/providers/card_provider.dart:45`: hay un canal Realtime por usuario sobre `cards`. Hay que cerrarlo con `ref.onDispose` al migrar, para no gastar conexiones (el plan gratis tiene un tope de 200).
+- [P2] (8/10) `test/widget/wallet_test.dart` prueba la billetera mock. Hay que reescribirlo cuando se reemplace `wallet_mock_provider` (Fase 0); si no, CI queda en rojo.
+- [P2] (7/10) Ubicación en segundo plano (conductor y compartir viaje): necesita un servicio en primer plano de Android con notificación visible (`geolocator`, configuración foreground). Sin eso, Android corta el GPS al bloquear la pantalla.
+- [P2] (7/10) Places Autocomplete cobra por sesión. Para ahorrar: debounce de 300 ms, mínimo 3 letras, session tokens y buscar primero en el directorio propio.
+- [P3] (8/10) El grafo en el celular necesita versión: `graph_version` en el servidor; el celular descarga completo solo si cambió. El grafo pesa menos de 1 MB.
+- [P3] (8/10) Índices GIST en todas las columnas `geography` nuevas y un índice trigram en `places.name`/`aliases`.
+
+**Mapa de cobertura (propuesto)**
+```
+CÓDIGO                                    FLUJOS DE USUARIO
+[+] PlannerService (Dart)                 [+] Planear viaje puerta a puerta
+  ├─ [GAP] enganche origen/destino a nodos   ├─ [GAP][→E2E] 3 casos de referencia
+  ├─ [GAP] Dijkstra con penalizaciones       └─ [GAP] Troncal bloqueada → desvío
+  └─ [GAP] sin ruta posible → mensaje      [+] Despacho
+[+] RPC accept_ride / reserve_seat          ├─ [GAP][→E2E] pedir → aceptar → cerrar → cobrar
+  ├─ [GAP] pgTAP: 2 aceptaciones a la vez   └─ [GAP] nadie acepta → timeout → reasignar
+  └─ [GAP] pgTAP: último cupo disputado    [+] Offline
+[+] RPC close_leg_and_charge                ├─ [GAP] acción offline rechazada → aviso
+  ├─ [GAP] pgTAP: idempotency_key repetido  └─ [GAP] reporte duplicado en reintento
+  └─ [GAP] saldo insuficiente             [+] Reportes viales
+[+] trip state machine (SQL)                ├─ [GAP] confirmación cruzada sube confianza
+  └─ [GAP] pgTAP: transición inválida       └─ [GAP] expiración del reporte
+[+] ai-chat                                [+] Degradación (D8)
+  └─ [GAP][→EVAL] 30 frases → herramienta     ├─ [GAP] Groq 429 → planificador manual
+                                             └─ [GAP] Places falla → directorio + pin
+EXISTENTE: 6 tests (ai_models, ai_conversation_provider, login, ai_chat, wallet★, widget★)
+Por retirar o reescribir: test/widget/wallet_test.dart (mock), test/widget_test.dart (smoke)
+```
+
+**Modos de falla críticos (sin rescate hoy):** proyecto Supabase pausado; webhook de Wompi perdido; push no entregado. Cada uno necesita:
+- un mensaje visible al usuario;
+- un registro en Sentry;
+- para Wompi, reconciliación diaria contra su API.
+
+## Revisión de diseño (gstack /plan-design-review) · 2026-10-12
+**Calificación:** 5/10 → 9/10. Fue solo texto: el diseñador visual de gstack necesita una API key de OpenAI que esta sesión no tiene. No hubo segunda opinión (el usuario la declinó).
+
+| ID | Pasada | Decisión |
+|---|---|---|
+| DS1 | Arquitectura de información (6→9) | Inicio: corredor → ¿A dónde vas? → mapa |
+| DS2 | Estados (2→9) | Tabla completa de estados (abajo) |
+| DS3 | Recorrido (5→9) | Modo invitado; la cuenta se pide al actuar |
+| DS4 | Riesgo de diseño genérico (5→8) | Atkinson Hyperlegible Next; sin el tema oscuro neón |
+| DS5 | Sistema de diseño (2→8) | `DESIGN.md` único + `/design-consultation` |
+| DS6 | Accesibilidad (4→9) | Modo conductor de una mano |
+| DS7 | Accesibilidad | Texto 200%, contraste 7:1, TalkBack, color+ícono |
+| DS8 | Sin resolver | Tuteo cercano, corto y local |
+
+**Pantalla de inicio (pasajero)**
+```
+┌──────────────────────────────────────┐
+│ ● Troncal Riohacha–Maicao: ABIERTA   │  1. Estado del corredor (ícono+texto+color)
+│   Actualizado hace 4 min · 12 reportes│
+├──────────────────────────────────────┤
+│                                      │
+│          [ mapa Google, gestos ]     │  3. Mapa de fondo
+│      ┌──────────────────────────┐    │
+│      │ 🔍 ¿A dónde vas?          │    │  2. Acción principal
+│      └──────────────────────────┘    │
+│        Casa · Trabajo · Recientes    │
+├──────────────────────────────────────┤
+│ Inicio  Viaje  Reportar  Billetera  Yo│  Navegación (5 destinos)
+└──────────────────────────────────────┘
+```
+
+**Tabla de estados (DS2)**
+
+| Función | Cargando | Vacío | Error | Éxito | Parcial | Sin señal |
+|---|---|---|---|---|---|---|
+| Estado del corredor | Franja con el último estado guardado + "actualizando" | "Sin reportes hoy en la Troncal" + botón Reportar | Último estado + "No pudimos actualizar" | Estado + hora + nº de reportes | Tramo sin datos: "Sin información del km X" | Último estado con su hora, en gris |
+| Buscar lugar | Resultados del directorio al instante; Google aparece debajo | "No encontramos 'X'. Fija el punto en el mapa" + botón pin | Solo directorio + pin (D8) | Lista con referencia y barrio | Solo directorio | Solo directorio local + pin |
+| Planear viaje | Esqueleto de tramos (no un spinner) | "No hay ruta posible ahora" + motivo (bloqueo, hora) + alternativa | Mensaje claro + botón reintentar | Itinerario: tiempo, rango de precio y tramos | Ruta con un tramo "sin dato de tarifa" | Planifica con el grafo local; avisa la fecha de los datos |
+| Pedir mototaxi | "Buscando conductor…" con radio en el mapa y botón cancelar | "Nadie disponible a 2 km. Te avisamos" + "Ver colectivos" | "No se pudo enviar. Reintentar" | Conductor, placa, foto y llegada | Contraoferta: aceptar o rechazar | Botón deshabilitado + "Necesitas señal para pedir" |
+| Viaje en curso | — | — | Tramo fallido → replaneo sugerido | Tramo cerrado + recibo | Esperando despacho del colectivo: rango de salida | Estado local + "Se sincroniza al volver la señal" |
+| Billetera | Saldo guardado + "actualizando" | "Aún no tienes movimientos" + Recargar | "Recarga no confirmada. Te avisamos" | Saldo + movimientos | Recarga pendiente marcada | Saldo guardado con su hora |
+| Reportar | Envío optimista | — | "Guardado; se enviará luego" | "Gracias. 2 personas más lo confirmaron" | Reporte sin confirmar | En cola, con ícono de reloj |
+
+**Recorrido (storyboard)**
+
+| Paso | Qué hace el usuario | Qué siente | Qué lo resuelve |
+|---|---|---|---|
+| 1 | Abre un link de WhatsApp: "bloqueo km 42" | Duda: ¿es verdad? | Página web con hora, confirmaciones y mapa, sin instalar |
+| 2 | Instala y abre la app | Impaciencia | Sin registro: ve el corredor en 1 s (DS3) |
+| 3 | Escribe "al Palacio de Justicia de Maicao" | Esperanza | Itinerario con desvío, tiempo y rango de precio |
+| 4 | Pide mototaxi al terminal | Ahora sí confía | La cuenta se pide aquí, en 1 paso |
+| 5 | Viaja por el corredor | Inseguridad | Compartir viaje + SOS siempre visibles |
+| 6 | Llega y paga | Alivio | Recibo único con el desglose de tramos |
+
+**No entra en esta revisión:** mockups visuales (sin API key) y la paleta exacta, que se define con `/design-consultation` en la Fase 2.
+
+## GSTACK REVIEW REPORT
+| Review | Trigger | Why | Runs | Status | Findings |
+|---|---|---|---|---|---|
+| CEO | /plan-ceo-review | Alcance y estrategia | 1 | issues_open | D1–D8 tomadas; errores de la sección 2 por definir en la implementación |
+| Eng | /plan-eng-review | Arquitectura y tests | 1 | clean | 9 hallazgos; E1–E6 tomadas |
+| Design | /plan-design-review | UI/UX | 1 | clean | 5/10 → 9/10; DS1–DS8 tomadas; mockups pendientes (sin API key) |
+| Outside voice | codex | Segunda opinión | 0 | unavailable | Codex no instalado |
+
+VERDICT: plan listo para empezar la Fase 0; correr /design-consultation al inicio de la Fase 2.
 
 NO UNRESOLVED DECISIONS
