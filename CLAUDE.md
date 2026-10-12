@@ -258,16 +258,19 @@ AppRoutes.nfcSimulator     // '/debug/nfc-simulator'
 
 ### Design System
 
-All visual constants in `lib/theme/design_tokens.dart`. Never hardcode colors, spacing, or radii.
+**`DESIGN.md` (repo root) is the source of truth** for color, type, spacing and motion.
+Read it before any visual or UI work and ask the user before departing from it; when
+reviewing or QA-ing UI, flag code that doesn't match it. Key rules: light theme first
+(readable in sun), one brand color `primary` #0B4A57, `road-*` colors only for road
+status (always with icon + text), Atkinson Hyperlegible Next/Mono bundled offline,
+48px touch targets (72px in driver mode), no cards by default.
+
+> `lib/theme/design_tokens.dart` still holds the **old** dark/neon theme until the Fase 2
+> theme migration. Never hardcode colors, spacing, or radii; use `GS*` tokens, and when
+> touching a screen, align it with `DESIGN.md`.
 
 ```dart
-// Colors
-GSColors.primary       // #1A1A2E — dark navy (backgrounds)
-GSColors.accent        // #00D4AA — teal (CTAs, active states)
-GSColors.accentAlt     // #6C63FF — violet (eco points, card gradients)
-GSColors.eco           // #3CB371 — green (eco/sustainability)
-
-// Transport mode colors
+// Transport mode colors (current code; Fase 2 replaces metro/bike with local modes)
 GSColors.bus / .metro / .bike / .walk / .taxi / .car
 
 // Spacing scale (use these, never raw numbers)
