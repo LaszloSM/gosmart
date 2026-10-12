@@ -277,7 +277,7 @@
       "road-unknown": {
         "role": "tertiary",
         "displayName": "Vía sin datos",
-        "canonical": "oklch(47.0% 0.024 264.3)",
+        "canonical": "oklch(45.8% 0.032 269.2)",
         "tonalRamp": [
           "#080B11",
           "#21252E",
