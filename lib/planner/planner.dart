@@ -11,19 +11,21 @@ import '../models/corridor_status.dart' show RoadState;
 import 'fares.dart';
 import 'graph.dart';
 
+const allTransitModes = {
+  TransitMode.walk,
+  TransitMode.mototaxi,
+  TransitMode.taxi,
+  TransitMode.colectivo,
+  TransitMode.transpadilla,
+  TransitMode.intermunicipal,
+};
+
 class PlanRequest {
   const PlanRequest({
     required this.origin,
     required this.destination,
     required this.at,
-    this.allowed = const {
-      TransitMode.walk,
-      TransitMode.mototaxi,
-      TransitMode.taxi,
-      TransitMode.colectivo,
-      TransitMode.transpadilla,
-      TransitMode.intermunicipal,
-    },
+    this.allowed = allTransitModes,
     this.roadStates = const {},
     this.originName = 'Tu ubicación',
     this.destinationName = 'Tu destino',

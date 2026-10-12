@@ -10,12 +10,11 @@ import 'package:latlong2/latlong.dart';
 import '../../theme/design_tokens.dart';
 import '../../providers/ai_conversation_provider.dart';
 import '../../models/ai_models.dart';
+import '../../models/route_result.dart';
 import '../../providers/active_route_provider.dart';
 import '../../providers/selected_mode_provider.dart';
 import '../../router/app_router.dart';
-import '../../core/money.dart';
 import '../../widgets/gs_button.dart';
-import '../../widgets/gs_route_plate.dart';
 import '../../widgets/gs_toast.dart';
 
 class AiChatScreen extends ConsumerStatefulWidget {
@@ -152,15 +151,21 @@ class _MessageBubble extends ConsumerStatefulWidget {
 }
 
 class _MessageBubbleState extends ConsumerState<_MessageBubble> {
-  /// Índice en message.routeResults: 0 = a pie, 1 = por la vía, 2 = en bici.
-  int _selectedRouteIdx = 1;
+  /// Opción elegida entre las que devolvió el planificador.
+  int _selectedRouteIdx = 0;
 
-  static const _routeLabels = ['A pie', 'Por la vía', 'En bici'];
-  static const _routeIcons = [
-    Icons.directions_walk_rounded,
-    Icons.two_wheeler_rounded,
-    Icons.pedal_bike_rounded,
-  ];
+  /// "Colectivo · 95 min": el modo del tramo más largo que no es a pie.
+  static String _routeLabel(RouteResult r) {
+    final main = r.legs.where((l) => l.mode != 'walk').fold<RouteLeg?>(
+        null, (best, l) => best == null || l.distanceKm > best.distanceKm ? l : best);
+    return '${main?.lineId ?? 'A pie'} · ${r.durationMin} min';
+  }
+
+  static IconData _routeIcon(RouteResult r) {
+    final main = r.legs.where((l) => l.mode != 'walk').fold<RouteLeg?>(
+        null, (best, l) => best == null || l.distanceKm > best.distanceKm ? l : best);
+    return modeIconFor(main?.lineId ?? 'A pie');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -233,22 +238,19 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
                   ],
                 ),
               ],
-              if (message.routes != null && message.routes!.isNotEmpty) ...[
-                const SizedBox(height: GSSpacing.s2),
-                _RoutePlate(routes: message.routes!, isEstimated: isEstimated),
-              ],
-              if (message.routeResults != null) ...[
+              if (message.routeResults != null &&
+                  message.routeResults!.whereType<RouteResult>().isNotEmpty) ...[
                 const SizedBox(height: GSSpacing.s3),
                 Wrap(
                   spacing: GSSpacing.s2,
                   runSpacing: GSSpacing.s2,
                   children: [
-                    for (var i = 0; i < 3; i++)
+                    for (var i = 0; i < message.routeResults!.length; i++)
                       if (message.routeResults![i] != null)
                         ChoiceChip(
-                          avatar: Icon(_routeIcons[i], size: 18),
-                          label: Text(
-                              '${_routeLabels[i]} · ${message.routeResults![i]!.durationMin} min'),
+                          avatar: Icon(_routeIcon(message.routeResults![i]!),
+                              size: 18),
+                          label: Text(_routeLabel(message.routeResults![i]!)),
                           selected: _selectedRouteIdx == i,
                           showCheckmark: false,
                           onSelected: (_) =>
@@ -278,28 +280,6 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
   }
 }
 
-// ── Ruta sugerida como placa ─────────────────────────────────────────────────
-
-class _RoutePlate extends StatelessWidget {
-  const _RoutePlate({required this.routes, required this.isEstimated});
-  final List<RouteOption> routes;
-  final bool isEstimated;
-
-  @override
-  Widget build(BuildContext context) {
-    final fastest = routes.firstWhere(
-      (r) => r.type == 'fastest',
-      orElse: () => routes.first,
-    );
-    return GSRoutePlate(
-      text: '${fastest.totalDurationMin} min',
-      leading: Icons.route_rounded,
-      size: GSPlateSize.sm,
-      detail: '${formatCop(fastest.totalCostCop)}'
-          '${isEstimated ? ' · estimado' : ''}',
-    );
-  }
-}
 
 // ── Escribiendo… ─────────────────────────────────────────────────────────────
 

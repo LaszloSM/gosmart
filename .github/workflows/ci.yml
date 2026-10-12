@@ -111,7 +111,7 @@ jobs:
       - name: Test and type-check ai-chat
         working-directory: backend/functions/ai-chat
         run: |
-          deno test normalizer_test.ts
+          deno test normalizer_test.ts tools_test.ts
           deno check index.ts
 
   build-android:

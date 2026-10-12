@@ -225,19 +225,25 @@ Future<void> updateProfile({...}) async {
   - `delete-account` — account deletion
 - **Realtime**: `activeCardProvider` subscribes to `cards` table changes for live balance updates.
 
-### AI Service — Edge Function `ai-chat`
+### AI Service — Edge Function `ai-chat` (function calling, Fase 5)
 
 ```
 Flutter AiService                       Edge Function ai-chat (Deno)
-  query + history + client_context  ──▶  normalize (Riohacha/Maicao) → FTS on colombia_kg_aliases
-  (location, traffic, Mapbox route)      → short system prompt → Groq 8b (70b fallback)
+  query + history + client_context  ──▶  KG context → Groq 8b (70b fallback) with TOOLS (tools.ts)
+                                          server tools: get_corridor_status, search_place, estimate_fare
+  ◀── { source: 'tool_call', tool_call: {id,name:'plan_trip',args}, tool_messages }
+  TripTool runs the planner ON THE PHONE (D6), then calls again with
+  tool_messages + {role:'tool', tool_call_id, content: summary JSON}  ──▶
   ◀── { content, source: 'groq'|'error'|'system', model, error, latency_ms }
 ```
+`sanitizeToolMessages` only accepts assistant tool calls + matching tool replies (no injected
+system/user turns). Routes for "Ver en el mapa" come from the planner, never from the model.
 
 - The Groq key never ships in the APK. On any failure the app shows a fallback and calls
   `Telemetry.degraded(service, code)`; the planner keeps working (decision D8).
 - No embeddings: HuggingFace/pgvector search was removed from ai-chat (decision E3).
-- Tests: `cd backend/functions/ai-chat && deno test normalizer_test.ts` (CI job `edge-functions`).
+- Tests: `cd backend/functions/ai-chat && deno test normalizer_test.ts tools_test.ts` (CI job
+  `edge-functions`). `tools_test.ts` has no remote imports (runs where deno.land is blocked).
 
 ### RAG Colombia — Knowledge Graph
 

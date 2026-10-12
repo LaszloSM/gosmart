@@ -16,7 +16,8 @@ Referencias generales (aproximadas, pueden cambiar):
 • Riohacha–Maicao: buses de empresas desde los terminales, alrededor de $14.000–$16.000; colectivos y vans salen cuando se llenan.
 • Terminal de Maicao: atiende aprox. 4:00 a. m.–7:00 p. m. De noche casi no hay servicio formal.
 • La Troncal puede tener bloqueos, a menudo desde temprano en la mañana. Si está cerrada, el desvío usual es por Albania–Cuestecitas.
-Si recibes [CONTEXTO DE LA APP], úsalo como dato principal.`
+Si recibes [CONTEXTO DE LA APP], úsalo como dato principal.
+Herramientas: si quieren ir a algún lado, usa plan_trip; si preguntan por la vía, get_corridor_status. Cuenta lo que devuelvan (tiempos, tarifas como rango "de referencia", avisos) sin cambiar cifras. Si plan_trip no encuentra ruta, dilo y sugiere mototaxi o taxi. "sin_datos" significa que no sabemos, no que esté despejada.`
 
 export function buildContext(entities: KgEntity[]): string {
   if (entities.length === 0) return ''
