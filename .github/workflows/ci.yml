@@ -96,12 +96,17 @@ jobs:
                    supabase/migrations/013_corridor.sql \
                    supabase/migrations/014_transport_graph.sql \
                    supabase/migrations/014_transport_graph.sql \
+                   supabase/migrations/015_dispatch.sql \
+                   supabase/migrations/015_dispatch.sql \
                    supabase/tests/011_roles_safety_test.sql \
                    supabase/tests/012_places_directory_test.sql \
                    supabase/tests/013_corridor_test.sql \
-                   supabase/tests/014_transport_graph_test.sql; do
+                   supabase/tests/014_transport_graph_test.sql \
+                   supabase/tests/015_dispatch_test.sql; do
             psql -d gosmart_core -v ON_ERROR_STOP=1 -q -f "$f"
           done
+          # D7: dos conexiones a la vez compiten por el mismo viaje y el último cupo
+          bash supabase/tests/015_race_test.sh gosmart_core
 
   edge-functions:
     name: Edge Functions (Deno)
