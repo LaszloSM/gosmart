@@ -47,7 +47,7 @@ Optional:
 
 ```
 SENTRY_DSN=                    # empty = no error reporting (lib/core/telemetry.dart)
-MAP_PROVIDER=google            # 'google' (default) or 'osm' for OpenStreetMap
+MAP_PROVIDER=google            # 'google' (default) or 'osm'. Google only if GOOGLE_MAPS_API_KEY starts with AIza
 MAPBOX_PUBLIC_TOKEN=pk.eyJ... # Mapbox public token; if empty, map falls back to OSM
 SHARE_BASE_URL=                # public_web on GitHub Pages; empty = share sends a Maps point
 ```
@@ -123,7 +123,7 @@ lib/
 │   │                             #   driver_work_panel (solicitudes cercanas, viaje activo, salidas)
 │   ├── legal/                    # Política Ley 1581 y términos (borrador con [PENDIENTE] visible)
 │   ├── home/                     # Inicio: Línea del corredor → mapa → hoja "¿A dónde vas?"
-│   │   └── widgets/              # HomeMap, HomeSheetContent, CorridorDetailSheet, QuickPlacesRow
+│   │   └── widgets/              # HomeMap, MapView (Google Maps o flutter_map), HomeSheetContent, CorridorDetailSheet, QuickPlacesRow
 │   ├── nfc_simulator/            # Debug NFC simulator (LOCAL MOCK — no Edge Function)
 │   ├── onboarding/               # IntroScreen (3 slides), LocationPermissionScreen
 │   ├── payment/                  # Payment validation screen
@@ -464,7 +464,8 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 | `flutter_dotenv` | ^5.1.0 | `.env` loading |
 | `flutter_nfc_kit` | ^3.4.0 | NFC hardware access |
 | `qr_flutter` | ^4.1.0 | QR code rendering |
-| `flutter_map` | ^7.0.2 | Map tiles — Mapbox dark-v11 (with `MAPBOX_PUBLIC_TOKEN`) or OSM fallback |
+| `google_maps_flutter` | ^2.18 | Map when a Google key is set (native gestures, night style) |
+| `flutter_map` | ^7.0.2 | Fallback map — Mapbox streets (with `MAPBOX_PUBLIC_TOKEN`) or OSM |
 | `geolocator` | ^13.0.0 | Device GPS location (Android + Web) |
 | `http` | ^1.2.0 | Direct REST calls (Groq AI) |
 | `intl` | ^0.20.2 | Date formatting, localization |
@@ -507,6 +508,10 @@ Currency: `'cop'` | `'usd'` | `'eur'`
   The QR is always drawn on white (also at night) so any camera reads it.
 - **Admin**: `flutter build web` compiles (checked 2026-10-12); the panel caps at 1200 px for desktop.
   First admin is set by SQL (`UPDATE profiles SET role='admin' WHERE id=…`); users can't self-promote.
+- **Map**: screens never import a map package; they use `MapView` + `MapViewController` (moveTo, fit).
+  Google Maps when `useGoogleMaps` (key `AIza…` in `.env`, also read by Gradle into the manifest), with
+  rotate/tilt/compass, `assets/map_styles/night.json` at night and camera bounds on La Guajira;
+  otherwise flutter_map (Mapbox or OSM). Neither was tried on a phone from this environment.
 - **Money formatting**: always `formatCop()` and `GSFonts.mono` for amounts the user compares.
   No red/green for income/expense — the sign carries it (red/green are road-only).
 - **`DateFormat(..., 'es')` throws** unless `initializeDateFormatting` ran (it doesn't in this app).

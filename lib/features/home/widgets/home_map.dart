@@ -1,19 +1,18 @@
 // lib/features/home/widgets/home_map.dart
 // Mapa de fondo del inicio: GPS, ruta activa y "¿Ir aquí?" con pulsación larga.
-// Todo el código del mapa vive aquí para facilitar el cambio a Google Maps (Fase 3).
+// El mapa en sí (Google o flutter_map) vive en map_view.dart.
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../../../core/env.dart';
 import '../../../core/region.dart';
 import '../../../models/route_result.dart';
 import '../../../providers/active_route_provider.dart';
 import '../../../router/app_router.dart';
 import '../../../services/location_service.dart';
 import '../../../theme/design_tokens.dart';
+import 'map_view.dart';
 
 class HomeMap extends ConsumerStatefulWidget {
   const HomeMap({super.key});
@@ -23,7 +22,7 @@ class HomeMap extends ConsumerStatefulWidget {
 }
 
 class _HomeMapState extends ConsumerState<HomeMap> {
-  final _mapController = MapController();
+  MapViewController? _map;
 
   LatLng _userPosition = GSRegion.riohacha;
   bool _hasFix = false;
@@ -43,7 +42,7 @@ class _HomeMapState extends ConsumerState<HomeMap> {
         _userPosition = pos;
         _hasFix = true;
       });
-      _mapController.move(pos, 14);
+      _map?.moveTo(pos);
     }
   }
 
@@ -56,115 +55,20 @@ class _HomeMapState extends ConsumerState<HomeMap> {
       if (next != null && next.legs.isNotEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          final allPoints = next.legs.expand((l) => l.points).toList();
-          if (allPoints.length > 1) {
-            _mapController.fitCamera(
-              CameraFit.bounds(
-                bounds: LatLngBounds.fromPoints(allPoints),
-                padding: const EdgeInsets.fromLTRB(40, 80, 40, 240),
-              ),
-            );
-          }
+          _map?.fit(next.legs.expand((l) => l.points).toList());
         });
       }
     });
 
     return Stack(
       children: [
-        FlutterMap(
-          mapController: _mapController,
-          options: MapOptions(
-            initialCenter: _userPosition,
-            initialZoom: 14,
-            minZoom: 5.0,
-            maxZoom: 19.0,
-            interactionOptions: const InteractionOptions(
-              flags: InteractiveFlag.all,
-            ),
-            onLongPress: (tapPosition, point) {
-              setState(() => _longPressPoint = point);
-            },
-          ),
-          children: [
-            // Estilo claro: DESIGN.md pide legibilidad al sol.
-            TileLayer(
-              urlTemplate: Env.mapboxToken.isNotEmpty
-                  ? 'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}@2x'
-                      '?access_token=${Env.mapboxToken}'
-                  : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              tileSize: Env.mapboxToken.isNotEmpty ? 512 : 256,
-              zoomOffset: Env.mapboxToken.isNotEmpty ? -1 : 0,
-              userAgentPackageName: 'com.gosmart.app',
-              maxNativeZoom: 19,
-            ),
-            if (activeRoute != null)
-              PolylineLayer(
-                polylines: activeRoute.legs
-                    .map((leg) => Polyline(
-                          points: leg.points,
-                          strokeWidth: 5.0,
-                          color: leg.color,
-                          borderColor: GSColors.surface,
-                          borderStrokeWidth: 1.5,
-                        ))
-                    .toList(),
-              ),
-            if (activeRoute != null && activeRoute.legs.isNotEmpty)
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: activeRoute.legs.first.points.first,
-                    width: 36,
-                    height: 36,
-                    child: _Dot(
-                        color: GSColors.brand, icon: Icons.my_location),
-                  ),
-                  Marker(
-                    point: activeRoute.legs.last.points.last,
-                    width: 40,
-                    height: 40,
-                    // Destino en tinta: el rojo es solo para la vía.
-                    child: _Dot(
-                        color: GSColors.text, icon: Icons.location_on),
-                  ),
-                ],
-              ),
-            // Posición del usuario (sin animación: DESIGN.md, nada en bucle).
-            if (_hasFix)
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: _userPosition,
-                    width: 24,
-                    height: 24,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: GSColors.brand,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: GSColors.surface, width: 3),
-                        boxShadow: GSShadow.md,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            if (_longPressPoint != null)
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: _longPressPoint!,
-                    width: 44,
-                    height: 44,
-                    alignment: Alignment.topCenter,
-                    child: Icon(
-                      Icons.location_on,
-                      color: GSColors.text,
-                      size: 44,
-                    ),
-                  ),
-                ],
-              ),
-          ],
+        MapView(
+          initialCenter: _userPosition,
+          onCreated: (c) => _map = c,
+          onLongPress: (point) => setState(() => _longPressPoint = point),
+          route: activeRoute,
+          user: _hasFix ? _userPosition : null,
+          pin: _longPressPoint,
         ),
 
         // Arriba del mapa: la hoja inferior tapa la parte de abajo.
@@ -206,25 +110,6 @@ class _HomeMapState extends ConsumerState<HomeMap> {
             ),
           ),
       ],
-    );
-  }
-}
-
-class _Dot extends StatelessWidget {
-  const _Dot({required this.color, required this.icon});
-  final Color color;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        border: Border.all(color: GSColors.surface, width: 2),
-        boxShadow: GSShadow.md,
-      ),
-      child: Icon(icon, color: GSColors.onBrand, size: 18),
     );
   }
 }

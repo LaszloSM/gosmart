@@ -59,6 +59,7 @@ dependencies:
   url_launcher: ^6.3.3
   collection: ^1.19.1
   mobile_scanner: ^6.0.0
+  google_maps_flutter: ^2.18.2
 
 dev_dependencies:
   flutter_test:
@@ -77,6 +78,7 @@ flutter:
     - assets/images/
     - assets/animations/
     - .env
+    - assets/map_styles/
 
   fonts:
     # Mundo "rótulo de colectivo": Barlow (cuerpo, cifras tabulares) y

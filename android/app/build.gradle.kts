@@ -1,3 +1,17 @@
+import java.io.File
+
+// La clave de Google Maps sale del mismo .env de la app (GOOGLE_MAPS_API_KEY) o
+// de una variable de entorno en CI. Nunca se escribe en el repo.
+fun mapsApiKey(root: File): String {
+    System.getenv("GOOGLE_MAPS_API_KEY")?.let { if (it.isNotBlank()) return it }
+    val env = File(root, "../.env")
+    if (!env.exists()) return ""
+    return env.readLines()
+        .map { it.trim() }
+        .firstOrNull { it.startsWith("GOOGLE_MAPS_API_KEY=") }
+        ?.substringAfter("=")?.trim() ?: ""
+}
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -28,6 +42,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey(rootProject.projectDir)
     }
 
     buildTypes {
