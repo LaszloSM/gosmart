@@ -58,9 +58,9 @@ class RouteProfile {
       };
 
   static Color colorFor(String profile) => switch (profile) {
-        driving => const Color(0xFFFF8C00), // orange
-        cycling => GSColors.eco,            // green
-        _ => GSColors.accent,              // teal
+        driving => GSColors.bus,
+        cycling => GSColors.bike,
+        _ => GSColors.walk,
       };
 
   static IconData iconFor(String profile) => switch (profile) {

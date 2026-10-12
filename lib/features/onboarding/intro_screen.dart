@@ -24,7 +24,7 @@ class _IntroScreenState extends State<IntroScreen> {
       description:
           'Encuentra la mejor manera de llegar a tu destino. '
           'Compara transporte público y privado en tiempo real con IA.',
-      gradientColors: [Color(0xFF5CFD80), Color(0xFF02C953)],
+      gradientColors: [GSColors.brand, GSColors.brand],
     ),
     _Slide(
       icon: Icons.account_balance_wallet_rounded,
@@ -32,7 +32,7 @@ class _IntroScreenState extends State<IntroScreen> {
       description:
           'Recarga tu tarjeta GoSmart y paga en cualquier sistema '
           'de transporte con un solo toque. Sin efectivo.',
-      gradientColors: [Color(0xFF45FEC9), Color(0xFF00A08A)],
+      gradientColors: [GSColors.brand, GSColors.brand],
     ),
     _Slide(
       icon: Icons.smart_toy_rounded,
@@ -40,7 +40,7 @@ class _IntroScreenState extends State<IntroScreen> {
       description:
           'Pregúntale a GoSmart AI sobre rutas, tarifas y horarios. '
           'Tu experto en movilidad urbana en Colombia.',
-      gradientColors: [Color(0xFF6C63FF), Color(0xFF3B35C4)],
+      gradientColors: [GSColors.brand, GSColors.brand],
     ),
   ];
 
@@ -193,7 +193,7 @@ class _SlideContent extends StatelessWidget {
                 ),
               ],
             ),
-            child: Icon(slide.icon, size: 72, color: Colors.black),
+            child: Icon(slide.icon, size: 72, color: GSColors.onBrand),
           ),
           const SizedBox(height: GSSpacing.s8),
           // Título

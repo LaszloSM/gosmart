@@ -56,9 +56,9 @@ class _GSSkeletonLoaderState extends State<GSSkeletonLoader>
               begin: Alignment(_animation.value - 1, 0),
               end: Alignment(_animation.value + 1, 0),
               colors: const [
-                Color(0xFF141928), // surface
-                Color(0xFF202537), // surfaceContainerHighest
-                Color(0xFF141928), // surface
+                GSColors.surfaceSunken,
+                GSColors.surface,
+                GSColors.surfaceSunken,
               ],
             ),
           ),

@@ -265,23 +265,32 @@ reviewing or QA-ing UI, flag code that doesn't match it. Key rules: light theme 
 status (always with icon + text), Atkinson Hyperlegible Next/Mono bundled offline,
 48px touch targets (72px in driver mode), no cards by default.
 
-> `lib/theme/design_tokens.dart` still holds the **old** dark/neon theme until the Fase 2
-> theme migration. Never hardcode colors, spacing, or radii; use `GS*` tokens, and when
-> touching a screen, align it with `DESIGN.md`.
+`lib/theme/design_tokens.dart` mirrors DESIGN.md. Never hardcode colors, spacing, or radii.
+New code uses the DESIGN.md names; the old names (`accent`, `primary`, `eco`, `success`…)
+are aliases kept so existing screens compile — `GSColors.primary` is now the **sand
+background**, not a dark color, so never put it behind white text.
 
 ```dart
+GSColors.brand / .onBrand / .brandTint      // mar profundo #0B4A57 + white text
+GSColors.background / .surface / .surfaceSunken
+GSColors.text / .textMuted / .line
+GSColors.roadOpen / .roadCaution(+Tint) / .roadClosed(+Tint) / .roadUnknown  // road status ONLY
+GSFonts.sans / GSFonts.mono                 // bundled in assets/fonts (OFL)
+GSCurve.enter / .exit / .move               // DESIGN.md motion
+GSSize.touchTarget=48  GSSize.touchTargetDriver=72  GSSize.corridorLine=56
+
 // Transport mode colors (current code; Fase 2 replaces metro/bike with local modes)
 GSColors.bus / .metro / .bike / .walk / .taxi / .car
 
 // Spacing scale (use these, never raw numbers)
 GSSpacing.s1=4  s2=8  s3=12  s4=16  s5=20  s6=24  s8=32
 
-// Radii
-GSRadius.sm=8  .md=12  .lg=16  .xl=20  .xxl=28  .full=9999
+// Radii (DESIGN.md caps at 16; xl/xxl are aliases of lg)
+GSRadius.sm=6  .md=10  .lg=16  .full=9999
 GSRadius.cardRadius / .buttonRadius / .sheetRadius
 
 // Sizes
-GSSize.bottomNav=72   GSSize.topBar=56   GSSize.touchTarget=44
+GSSize.bottomNav=72   GSSize.topBar=56
 ```
 
 **Reusable widgets** (all in `lib/widgets/`, prefixed `GS*`):
@@ -377,7 +386,6 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 | `flutter_dotenv` | ^5.1.0 | `.env` loading |
 | `flutter_nfc_kit` | ^3.4.0 | NFC hardware access |
 | `qr_flutter` | ^4.1.0 | QR code rendering |
-| `google_fonts` | ^6.2.1 | Typography |
 | `flutter_map` | ^7.0.2 | Map tiles — Mapbox dark-v11 (with `MAPBOX_PUBLIC_TOKEN`) or OSM fallback |
 | `geolocator` | ^13.0.0 | Device GPS location (Android + Web) |
 | `http` | ^1.2.0 | Direct REST calls (Groq AI) |
@@ -400,4 +408,6 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 - **`GSButton` API**: Use `isLoading:` (not `loading:`), `isFullWidth:` (not `fullWidth:`). Variant: `GSButtonVariant.outline / .ghost / .primary`.
 - **`GeocodingService`**: Method is `.search(query)` (not `.suggest()`). Returns `List<GeocodeSuggestion>`.
 - **Wallet vs cards**: `wallets` / `wallet_transactions` (`walletProvider`) is the money model. `cards` / `activeCardProvider` is only the card UI (lock/NFC, future public-transport validators). Never write balances from the client; use RPCs.
+- **`AnimatedDefaultTextStyle` / `DefaultTextStyle` replace the inherited style**: always set `fontFamily: GSFonts.sans`, or the text falls back to Roboto.
+- **Fonts are bundled** (`pubspec.yaml` → `fonts:`); there is no `google_fonts` package and no runtime font download.
 - **`GSCard` wraps its child in a transparent `Material`** so `ListTile`s inside it render ripples (newer Flutter asserts otherwise).

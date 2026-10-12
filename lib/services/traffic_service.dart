@@ -21,6 +21,7 @@
 import 'package:flutter/painting.dart';
 
 import '../models/traffic_model.dart';
+import '../theme/design_tokens.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Interface contract
@@ -198,25 +199,24 @@ class HeuristicTrafficService implements ITrafficService {
     final mul = factor.durationMultiplier;
 
     // Thresholds chosen so that the label matches driver intuition:
-    // < 1.10 → "Fluido" (green)   — negligible delay
-    // 1.10-1.30 → "Moderado" (yellow) — noticeable but manageable
-    // 1.30-1.50 → "Alto" (orange) — significant delays
-    // ≥ 1.50 → "Muy alto" (red)   — gridlock conditions
+    // < 1.10 → "Fluido" (roadOpen)       — negligible delay
+    // 1.10-1.50 → "Moderado"/"Alto" (roadCaution) — noticeable delays
+    // ≥ 1.50 → "Muy alto" (roadClosed)   — gridlock conditions
     final String label;
     final Color color;
 
     if (mul < 1.10) {
       label = 'Fluido';
-      color = const Color(0xFF3CB371); // GSColors.eco
+      color = GSColors.roadOpen;
     } else if (mul < 1.30) {
       label = 'Moderado';
-      color = const Color(0xFFFFA502); // GSColors.warning
+      color = GSColors.roadCaution;
     } else if (mul < 1.50) {
       label = 'Alto';
-      color = const Color(0xFFFF6B35); // between warning and error
+      color = GSColors.roadCaution;
     } else {
       label = 'Muy alto';
-      color = const Color(0xFFFF4757); // GSColors.error
+      color = GSColors.roadClosed;
     }
 
     return TrafficCondition(

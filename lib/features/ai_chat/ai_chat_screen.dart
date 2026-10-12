@@ -244,7 +244,7 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
                         vertical: GSSpacing.s3),
                     decoration: BoxDecoration(
                       color: isUser
-                          ? GSColors.primary
+                          ? GSColors.brand
                           : GSColors.surface,
                       borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(GSRadius.lg),
@@ -568,15 +568,15 @@ class _ChatInput extends StatelessWidget {
           GestureDetector(
             onTap: canSend ? onSend : null,
             child: Container(
-              width: 36,
-              height: 36,
+              width: GSSize.touchTarget,
+              height: GSSize.touchTarget,
               decoration: BoxDecoration(
-                color: canSend ? GSColors.accent : GSColors.border,
+                color: canSend ? GSColors.brand : GSColors.surfaceSunken,
                 shape: BoxShape.circle,
-                boxShadow: canSend ? GSShadow.primary : null,
               ),
-              child: const Icon(Icons.send_rounded,
-                  color: Colors.white, size: 18),
+              child: Icon(Icons.send_rounded,
+                  color: canSend ? GSColors.onBrand : GSColors.textDisabled,
+                  size: 20),
             ),
           ),
         ],

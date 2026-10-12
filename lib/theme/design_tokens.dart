@@ -1,85 +1,100 @@
 import 'package:flutter/material.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GoSmart Design Tokens — "Kinetic Flow" dark edition
+// GoSmart Design Tokens — refleja DESIGN.md (fuente de verdad).
+// Claro primero, legible al sol. Un solo color de marca ("mar profundo").
+// Rojo / ámbar / verde existen SOLO para el estado de la vía (road*).
 // ─────────────────────────────────────────────────────────────────────────────
 
 abstract class GSColors {
-  // ── Base surface hierarchy (dark layering system) ──────────────────────────
-  /// Deepest base — use as scaffold/page background.
-  static const primary = Color(0xFF0A0E1A);
+  // ── DESIGN.md: marca y neutros ─────────────────────────────────────────────
+  /// Mar profundo: marca, acciones, selección. Blanco encima 9.8:1.
+  static const brand = Color(0xFF0B4A57);
+  static const brandPressed = Color(0xFF093D48);
 
-  /// Sectioning layer — separates background from cards.
-  static const surfaceContainerLow = Color(0xFF0E1320);
+  /// Texto e íconos sobre [brand].
+  static const onBrand = Color(0xFFFFFFFF);
 
-  /// Default card surface.
-  static const surface = Color(0xFF141928);
+  /// Tinte de marca para fondos seleccionados (texto [brand] encima > 7:1).
+  static const brandTint = Color(0xFFDCEBEE);
 
-  /// Elevated card / prominent element.
-  static const surfaceContainerHigh = Color(0xFF1A1F2F);
+  /// Arena: fondo de pantalla.
+  static const background = Color(0xFFF6F1E7);
 
-  /// Modals, sheets, overlays.
-  static const surfaceContainerHighest = Color(0xFF202537);
+  /// Sal: hojas, superficies, campos.
+  static const surface = Color(0xFFFFFDF8);
 
-  /// Active / highlighted states (e.g. focused input ring).
-  static const surfaceBright = Color(0xFF252B3F);
+  /// Arena un tono más oscura: agrupar secciones, chips sin seleccionar.
+  static const surfaceSunken = Color(0xFFEFE8DA);
 
-  // ── Kinetic Green — primary interactive / CTA ──────────────────────────────
-  static const accent = Color(0xFF5CFD80);
-  static const accentHover = Color(0xFF4BEE74);
+  /// Tinta: texto principal (15.6:1 sobre arena).
+  static const text = Color(0xFF1B1915);
 
-  /// Used as gradient endpoint on primary buttons.
-  static const accentContainer = Color(0xFF02C953);
+  /// Tinta suave: texto secundario (8.4:1 sobre arena).
+  static const textMuted = Color(0xFF4A453C);
 
-  /// Dark container for accent-tinted backgrounds.
-  static const accentLight = Color(0xFF003711);
+  /// Solo divisores; nunca texto encima.
+  static const line = Color(0xFFCFC4B1);
 
-  // ── Cyan — secondary accent ────────────────────────────────────────────────
-  static const accentAlt = Color(0xFF45FEC9);
-  static const accentAltLight = Color(0xFF006C52);
+  // ── DESIGN.md: estado de la vía (siempre con ícono + texto) ────────────────
+  static const roadOpen = Color(0xFF17602F);
+  static const roadCaution = Color(0xFF6A3F00);
+  static const roadCautionTint = Color(0xFFFBE7C2);
+  static const roadClosed = Color(0xFF9E1F18);
+  static const roadClosedTint = Color(0xFFF6DAD6);
+  static const roadUnknown = Color(0xFF55514A);
 
-  // ── Sky Blue — tertiary ────────────────────────────────────────────────────
-  static const tertiary = Color(0xFF57BCFF);
-  static const tertiaryLight = Color(0xFF003552);
+  // ── Nombres anteriores (alias). Código nuevo: usar los de arriba. ──────────
+  /// Antes "fondo más oscuro"; ahora el fondo arena.
+  static const primary = background;
+  static const bg = background;
+  static const surfaceContainerLow = surfaceSunken;
+  static const surfaceDark = surfaceSunken;
+  static const surfaceContainerHigh = surface;
+  static const surfaceContainerHighest = surface;
+  static const surfaceBright = surfaceSunken;
 
-  // ── Eco ────────────────────────────────────────────────────────────────────
-  static const eco = Color(0xFF5CFD80);
-  static const ecoLight = Color(0xFF003711);
-  static const ecoDark = Color(0xFF4BEE74);
+  static const accent = brand;
+  static const accentHover = brandPressed;
+  static const accentContainer = brand;
+  static const accentLight = brandTint;
+  static const accentAlt = brand;
+  static const accentAltLight = brandTint;
+  static const tertiary = brand;
+  static const tertiaryLight = brandTint;
 
-  // ── Neutral ────────────────────────────────────────────────────────────────
-  static const bg = Color(0xFF0A0E1A);
+  /// Los eco-puntos no usan verde: el verde es de la vía.
+  static const eco = brand;
+  static const ecoLight = brandTint;
+  static const ecoDark = brandPressed;
 
-  /// Alias kept for legacy uses — equals surfaceContainerLow.
-  static const surfaceDark = Color(0xFF0E1320);
+  static const border = line;
+  static const textPrimary = text;
+  static const textSecondary = textMuted;
 
-  /// Subtle outline — replaces hard 1px borders (use at 15–40% opacity).
-  static const border = Color(0xFF444756);
+  /// Texto deshabilitado (exento del mínimo de contraste).
+  static const textDisabled = Color(0xFF8A8275);
 
-  static const textPrimary = Color(0xFFE2E4F6);
-  static const textSecondary = Color(0xFFA7AABB);
-  static const textDisabled = Color(0xFF717584);
+  // Semánticos de formulario / avisos. El éxito usa la marca, no el verde.
+  static const success = brand;
+  static const successLight = brandTint;
+  static const warning = roadCaution;
+  static const warningLight = roadCautionTint;
+  static const error = roadClosed;
+  static const errorLight = roadClosedTint;
+  static const info = brand;
+  static const infoLight = brandTint;
 
-  // ── Semantic ───────────────────────────────────────────────────────────────
-  static const success = Color(0xFF5CFD80);
-  static const successLight = Color(0xFF003711);
-  static const warning = Color(0xFFFFA502);
-  static const warningLight = Color(0xFF3D2600);
-  static const error = Color(0xFFFF7351);
-  static const errorLight = Color(0xFF3D1500);
-  static const info = Color(0xFF57BCFF);
-  static const infoLight = Color(0xFF003552);
+  // ── Modos de transporte (distintos del rojo/ámbar/verde de la vía) ─────────
+  static const bus = brand; // TransPadilla, colectivo, intermunicipal
+  static const taxi = Color(0xFF7A4E2D); // mototaxi / taxi
+  static const car = text;
+  static const walk = textMuted;
+  static const bike = Color(0xFF3D6B8C);
+  static const metro = Color(0xFF3D6B8C);
 
-  // ── Transport modes ────────────────────────────────────────────────────────
-  static const car = Color(0xFF5CFD80);    // kinetic green
-  static const taxi = Color(0xFFFFA502);   // amber
-  static const bus = Color(0xFF6C63FF);    // violet (kept for visual distinction)
-  static const bike = Color(0xFF45FEC9);   // cyan
-  static const walk = Color(0xFFA7AABB);   // muted
-  static const metro = Color(0xFFFF7351);  // coral red
-
-  // ── Card ───────────────────────────────────────────────────────────────────
-  static const cardGold = Color(0xFFC9A84C);
+  // ── Tarjeta GoSmart ────────────────────────────────────────────────────────
+  static const cardGold = Color(0xFFB08A3E);
 }
 
 abstract class GSSpacing {
@@ -96,112 +111,101 @@ abstract class GSSpacing {
 }
 
 abstract class GSRadius {
-  static const double sm = 8;
-  static const double md = 12;
+  /// Inputs y chips.
+  static const double sm = 6;
+
+  /// Botones.
+  static const double md = 10;
+
+  /// Hojas y la solicitud del conductor.
   static const double lg = 16;
-  static const double xl = 20;
-  static const double xxl = 28;
+
+  // Alias anteriores: DESIGN.md no pasa de 16.
+  static const double xl = lg;
+  static const double xxl = lg;
+
+  /// Solo filtros de modo de transporte.
   static const double full = 9999;
 
-  static BorderRadius get cardRadius => BorderRadius.circular(xl);
-  static BorderRadius get buttonRadius => BorderRadius.circular(full);
+  static BorderRadius get cardRadius => BorderRadius.circular(lg);
+  static BorderRadius get buttonRadius => BorderRadius.circular(md);
   static BorderRadius get chipRadius => BorderRadius.circular(full);
   static BorderRadius get sheetRadius =>
-      const BorderRadius.vertical(top: Radius.circular(xxl));
+      const BorderRadius.vertical(top: Radius.circular(lg));
 }
 
+/// Profundidad = desplazamiento + desenfoque suave en tinta. Sin brillos.
 abstract class GSShadow {
+  static const _ink = Color(0xFF1B1915);
+
   static List<BoxShadow> get sm => [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.18),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
+          color: _ink.withValues(alpha: 0.08),
+          blurRadius: 4,
+          offset: const Offset(0, 1),
         ),
       ];
 
   static List<BoxShadow> get md => [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.28),
-          blurRadius: 20,
-          offset: const Offset(0, 4),
-        ),
-        BoxShadow(
-          color: const Color(0xFF5CFD80).withValues(alpha: 0.04),
-          blurRadius: 20,
-          offset: const Offset(0, 0),
+          color: _ink.withValues(alpha: 0.10),
+          blurRadius: 10,
+          offset: const Offset(0, 2),
         ),
       ];
 
   static List<BoxShadow> get lg => [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.32),
-          blurRadius: 40,
-          offset: const Offset(0, 8),
-        ),
-        BoxShadow(
-          color: const Color(0xFF5CFD80).withValues(alpha: 0.06),
-          blurRadius: 40,
-          offset: const Offset(0, 0),
-        ),
-      ];
-
-  /// Ambient floating card shadow — tinted with kinetic green.
-  static List<BoxShadow> get card => [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.24),
-          blurRadius: 32,
-          offset: const Offset(0, 4),
-        ),
-        BoxShadow(
-          color: const Color(0xFF5CFD80).withValues(alpha: 0.04),
-          blurRadius: 32,
-          offset: const Offset(0, 0),
-        ),
-      ];
-
-  /// Kinetic green glow — use for primary CTA buttons.
-  static List<BoxShadow> get accent => [
-        BoxShadow(
-          color: const Color(0xFF5CFD80).withValues(alpha: 0.28),
-          blurRadius: 24,
+          color: _ink.withValues(alpha: 0.12),
+          blurRadius: 16,
           offset: const Offset(0, 4),
         ),
       ];
 
-  /// Alias kept for backward compat.
-  static List<BoxShadow> get primary => accent;
-
-  static List<BoxShadow> get eco => [
+  /// Hoja inferior sobre el mapa (DESIGN.md: 0 -2, blur 12, tinta 12%).
+  static List<BoxShadow> get sheet => [
         BoxShadow(
-          color: GSColors.eco.withValues(alpha: 0.24),
-          blurRadius: 20,
-          offset: const Offset(0, 6),
+          color: _ink.withValues(alpha: 0.12),
+          blurRadius: 12,
+          offset: const Offset(0, -2),
         ),
       ];
 
-  static List<BoxShadow> get neumorphic => [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.40),
-          blurRadius: 14,
-          offset: const Offset(6, 6),
-        ),
-        BoxShadow(
-          color: GSColors.surfaceBright.withValues(alpha: 0.6),
-          blurRadius: 10,
-          offset: const Offset(-4, -4),
-        ),
-      ];
+  static List<BoxShadow> get card => sm;
+
+  // Alias anteriores (antes eran brillos de color; ahora sombras neutras).
+  static List<BoxShadow> get accent => sm;
+  static List<BoxShadow> get primary => sm;
+  static List<BoxShadow> get eco => sm;
+  static List<BoxShadow> get neumorphic => sm;
 }
 
 abstract class GSDuration {
+  /// Presión de botón (DESIGN.md: 100–150 ms).
+  static const press = Duration(milliseconds: 120);
   static const fast = Duration(milliseconds: 150);
   static const normal = Duration(milliseconds: 250);
   static const slow = Duration(milliseconds: 400);
-  static const page = Duration(milliseconds: 300);
+  static const page = Duration(milliseconds: 250);
+
+  /// Hojas: entrada 250 ms, salida 200 ms.
+  static const sheetIn = Duration(milliseconds: 250);
+  static const sheetOut = Duration(milliseconds: 200);
+}
+
+abstract class GSCurve {
+  /// Entrada: ease-out fuerte, cubic-bezier(0.23, 1, 0.32, 1).
+  static const enter = Cubic(0.23, 1, 0.32, 1);
+  static const exit = Curves.easeIn;
+  static const move = Curves.easeInOut;
 }
 
 abstract class GSSize {
-  static const double touchTarget = 44;
+  /// Pasajero (DESIGN.md `spacing.touch`).
+  static const double touchTarget = 48;
+
+  /// Modo conductor de una mano (DESIGN.md `spacing.touch-driver`).
+  static const double touchTargetDriver = 72;
   static const double iconSm = 16;
   static const double iconMd = 20;
   static const double iconLg = 24;
@@ -211,38 +215,40 @@ abstract class GSSize {
   static const double avatarLg = 64;
   static const double bottomNav = 72;
   static const double topBar = 56;
+
+  /// Línea del corredor arriba del mapa.
+  static const double corridorLine = 56;
 }
 
+/// Superficies translúcidas: DESIGN.md no usa vidrio esmerilado; la opacidad
+/// queda en 1 para que las superficies sean sólidas y legibles al sol.
 abstract class GSGlass {
-  static const double blur = 24;
-  static const double backgroundOpacity = 0.88;
-  static const double borderOpacity = 0.10;
+  static const double blur = 0;
+  static const double backgroundOpacity = 1.0;
+  static const double borderOpacity = 1.0;
   static const double borderWidth = 1.0;
 }
 
+/// DESIGN.md: sin degradados. Se conservan los nombres con un color plano
+/// (dos paradas iguales) para no romper los usos existentes.
 abstract class GSGradient {
-  /// Primary CTA gradient — kinetic green → cyan.
-  static List<Color> get accentPill => [GSColors.accent, GSColors.accentAlt];
-
-  /// Subtle gloss highlight for cards.
-  static List<Color> get cardGloss =>
-      [Colors.white.withValues(alpha: 0.05), Colors.transparent];
-
-  /// Avatar ring gradient.
-  static List<Color> get avatarRing => [GSColors.accent, GSColors.accentAlt];
-
-  /// Primary button gradient.
-  static List<Color> get primaryButton => [GSColors.accent, GSColors.accentAlt];
-
-  /// Smart card gradient — deep navy → kinetic green.
-  static List<Color> get smartCard =>
-      [const Color(0xFF0A0E1A), GSColors.accent];
+  static List<Color> get accentPill => const [GSColors.brand, GSColors.brand];
+  static List<Color> get cardGloss => const [Colors.transparent, Colors.transparent];
+  static List<Color> get avatarRing => const [GSColors.brand, GSColors.brand];
+  static List<Color> get primaryButton => const [GSColors.brand, GSColors.brand];
+  static List<Color> get smartCard => const [GSColors.brand, GSColors.brand];
 }
 
 abstract class GSAnimDuration {
-  static const countUp = Duration(milliseconds: 800);
-  static const checkmarkStroke = Duration(milliseconds: 600);
-  static const particleBurst = Duration(milliseconds: 700);
-  static const int skeletonStagger = 80;
+  static const countUp = Duration(milliseconds: 600);
+  static const checkmarkStroke = Duration(milliseconds: 400);
+  static const particleBurst = Duration(milliseconds: 500);
+  static const int skeletonStagger = 60;
   static const pillSlide = Duration(milliseconds: 200);
+}
+
+/// Familias tipográficas empaquetadas en assets/fonts (OFL), sin red.
+abstract class GSFonts {
+  static const sans = 'AtkinsonHyperlegibleNext';
+  static const mono = 'AtkinsonHyperlegibleMono';
 }

@@ -409,7 +409,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return SliverAppBar(
       expandedHeight: 200,
       pinned: true,
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: GSColors.brand,
       elevation: 0,
       automaticallyImplyLeading: false,
       actions: [
@@ -423,13 +423,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           children: [
             // Gradient background
             Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF1A1A2E), Color(0xFF6C63FF)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
+              color: GSColors.brand,
             ),
             // Avatar + name at bottom
             Positioned(
@@ -532,8 +526,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     Text(
                       p.email,
                       style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
+                        color: GSColors.onBrand,
+                        fontSize: 14,
                       ),
                     ),
                   ],

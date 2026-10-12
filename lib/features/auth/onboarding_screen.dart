@@ -11,16 +11,8 @@ class OnboardingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(children: [
-        // Layer 1 — dark gradient background (fills screen)
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF1A1A2E), Color(0xFF0D1117)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
+        // Layer 1 — fondo de marca sólido (texto blanco encima, 9.8:1)
+        Container(color: GSColors.brand),
         // Layer 2 — content
         SafeArea(
           child: Column(children: [
@@ -53,13 +45,13 @@ class OnboardingScreen extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _modeIcon(Icons.directions_car_rounded, GSColors.accent),
+                          _modeIcon(Icons.two_wheeler_rounded, GSColors.onBrand),
                           const SizedBox(width: 16),
-                          _modeIcon(Icons.directions_bus_rounded, const Color(0xFF6C63FF)),
+                          _modeIcon(Icons.directions_bus_rounded, GSColors.onBrand),
                           const SizedBox(width: 16),
-                          _modeIcon(Icons.pedal_bike_rounded, const Color(0xFF3CB371)),
+                          _modeIcon(Icons.local_taxi_rounded, GSColors.onBrand),
                           const SizedBox(width: 16),
-                          _modeIcon(Icons.subway_rounded, const Color(0xFFFF4757)),
+                          _modeIcon(Icons.directions_walk_rounded, GSColors.onBrand),
                         ],
                       ),
                     ],

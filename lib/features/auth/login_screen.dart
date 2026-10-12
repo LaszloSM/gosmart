@@ -64,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: GSColors.primary,
+      backgroundColor: GSColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(GSSpacing.s6),
@@ -341,17 +341,18 @@ class _ToggleTab extends StatelessWidget {
           curve: Curves.easeOutCubic,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: selected ? GSColors.accent : Colors.transparent,
+            color: selected ? GSColors.brand : Colors.transparent,
             borderRadius: BorderRadius.circular(GSRadius.full),
-            boxShadow: selected ? GSShadow.accent : [],
           ),
           child: AnimatedDefaultTextStyle(
             duration: GSDuration.normal,
             curve: Curves.easeOutCubic,
+            // Reemplaza el estilo heredado completo: hay que repetir la familia.
             style: TextStyle(
-              fontSize: 14,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-              color: selected ? Colors.white : GSColors.textSecondary,
+              fontFamily: GSFonts.sans,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: selected ? GSColors.onBrand : GSColors.textMuted,
             ),
             child: Text(label),
           ),

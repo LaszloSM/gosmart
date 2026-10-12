@@ -176,7 +176,7 @@ class GSNotificationBanner extends StatelessWidget {
                 color: GSColors.accentLight,
                 borderRadius: BorderRadius.circular(GSRadius.sm),
               ),
-              child: Icon(icon, color: GSColors.primary, size: 20),
+              child: Icon(icon, color: GSColors.brand, size: 20),
             ),
             const SizedBox(width: GSSpacing.s3),
             Expanded(

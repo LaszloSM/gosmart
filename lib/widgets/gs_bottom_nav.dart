@@ -34,11 +34,11 @@ class GSBottomNav extends StatelessWidget {
         ),
         child: Container(
           height: GSSize.bottomNav + MediaQuery.of(context).padding.bottom,
-          decoration: BoxDecoration(
-            color: GSColors.primary.withValues(alpha: GSGlass.backgroundOpacity),
+          decoration: const BoxDecoration(
+            color: GSColors.surface,
             border: Border(
               top: BorderSide(
-                color: GSColors.accent.withValues(alpha: GSGlass.borderOpacity),
+                color: GSColors.line,
                 width: GSGlass.borderWidth,
               ),
             ),
@@ -82,67 +82,41 @@ class _NavTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(GSRadius.full),
-        splashColor: GSColors.accent.withValues(alpha: 0.10),
+        splashColor: GSColors.brand.withValues(alpha: 0.10),
         highlightColor: Colors.transparent,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Pastilla de marca detrás del ícono activo; la etiqueta siempre
+            // debajo, para que quepa con texto grande y nombres largos.
             AnimatedContainer(
               duration: GSAnimDuration.pillSlide,
-              curve: Curves.easeInOut,
+              curve: GSCurve.move,
               padding: const EdgeInsets.symmetric(
-                horizontal: GSSpacing.s3,
+                horizontal: GSSpacing.s4,
                 vertical: GSSpacing.s1,
               ),
-              decoration: isActive
-                  ? BoxDecoration(
-                      borderRadius: BorderRadius.circular(GSRadius.full),
-                      gradient: LinearGradient(
-                        colors: GSGradient.accentPill,
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: GSColors.accent.withValues(alpha: 0.20),
-                          blurRadius: 12,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    )
-                  : const BoxDecoration(),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    item.icon,
-                    size: GSSize.iconLg,
-                    color: isActive ? GSColors.primary : GSColors.textDisabled,
-                  ),
-                  if (isActive) ...[
-                    const SizedBox(width: GSSpacing.s1),
-                    Text(
-                      item.label,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: GSColors.primary,
-                      ),
-                    ),
-                  ],
-                ],
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(GSRadius.full),
+                color: isActive ? GSColors.brand : Colors.transparent,
+              ),
+              child: Icon(
+                item.icon,
+                size: GSSize.iconLg,
+                color: isActive ? GSColors.onBrand : GSColors.textMuted,
               ),
             ),
             const SizedBox(height: 2),
-            if (!isActive)
-              Text(
-                item.label,
-                style: const TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w400,
-                  color: GSColors.textDisabled,
-                ),
+            Text(
+              item.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isActive ? GSColors.brand : GSColors.textMuted,
               ),
+            ),
           ],
         ),
       ),

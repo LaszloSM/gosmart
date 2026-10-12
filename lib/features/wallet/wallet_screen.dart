@@ -243,8 +243,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: isLocked
-                          ? const [Color(0xFF1A1F2F), Color(0xFF252B3F)]
-                          : [GSColors.primary, GSColors.accent],
+                          ? const [GSColors.roadUnknown, GSColors.roadUnknown]
+                          : const [GSColors.brand, GSColors.brand],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -302,7 +302,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                             Text(
                               'GoSmart',
                               style: TextStyle(
-                                color: GSColors.primary.withValues(alpha: 0.85),
+                                color: GSColors.onBrand.withValues(alpha: 0.9),
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: -0.5,
@@ -315,7 +315,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                       Text(
                         card?.numberMasked ?? '•••• •••• •••• 0000',
                         style: TextStyle(
-                          color: GSColors.primary.withValues(alpha: 0.75),
+                          color: GSColors.onBrand.withValues(alpha: 0.9),
                           fontSize: 16,
                           letterSpacing: 3,
                           fontWeight: FontWeight.w500,
@@ -334,7 +334,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                                   Text(
                                     'Saldo disponible',
                                     style: TextStyle(
-                                      color: GSColors.primary.withValues(alpha: 0.65),
+                                      color: GSColors.onBrand.withValues(alpha: 0.9),
                                       fontSize: 11,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -353,17 +353,20 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                               horizontal: 10,
                               vertical: 5,
                             ),
+                            // Chip claro sobre la tarjeta: se distingue del
+                            // fondo de marca y del gris de bloqueada.
                             decoration: BoxDecoration(
-                              color:
-                                  isLocked ? GSColors.error : GSColors.success,
+                              color: GSColors.surface,
                               borderRadius:
-                                  BorderRadius.circular(GSRadius.full),
+                                  BorderRadius.circular(GSRadius.sm),
                             ),
                             child: Text(
                               isLocked ? 'Bloqueada' : 'Activa',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
+                              style: TextStyle(
+                                color: isLocked
+                                    ? GSColors.roadUnknown
+                                    : GSColors.brand,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -914,7 +917,7 @@ class _AnimatedBalance extends StatelessWidget {
         style: const TextStyle(
           fontSize: 32,
           fontWeight: FontWeight.w800,
-          color: GSColors.primary,
+          color: GSColors.onBrand,
           letterSpacing: -0.5,
         ),
       ),

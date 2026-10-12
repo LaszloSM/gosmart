@@ -32,9 +32,6 @@ dependencies:
   # QR
   qr_flutter: ^4.1.0
 
-  # UI & fonts
-  google_fonts: ^6.2.1
-
   # UUID for idempotency keys
   uuid: ^4.3.3
 
@@ -77,3 +74,22 @@ flutter:
     - assets/images/
     - assets/animations/
     - .env
+
+  # Atkinson Hyperlegible Next + Mono (OFL), empaquetadas para uso sin señal.
+  fonts:
+    - family: AtkinsonHyperlegibleNext
+      fonts:
+        - asset: assets/fonts/AtkinsonHyperlegibleNext-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/AtkinsonHyperlegibleNext-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/AtkinsonHyperlegibleNext-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/AtkinsonHyperlegibleNext-ExtraBold.ttf
+          weight: 800
+    - family: AtkinsonHyperlegibleMono
+      fonts:
+        - asset: assets/fonts/AtkinsonHyperlegibleMono-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/AtkinsonHyperlegibleMono-Bold.ttf
+          weight: 700

@@ -47,7 +47,7 @@ class _EmptyRoute extends StatelessWidget {
           const Icon(Icons.route_rounded, size: 56, color: GSColors.accent),
           const SizedBox(height: GSSpacing.s4),
           const Text('No hay ruta activa',
-              style: TextStyle(color: Colors.white70, fontSize: 16)),
+              style: TextStyle(color: GSColors.textMuted, fontSize: 16)),
           const SizedBox(height: GSSpacing.s4),
           GSButton(label: 'Planificar ruta', onPressed: onPlan),
         ],
@@ -85,7 +85,7 @@ class _RouteBody extends StatelessWidget {
               const Text(
                 'Segmentos del viaje',
                 style: TextStyle(
-                    color: Colors.white70,
+                    color: GSColors.textMuted,
                     fontWeight: FontWeight.bold,
                     fontSize: 13),
               ),
@@ -135,7 +135,7 @@ class _SummaryCard extends StatelessWidget {
             icon: Icons.straighten_rounded,
             label: 'Distancia',
             value: '${route.distanceKm.toStringAsFixed(1)} km',
-            color: Colors.white70,
+            color: GSColors.textMuted,
           ),
           if (co2Saved > 0)
             _Stat(
@@ -178,7 +178,7 @@ class _Stat extends StatelessWidget {
             style: TextStyle(
                 color: color, fontWeight: FontWeight.bold, fontSize: 14)),
         Text(label,
-            style: const TextStyle(color: Colors.white38, fontSize: 10)),
+            style: const TextStyle(color: GSColors.textMuted, fontSize: 12)),
       ],
     );
   }
@@ -234,10 +234,10 @@ class _LegCard extends StatelessWidget {
             children: [
               Text('${leg.durationMin} min',
                   style: const TextStyle(
-                      color: Colors.white70, fontWeight: FontWeight.bold)),
+                      color: GSColors.textMuted, fontWeight: FontWeight.bold)),
               Text('${leg.distanceKm.toStringAsFixed(1)} km',
                   style: const TextStyle(
-                      color: Colors.white38, fontSize: 11)),
+                      color: GSColors.textMuted, fontSize: 11)),
             ],
           ),
         ],
@@ -271,7 +271,7 @@ class _CostCard extends StatelessWidget {
               color: GSColors.accent, size: 20),
           const SizedBox(width: GSSpacing.s3),
           const Text('Costo estimado',
-              style: TextStyle(color: Colors.white70)),
+              style: TextStyle(color: GSColors.textMuted)),
           const Spacer(),
           Text(
             '\$$formatted COP',
@@ -301,7 +301,7 @@ class _BottomAction extends StatelessWidget {
           Text(
             'Modo: $mode · ${route.durationMin} min · '
             '${route.distanceKm.toStringAsFixed(1)} km',
-            style: const TextStyle(color: Colors.white70),
+            style: const TextStyle(color: GSColors.textMuted),
           ),
           const SizedBox(height: GSSpacing.s5),
           GSButton(

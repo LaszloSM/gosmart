@@ -1,263 +1,279 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'design_tokens.dart';
 
+/// Tema de GoSmart según DESIGN.md: claro primero (legible al sol),
+/// Atkinson Hyperlegible Next empaquetada, una sola marca ("mar profundo").
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get dark {
-    // Display & headlines use Plus Jakarta Sans (editorial, premium).
-    // Body & labels use Inter (legible at small sizes).
-    final displayStyle = GoogleFonts.plusJakartaSans(
-      color: GSColors.textPrimary,
-      fontWeight: FontWeight.w700,
-    );
-    final headlineStyle = GoogleFonts.plusJakartaSans(
-      color: GSColors.textPrimary,
-      fontWeight: FontWeight.w700,
+  static ThemeData get light {
+    const ink = GSColors.text;
+    const muted = GSColors.textMuted;
+
+    // Escala DESIGN.md: 28 / 20 / 17 / 14, con saltos de más de un peso.
+    const textTheme = TextTheme(
+      displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, height: 1.2, letterSpacing: -0.32, color: ink),
+      displayMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, height: 1.2, letterSpacing: -0.28, color: ink),
+      displaySmall: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, height: 1.25, color: ink),
+      headlineLarge: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, height: 1.25, color: ink),
+      headlineMedium: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, height: 1.3, color: ink),
+      headlineSmall: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, height: 1.3, color: ink),
+      titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: ink),
+      titleMedium: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: ink),
+      titleSmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: muted),
+      bodyLarge: TextStyle(fontSize: 17, fontWeight: FontWeight.w400, height: 1.45, color: ink),
+      bodyMedium: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, height: 1.45, color: muted),
+      bodySmall: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, height: 1.4, color: muted),
+      labelLarge: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: ink),
+      labelMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.14, color: muted),
+      labelSmall: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.12, color: muted),
     );
 
-    final textTheme = ThemeData.dark().textTheme.copyWith(
-      displayLarge: displayStyle.copyWith(fontSize: 32, height: 1.2),
-      displayMedium: displayStyle.copyWith(fontSize: 28, height: 1.2),
-      displaySmall: displayStyle.copyWith(fontSize: 24, height: 1.3),
-      headlineLarge: headlineStyle.copyWith(fontSize: 24, fontWeight: FontWeight.w700),
-      headlineMedium: headlineStyle.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
-      headlineSmall: headlineStyle.copyWith(fontSize: 17, fontWeight: FontWeight.w600),
-      titleLarge: GoogleFonts.inter(
-        fontSize: 17, fontWeight: FontWeight.w600,
-        color: GSColors.textPrimary,
-      ),
-      titleMedium: GoogleFonts.inter(
-        fontSize: 15, fontWeight: FontWeight.w500,
-        color: GSColors.textPrimary,
-      ),
-      titleSmall: GoogleFonts.inter(
-        fontSize: 13, fontWeight: FontWeight.w500,
-        color: GSColors.textSecondary,
-      ),
-      bodyLarge: GoogleFonts.inter(
-        fontSize: 16, fontWeight: FontWeight.w400,
-        color: GSColors.textPrimary, height: 1.5,
-      ),
-      bodyMedium: GoogleFonts.inter(
-        fontSize: 14, fontWeight: FontWeight.w400,
-        color: GSColors.textSecondary, height: 1.5,
-      ),
-      bodySmall: GoogleFonts.inter(
-        fontSize: 12, fontWeight: FontWeight.w400,
-        color: GSColors.textDisabled, height: 1.5,
-      ),
-      labelLarge: GoogleFonts.inter(
-        fontSize: 15, fontWeight: FontWeight.w600,
-        color: GSColors.textPrimary,
-      ),
-      labelMedium: GoogleFonts.inter(
-        fontSize: 13, fontWeight: FontWeight.w500,
-        color: GSColors.textSecondary,
-      ),
-      labelSmall: GoogleFonts.inter(
-        fontSize: 12, fontWeight: FontWeight.w500,
-        color: GSColors.textDisabled,
-      ),
+    final buttonShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(GSRadius.md),
     );
+    const buttonText = TextStyle(
+      fontFamily: GSFonts.sans,
+      fontSize: 17,
+      fontWeight: FontWeight.w600,
+    );
+    final inputRadius = BorderRadius.circular(GSRadius.sm);
 
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
+      brightness: Brightness.light,
+      fontFamily: GSFonts.sans,
       colorScheme: const ColorScheme(
-        brightness: Brightness.dark,
-        primary: GSColors.accent,
-        onPrimary: Color(0xFF003711),
-        primaryContainer: GSColors.accentContainer,
-        onPrimaryContainer: GSColors.textPrimary,
-        secondary: GSColors.accentAlt,
-        onSecondary: Color(0xFF003D2E),
-        secondaryContainer: GSColors.accentAltLight,
-        onSecondaryContainer: GSColors.textPrimary,
-        tertiary: GSColors.tertiary,
-        onTertiary: GSColors.tertiaryLight,
-        tertiaryContainer: GSColors.tertiaryLight,
-        onTertiaryContainer: GSColors.textPrimary,
-        error: GSColors.error,
-        onError: Color(0xFF3D1500),
-        errorContainer: GSColors.errorLight,
-        onErrorContainer: GSColors.error,
+        brightness: Brightness.light,
+        primary: GSColors.brand,
+        onPrimary: GSColors.onBrand,
+        primaryContainer: GSColors.brandTint,
+        onPrimaryContainer: GSColors.brand,
+        secondary: GSColors.brand,
+        onSecondary: GSColors.onBrand,
+        secondaryContainer: GSColors.brandTint,
+        onSecondaryContainer: GSColors.brand,
+        tertiary: GSColors.brand,
+        onTertiary: GSColors.onBrand,
+        tertiaryContainer: GSColors.brandTint,
+        onTertiaryContainer: GSColors.brand,
+        error: GSColors.roadClosed,
+        onError: GSColors.onBrand,
+        errorContainer: GSColors.roadClosedTint,
+        onErrorContainer: GSColors.roadClosed,
         surface: GSColors.surface,
-        onSurface: GSColors.textPrimary,
-        surfaceContainerHighest: GSColors.surfaceContainerHighest,
-        onSurfaceVariant: GSColors.textSecondary,
-        outline: GSColors.border,
-        outlineVariant: GSColors.surfaceBright,
-        shadow: Colors.black,
-        scrim: Colors.black,
-        inverseSurface: GSColors.textPrimary,
-        onInverseSurface: GSColors.primary,
-        inversePrimary: GSColors.accentLight,
+        onSurface: GSColors.text,
+        surfaceContainerLowest: GSColors.surface,
+        surfaceContainerLow: GSColors.background,
+        surfaceContainer: GSColors.background,
+        surfaceContainerHigh: GSColors.surfaceSunken,
+        surfaceContainerHighest: GSColors.surfaceSunken,
+        onSurfaceVariant: GSColors.textMuted,
+        outline: GSColors.textMuted,
+        outlineVariant: GSColors.line,
+        shadow: GSColors.text,
+        scrim: GSColors.text,
+        inverseSurface: GSColors.text,
+        onInverseSurface: GSColors.surface,
+        inversePrimary: GSColors.brandTint,
       ),
-      scaffoldBackgroundColor: GSColors.bg,
+      scaffoldBackgroundColor: GSColors.background,
       textTheme: textTheme,
 
-      // AppBar
-      appBarTheme: AppBarTheme(
-        backgroundColor: GSColors.bg,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: GSColors.background,
+        foregroundColor: GSColors.text,
         elevation: 0,
         scrolledUnderElevation: 0,
-        centerTitle: true,
-        systemOverlayStyle: const SystemUiOverlayStyle(
+        centerTitle: false,
+        systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
         ),
-        titleTextStyle: GoogleFonts.plusJakartaSans(
-          fontSize: 17, fontWeight: FontWeight.w700,
-          color: GSColors.textPrimary,
+        titleTextStyle: TextStyle(
+          fontFamily: GSFonts.sans,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          color: GSColors.text,
         ),
-        iconTheme: const IconThemeData(color: GSColors.textPrimary, size: 24),
+        iconTheme: IconThemeData(color: GSColors.text, size: 24),
       ),
 
-      // Card
+      // DESIGN.md: sin tarjetas por defecto; cuando existen, planas con línea.
       cardTheme: CardThemeData(
         color: GSColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(GSRadius.xl),
+          borderRadius: BorderRadius.circular(GSRadius.lg),
+          side: const BorderSide(color: GSColors.line),
         ),
         margin: EdgeInsets.zero,
       ),
 
-      // Input — dark fields with ghost border
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: GSColors.surfaceContainerLow,
+        fillColor: GSColors.surface,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(GSRadius.xl),
-          borderSide: BorderSide.none,
+          borderRadius: inputRadius,
+          borderSide: const BorderSide(color: GSColors.textMuted, width: 1.5),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(GSRadius.xl),
-          borderSide: BorderSide(
-            color: GSColors.border.withValues(alpha: 0.15),
-            width: 1,
-          ),
+          borderRadius: inputRadius,
+          borderSide: const BorderSide(color: GSColors.textMuted, width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(GSRadius.xl),
-          borderSide: BorderSide(
-            color: GSColors.accent.withValues(alpha: 0.40),
-            width: 1.5,
-          ),
+          borderRadius: inputRadius,
+          borderSide: const BorderSide(color: GSColors.brand, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(GSRadius.xl),
-          borderSide: const BorderSide(color: GSColors.error, width: 1.5),
+          borderRadius: inputRadius,
+          borderSide: const BorderSide(color: GSColors.roadClosed, width: 2),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(GSRadius.xl),
-          borderSide: const BorderSide(color: GSColors.error, width: 1.5),
+          borderRadius: inputRadius,
+          borderSide: const BorderSide(color: GSColors.roadClosed, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: GSSpacing.s4, vertical: GSSpacing.s4,
+          horizontal: GSSpacing.s4,
+          vertical: GSSpacing.s3,
         ),
-        hintStyle: GoogleFonts.inter(
-          color: GSColors.textDisabled, fontSize: 15,
-        ),
-        labelStyle: GoogleFonts.inter(
-          color: GSColors.textSecondary, fontSize: 15,
-        ),
+        hintStyle: const TextStyle(color: GSColors.textDisabled, fontSize: 17),
+        labelStyle: const TextStyle(color: GSColors.textMuted, fontSize: 17),
+        errorStyle: const TextStyle(color: GSColors.roadClosed, fontSize: 14),
       ),
 
-      // ElevatedButton — note: GSButton overrides this with gradients
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: GSColors.accent,
-          foregroundColor: GSColors.primary,
-          minimumSize: const Size(double.infinity, 52),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(GSRadius.full),
-          ),
+          backgroundColor: GSColors.brand,
+          foregroundColor: GSColors.onBrand,
+          disabledBackgroundColor: GSColors.brand.withValues(alpha: 0.38),
+          disabledForegroundColor: GSColors.onBrand,
+          minimumSize: const Size(double.infinity, GSSize.touchTarget),
+          shape: buttonShape,
           elevation: 0,
-          textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
+          textStyle: buttonText,
         ),
       ),
 
-      // OutlinedButton
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: GSColors.brand,
+          foregroundColor: GSColors.onBrand,
+          minimumSize: const Size(double.infinity, GSSize.touchTarget),
+          shape: buttonShape,
+          textStyle: buttonText,
+        ),
+      ),
+
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: GSColors.accent,
-          minimumSize: const Size(double.infinity, 52),
-          side: BorderSide(
-            color: GSColors.accent.withValues(alpha: 0.40),
-            width: 1.5,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(GSRadius.full),
-          ),
-          textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
+          foregroundColor: GSColors.text,
+          minimumSize: const Size(double.infinity, GSSize.touchTarget),
+          side: const BorderSide(color: GSColors.textMuted, width: 2),
+          shape: buttonShape,
+          textStyle: buttonText,
         ),
       ),
 
-      // TextButton
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: GSColors.accent,
-          textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w500),
+          foregroundColor: GSColors.brand,
+          minimumSize: const Size(GSSize.touchTarget, GSSize.touchTarget),
+          textStyle: buttonText,
         ),
       ),
 
-      // BottomNavigationBar
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: GSColors.surface,
-        selectedItemColor: GSColors.accent,
-        unselectedItemColor: GSColors.textDisabled,
+        selectedItemColor: GSColors.brand,
+        unselectedItemColor: GSColors.textMuted,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
-        selectedLabelStyle: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: GoogleFonts.inter(fontSize: 11),
+        selectedLabelStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
       ),
 
-      // Chip — dark base, kinetic green selected
       chipTheme: ChipThemeData(
-        backgroundColor: GSColors.surfaceContainerHigh,
-        selectedColor: GSColors.accentLight,
-        labelStyle: GoogleFonts.inter(fontSize: 13, color: GSColors.textPrimary),
+        backgroundColor: GSColors.surfaceSunken,
+        selectedColor: GSColors.brandTint,
+        labelStyle: const TextStyle(
+          fontFamily: GSFonts.sans,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: GSColors.text,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(GSRadius.sm),
         ),
         side: BorderSide.none,
         padding: const EdgeInsets.symmetric(
-          horizontal: GSSpacing.s3, vertical: GSSpacing.s1,
+          horizontal: GSSpacing.s3,
+          vertical: GSSpacing.s1,
         ),
       ),
 
-      // Divider — subtle, no hard lines
-      dividerTheme: DividerThemeData(
-        color: GSColors.border.withValues(alpha: 0.20),
+      dividerTheme: const DividerThemeData(
+        color: GSColors.line,
         thickness: 1,
         space: 0,
       ),
 
-      // Switch
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return GSColors.accent;
-          return GSColors.textDisabled;
+          if (states.contains(WidgetState.selected)) return GSColors.onBrand;
+          return GSColors.textMuted;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return GSColors.accentLight;
-          return GSColors.surfaceContainerHigh;
+          if (states.contains(WidgetState.selected)) return GSColors.brand;
+          return GSColors.surfaceSunken;
+        }),
+        trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return GSColors.brand;
+          return GSColors.textMuted;
         }),
       ),
 
-      // ListTile
       listTileTheme: const ListTileThemeData(
         tileColor: Colors.transparent,
-        iconColor: GSColors.textSecondary,
-        textColor: GSColors.textPrimary,
+        iconColor: GSColors.textMuted,
+        textColor: GSColors.text,
+        minVerticalPadding: GSSpacing.s3,
+      ),
+
+      snackBarTheme: const SnackBarThemeData(
+        backgroundColor: GSColors.text,
+        contentTextStyle: TextStyle(
+          fontFamily: GSFonts.sans,
+          fontSize: 15,
+          color: GSColors.surface,
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: GSColors.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(GSRadius.lg)),
+        ),
+      ),
+
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: GSColors.brand,
+        linearTrackColor: GSColors.line,
+      ),
+
+      // Movimiento DESIGN.md: entradas ease-out fuertes, sin rebotes.
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+        },
       ),
     );
   }
 
-  // Keep the old getter name so main.dart doesn't break
-  static ThemeData get light => dark;
+  /// Nombre anterior. La app es clara primero; el tema nocturno llega después.
+  static ThemeData get dark => light;
 }

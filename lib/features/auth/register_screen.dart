@@ -84,7 +84,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final tt = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: GSColors.primary,
+      backgroundColor: GSColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(GSSpacing.s6),

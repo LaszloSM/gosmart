@@ -116,7 +116,7 @@ class _GSButtonState extends State<GSButton> {
         ? GSColors.textDisabled
         : (widget.variant == GSButtonVariant.primary ||
                 widget.variant == GSButtonVariant.eco)
-            ? GSColors.primary  // dark text on bright gradient
+            ? GSColors.onBrand
             : colors.fg;
 
     if (widget.isLoading) {
@@ -159,7 +159,7 @@ class _GSButtonState extends State<GSButton> {
   _VariantColors get _variantColors {
     switch (widget.variant) {
       case GSButtonVariant.primary:
-        return const _VariantColors(GSColors.accent, GSColors.primary);
+        return const _VariantColors(GSColors.brand, GSColors.onBrand);
       case GSButtonVariant.secondary:
         return const _VariantColors(GSColors.accentLight, GSColors.accent);
       case GSButtonVariant.outline:
@@ -167,7 +167,7 @@ class _GSButtonState extends State<GSButton> {
       case GSButtonVariant.ghost:
         return const _VariantColors(Colors.transparent, GSColors.textSecondary);
       case GSButtonVariant.eco:
-        return const _VariantColors(GSColors.eco, GSColors.primary);
+        return const _VariantColors(GSColors.brand, GSColors.onBrand);
       case GSButtonVariant.danger:
         return const _VariantColors(Colors.transparent, GSColors.error);
     }

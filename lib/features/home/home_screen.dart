@@ -592,7 +592,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 Text(
                                   'IA Asistente',
                                   style: TextStyle(
-                                    color: Colors.white70,
+                                    color: GSColors.onBrand,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -793,17 +793,12 @@ class _AppMapState extends ConsumerState<_AppMap>
                     width: 40,
                     height: 40,
                     child: Container(
+                      // Destino en tinta: el rojo es solo para la vía.
                       decoration: BoxDecoration(
-                        color: GSColors.error,
+                        color: GSColors.text,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: GSColors.error.withValues(alpha: 0.4),
-                            blurRadius: 8,
-                            spreadRadius: 2,
-                          ),
-                        ],
+                        border: Border.all(color: GSColors.surface, width: 2),
+                        boxShadow: GSShadow.md,
                       ),
                       child: const Icon(
                         Icons.location_on,
@@ -824,16 +819,10 @@ class _AppMapState extends ConsumerState<_AppMap>
                     height: 36,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: GSColors.accent,
+                        color: GSColors.brand,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: GSColors.accent.withValues(alpha: 0.4),
-                            blurRadius: 6,
-                            spreadRadius: 1,
-                          ),
-                        ],
+                        border: Border.all(color: GSColors.surface, width: 2),
+                        boxShadow: GSShadow.md,
                       ),
                       child: const Icon(
                           Icons.my_location, color: Colors.white, size: 16),
@@ -895,7 +884,7 @@ class _AppMapState extends ConsumerState<_AppMap>
           bottom: GSSize.bottomNav + GSSpacing.s4,
           child: FloatingActionButton.small(
             heroTag: 'recenter',
-            backgroundColor: GSColors.primary,
+            backgroundColor: GSColors.brand,
             onPressed: _recenter,
             child: const Icon(Icons.my_location, color: Colors.white, size: 20),
           ),
@@ -915,13 +904,13 @@ class _RouteBanner extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(
           horizontal: GSSpacing.s5, vertical: GSSpacing.s3),
       decoration: const BoxDecoration(
-        color: GSColors.primary,
+        color: GSColors.brand,
         borderRadius: BorderRadius.vertical(top: Radius.circular(GSRadius.lg)),
       ),
       child: Row(
         children: [
           Icon(RouteProfile.iconFor(route.profile),
-              color: RouteProfile.colorFor(route.profile), size: 20),
+              color: GSColors.onBrand, size: 20),
           const SizedBox(width: GSSpacing.s3),
           Text(
             '${route.durationMin} min · ${route.distanceKm.toStringAsFixed(1)} km',
