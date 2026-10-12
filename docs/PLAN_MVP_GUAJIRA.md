@@ -97,6 +97,14 @@ La visión de largo plazo sigue siendo la **tarjeta universal de transporte** de
 - **Radios:** 4/8/12. Sin degradados, sin vidrio, sin tarjetas por defecto.
 - **Movimiento:** presión 0.97 en 120 ms; cambio de texto de placa con fundido y desplazamiento de 8 dp en 200 ms; hojas de 250 ms al entrar y 200 ms al salir; nada al cambiar de pestaña.
 
+**Avance (2026-10-12, noche):** construidos en el mundo nuevo la base (tokens, tema, fuentes,
+`GSRoutePlate`, `GSButton`, barra inferior, campos, hojas, `GSListRow`, `GSEmptyState`, `GSToast`),
+inicio, perfil, planificador + detalle de ruta, billetera, asistente, login, registro, SMS, intro,
+permiso de ubicación y splash. De paso se quitaron funciones falsas (interruptores sin efecto,
+"Próximamente", "Iniciar viaje" y el pago NFC que siempre fallaba) y se corrigieron fallas reales
+(fechas que lanzaban excepción, SMS sin +57, consentimientos siempre en false, celular del registro
+que se perdía, sin forma de elegir el modo). Pendiente: revisión final, modo nocturno y `DESIGN.md`.
+
 **Orden de construcción (code-led, una pantalla por entrega):**
 1. **Base:** tokens, tema, fuentes, `GSRoutePlate`, `GSButton`, barra inferior, campos y hojas.
 2. **Perfil** (partir sus 1.115 líneas).
