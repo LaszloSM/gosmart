@@ -266,17 +266,17 @@ AppRoutes.nfcSimulator     // '/debug/nfc-simulator'
 
 ### Design System
 
-**Rediseño total en curso (2026-10-12), mundo "Rótulo de colectivo".** `DESIGN.md` describe el
-mundo anterior y está marcado OBSOLETO hasta que el documentador de impeccable lo reescriba al
-cerrar el rediseño. Mientras tanto la autoridad visual es:
-1. `.impeccable/surfaces/lib-main-dart.md` — contrato de dirección (THESIS, OWN-WORLD, FIRST VIEWPORT…).
-2. `lib/theme/design_tokens.dart` + `lib/theme/app_theme.dart`.
-3. `PRODUCT.md` — verdad del producto (usuarios, contexto, accesibilidad).
+**`DESIGN.md` (repo root) is the source of truth** — mundo "Rótulo de colectivo" (rediseño total
+2026-10-12), escrito por el documentador de impeccable desde lo construido; sidecar de tokens en
+`.impeccable/design.json`. Léelo antes de cualquier trabajo de UI y pregunta al usuario antes de
+apartarte de él. También mandan `PRODUCT.md` (verdad del producto) y el contrato de dirección
+`.impeccable/surfaces/lib-main-dart.md`. `lib/theme/design_tokens.dart` lo refleja.
 
 **Skills de diseño instaladas en `.claude/skills/`** (úsalas en todo trabajo de UI):
 `impeccable` (proceso, `critique`/`audit`/`polish`/`harden`, reglas Android, `reference/craft-floor.md`),
 `taste-skill` + `redesign-skill` (AI tells prohibidos, estados completos), `emil-design-eng` +
-`animate` + `review-animations` (movimiento). Plan de la fase: `docs/PLAN_MVP_GUAJIRA.md` → Fase 2.
+`animate` + `review-animations` (movimiento). Plan de la fase: `docs/PLAN_MVP_GUAJIRA.md` → Fase 2. Capturas para revisar UI:
+`flutter test tool/screenshots/review_shots_test.dart` → `.impeccable/review/`.
 
 Reglas del mundo: shell en ultramar (`GSColors.brand` #1B3A8C: AppBar, barra inferior, botón
 primario); fondo lámina fría; placas blancas con letras Barlow Condensed en ultramar

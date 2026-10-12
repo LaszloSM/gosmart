@@ -92,7 +92,7 @@ class _NavTile extends StatelessWidget {
                 color: isActive ? GSColors.surface : Colors.transparent,
                 border: isActive
                     ? const Border(
-                        bottom: BorderSide(color: GSColors.stripe, width: 3))
+                        bottom: BorderSide(color: GSColors.stripe, width: 4))
                     : null,
               ),
               child: Icon(

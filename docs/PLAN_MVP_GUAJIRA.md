@@ -103,7 +103,11 @@ inicio, perfil, planificador + detalle de ruta, billetera, asistente, login, reg
 permiso de ubicación y splash. De paso se quitaron funciones falsas (interruptores sin efecto,
 "Próximamente", "Iniciar viaje" y el pago NFC que siempre fallaba) y se corrigieron fallas reales
 (fechas que lanzaban excepción, SMS sin +57, consentimientos siempre en false, celular del registro
-que se perdía, sin forma de elegir el modo). Pendiente: revisión final, modo nocturno y `DESIGN.md`.
+que se perdía, sin forma de elegir el modo). Revisión final de impeccable en un agente nuevo: "fix" → dos rondas de arreglos → **ship**.
+Revisión de movimiento de Emil: "Block" → arreglada (pestañas sin animación, ease-out en la hoja,
+volver más rápido que entrar, "quitar animaciones" en todo). `DESIGN.md` reescrito por el
+documentador desde lo construido. **Queda pendiente el modo nocturno** (`AppTheme.dark` devuelve
+el claro): exige pasar los colores estáticos `GSColors` a colores del tema en toda la app.
 
 **Orden de construcción (code-led, una pantalla por entrega):**
 1. **Base:** tokens, tema, fuentes, `GSRoutePlate`, `GSButton`, barra inferior, campos y hojas.
@@ -122,7 +126,7 @@ que se perdía, sin forma de elegir el modo). Pendiente: revisión final, modo n
 - Revisión final de impeccable en un agente nuevo, sin el historial de la construcción.
 - Revisión de movimiento de Emil.
 - Chequeo previo de taste-skill.
-- Al terminar el mundo, el documentador de impeccable reescribe `DESIGN.md` desde lo construido. El `DESIGN.md` actual describe el mundo descartado y queda **obsoleto hasta entonces**.
+- Al terminar el mundo, el documentador de impeccable reescribe `DESIGN.md` desde lo construido (hecho el 2026-10-12).
 
 **Se mantiene de la versión anterior de esta fase:** arquitectura de información (DS1), modo invitado (DS3), modo conductor de una mano (DS6: 72 dp, 2 acciones por pantalla), accesibilidad (DS7), tono (DS8), modos de transporte locales y los componentes nuevos (`GSPlacePicker`, `GSLegTimeline`, `GSFareRange`, `GSSosButton`, `GSReportSheet`, `GSOfflineBanner`, `GSDriverRequestCard`).
 
