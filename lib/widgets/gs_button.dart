@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../theme/design_tokens.dart';
 
 enum GSButtonVariant { primary, secondary, outline, ghost, eco, danger }
-enum GSButtonSize { sm, md, lg }
+/// `driver`: 72 dp, para el modo conductor (DS6, una mano).
+enum GSButtonSize { sm, md, lg, driver }
 
 /// Botón GoSmart (mundo "rótulo de colectivo"): plano, radio md, etiqueta en
 /// letra condensada de rótulo. Al presionar baja a 0.97 en 120 ms ease-out
@@ -66,11 +67,19 @@ class _GSButtonState extends State<GSButton> {
         splashFactory: NoSplash.splashFactory,
         highlightColor: c.fg.withValues(alpha: 0.08),
         child: Container(
-          height: d.height,
+          // Alto mínimo, no fijo: con texto al 200 % la etiqueta baja a una
+          // segunda línea en vez de cortarse (Regla de los Doscientos).
+          constraints: BoxConstraints(minHeight: d.height),
           width: widget.isFullWidth ? double.infinity : null,
-          padding: EdgeInsets.symmetric(horizontal: d.hPad),
-          alignment: Alignment.center,
-          child: _content(c.fg, d),
+          padding: EdgeInsets.symmetric(
+              horizontal: d.hPad, vertical: GSSpacing.s1),
+          // Center con heightFactor 1: centra sin estirarse a todo el alto
+          // disponible (un Container con alignment sí se estiraría).
+          child: Center(
+            heightFactor: 1,
+            widthFactor: widget.isFullWidth ? null : 1,
+            child: _content(c.fg, d),
+          ),
         ),
       ),
     );
@@ -117,7 +126,8 @@ class _GSButtonState extends State<GSButton> {
         Flexible(
           child: Text(
             widget.label,
-            maxLines: 1,
+            maxLines: 2,
+            textAlign: TextAlign.center,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontFamily: GSFonts.display,
@@ -163,6 +173,9 @@ class _GSButtonState extends State<GSButton> {
         return const _SizeDims(height: 52, hPad: 20, fontSize: 20, iconSize: 22);
       case GSButtonSize.lg:
         return const _SizeDims(height: 60, hPad: 24, fontSize: 22, iconSize: 24);
+      case GSButtonSize.driver:
+        return const _SizeDims(
+            height: GSSize.touchTargetDriver, hPad: 24, fontSize: 24, iconSize: 26);
     }
   }
 }

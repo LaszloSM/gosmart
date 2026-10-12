@@ -30,9 +30,44 @@ class DriverHomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final driver = ref.watch(myDriverProvider);
+    final d = driver.valueOrNull;
+    final approved = d?.status == DriverStatus.approved;
     return Scaffold(
       backgroundColor: GSColors.background,
-      appBar: AppBar(title: const Text('Modo conductor')),
+      // Lo secundario va arriba; la zona del pulgar queda para lo que toca ahora (DS6).
+      appBar: AppBar(
+        title: const Text('Modo conductor'),
+        actions: [
+          if (approved)
+            IconButton(
+              tooltip: 'Cobrar con QR',
+              icon: const Icon(Icons.qr_code_2_rounded),
+              onPressed: () => context.push(AppRoutes.driverCharge),
+            ),
+          if (d != null)
+            IconButton(
+              tooltip: 'Editar mis datos',
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () => context.push(AppRoutes.driverSignup),
+            ),
+          if (approved && d!.available)
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: GSColors.onShell),
+              onPressed: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                try {
+                  await driverService.setAvailable(d.userId, false);
+                  ref.invalidate(myDriverProvider);
+                } catch (_) {
+                  GSToast.showWithMessenger(messenger,
+                      message: 'No pudimos pausarte. Revisa tu conexión.',
+                      type: GSToastType.error);
+                }
+              },
+              child: const Text('Pausar'),
+            ),
+        ],
+      ),
       body: driver.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => Padding(
@@ -132,6 +167,25 @@ class _DriverBodyState extends ConsumerState<_DriverBody> {
           d.reviewNote ?? 'Escríbenos para saber cómo reactivarla.'),
     };
 
+    final plate = Padding(
+      padding: const EdgeInsets.fromLTRB(
+          GSSpacing.s4, GSSpacing.s4, GSSpacing.s4, 0),
+      child: GSRoutePlate(
+        text: statusTitle,
+        detail: statusDetail,
+        detailMaxLines: 4,
+        leading: approved && d.available
+            ? Icons.radio_button_checked_rounded
+            : Icons.radio_button_unchecked_rounded,
+        isActive: approved && d.available,
+        size: GSPlateSize.lg,
+      ),
+    );
+    // Disponible: el panel de trabajo ocupa la pantalla y maneja la zona del pulgar.
+    if (approved && d.available) {
+      return DriverWorkPanel(driver: d, header: [plate]);
+    }
+
     return Column(
       children: [
         Expanded(
@@ -173,22 +227,6 @@ class _DriverBodyState extends ConsumerState<_DriverBody> {
                   ].join(' · '),
                 ),
               ],
-              if (approved) ...[
-                const Divider(indent: GSSpacing.s4),
-                GSListRow(
-                  icon: Icons.qr_code_2_rounded,
-                  title: 'Cobrar con QR',
-                  subtitle: 'El pasajero escanea y te paga con su saldo',
-                  onTap: () => context.push(AppRoutes.driverCharge),
-                ),
-              ],
-              const Divider(indent: GSSpacing.s4),
-              GSListRow(
-                icon: Icons.edit_outlined,
-                title: 'Editar mis datos',
-                onTap: () => context.push(AppRoutes.driverSignup),
-              ),
-              if (approved && d.available) DriverWorkPanel(driver: d),
               if (!approved) ...[
                 const GSSectionTitle('Documentos'),
                 Padding(
@@ -233,15 +271,12 @@ class _DriverBodyState extends ConsumerState<_DriverBody> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(
                   GSSpacing.s4, GSSpacing.s2, GSSpacing.s4, GSSpacing.s3),
-              child: SizedBox(
-                height: GSSize.touchTargetDriver,
+              child: ConstrainedBox(
+                constraints:
+                    const BoxConstraints(minHeight: GSSize.touchTargetDriver),
                 child: GSButton(
-                  label: d.available ? 'Dejar de estar disponible'
-                      : 'Ponerme disponible',
-                  size: GSButtonSize.lg,
-                  variant: d.available
-                      ? GSButtonVariant.outline
-                      : GSButtonVariant.primary,
+                  label: 'Ponerme disponible',
+                  size: GSButtonSize.driver,
                   isLoading: _toggling,
                   onPressed: _toggling ? null : _toggle,
                 ),

@@ -7,6 +7,7 @@ import 'package:gosmart/features/driver/driver_home_screen.dart';
 import 'package:gosmart/models/driver_model.dart';
 import 'package:gosmart/providers/driver_provider.dart';
 import 'package:gosmart/theme/app_theme.dart';
+import 'package:gosmart/widgets/gs_button.dart';
 
 Widget _app(DriverProfile? d) => ProviderScope(
       overrides: [myDriverProvider.overrideWith((ref) async => d)],
@@ -58,10 +59,11 @@ void main() {
     await tester.pumpWidget(_app(_d('approved', docs: true)));
     await tester.pumpAndSettle();
     expect(find.text('NO DISPONIBLE'), findsOneWidget);
-    final btn = find.text('Ponerme disponible');
+    final btn = find.widgetWithText(GSButton, 'Ponerme disponible');
     expect(btn, findsOneWidget);
-    expect(tester.getSize(find.ancestor(of: btn, matching: find.byType(SizedBox)).first).height,
-        greaterThanOrEqualTo(72));
+    expect(tester.getSize(btn).height, greaterThanOrEqualTo(72));
+    // Cobrar y editar van arriba, no compiten en la zona del pulgar.
+    expect(find.byTooltip('Cobrar con QR'), findsOneWidget);
     expect(find.text('Placa ABC12D'), findsOneWidget);
   });
 }

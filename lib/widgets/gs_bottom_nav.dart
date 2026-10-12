@@ -18,8 +18,8 @@ class GSBottomNav extends StatelessWidget {
   static const _items = [
     _NavItem(GSNavTab.home, Icons.home_rounded, 'Inicio', AppRoutes.home),
     _NavItem(GSNavTab.trip, Icons.route_rounded, 'Viaje', AppRoutes.trip),
-    _NavItem(GSNavTab.report, Icons.campaign_rounded, 'Reportar',
-        AppRoutes.report),
+    _NavItem(
+        GSNavTab.report, Icons.campaign_rounded, 'Reportar', AppRoutes.report),
     _NavItem(GSNavTab.wallet, Icons.account_balance_wallet_rounded, 'Billetera',
         AppRoutes.wallet),
     _NavItem(
@@ -91,7 +91,10 @@ class _NavTile extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(GSRadius.sm),
-                color: isActive ? GSColors.surface : Colors.transparent,
+                // De noche la pastilla en lámina oscura parecía un hueco.
+                color: isActive
+                    ? (GSColors.isDark ? GSColors.brandTint : GSColors.surface)
+                    : Colors.transparent,
                 border: isActive
                     ? Border(
                         bottom: BorderSide(color: GSColors.stripe, width: 4))
@@ -104,15 +107,22 @@ class _NavTile extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 2),
-            Text(
-              item.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: GSFonts.sans,
-                fontSize: 13,
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                color: isActive ? GSColors.onShell : GSColors.onShellMuted,
+            // Cinco pestañas en 360 dp: la etiqueta crece hasta 1,6× y, si aun
+            // así no cabe, se reduce para caber entera (nunca "Bille…").
+            MediaQuery.withClampedTextScaling(
+              maxScaleFactor: 1.6,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  item.label,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontFamily: GSFonts.sans,
+                    fontSize: 13,
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                    color: isActive ? GSColors.onShell : GSColors.onShellMuted,
+                  ),
+                ),
               ),
             ),
           ],

@@ -31,11 +31,15 @@ class DriverWorkPanel extends ConsumerStatefulWidget {
   const DriverWorkPanel({
     super.key,
     required this.driver,
+    this.header = const [],
     this.locate,
     this.pollEvery = const Duration(seconds: 5),
   });
 
   final DriverProfile driver;
+
+  /// Lo que va arriba de la lista (la placa de estado del conductor).
+  final List<Widget> header;
   final Future<LatLng?> Function()? locate;
   final Duration pollEvery;
 
@@ -52,6 +56,10 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
   bool _gps = true;
   bool _loaded = false;
   String? _busy;
+  String? _selectedId;
+  /// Hora del último dato bueno cuando la red falla (null = hay señal).
+  DateTime? _offlineSince;
+  DateTime? _lastOk;
 
   bool get _isScheduled =>
       widget.driver.service == 'colectivo' ||
@@ -90,9 +98,17 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
         _departures = deps;
         _cash = cash;
         _loaded = true;
+        _lastOk = DateTime.now();
+        _offlineSince = null;
       });
     } catch (_) {
-      if (mounted) setState(() => _loaded = true);
+      // Sin señal no es "nadie pide": se dice y se conserva lo último.
+      if (mounted) {
+        setState(() {
+          _loaded = true;
+          _offlineSince = _lastOk ?? DateTime.now();
+        });
+      }
     }
   }
 
@@ -118,50 +134,164 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    if (!_loaded) {
-      return const Padding(
-        padding: EdgeInsets.all(GSSpacing.s4),
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
-    final a = _active;
-    final main = a != null
-        ? _activeRide(a, text)
-        : _isScheduled
-            ? _scheduled(text)
-            : _nearbyList(text);
-    if (_cash.isEmpty) return main;
+    final list = <Widget>[
+      ...widget.header,
+      if (!_loaded)
+        const Padding(
+          padding: EdgeInsets.all(GSSpacing.s4),
+          child: Center(child: CircularProgressIndicator()),
+        )
+      else ...[
+        if (_offlineSince != null)
+          _note(text, 'Sin señal · reintentando. Último dato a las '
+              '${_hhmm(_offlineSince!)}.'),
+        if (_cash.isNotEmpty) ...[
+          const GSSectionTitle('Efectivo por confirmar'),
+          for (final c in _cash)
+            GSListRow(
+              icon: Icons.payments_outlined,
+              title: '¿Recibiste ${formatCop(c.amount)}?',
+              subtitle: 'Confírmalo abajo para que el pasajero tenga su recibo',
+            ),
+        ],
+        if (_active != null)
+          _activeRideInfo(_active!, text)
+        else if (_isScheduled)
+          ..._scheduledInfo(text)
+        else
+          ..._nearbyInfo(text),
+      ],
+    ];
+    final actions = _loaded ? _thumbActions() : const <Widget>[];
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const GSSectionTitle('Efectivo por confirmar'),
-        for (final c in _cash)
-          GSListRow(
-            icon: Icons.payments_outlined,
-            title: '¿Recibiste ${formatCop(c.amount)}?',
-            subtitle: 'Confírmalo para que el pasajero tenga su recibo',
-            trailing: TextButton(
-              onPressed: _busy != null
-                  ? null
-                  : () => _run('cash-${c.id}',
-                      () => paymentService.confirmCash(c.id),
-                      ok: 'Efectivo confirmado'),
-              child: const Text('Sí, recibí'),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.only(bottom: GSSpacing.s4),
+            children: list,
+          ),
+        ),
+        if (actions.isNotEmpty)
+          // Zona del pulgar (DS6): solo lo que toca ahora, máximo 2 acciones de 72 dp.
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: GSColors.surface,
+              border: Border(top: BorderSide(color: GSColors.line)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    GSSpacing.s4, GSSpacing.s3, GSSpacing.s4, GSSpacing.s3),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var i = 0; i < actions.length; i++) ...[
+                      if (i > 0) const SizedBox(height: GSSpacing.s2),
+                      actions[i],
+                    ],
+                  ],
+                ),
+              ),
             ),
           ),
-        main,
       ],
     );
   }
 
-  Widget _nearbyList(TextTheme text) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
+  Widget _big(String label, VoidCallback? onPressed,
+          {bool outline = false, String? busyKey, IconData? icon}) =>
+      GSButton(
+        label: label,
+        size: GSButtonSize.driver,
+        leadingIcon: icon,
+        variant: outline ? GSButtonVariant.outline : GSButtonVariant.primary,
+        isLoading: busyKey != null && _busy == busyKey,
+        onPressed: _busy != null ? null : onPressed,
+      );
+
+  /// Prioridad: viaje activo > efectivo por confirmar > solicitud elegida > salidas.
+  List<Widget> _thumbActions() {
+    final a = _active;
+    if (a != null) {
+      final picked = a.status == RideStatus.inProgress;
+      return [
+        _big(picked ? 'Terminar viaje' : 'Recogí al pasajero', () async {
+          await _run(a.id, () => dispatchService.transitionRide(
+              a.id, picked ? RideStatus.completed : RideStatus.inProgress),
+              ok: picked ? 'Viaje terminado' : null);
+          if (picked && mounted) {
+            await showRateSheet(context, requestId: a.id, asDriver: true);
+          }
+        }, busyKey: a.id),
+        if (!picked)
+          _big('No puedo llegar', () => _confirmCancel(a), outline: true),
+      ];
+    }
+    if (_cash.isNotEmpty) {
+      final c = _cash.first;
+      return [
+        _big('Sí, recibí ${formatCop(c.amount)}',
+            () => _run('cash-${c.id}', () => paymentService.confirmCash(c.id),
+                ok: 'Efectivo confirmado'),
+            busyKey: 'cash-${c.id}', icon: Icons.payments_outlined),
+      ];
+    }
+    if (_isScheduled) {
+      return [
+        _big('Publicar salida', () => showModalBottomSheet<void>(
+              context: context,
+              isScrollControlled: true,
+              showDragHandle: true,
+              builder: (_) => PublishDepartureSheet(onDone: _tick),
+            ), icon: Icons.add_rounded),
+      ];
+    }
+    final r = _selected;
+    if (r == null) return const [];
+    return [
+      _big('Aceptar ${formatCop(r.offeredFare)}',
+          () => _run(r.id, () => dispatchService.acceptRide(r.id),
+              ok: 'Viaje aceptado. Ve por el pasajero.'),
+          busyKey: r.id),
+      if (r.myOffer == null)
+        _big('Ofrecer ${formatCop(r.offeredFare + 1000)}',
+            () => _run('offer-${r.id}',
+                () => dispatchService.counterOffer(r.id, r.offeredFare + 1000),
+                ok: 'Oferta enviada'),
+            outline: true, busyKey: 'offer-${r.id}'),
+    ];
+  }
+
+  Future<void> _confirmCancel(RideRequest r) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Cancelar este viaje?'),
+        content: const Text('El pasajero tendrá que pedir otro conductor.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Seguir')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Cancelar viaje')),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await _run('cancel', () => dispatchService.transitionRide(r.id, RideStatus.cancelled));
+    }
+  }
+
+  NearbyRequest? get _selected {
+    if (_nearby.isEmpty) return null;
+    return _nearby.firstWhere((r) => r.id == _selectedId, orElse: () => _nearby.first);
+  }
+
+  List<Widget> _nearbyInfo(TextTheme text) => [
         const GSSectionTitle('Solicitudes cerca'),
         if (!_gps)
           _note(text, 'Activa el GPS: sin ubicación no podemos mostrarte '
               'solicitudes cercanas.')
+        else if (_offlineSince != null)
+          const SizedBox.shrink()
         else if (_nearby.isEmpty)
           _note(text, 'Nadie está pidiendo cerca ahora. Esta lista se '
               'actualiza sola mientras la pantalla esté abierta.'),
@@ -171,24 +301,19 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
                 GSSpacing.s4, 0, GSSpacing.s4, GSSpacing.s3),
             child: DriverRequestCard(
               request: r,
-              busy: _busy == r.id,
-              onAccept: () => _run(r.id, () => dispatchService.acceptRide(r.id),
-                  ok: 'Viaje aceptado. Ve por el pasajero.'),
-              onCounter: () => _run(r.id,
-                  () => dispatchService.counterOffer(r.id, r.offeredFare + 1000),
-                  ok: 'Oferta enviada'),
+              selected: r.id == _selected?.id,
+              onTap: () => setState(() => _selectedId = r.id),
             ),
           ),
-      ],
-    );
-  }
+      ];
 
   Widget _note(TextTheme text, String s) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
+        padding: const EdgeInsets.fromLTRB(
+            GSSpacing.s4, GSSpacing.s2, GSSpacing.s4, GSSpacing.s2),
         child: Text(s, style: text.bodyMedium),
       );
 
-  Widget _activeRide(RideRequest r, TextTheme text) {
+  Widget _activeRideInfo(RideRequest r, TextTheme text) {
     final picked = r.status == RideStatus.inProgress;
     return Padding(
       padding: const EdgeInsets.all(GSSpacing.s4),
@@ -200,7 +325,7 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
             text: r.destLabel ?? 'Destino',
             leading: Icons.route_rounded,
             isActive: true,
-            maxLines: 2,
+            maxLines: 3,
             detail: 'Tarifa acordada ${formatCop(r.agreedFare ?? r.offeredFare)}',
           ),
           const SizedBox(height: GSSpacing.s3),
@@ -210,151 +335,93 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
                 : 'Ve por el pasajero en ${r.originLabel ?? 'el punto de salida'}.',
             style: text.bodyLarge,
           ),
-          const SizedBox(height: GSSpacing.s4),
-          SizedBox(
-            height: GSSize.touchTargetDriver,
-            child: GSButton(
-              label: picked ? 'Terminar viaje' : 'Recogí al pasajero',
-              size: GSButtonSize.lg,
-              isLoading: _busy == r.id,
-              onPressed: _busy != null
-                  ? null
-                  : () async {
-                      await _run(r.id, () => dispatchService.transitionRide(
-                          r.id, picked ? RideStatus.completed : RideStatus.inProgress),
-                          ok: picked ? 'Viaje terminado' : null);
-                      if (picked && mounted) {
-                        await showRateSheet(context, requestId: r.id, asDriver: true);
-                      }
-                    },
-            ),
-          ),
-          if (!picked)
-            TextButton(
-              onPressed: _busy != null
-                  ? null
-                  : () => _run('cancel', () => dispatchService.transitionRide(
-                      r.id, RideStatus.cancelled)),
-              child: const Text('No puedo llegar: cancelar'),
-            ),
         ],
       ),
     );
   }
 
-  Widget _scheduled(TextTheme text) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
+  List<Widget> _scheduledInfo(TextTheme text) => [
         const GSSectionTitle('Tus salidas'),
-        if (_departures.isEmpty)
+        if (_departures.isEmpty && _offlineSince == null)
           _note(text, 'Publica tu próxima salida para que los pasajeros '
               'reserven cupo.'),
         for (final d in _departures)
           GSListRow(
             icon: Icons.event_seat_outlined,
             title: '${d.seatsTaken} de ${d.seatsTotal} cupos reservados',
-            subtitle: '${_nodeName(d.fromNode)} → ${_nodeName(d.toNode)} · '
+            subtitle: 'De ${_nodeName(d.fromNode)} a ${_nodeName(d.toNode)} · '
                 '${d.status == 'full' ? 'llena' : 'abierta'}',
             value: formatCop(d.fare),
           ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-              GSSpacing.s4, GSSpacing.s4, GSSpacing.s4, 0),
-          child: SizedBox(
-            height: GSSize.touchTargetDriver,
-            child: GSButton(
-              label: 'Publicar salida',
-              size: GSButtonSize.lg,
-              leadingIcon: Icons.add_rounded,
-              onPressed: () => showModalBottomSheet<void>(
-                context: context,
-                isScrollControlled: true,
-                showDragHandle: true,
-                builder: (_) => PublishDepartureSheet(onDone: _tick),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+      ];
 
   String _nodeName(String id) =>
       ref.read(transportGraphProvider).valueOrNull?.graph.nodes[id]?.name ?? id;
 }
 
-/// Solicitud entrante: origen, destino, distancias y dos botones grandes.
+/// Solicitud entrante: tarifa, distancias, origen y destino. Las acciones
+/// (Aceptar / Ofrecer) van en la zona del pulgar para la que esté elegida.
 class DriverRequestCard extends StatelessWidget {
   const DriverRequestCard({
     super.key,
     required this.request,
-    required this.onAccept,
-    required this.onCounter,
-    this.busy = false,
+    this.selected = false,
+    this.onTap,
   });
 
   final NearbyRequest request;
-  final VoidCallback onAccept;
-  final VoidCallback onCounter;
-  final bool busy;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  static String km(double v) => v.toStringAsFixed(1).replaceAll('.', ',');
 
   @override
   Widget build(BuildContext context) {
     final r = request;
     final text = Theme.of(context).textTheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: GSColors.surface,
+    return Material(
+      color: GSColors.surface,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(GSRadius.lg),
-        border: Border.all(color: GSColors.line, width: 1.5),
+        side: BorderSide(
+            color: selected ? GSColors.brand : GSColors.line,
+            width: selected ? 2 : 1.5),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(GSSpacing.s4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              formatCop(r.offeredFare),
-              style: TextStyle(
-                fontFamily: GSFonts.display,
-                fontFeatures: GSFonts.tabular,
-                fontSize: 32,
-                fontWeight: FontWeight.w800,
-                color: GSColors.text,
-              ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                  color: selected ? GSColors.stripe : Colors.transparent, width: 4),
             ),
-            Text('Recoger a ${r.pickupKm.toStringAsFixed(1)} km · '
-                'viaje de ${r.tripKm.toStringAsFixed(1)} km',
-                style: text.bodyMedium?.copyWith(fontFeatures: GSFonts.tabular)),
-            const SizedBox(height: GSSpacing.s2),
-            Text('Desde ${r.originLabel ?? 'punto marcado'}',
-                style: text.bodyLarge, maxLines: 2, overflow: TextOverflow.ellipsis),
-            Text('Hasta ${r.destLabel ?? 'punto marcado'}',
-                style: text.bodyLarge, maxLines: 2, overflow: TextOverflow.ellipsis),
-            if (r.myOffer != null)
-              Text('Ofreciste ${formatCop(r.myOffer!)}', style: text.bodySmall),
-            const SizedBox(height: GSSpacing.s3),
-            SizedBox(
-              height: GSSize.touchTargetDriver,
-              child: GSButton(
-                label: 'Aceptar ${formatCop(r.offeredFare)}',
-                size: GSButtonSize.lg,
-                isLoading: busy,
-                onPressed: busy ? null : onAccept,
+          ),
+          padding: const EdgeInsets.all(GSSpacing.s4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                formatCop(r.offeredFare),
+                style: TextStyle(
+                  fontFamily: GSFonts.display,
+                  fontFeatures: GSFonts.tabular,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
+                  color: GSColors.text,
+                ),
               ),
-            ),
-            const SizedBox(height: GSSpacing.s2),
-            SizedBox(
-              height: GSSize.touchTargetDriver,
-              child: GSButton(
-                label: 'Ofrecer ${formatCop(r.offeredFare + 1000)}',
-                size: GSButtonSize.lg,
-                variant: GSButtonVariant.outline,
-                onPressed: busy || r.myOffer != null ? null : onCounter,
-              ),
-            ),
-          ],
+              Text('Recoger a ${km(r.pickupKm)} km · viaje de ${km(r.tripKm)} km',
+                  style: text.bodyMedium?.copyWith(fontFeatures: GSFonts.tabular)),
+              const SizedBox(height: GSSpacing.s2),
+              Text('Desde ${r.originLabel ?? 'punto marcado'}',
+                  style: text.bodyLarge, maxLines: 3, overflow: TextOverflow.ellipsis),
+              Text('Hasta ${r.destLabel ?? 'punto marcado'}',
+                  style: text.bodyLarge, maxLines: 3, overflow: TextOverflow.ellipsis),
+              if (r.myOffer != null)
+                Text('Ofreciste ${formatCop(r.myOffer!)}', style: text.bodySmall),
+            ],
+          ),
         ),
       ),
     );
@@ -407,9 +474,9 @@ class _PublishDepartureSheetState extends ConsumerState<PublishDepartureSheet> {
     final text = Theme.of(context).textTheme;
     return Row(children: [
       Expanded(child: Text(label, style: text.bodyLarge)),
-      IconButton(tooltip: 'Menos', onPressed: minus, icon: const Icon(Icons.remove_rounded)),
+      IconButton(tooltip: 'Menos', iconSize: 32, constraints: _driverTap, onPressed: minus, icon: const Icon(Icons.remove_rounded)),
       Text(value, style: text.titleMedium?.copyWith(fontFeatures: GSFonts.tabular)),
-      IconButton(tooltip: 'Más', onPressed: plus, icon: const Icon(Icons.add_rounded)),
+      IconButton(tooltip: 'Más', iconSize: 32, constraints: _driverTap, onPressed: plus, icon: const Icon(Icons.add_rounded)),
     ]);
   }
 
@@ -451,11 +518,11 @@ class _PublishDepartureSheetState extends ConsumerState<PublishDepartureSheet> {
                 _fare > 1000 ? () => setState(() => _fare -= 500) : null,
                 () => setState(() => _fare += 500)),
             const SizedBox(height: GSSpacing.s3),
-            SizedBox(
-              height: GSSize.touchTargetDriver,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: GSSize.touchTargetDriver),
               child: GSButton(
                 label: 'Publicar',
-                size: GSButtonSize.lg,
+                size: GSButtonSize.driver,
                 isLoading: _busy,
                 onPressed: _from != null && _to != null && !_busy ? _publish : null,
               ),
@@ -466,3 +533,12 @@ class _PublishDepartureSheetState extends ConsumerState<PublishDepartureSheet> {
     );
   }
 }
+
+String _hhmm(DateTime t) {
+  final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
+  return '$h:${t.minute.toString().padLeft(2, '0')} ${t.hour < 12 ? 'a. m.' : 'p. m.'}';
+}
+
+/// Pasos −/+ del modo conductor: 72 dp (DS6).
+const _driverTap = BoxConstraints.tightFor(
+    width: GSSize.touchTargetDriver, height: GSSize.touchTargetDriver);

@@ -85,6 +85,8 @@ class _ChargeScreenState extends State<ChargeScreen> {
             Row(children: [
               IconButton.filledTonal(
                 iconSize: 32,
+                constraints: const BoxConstraints.tightFor(
+                    width: GSSize.touchTargetDriver, height: GSSize.touchTargetDriver),
                 tooltip: 'Bajar \$500',
                 onPressed: _amount > 500 ? () => setState(() => _amount -= 500) : null,
                 icon: const Icon(Icons.remove_rounded),
@@ -92,17 +94,19 @@ class _ChargeScreenState extends State<ChargeScreen> {
               Expanded(child: Text(formatCop(_amount), textAlign: TextAlign.center, style: big)),
               IconButton.filledTonal(
                 iconSize: 32,
+                constraints: const BoxConstraints.tightFor(
+                    width: GSSize.touchTargetDriver, height: GSSize.touchTargetDriver),
                 tooltip: 'Subir \$500',
                 onPressed: () => setState(() => _amount += 500),
                 icon: const Icon(Icons.add_rounded),
               ),
             ]),
             const SizedBox(height: GSSpacing.s5),
-            SizedBox(
-              height: GSSize.touchTargetDriver,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: GSSize.touchTargetDriver),
               child: GSButton(
                 label: 'Mostrar QR',
-                size: GSButtonSize.lg,
+                size: GSButtonSize.driver,
                 isLoading: _busy,
                 onPressed: _busy ? null : _create,
               ),
@@ -144,11 +148,11 @@ class _ChargeScreenState extends State<ChargeScreen> {
               style: text.bodyMedium,
             ),
             const SizedBox(height: GSSpacing.s4),
-            SizedBox(
-              height: GSSize.touchTargetDriver,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: GSSize.touchTargetDriver),
               child: GSButton(
                 label: 'Nuevo cobro',
-                size: GSButtonSize.lg,
+                size: GSButtonSize.driver,
                 variant: GSButtonVariant.outline,
                 onPressed: () {
                   _timer?.cancel();
