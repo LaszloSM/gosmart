@@ -16,7 +16,6 @@ import '../features/auth/register_screen.dart';
 import '../features/auth/sms_verify_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/wallet/wallet_screen.dart';
-import '../features/history/history_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/routes/route_planner_screen.dart';
 import '../features/routes/route_detail_screen.dart';
@@ -198,14 +197,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           transitionsBuilder: _slideAndFade,
         ),
       ),
+      // El historial vive ahora dentro de la Billetera.
       GoRoute(
         path: AppRoutes.history,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const HistoryScreen(),
-          transitionDuration: GSDuration.page,
-          transitionsBuilder: _slideAndFade,
-        ),
+        redirect: (_, __) => AppRoutes.wallet,
       ),
       GoRoute(
         path: AppRoutes.profile,

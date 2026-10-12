@@ -67,23 +67,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.dispose();
   }
 
-  void _onNavTap(int i) {
-    switch (i) {
-      case 0:
-        context.go(AppRoutes.home);
-        break;
-      case 1:
-        context.go(AppRoutes.history);
-        break;
-      case 2:
-        context.go(AppRoutes.wallet);
-        break;
-      case 3:
-        context.go(AppRoutes.profile);
-        break;
-    }
-  }
-
   // ── Photo upload ───────────────────────────────────────────────────────────
 
   Future<void> _pickAndUploadPhoto() async {
@@ -396,10 +379,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: GSBottomNav(
-        currentIndex: 3,
-        onTap: _onNavTap,
-      ),
+      bottomNavigationBar: const GSBottomNav(current: GSNavTab.profile),
     );
   }
 

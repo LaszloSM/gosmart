@@ -1,5 +1,5 @@
 // lib/models/wallet_model.dart
-import 'package:intl/intl.dart';
+import '../core/money.dart';
 
 /// Billetera GoSmart (tabla `wallets`). Saldo en COP enteros.
 class Wallet {
@@ -36,10 +36,7 @@ class Wallet {
   }
 
   /// Saldo formateado con separadores de miles en COP
-  String get formattedBalance {
-    final f = NumberFormat('#,###', 'es_CO');
-    return '\$${f.format(balance)} COP';
-  }
+  String get formattedBalance => '${formatCop(balance)} COP';
 
   /// Número de tarjeta con dígitos centrales ocultos
   /// GS-1234-5678-9012 → GS-****-****-9012

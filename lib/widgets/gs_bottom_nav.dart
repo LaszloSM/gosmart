@@ -1,63 +1,51 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../router/app_router.dart';
 import '../theme/design_tokens.dart';
 
-/// Glass bottom navigation bar — dark edition.
-/// Active tab: kinetic green → cyan gradient pill with icon + label.
-/// Inactive tabs: icon + label (9sp, muted).
-class GSBottomNav extends StatelessWidget {
-  const GSBottomNav({
-    super.key,
-    required this.currentIndex,
-    required this.onTap,
-  });
+/// Destinos de la barra inferior. "Viaje" y "Reportar" se suman cuando
+/// existan (Fases 4 y 6); el historial vive dentro de la Billetera.
+enum GSNavTab { home, wallet, profile }
 
-  final int currentIndex;
-  final ValueChanged<int> onTap;
+/// Barra inferior: superficie sal, ícono activo en pastilla de marca y la
+/// etiqueta siempre debajo. Navega sola con `context.go`.
+class GSBottomNav extends StatelessWidget {
+  const GSBottomNav({super.key, required this.current});
+
+  final GSNavTab current;
 
   static const _items = [
-    _NavItem(icon: Icons.home_rounded, label: 'Inicio'),
-    _NavItem(icon: Icons.route_rounded, label: 'Viajes'),
-    _NavItem(icon: Icons.account_balance_wallet_rounded, label: 'Billetera'),
-    _NavItem(icon: Icons.person_rounded, label: 'Perfil'),
+    _NavItem(GSNavTab.home, Icons.home_rounded, 'Inicio', AppRoutes.home),
+    _NavItem(GSNavTab.wallet, Icons.account_balance_wallet_rounded,
+        'Billetera', AppRoutes.wallet),
+    _NavItem(GSNavTab.profile, Icons.person_rounded, 'Perfil',
+        AppRoutes.profile),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(
-          sigmaX: GSGlass.blur,
-          sigmaY: GSGlass.blur,
-        ),
-        child: Container(
-          height: GSSize.bottomNav + MediaQuery.of(context).padding.bottom,
-          decoration: const BoxDecoration(
-            color: GSColors.surface,
-            border: Border(
-              top: BorderSide(
-                color: GSColors.line,
-                width: GSGlass.borderWidth,
-              ),
-            ),
-          ),
-          child: SafeArea(
-            top: false,
-            child: Row(
-              children: List.generate(
-                _items.length,
-                (index) => Expanded(
-                  child: _NavTile(
-                    item: _items[index],
-                    isActive: currentIndex == index,
-                    onTap: () => onTap(index),
-                  ),
+    return Container(
+      height: GSSize.bottomNav + MediaQuery.of(context).padding.bottom,
+      decoration: const BoxDecoration(
+        color: GSColors.surface,
+        border: Border(top: BorderSide(color: GSColors.line)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            for (final item in _items)
+              Expanded(
+                child: _NavTile(
+                  item: item,
+                  isActive: item.tab == current,
+                  onTap: () {
+                    if (item.tab != current) context.go(item.route);
+                  },
                 ),
               ),
-            ),
-          ),
+          ],
         ),
       ),
     );
@@ -89,9 +77,8 @@ class _NavTile extends StatelessWidget {
           children: [
             // Pastilla de marca detrás del ícono activo; la etiqueta siempre
             // debajo, para que quepa con texto grande y nombres largos.
-            AnimatedContainer(
-              duration: GSAnimDuration.pillSlide,
-              curve: GSCurve.move,
+            // Sin animación: cambiar de pestaña es una acción repetida.
+            Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: GSSpacing.s4,
                 vertical: GSSpacing.s1,
@@ -125,7 +112,9 @@ class _NavTile extends StatelessWidget {
 }
 
 class _NavItem {
+  final GSNavTab tab;
   final IconData icon;
   final String label;
-  const _NavItem({required this.icon, required this.label});
+  final String route;
+  const _NavItem(this.tab, this.icon, this.label, this.route);
 }

@@ -65,15 +65,9 @@ class _GSButtonState extends State<GSButton> {
             width: widget.isFullWidth ? double.infinity : null,
             height: dims.height,
             child: DecoratedBox(
+              // DESIGN.md: botones planos (sin sombra), radio md.
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(GSRadius.full),
-                boxShadow: isDisabled
-                    ? []
-                    : isPrimary
-                        ? GSShadow.accent
-                        : isEco
-                            ? GSShadow.eco
-                            : [],
+                borderRadius: BorderRadius.circular(GSRadius.md),
               ),
               child: Container(
                 height: dims.height,
@@ -84,7 +78,7 @@ class _GSButtonState extends State<GSButton> {
                       ? LinearGradient(
                           colors: isPrimary
                               ? GSGradient.primaryButton
-                              : [GSColors.eco, GSColors.ecoDark],
+                              : [GSColors.eco, GSColors.eco],
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
                         )
@@ -92,12 +86,9 @@ class _GSButtonState extends State<GSButton> {
                   color: isDisabled
                       ? GSColors.surfaceContainerHigh
                       : (!isPrimary && !isEco) ? colors.bg : null,
-                  borderRadius: BorderRadius.circular(GSRadius.full),
+                  borderRadius: BorderRadius.circular(GSRadius.md),
                   border: widget.variant == GSButtonVariant.outline
-                      ? Border.all(
-                          color: GSColors.accent.withValues(alpha: 0.40),
-                          width: 1.5,
-                        )
+                      ? Border.all(color: GSColors.textMuted, width: 2)
                       : widget.variant == GSButtonVariant.danger
                           ? Border.all(color: GSColors.error, width: 1.5)
                           : null,

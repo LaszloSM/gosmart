@@ -92,13 +92,13 @@ After running 005+, PostgREST reloads automatically via `NOTIFY pgrst, 'reload s
 lib/
 ├── core/
 │   ├── env.dart                  # Typed access to .env via flutter_dotenv
+│   ├── money.dart                # formatCop(37000) → "$37.000" (signed: "+$10.000" / "−$2.500")
 │   ├── region.dart               # GSRegion: Riohacha/Maicao centers + La Guajira bbox
 │   ├── telemetry.dart            # Optional Sentry; Telemetry.degraded(service, code)
 │   └── supabase_client.dart      # GoSmartSupabase.client singleton (initialized once in main)
 ├── features/                     # Screen-level UI (one folder per feature)
 │   ├── ai_chat/                  # AI assistant chat UI
 │   ├── auth/                     # Login, register, SMS OTP
-│   ├── history/                  # Transaction history
 │   ├── home/                     # Inicio: Línea del corredor → mapa → hoja "¿A dónde vas?"
 │   │   └── widgets/              # HomeMap, HomeSheetContent, CorridorDetailSheet, QuickPlacesRow
 │   ├── nfc_simulator/            # Debug NFC simulator (LOCAL MOCK — no Edge Function)
@@ -107,7 +107,8 @@ lib/
 │   ├── profile/                  # User profile + edit sheets
 │   ├── routes/                   # Route planner + route detail
 │   ├── splash/                   # SplashScreen — animated logo, onboarding routing
-│   └── wallet/                   # Wallet / recharge screen (Supabase `wallets`)
+│   └── wallet/                   # Billetera: saldo, recargar/pagar, movimientos (ex-historial), tarjeta
+│       └── widgets/              # BalanceHeader, WalletMovements, RechargeSheetContent, CardControls
 ├── models/                       # Pure data classes (no Flutter dependencies)
 │   ├── ai_models.dart            # AiMessage, ConversationTurn, RouteOption, Leg
 │   ├── authorize_result.dart     # NFC authorization result
@@ -246,7 +247,7 @@ AppRoutes.intro            // '/intro'            ← onboarding slides (first l
 AppRoutes.locationPermission // '/location-permission' ← GPS permission request
 AppRoutes.home             // '/home'
 AppRoutes.wallet           // '/wallet'
-AppRoutes.history          // '/history'
+AppRoutes.history          // '/history' → redirects to /wallet (history lives in the wallet)
 AppRoutes.profile          // '/profile'
 AppRoutes.aiChat           // '/ai-chat'
 AppRoutes.routePlanner     // '/routes'
@@ -305,7 +306,9 @@ GSSize.bottomNav=72   GSSize.topBar=56
 - `GSCard`, `GSInfoCard`, `GSOptionCard`, `GSModeChip`
 - `GSCorridorLine` — DESIGN.md corridor line (56 px); state always icon + word, time in mono
 - `GSTextField`, `GSSearchBar`
-- `GSBottomNav`, `GSBottomSheet`
+- `GSBottomNav(current: GSNavTab.home|wallet|profile)` — navigates by itself; 3 tabs today
+  (Viaje and Reportar join in Fases 6 and 4)
+- `GSBottomSheet`
 - `GSToast`, `GSSkeletonLoader`, `GSEmptyState`
 
 ## Key Patterns
@@ -415,6 +418,12 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 - **`idempotency_key` on transactions**: Always generate a UUID before NFC tap, not after — the key must be sent with the authorization request, not generated from the response.
 - **`GSButton` API**: Use `isLoading:` (not `loading:`), `isFullWidth:` (not `fullWidth:`). Variant: `GSButtonVariant.outline / .ghost / .primary`.
 - **`GeocodingService`**: Method is `.search(query)` (not `.suggest()`). Returns `List<GeocodeSuggestion>`.
+- **Money formatting**: always `formatCop()` and `GSFonts.mono` for amounts the user compares.
+  No red/green for income/expense — the sign carries it (red/green are road-only).
+- **`DateFormat(..., 'es')` throws** unless `initializeDateFormatting` ran (it doesn't in this app).
+  Format Spanish dates by hand (see `WalletTransactionModel.formattedDate`).
+- **`transactionListProvider` / table `transactions`**: no screen uses it since the wallet merge;
+  kept for trips (Fase 6). Money movements come from `walletTransactionsProvider`.
 - **Wallet vs cards**: `wallets` / `wallet_transactions` (`walletProvider`) is the money model. `cards` / `activeCardProvider` is only the card UI (lock/NFC, future public-transport validators). Never write balances from the client; use RPCs.
 - **`AnimatedDefaultTextStyle` / `DefaultTextStyle` replace the inherited style**: always set `fontFamily: GSFonts.sans`, or the text falls back to Roboto.
 - **Fonts are bundled** (`pubspec.yaml` → `fonts:`); there is no `google_fonts` package and no runtime font download.

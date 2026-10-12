@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../models/corridor_status.dart';
 import '../../models/route_result.dart';
 import '../../providers/active_route_provider.dart';
 import '../../providers/corridor_provider.dart';
-import '../../router/app_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
 import '../../widgets/gs_corridor_line.dart';
@@ -33,23 +31,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void dispose() {
     _sheetCtrl.dispose();
     super.dispose();
-  }
-
-  void _onNavTap(int index) {
-    switch (index) {
-      case 0:
-        context.go(AppRoutes.home);
-        break;
-      case 1:
-        context.go(AppRoutes.history);
-        break;
-      case 2:
-        context.go(AppRoutes.wallet);
-        break;
-      case 3:
-        context.go(AppRoutes.profile);
-        break;
-    }
   }
 
   @override
@@ -118,10 +99,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: GSBottomNav(
-        currentIndex: 0,
-        onTap: _onNavTap,
-      ),
+      bottomNavigationBar: const GSBottomNav(current: GSNavTab.home),
     );
   }
 }

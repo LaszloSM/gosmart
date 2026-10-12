@@ -1,7 +1,6 @@
 // lib/models/wallet_transaction_model.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import '../theme/design_tokens.dart';
+import '../core/money.dart';
 
 enum WalletTxType { recharge, trip, refund, bonus }
 
@@ -43,11 +42,9 @@ class WalletTransactionModel {
 
   bool get isIncome => amount >= 0;
 
-  String get formattedAmount {
-    final f = NumberFormat('#,###', 'es_CO');
-    final sign = amount >= 0 ? '+' : '-';
-    return '$sign\$${f.format(amount.abs())} COP';
-  }
+  /// "+$10.000" o "−$2.500". El signo dice si entra o sale; sin colores
+  /// rojo/verde (DESIGN.md: esos son solo para la vía).
+  String get formattedAmount => formatCop(amount, signed: true);
 
   String get typeLabel => switch (type) {
         WalletTxType.recharge => 'Recarga',
@@ -63,15 +60,18 @@ class WalletTransactionModel {
         WalletTxType.bonus => Icons.card_giftcard_rounded,
       };
 
-  Color get color => isIncome ? GSColors.success : GSColors.error;
-
   String get formattedDate {
     final now = DateTime.now();
     final diff = now.difference(createdAt);
+    if (diff.inMinutes < 1) return 'Ahora';
     if (diff.inMinutes < 60) return 'Hace ${diff.inMinutes} min';
     if (diff.inHours < 24) return 'Hace ${diff.inHours}h';
     if (diff.inDays == 1) return 'Ayer';
     if (diff.inDays < 7) return 'Hace ${diff.inDays} días';
-    return DateFormat('d MMM', 'es').format(createdAt);
+    // Sin DateFormat('es'): exige initializeDateFormatting y lanzaría aquí.
+    const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun',
+        'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    final local = createdAt.toLocal();
+    return '${local.day} ${months[local.month - 1]}';
   }
 }
