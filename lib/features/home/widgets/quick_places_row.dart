@@ -9,7 +9,7 @@ import '../../../models/geocode_suggestion.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/favorites_provider.dart';
 import '../../../router/app_router.dart';
-import '../../../services/geocoding_service.dart';
+import '../../../services/place_search.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_button.dart';
 import '../../../widgets/gs_route_plate.dart';
@@ -413,7 +413,7 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
       return;
     }
     setState(() => _searching = true);
-    final results = await geocodingService.search(query);
+    final results = (await placeSearch.search(query)).items;
     if (mounted) {
       setState(() {
         _suggestions = results;

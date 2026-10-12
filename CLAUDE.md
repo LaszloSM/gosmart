@@ -75,6 +75,7 @@ All migrations live in `supabase/migrations/`. Run them in order in the Supabase
 | `008_wallet_mock.sql` | Tables: `wallets` (balance INTEGER, card_number, card_status), `wallet_transactions`. RPCs: `recharge_wallet` (row-locking), `generate_gosmart_card_number`. Trigger: `create_wallet_for_new_user` (auto-creates wallet with $10,000 COP welcome balance on signup). |
 | `009_favorites_history.sql` | Tables: `favorite_places` (unique partial index per home/work per user), `trip_history`. RPC: `increment_favorite_use`. |
 | `011_roles_safety.sql` | `profiles.role` (passenger/driver/admin; trigger impide subirse de rol), `drivers` (solo admin aprueba vía `admin_review_driver`), `driver_documents` + bucket privado `driver-docs`, `vehicles`, `emergency_contacts` (+57, máx. 5), `sos_events` (idempotente), `trip_shares` + RPCs `trip_share_start/update/stop/view`. Sin PostGIS. |
+| `012_places_directory.sql` | `places` gazetteer (name + aliases, city, kind, lat/lng, `verified`), `gs_norm()` (sin tildes), trigram index, public RPC `search_places(q, lat, lng, limit)`. Seed (approximate, unverified): `supabase/seed/places_seed.sql`. |
 | `010_wallet_hardening.sql` | **Security fix for 008.** Drops user UPDATE on `wallets` and INSERT on `wallet_transactions`; revokes `recharge_wallet` from clients; adds `idempotency_key`; new RPC `wallet_recharge_simulated(p_amount, p_idempotency_key)` that uses `auth.uid()`. Backfills wallets for older users. |
 
 **SQL tests:** `supabase/tests/` runs on a plain Postgres 16 (CI job `sql-tests`). `_supabase_stub.sql`
@@ -147,7 +148,9 @@ lib/
 │   ├── profile_service.dart
 │   ├── location_service.dart     # GPS via geolocator — returns LatLng? (null if unavailable)
 │   ├── directions_service.dart   # Mapbox Directions API v5 — walking/driving/cycling polylines
-│   └── geocoding_service.dart    # Mapbox Geocoding API v5 — address search for Colombia (returns GeocodeSuggestion)
+│   ├── geocoding_service.dart    # Mapbox Geocoding API v5 — search() never throws; searchStrict() throws GeocodingException
+│   ├── place_search.dart         # placeSearch: directory (places) first, then provider; result.limited = degraded (D8)
+│   └── safety_service.dart       # emergency contacts, sos_events, trip_share_* RPCs
 ├── theme/
 │   ├── app_theme.dart            # MaterialApp ThemeData
 │   └── design_tokens.dart        # GSColors, GSSpacing, GSRadius, GSShadow, GSSize, etc.
@@ -437,7 +440,8 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 - **Supabase Realtime**: `activeCardProvider` holds an active subscription. Dispose it properly or use `ref.onDispose`.
 - **`idempotency_key` on transactions**: Always generate a UUID before NFC tap, not after — the key must be sent with the authorization request, not generated from the response.
 - **`GSButton` API**: Use `isLoading:` (not `loading:`), `isFullWidth:` (not `fullWidth:`). Variant: `GSButtonVariant.outline / .ghost / .primary`.
-- **`GeocodingService`**: Method is `.search(query)` (not `.suggest()`). Returns `List<GeocodeSuggestion>`.
+- **Place search**: screens use `placeSearch.search(q, near:)` (returns `PlaceSearchResult` with
+  `items` and `limited`), not `geocodingService` directly. Directory rows with `verified=false` show "aprox.".
 - **Money formatting**: always `formatCop()` and `GSFonts.mono` for amounts the user compares.
   No red/green for income/expense — the sign carries it (red/green are road-only).
 - **`DateFormat(..., 'es')` throws** unless `initializeDateFormatting` ran (it doesn't in this app).

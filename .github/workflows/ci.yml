@@ -83,7 +83,11 @@ jobs:
                    supabase/tests/_profiles_fixture.sql \
                    supabase/migrations/011_roles_safety.sql \
                    supabase/migrations/011_roles_safety.sql \
-                   supabase/tests/011_roles_safety_test.sql; do
+                   supabase/migrations/012_places_directory.sql \
+                   supabase/migrations/012_places_directory.sql \
+                   supabase/seed/places_seed.sql \
+                   supabase/tests/011_roles_safety_test.sql \
+                   supabase/tests/012_places_directory_test.sql; do
             psql -d gosmart_core -v ON_ERROR_STOP=1 -q -f "$f"
           done
 

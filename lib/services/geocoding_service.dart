@@ -31,14 +31,32 @@ class GeocodingService {
     return GSRegion.bbox;
   }
 
+  /// true si hay token del proveedor configurado.
+  bool get isConfigured => Env.mapboxToken.isNotEmpty;
+
+  /// Igual que [searchStrict], pero nunca falla: devuelve [] ante cualquier error.
   Future<List<GeocodeSuggestion>> search(
     String query, {
     LatLng? proximity,
   }) async {
-    final token = Env.mapboxToken;
-    if (token.isEmpty || query.trim().length < 2) return [];
-
     try {
+      return await searchStrict(query, proximity: proximity);
+    } catch (e) {
+      debugPrint('[GeocodingService] search error: $e');
+      return [];
+    }
+  }
+
+  /// Lanza [GeocodingException] si el proveedor falla, para poder avisar (D8).
+  Future<List<GeocodeSuggestion>> searchStrict(
+    String query, {
+    LatLng? proximity,
+  }) async {
+    final token = Env.mapboxToken;
+    if (token.isEmpty) throw const GeocodingException('no_key');
+    if (query.trim().length < 2) return [];
+
+    {
       final encoded = Uri.encodeComponent(query.trim());
       var url = '$_base/$encoded.json'
           '?access_token=$token'
@@ -57,8 +75,7 @@ class GeocodingService {
           .timeout(const Duration(seconds: 10));
 
       if (res.statusCode != 200) {
-        debugPrint('[GeocodingService] ${res.statusCode}: ${res.body}');
-        return [];
+        throw GeocodingException('http_${res.statusCode}');
       }
 
       final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -79,9 +96,6 @@ class GeocodingService {
           featureType: featureType,
         );
       }).toList();
-    } catch (e) {
-      debugPrint('[GeocodingService] search error: $e');
-      return [];
     }
   }
 
@@ -96,3 +110,10 @@ class GeocodingService {
 }
 
 final geocodingService = GeocodingService();
+
+class GeocodingException implements Exception {
+  const GeocodingException(this.code);
+  final String code;
+  @override
+  String toString() => 'GeocodingException($code)';
+}

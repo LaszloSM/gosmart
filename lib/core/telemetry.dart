@@ -2,12 +2,15 @@
 // Reporte de errores con Sentry (plan gratis). Si SENTRY_DSN está vacío no se
 // envía nada y la app funciona igual (desarrollo local, tests).
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'env.dart';
 
 abstract class Telemetry {
-  static bool get enabled => Env.sentryDsn.isNotEmpty;
+  // Sin .env cargado (pruebas) no hay Sentry, en vez de fallar.
+  static bool get enabled =>
+      dotenv.isInitialized && Env.sentryDsn.isNotEmpty;
 
   /// Inicia Sentry alrededor de [appRunner], o lo ejecuta directo si no hay DSN.
   static Future<void> init(Future<void> Function() appRunner) async {

@@ -19,7 +19,7 @@ import '../../providers/selected_mode_provider.dart';
 import '../../router/app_router.dart';
 import '../../services/directions_service.dart';
 import '../../services/eco_service.dart';
-import '../../services/geocoding_service.dart';
+import '../../services/place_search.dart';
 import '../../services/location_service.dart';
 import '../../services/public_transport_service.dart';
 import '../../theme/design_tokens.dart';
@@ -44,6 +44,8 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   LatLng? _destLatLng;
   String? _destLabel; // destino elegido (placa pintada)
   List<GeocodeSuggestion> _suggestions = [];
+  bool _searchLimited = false; // el proveedor externo no respondió (D8)
+  String? _searchedFor;        // última búsqueda terminada
   Timer? _debounce;
   bool _loading = false;
   bool _locating = true;
@@ -110,13 +112,21 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     setState(() {}); // botón de borrar en el campo
     _debounce?.cancel();
     if (text.length < 3) {
-      setState(() => _suggestions = []);
+      setState(() {
+        _suggestions = [];
+        _searchedFor = null;
+      });
       return;
     }
     _debounce = Timer(const Duration(milliseconds: 300), () async {
-      final results =
-          await geocodingService.search(text, proximity: _originLatLng);
-      if (mounted) setState(() => _suggestions = results);
+      final result = await placeSearch.search(text, near: _originLatLng);
+      // Si el usuario siguió escribiendo, esta respuesta ya no aplica.
+      if (!mounted || _destCtrl.text.trim() != text) return;
+      setState(() {
+        _suggestions = result.items;
+        _searchLimited = result.limited;
+        _searchedFor = text;
+      });
     });
   }
 
@@ -270,6 +280,13 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                     _suggestions[i].placeName, _suggestions[i].latLng),
               ),
             ],
+          if (typing && _searchedFor != null &&
+              (_suggestions.isEmpty || _searchLimited))
+            _SearchNotice(
+              empty: _suggestions.isEmpty,
+              limited: _searchLimited,
+              query: _searchedFor!,
+            ),
           const GSSectionTitle('¿En qué vas?'),
           const SizedBox(height: GSSpacing.s2),
           ModeSelector(
@@ -291,6 +308,51 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
             onPressed: _loading ? null : _search,
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Cuando no hay resultados o el buscador externo no respondió (D8): decirlo
+/// y dar la salida que siempre funciona, marcar el punto en el mapa.
+class _SearchNotice extends StatelessWidget {
+  const _SearchNotice({
+    required this.empty,
+    required this.limited,
+    required this.query,
+  });
+  final bool empty;
+  final bool limited;
+  final String query;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final title = empty ? 'No encontramos "$query"' : null;
+    final body = limited
+        ? 'Ahora solo buscamos en los lugares conocidos de la región. '
+            'Si no aparece, mantén presionado el mapa del inicio en el punto.'
+        : 'Prueba con una referencia cercana ("frente al parque") o mantén '
+            'presionado el mapa del inicio en el punto.';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          GSSpacing.s4, GSSpacing.s3, GSSpacing.s4, GSSpacing.s2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(limited ? Icons.cloud_off_outlined : Icons.search_off_rounded,
+              size: 20, color: GSColors.textMuted),
+          const SizedBox(width: GSSpacing.s2),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (title != null) Text(title, style: text.titleSmall),
+                Text(body, style: text.bodySmall),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
