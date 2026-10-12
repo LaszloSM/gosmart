@@ -12,7 +12,7 @@ class PublicTransportService {
   Future<RouteResult?> planRoute({
     required LatLng origin,
     required LatLng destination,
-    required String mode, // 'Bus', 'Metro', 'BRT', 'Cable'
+    required String mode, // 'Colectivo', 'TransPadilla', 'Intermunicipal'
   }) async {
     try {
       // 1. Encontrar estaciones cercanas
@@ -140,32 +140,27 @@ class PublicTransportService {
   // Mapeo de modo de transporte a tipos del schema colombia_kg.
   // Tipos válidos en 006_colombia_kg.sql: 'station', 'stop', 'terminal'.
   List<String> _typesFor(String mode) => switch (mode) {
-    'Metro'  => ['station'],
-    'Cable'  => ['station'],
-    'BRT'    => ['station', 'terminal'],
-    _        => ['stop', 'terminal'],  // Bus e Intermunicipal
+    'TransPadilla'   => ['station', 'stop'],
+    'Intermunicipal' => ['terminal'],
+    _                => ['stop', 'terminal'], // colectivo
   };
 
   String _mapboxProfileFor(String mode) => switch (mode) {
-    'Bici'  => 'cycling',
     'A pie' => 'walking',
     _       => 'driving',
   };
 
   String _modeName(String mode) => switch (mode) {
-    'Metro'         => 'el Metro',
-    'Cable'         => 'el Metrocable',
-    'BRT'           => 'el TransPadilla',
-    'Intermunicipal'=> 'el bus intermunicipal',
-    _               => 'el Bus',
+    'TransPadilla'   => 'el TransPadilla',
+    'Intermunicipal' => 'el bus intermunicipal',
+    _                => 'el colectivo',
   };
 
+  // Tarifas de referencia SIN levantamiento de campo (Fase 1): por verificar.
   int _publicFare(String mode) => switch (mode) {
-    'Metro'          => 3400,
-    'Cable'          => 0,    // integrado con Metro
-    'BRT'            => 3000, // TransPadilla (Riohacha)
+    'TransPadilla'   => 3000,
     'Intermunicipal' => 15000,
-    _                => 3000, // colectivo urbano (dato por verificar en campo)
+    _                => 3000, // colectivo urbano
   };
 
   // Haversine distance en km

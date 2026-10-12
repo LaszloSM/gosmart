@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../models/corridor_status.dart';
 import '../../models/route_result.dart';
 import '../../providers/active_route_provider.dart';
 import '../../providers/corridor_provider.dart';
+import '../../providers/selected_mode_provider.dart';
+import '../../router/app_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
 import '../../widgets/gs_corridor_line.dart';
@@ -134,41 +137,67 @@ class _CorridorHeader extends StatelessWidget {
   }
 }
 
+/// Ruta activa sobre la hoja: toca para ver los tramos, la X la quita.
 class _RouteBanner extends ConsumerWidget {
   const _RouteBanner({required this.route});
   final RouteResult route;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      padding: const EdgeInsets.only(left: GSSpacing.s4),
-      decoration: const BoxDecoration(
-        color: GSColors.brand,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(GSRadius.lg)),
-      ),
-      child: Row(
-        children: [
-          Icon(RouteProfile.iconFor(route.profile),
-              color: GSColors.onBrand, size: 20),
-          const SizedBox(width: GSSpacing.s3),
-          Expanded(
-            child: Text(
-              '${route.durationMin} min · ${route.distanceKm.toStringAsFixed(1)} km',
-              style: const TextStyle(
-                fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
-                color: GSColors.onBrand,
-                fontWeight: FontWeight.w600,
-                fontSize: 17,
+    final mode = ref.watch(selectedModeProvider);
+    return Material(
+      color: GSColors.brand,
+      borderRadius:
+          const BorderRadius.vertical(top: Radius.circular(GSRadius.lg)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => context.push(AppRoutes.routeDetail),
+        child: Container(
+          decoration: const BoxDecoration(
+            border: Border(
+                bottom: BorderSide(color: GSColors.stripe, width: 4)),
+          ),
+          padding: const EdgeInsets.only(left: GSSpacing.s4),
+          child: Row(
+            children: [
+              Icon(modeIconFor(mode), color: GSColors.onBrand),
+              const SizedBox(width: GSSpacing.s3),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${route.durationMin} min · '
+                      '${route.distanceKm.toStringAsFixed(1)} km',
+                      style: const TextStyle(
+                        fontFamily: GSFonts.display,
+                        fontFeatures: GSFonts.tabular,
+                        color: GSColors.onBrand,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 22,
+                      ),
+                    ),
+                    const Text(
+                      'Toca para ver los tramos',
+                      style: TextStyle(
+                        fontFamily: GSFonts.sans,
+                        color: GSColors.onBrandMuted,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+              IconButton(
+                tooltip: 'Quitar ruta',
+                icon: const Icon(Icons.close_rounded, color: GSColors.onBrand),
+                onPressed: () =>
+                    ref.read(activeRouteProvider.notifier).state = null,
+              ),
+            ],
           ),
-          IconButton(
-            tooltip: 'Quitar ruta',
-            icon: const Icon(Icons.close, color: GSColors.onBrand),
-            onPressed: () =>
-                ref.read(activeRouteProvider.notifier).state = null,
-          ),
-        ],
+        ),
       ),
     );
   }

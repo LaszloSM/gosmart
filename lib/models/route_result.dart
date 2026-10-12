@@ -70,8 +70,8 @@ class RouteProfile {
       };
 
   static String labelFor(String profile) => switch (profile) {
-        driving => 'En bus · más rápida',
-        cycling => 'En bici · eco',
+        driving => 'Por la vía',
+        cycling => 'En bici',
         _ => 'A pie · más barata',
       };
 }
