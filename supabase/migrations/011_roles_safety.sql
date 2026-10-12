@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS drivers (
                    CHECK (status IN ('pending', 'approved', 'rejected', 'suspended')),
   review_note      TEXT CHECK (char_length(review_note) <= 300),
   reviewed_at      TIMESTAMPTZ,
-  reviewed_by      UUID REFERENCES auth.users(id),
+  reviewed_by      UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   available        BOOLEAN NOT NULL DEFAULT false,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),

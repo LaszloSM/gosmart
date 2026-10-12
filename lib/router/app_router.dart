@@ -21,6 +21,8 @@ import '../features/routes/route_detail_screen.dart';
 import '../features/ai_chat/ai_chat_screen.dart';
 import '../features/nfc_simulator/nfc_auth_simulator_screen.dart';
 import '../features/safety/emergency_contacts_screen.dart';
+import '../features/legal/legal_screen.dart';
+import '../features/legal/legal_texts.dart';
 
 /// Transición de pantalla: fundido + 4 % de desplazamiento con ease-out
 /// fuerte (Emil). Con "quitar animaciones" queda solo el fundido.
@@ -92,6 +94,8 @@ abstract class AppRoutes {
   static const paymentValidation = '/payment-validation';
   static const nfcSimulator     = '/debug/nfc-simulator';
   static const emergencyContacts = '/safety/contacts';
+  static const privacy          = '/legal/privacy';
+  static const terms            = '/legal/terms';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -114,6 +118,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == AppRoutes.routePlanner ||
           state.matchedLocation == AppRoutes.routeDetail ||
           state.matchedLocation == AppRoutes.aiChat ||
+          state.matchedLocation == AppRoutes.privacy ||
+          state.matchedLocation == AppRoutes.terms ||
           state.matchedLocation == AppRoutes.splash ||
           state.matchedLocation == AppRoutes.intro ||
           state.matchedLocation == AppRoutes.locationPermission ||
@@ -193,6 +199,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.emergencyContacts,
         pageBuilder: (context, state) =>
             _page(state, const EmergencyContactsScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.privacy,
+        pageBuilder: (context, state) =>
+            _page(state, const LegalScreen(doc: privacyPolicy)),
+      ),
+      GoRoute(
+        path: AppRoutes.terms,
+        pageBuilder: (context, state) =>
+            _page(state, const LegalScreen(doc: termsOfUse)),
       ),
       GoRoute(
         path: AppRoutes.aiChat,

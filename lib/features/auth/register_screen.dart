@@ -143,6 +143,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   subtitle: 'Obligatorio (Ley 1581). Los usamos solo para tu '
                       'cuenta, tus viajes y tus pagos.',
                 ),
+                Wrap(
+                  children: [
+                    TextButton(
+                      onPressed: () => context.push(AppRoutes.privacy),
+                      child: const Text('Leer cómo usamos tus datos'),
+                    ),
+                    TextButton(
+                      onPressed: () => context.push(AppRoutes.terms),
+                      child: const Text('Leer los términos'),
+                    ),
+                  ],
+                ),
                 _ConsentTile(
                   value: _geoConsent,
                   onChanged: (v) => setState(() => _geoConsent = v),
@@ -158,9 +170,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: GSSpacing.s6),
                 GSButton(
                   label: 'Crear cuenta',
+                  semanticLabel: 'Crear cuenta y aceptar los términos de uso',
                   onPressed: _dataConsent ? _submit : null,
                   isLoading: _isLoading,
                 ),
+                const SizedBox(height: GSSpacing.s2),
+                Text('Al crear tu cuenta aceptas los términos de uso.',
+                    style: text.bodySmall, textAlign: TextAlign.center),
                 if (!_dataConsent) ...[
                   const SizedBox(height: GSSpacing.s2),
                   Text(

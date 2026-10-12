@@ -164,6 +164,37 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  Future<void> _confirmDeleteAccount() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Eliminar tu cuenta?'),
+        content: const Text(
+            'Se borran tu perfil, tu billetera de prueba, tus contactos de '
+            'emergencia y tus viajes. No se puede deshacer.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Eliminar')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await authService.deleteAccount();
+      await authService.signOut();
+    } catch (_) {
+      GSToast.showWithMessenger(messenger,
+          message: 'No pudimos eliminar tu cuenta. Revisa tu conexión '
+              'e intenta de nuevo.',
+          type: GSToastType.error);
+    }
+  }
+
   Future<void> _signOut() async {
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -228,6 +259,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             icon: Icons.lock_outline_rounded,
             title: 'Cambiar contraseña',
             onTap: _showChangePassword,
+          ),
+          const GSSectionTitle('Tus datos y la ley'),
+          GSListRow(
+            icon: Icons.privacy_tip_outlined,
+            title: 'Cómo usamos tus datos',
+            onTap: () => context.push(AppRoutes.privacy),
+          ),
+          const Divider(indent: GSSpacing.s4),
+          GSListRow(
+            icon: Icons.description_outlined,
+            title: 'Términos de uso',
+            onTap: () => context.push(AppRoutes.terms),
+          ),
+          const Divider(indent: GSSpacing.s4),
+          GSListRow(
+            icon: Icons.delete_forever_outlined,
+            title: 'Eliminar mi cuenta',
+            subtitle: 'Borra tu perfil, billetera, contactos y viajes',
+            onTap: _confirmDeleteAccount,
           ),
           if (kDebugMode) ...[
             const GSSectionTitle('Desarrollo'),
