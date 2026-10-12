@@ -10,7 +10,7 @@ class GSCard extends StatelessWidget {
     this.padding,
     this.margin,
     this.radius,
-    this.color = GSColors.surface,
+    this.color,
     this.shadow,
     this.border,
     this.onTap,
@@ -21,7 +21,7 @@ class GSCard extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
   final double? radius;
-  final Color color;
+  final Color? color;
   final List<BoxShadow>? shadow;
   final Border? border;
   final VoidCallback? onTap;
@@ -33,7 +33,7 @@ class GSCard extends StatelessWidget {
     final content = Container(
       margin: margin,
       decoration: BoxDecoration(
-        color: color,
+        color: color ?? GSColors.surface,
         borderRadius: BorderRadius.circular(r),
         boxShadow: shadow,
         border: border ?? Border.all(color: GSColors.line),

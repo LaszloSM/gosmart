@@ -7,13 +7,18 @@ import 'design_tokens.dart';
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get light {
-    const ink = GSColors.text;
-    const muted = GSColors.textMuted;
+  static ThemeData get light => _build(GSPalette.light, Brightness.light);
+
+  /// Noche: esquema propio (superficies más claras arriba, marca aclarada).
+  static ThemeData get dark => _build(GSPalette.dark, Brightness.dark);
+
+  static ThemeData _build(GSPalette p, Brightness brightness) {
+    final ink = p.text;
+    final muted = p.textMuted;
     const disp = GSFonts.display;
 
     // Títulos en Barlow Condensed (rótulo); cuerpo y etiquetas en Barlow.
-    const textTheme = TextTheme(
+    final textTheme = TextTheme(
       displayLarge: TextStyle(fontFamily: disp, fontSize: 40, fontWeight: FontWeight.w800, height: 1.05, color: ink),
       displayMedium: TextStyle(fontFamily: disp, fontSize: 34, fontWeight: FontWeight.w800, height: 1.05, color: ink),
       displaySmall: TextStyle(fontFamily: disp, fontSize: 28, fontWeight: FontWeight.w800, height: 1.1, color: ink),
@@ -43,54 +48,54 @@ class AppTheme {
 
     final base = ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
+      brightness: brightness,
       fontFamily: GSFonts.sans,
-      colorScheme: const ColorScheme(
-        brightness: Brightness.light,
-        primary: GSColors.brand,
-        onPrimary: GSColors.onBrand,
-        primaryContainer: GSColors.brandTint,
-        onPrimaryContainer: GSColors.brand,
-        secondary: GSColors.brand,
-        onSecondary: GSColors.onBrand,
-        secondaryContainer: GSColors.brandTint,
-        onSecondaryContainer: GSColors.brand,
-        tertiary: GSColors.brand,
-        onTertiary: GSColors.onBrand,
-        tertiaryContainer: GSColors.brandTint,
-        onTertiaryContainer: GSColors.brand,
-        error: GSColors.roadClosed,
-        onError: GSColors.onBrand,
-        errorContainer: GSColors.roadClosedTint,
-        onErrorContainer: GSColors.roadClosed,
-        surface: GSColors.surface,
-        onSurface: GSColors.text,
-        surfaceContainerLowest: GSColors.surface,
-        surfaceContainerLow: GSColors.background,
-        surfaceContainer: GSColors.background,
-        surfaceContainerHigh: GSColors.surfaceSunken,
-        surfaceContainerHighest: GSColors.surfaceSunken,
-        onSurfaceVariant: GSColors.textMuted,
-        outline: GSColors.textMuted,
-        outlineVariant: GSColors.line,
-        shadow: GSColors.text,
-        scrim: GSColors.text,
-        inverseSurface: GSColors.text,
-        onInverseSurface: GSColors.surface,
-        inversePrimary: GSColors.brandTint,
+      colorScheme: ColorScheme(
+        brightness: brightness,
+        primary: p.brand,
+        onPrimary: p.onBrand,
+        primaryContainer: p.brandTint,
+        onPrimaryContainer: p.brand,
+        secondary: p.brand,
+        onSecondary: p.onBrand,
+        secondaryContainer: p.brandTint,
+        onSecondaryContainer: p.brand,
+        tertiary: p.brand,
+        onTertiary: p.onBrand,
+        tertiaryContainer: p.brandTint,
+        onTertiaryContainer: p.brand,
+        error: p.roadClosed,
+        onError: p.onBrand,
+        errorContainer: p.roadClosedTint,
+        onErrorContainer: p.roadClosed,
+        surface: p.surface,
+        onSurface: p.text,
+        surfaceContainerLowest: p.surface,
+        surfaceContainerLow: p.background,
+        surfaceContainer: p.background,
+        surfaceContainerHigh: p.surfaceSunken,
+        surfaceContainerHighest: p.surfaceSunken,
+        onSurfaceVariant: p.textMuted,
+        outline: p.textMuted,
+        outlineVariant: p.line,
+        shadow: p.text,
+        scrim: p.text,
+        inverseSurface: p.text,
+        onInverseSurface: p.surface,
+        inversePrimary: p.brandTint,
       ),
-      scaffoldBackgroundColor: GSColors.background,
+      scaffoldBackgroundColor: p.background,
       textTheme: textTheme,
 
       // Shell en ultramar: la barra superior es la carrocería.
-      appBarTheme: const AppBarTheme(
-        backgroundColor: GSColors.brand,
-        foregroundColor: GSColors.onBrand,
+      appBarTheme: AppBarTheme(
+        backgroundColor: p.shell,
+        foregroundColor: p.onShell,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
         toolbarHeight: GSSize.topBar,
-        systemOverlayStyle: SystemUiOverlayStyle(
+        systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.light,
           statusBarBrightness: Brightness.dark,
@@ -100,61 +105,61 @@ class AppTheme {
           fontSize: 26,
           fontWeight: FontWeight.w800,
           letterSpacing: 0.2,
-          color: GSColors.onBrand,
+          color: p.onShell,
         ),
-        iconTheme: IconThemeData(color: GSColors.onBrand, size: 24),
-        actionsIconTheme: IconThemeData(color: GSColors.onBrand, size: 24),
+        iconTheme: IconThemeData(color: p.onShell, size: 24),
+        actionsIconTheme: IconThemeData(color: p.onShell, size: 24),
       ),
 
       // DESIGN.md: sin tarjetas por defecto; cuando existen, planas con línea.
       cardTheme: CardThemeData(
-        color: GSColors.surface,
+        color: p.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(GSRadius.lg),
-          side: const BorderSide(color: GSColors.line),
+          side: BorderSide(color: p.line),
         ),
         margin: EdgeInsets.zero,
       ),
 
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: GSColors.surface,
+        fillColor: p.surface,
         border: OutlineInputBorder(
           borderRadius: inputRadius,
-          borderSide: const BorderSide(color: GSColors.textMuted, width: 1.5),
+          borderSide: BorderSide(color: p.textMuted, width: 1.5),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: inputRadius,
-          borderSide: const BorderSide(color: GSColors.textMuted, width: 1.5),
+          borderSide: BorderSide(color: p.textMuted, width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: inputRadius,
-          borderSide: const BorderSide(color: GSColors.brand, width: 2),
+          borderSide: BorderSide(color: p.brand, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: inputRadius,
-          borderSide: const BorderSide(color: GSColors.roadClosed, width: 2),
+          borderSide: BorderSide(color: p.roadClosed, width: 2),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: inputRadius,
-          borderSide: const BorderSide(color: GSColors.roadClosed, width: 2),
+          borderSide: BorderSide(color: p.roadClosed, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: GSSpacing.s4,
           vertical: GSSpacing.s3,
         ),
-        hintStyle: const TextStyle(color: GSColors.textDisabled, fontSize: 17),
-        labelStyle: const TextStyle(color: GSColors.textMuted, fontSize: 17),
-        errorStyle: const TextStyle(color: GSColors.roadClosed, fontSize: 14),
+        hintStyle: TextStyle(color: p.textDisabled, fontSize: 17),
+        labelStyle: TextStyle(color: p.textMuted, fontSize: 17),
+        errorStyle: TextStyle(color: p.roadClosed, fontSize: 14),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: GSColors.brand,
-          foregroundColor: GSColors.onBrand,
-          disabledBackgroundColor: GSColors.brand.withValues(alpha: 0.38),
-          disabledForegroundColor: GSColors.onBrand,
+          backgroundColor: p.brand,
+          foregroundColor: p.onBrand,
+          disabledBackgroundColor: p.brand.withValues(alpha: 0.38),
+          disabledForegroundColor: p.onBrand,
           minimumSize: const Size(double.infinity, GSSize.touchTarget),
           shape: buttonShape,
           elevation: 0,
@@ -164,8 +169,8 @@ class AppTheme {
 
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: GSColors.brand,
-          foregroundColor: GSColors.onBrand,
+          backgroundColor: p.brand,
+          foregroundColor: p.onBrand,
           minimumSize: const Size(double.infinity, GSSize.touchTarget),
           shape: buttonShape,
           textStyle: buttonText,
@@ -174,9 +179,9 @@ class AppTheme {
 
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: GSColors.text,
+          foregroundColor: p.text,
           minimumSize: const Size(double.infinity, GSSize.touchTarget),
-          side: const BorderSide(color: GSColors.textMuted, width: 2),
+          side: BorderSide(color: p.textMuted, width: 2),
           shape: buttonShape,
           textStyle: buttonText,
         ),
@@ -184,35 +189,35 @@ class AppTheme {
 
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: GSColors.brand,
+          foregroundColor: p.brand,
           minimumSize: const Size(GSSize.touchTarget, GSSize.touchTarget),
           textStyle: buttonText,
         ),
       ),
 
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: GSColors.surface,
-        selectedItemColor: GSColors.brand,
-        unselectedItemColor: GSColors.textMuted,
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: p.surface,
+        selectedItemColor: p.brand,
+        unselectedItemColor: p.textMuted,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
-        selectedLabelStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        selectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
       ),
 
       chipTheme: ChipThemeData(
-        backgroundColor: GSColors.surfaceSunken,
-        selectedColor: GSColors.brandTint,
-        labelStyle: const TextStyle(
+        backgroundColor: p.surfaceSunken,
+        selectedColor: p.brandTint,
+        labelStyle: TextStyle(
           fontFamily: GSFonts.sans,
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: GSColors.text,
+          color: p.text,
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(GSRadius.sm),
         ),
-        side: const BorderSide(color: GSColors.line),
+        side: BorderSide(color: p.line),
         padding: const EdgeInsets.symmetric(
           horizontal: GSSpacing.s3,
           vertical: GSSpacing.s1,
@@ -226,16 +231,16 @@ class AppTheme {
           minimumSize: const WidgetStatePropertyAll(Size(0, GSSize.touchTarget)),
           shape: WidgetStatePropertyAll(RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(GSRadius.md))),
-          side: const WidgetStatePropertyAll(
-              BorderSide(color: GSColors.brand, width: 1.5)),
+          side: WidgetStatePropertyAll(
+              BorderSide(color: p.brand, width: 1.5)),
           backgroundColor: WidgetStateProperty.resolveWith((s) =>
               s.contains(WidgetState.selected)
-                  ? GSColors.brand
-                  : GSColors.surface),
+                  ? p.brand
+                  : p.surface),
           foregroundColor: WidgetStateProperty.resolveWith((s) =>
               s.contains(WidgetState.selected)
-                  ? GSColors.onBrand
-                  : GSColors.brand),
+                  ? p.onBrand
+                  : p.brand),
           textStyle: const WidgetStatePropertyAll(TextStyle(
             fontFamily: GSFonts.display,
             fontSize: 19,
@@ -246,73 +251,73 @@ class AppTheme {
 
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith((s) =>
-            s.contains(WidgetState.selected) ? GSColors.brand : null),
-        side: const BorderSide(color: GSColors.textMuted, width: 2),
+            s.contains(WidgetState.selected) ? p.brand : null),
+        side: BorderSide(color: p.textMuted, width: 2),
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(GSRadius.sm)),
       ),
 
-      dividerTheme: const DividerThemeData(
-        color: GSColors.line,
+      dividerTheme: DividerThemeData(
+        color: p.line,
         thickness: 1,
         space: 0,
       ),
 
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return GSColors.onBrand;
-          return GSColors.textMuted;
+          if (states.contains(WidgetState.selected)) return p.onBrand;
+          return p.textMuted;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return GSColors.brand;
-          return GSColors.surfaceSunken;
+          if (states.contains(WidgetState.selected)) return p.brand;
+          return p.surfaceSunken;
         }),
         trackOutlineColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return GSColors.brand;
-          return GSColors.textMuted;
+          if (states.contains(WidgetState.selected)) return p.brand;
+          return p.textMuted;
         }),
       ),
 
-      listTileTheme: const ListTileThemeData(
+      listTileTheme: ListTileThemeData(
         tileColor: Colors.transparent,
-        iconColor: GSColors.textMuted,
-        textColor: GSColors.text,
+        iconColor: p.textMuted,
+        textColor: p.text,
         minVerticalPadding: GSSpacing.s3,
         titleTextStyle: TextStyle(
           fontFamily: GSFonts.sans,
           fontSize: 17,
           fontWeight: FontWeight.w600,
-          color: GSColors.text,
+          color: p.text,
         ),
         subtitleTextStyle: TextStyle(
           fontFamily: GSFonts.sans,
           fontSize: 15,
           height: 1.35,
-          color: GSColors.textMuted,
+          color: p.textMuted,
         ),
       ),
 
-      snackBarTheme: const SnackBarThemeData(
-        backgroundColor: GSColors.text,
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: p.text,
         contentTextStyle: TextStyle(
           fontFamily: GSFonts.sans,
           fontSize: 15,
-          color: GSColors.surface,
+          color: p.surface,
         ),
         behavior: SnackBarBehavior.floating,
       ),
 
-      bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: GSColors.surface,
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: p.surface,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
+        shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(GSRadius.lg)),
         ),
       ),
 
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: GSColors.brand,
-        linearTrackColor: GSColors.line,
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: p.brand,
+        linearTrackColor: p.line,
       ),
 
     );
@@ -324,6 +329,4 @@ class AppTheme {
     );
   }
 
-  /// Nombre anterior. La app es clara primero; el tema nocturno llega después.
-  static ThemeData get dark => light;
 }

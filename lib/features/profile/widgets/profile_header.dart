@@ -90,14 +90,14 @@ class _Avatar extends StatelessWidget {
                 backgroundColor: GSColors.brandTint,
                 backgroundImage: url != null ? NetworkImage(url!) : null,
                 child: url == null
-                    ? const Icon(Icons.person_rounded,
+                    ? Icon(Icons.person_rounded,
                         size: 30, color: GSColors.brand)
                     : null,
               ),
               if (uploading)
-                const Positioned.fill(
+                Positioned.fill(
                   child: CircleAvatar(
-                    backgroundColor: Color(0x99111827),
+                    backgroundColor: const Color(0x99111827),
                     child: SizedBox(
                       width: 20,
                       height: 20,
@@ -116,7 +116,7 @@ class _Avatar extends StatelessWidget {
                     shape: BoxShape.circle,
                     border: Border.all(color: GSColors.surface, width: 2),
                   ),
-                  child: const Icon(Icons.photo_camera_rounded,
+                  child: Icon(Icons.photo_camera_rounded,
                       size: 14, color: GSColors.onBrand),
                 ),
               ),

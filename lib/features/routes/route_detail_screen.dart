@@ -188,7 +188,7 @@ class _LegStep extends StatelessWidget {
                       size: GSPlateSize.sm,
                       trailing: Text(
                         '${leg.durationMin} min',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: GSFonts.mono,
                           fontFeatures: GSFonts.tabular,
                           fontSize: 17,

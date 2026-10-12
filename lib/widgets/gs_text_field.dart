@@ -59,7 +59,7 @@ class GSTextField extends StatelessWidget {
       enabled: enabled,
       autofocus: autofocus,
       textCapitalization: textCapitalization,
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: GSFonts.sans,
         fontSize: 17,
         color: GSColors.text,
@@ -85,7 +85,7 @@ class GSTextField extends StatelessWidget {
               children: [
                 Text(
                   label!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: GSFonts.sans,
                     fontSize: 15,
                     fontWeight: FontWeight.w600,

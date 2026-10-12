@@ -289,7 +289,14 @@ Movimiento: presión 0.97 en 120 ms `GSCurve.enter`; nada animado al cambiar de 
 `GSColors.primary` es un alias del fondo (lámina), nunca detrás de texto blanco. Código nuevo usa
 los nombres nuevos.
 
+**Día y noche:** `GSColors.*` son getters que leen la paleta activa (`GSPalette.light` /
+`GSPalette.dark`); `main.dart` la aplica según el brillo del tema (`ThemeMode.system`) y reconstruye
+el árbol al cambiar. Por eso los colores NO son `const`: nunca guardes un color en un campo
+`static final` (se quedaría con el de la primera vez); usa getters. Barras y cabeceras usan
+`shell/onShell/onShellMuted` (ultramar profundo de noche); letras, íconos y botones usan `brand`.
+
 ```dart
+GSColors.shell / .onShell / .onShellMuted     // carrocería: AppBar, barra inferior, cabeceras
 GSColors.brand / .brandPressed / .onBrand / .onBrandMuted / .brandTint / .stripe
 GSColors.background / .surface / .surfaceSunken / .text / .textMuted / .line
 GSColors.roadOpen / .roadCaution(+Tint) / .roadClosed(+Tint) / .roadUnknown  // road status ONLY

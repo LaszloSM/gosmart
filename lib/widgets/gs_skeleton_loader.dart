@@ -66,7 +66,7 @@ class _GSSkeletonLoaderState extends State<GSSkeletonLoader>
             gradient: LinearGradient(
               begin: Alignment(_animation.value - 1, 0),
               end: Alignment(_animation.value + 1, 0),
-              colors: const [
+              colors: [
                 GSColors.surfaceSunken,
                 GSColors.surface,
                 GSColors.surfaceSunken,

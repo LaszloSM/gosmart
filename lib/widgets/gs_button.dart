@@ -141,16 +141,16 @@ class _GSButtonState extends State<GSButton> {
     switch (widget.variant) {
       case GSButtonVariant.primary:
       case GSButtonVariant.eco:
-        return const _VariantColors(GSColors.brand, GSColors.onBrand);
+        return _VariantColors(GSColors.brand, GSColors.onBrand);
       case GSButtonVariant.secondary:
-        return const _VariantColors(GSColors.brandTint, GSColors.brand);
+        return _VariantColors(GSColors.brandTint, GSColors.brand);
       case GSButtonVariant.outline:
-        return const _VariantColors(
+        return _VariantColors(
             GSColors.surface, GSColors.brand, GSColors.brand);
       case GSButtonVariant.ghost:
-        return const _VariantColors(Colors.transparent, GSColors.brand);
+        return _VariantColors(Colors.transparent, GSColors.brand);
       case GSButtonVariant.danger:
-        return const _VariantColors(
+        return _VariantColors(
             GSColors.surface, GSColors.roadClosed, GSColors.roadClosed);
     }
   }
@@ -194,8 +194,8 @@ class GSIconButton extends StatelessWidget {
     super.key,
     required this.icon,
     required this.onPressed,
-    this.backgroundColor = GSColors.surface,
-    this.iconColor = GSColors.textPrimary,
+    this.backgroundColor,
+    this.iconColor,
     this.size = GSSize.touchTarget,
     this.tooltip,
     this.hasShadow = false,
@@ -203,8 +203,8 @@ class GSIconButton extends StatelessWidget {
 
   final IconData icon;
   final VoidCallback? onPressed;
-  final Color backgroundColor;
-  final Color iconColor;
+  final Color? backgroundColor;
+  final Color? iconColor;
   final double size;
   final String? tooltip;
   final bool hasShadow;
@@ -223,11 +223,12 @@ class GSIconButton extends StatelessWidget {
             width: size,
             height: size,
             decoration: BoxDecoration(
-              color: backgroundColor,
+              color: backgroundColor ?? GSColors.surface,
               shape: BoxShape.circle,
               boxShadow: hasShadow ? GSShadow.card : [],
             ),
-            child: Icon(icon, color: iconColor, size: size * 0.45),
+            child: Icon(icon,
+                color: iconColor ?? GSColors.text, size: size * 0.45),
           ),
         ),
       ),

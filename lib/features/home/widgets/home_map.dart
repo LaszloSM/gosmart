@@ -116,7 +116,7 @@ class _HomeMapState extends ConsumerState<HomeMap> {
                     point: activeRoute.legs.first.points.first,
                     width: 36,
                     height: 36,
-                    child: const _Dot(
+                    child: _Dot(
                         color: GSColors.brand, icon: Icons.my_location),
                   ),
                   Marker(
@@ -124,7 +124,7 @@ class _HomeMapState extends ConsumerState<HomeMap> {
                     width: 40,
                     height: 40,
                     // Destino en tinta: el rojo es solo para la vía.
-                    child: const _Dot(
+                    child: _Dot(
                         color: GSColors.text, icon: Icons.location_on),
                   ),
                 ],
@@ -156,7 +156,7 @@ class _HomeMapState extends ConsumerState<HomeMap> {
                     width: 44,
                     height: 44,
                     alignment: Alignment.topCenter,
-                    child: const Icon(
+                    child: Icon(
                       Icons.location_on,
                       color: GSColors.text,
                       size: 44,
@@ -190,7 +190,7 @@ class _HomeMapState extends ConsumerState<HomeMap> {
             top: GSSpacing.s3,
             child: Material(
               color: GSColors.surface,
-              shape: const CircleBorder(
+              shape: CircleBorder(
                 side: BorderSide(color: GSColors.line),
               ),
               elevation: 0,
@@ -201,7 +201,7 @@ class _HomeMapState extends ConsumerState<HomeMap> {
                   width: GSSize.touchTarget,
                   height: GSSize.touchTarget,
                 ),
-                icon: const Icon(Icons.my_location, color: GSColors.brand),
+                icon: Icon(Icons.my_location, color: GSColors.brand),
               ),
             ),
           ),
@@ -262,7 +262,7 @@ class _GoHereCard extends StatelessWidget {
                 Text(
                   '${point.latitude.toStringAsFixed(4)}, '
                   '${point.longitude.toStringAsFixed(4)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,

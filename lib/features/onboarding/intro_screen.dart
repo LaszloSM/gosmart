@@ -37,7 +37,7 @@ class IntroScreen extends StatelessWidget {
           children: [
             // Carrocería: el nombre y la Línea de ejemplo.
             ColoredBox(
-              color: GSColors.brand,
+              color: GSColors.shell,
               child: SafeArea(
                 bottom: false,
                 child: Padding(
@@ -46,24 +46,24 @@ class IntroScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'GoSmart',
                         style: TextStyle(
                           fontFamily: GSFonts.display,
                           fontSize: 40,
                           fontWeight: FontWeight.w800,
                           height: 1,
-                          color: GSColors.onBrand,
+                          color: GSColors.onShell,
                         ),
                       ),
                       const SizedBox(height: GSSpacing.s2),
-                      const Text(
+                      Text(
                         'Antes de salir, ya sabes cómo está la vía.',
                         style: TextStyle(
                           fontFamily: GSFonts.sans,
                           fontSize: 19,
                           fontWeight: FontWeight.w500,
-                          color: GSColors.onBrand,
+                          color: GSColors.onShell,
                         ),
                       ),
                       const SizedBox(height: GSSpacing.s5),
@@ -74,12 +74,12 @@ class IntroScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: GSSpacing.s2),
-                      const Text(
+                      Text(
                         'Ejemplo: así se ve un bloqueo en la Troncal.',
                         style: TextStyle(
                           fontFamily: GSFonts.sans,
                           fontSize: 14,
-                          color: GSColors.onBrandMuted,
+                          color: GSColors.onShellMuted,
                         ),
                       ),
                     ],

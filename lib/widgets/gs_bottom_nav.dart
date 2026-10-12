@@ -29,7 +29,7 @@ class GSBottomNav extends StatelessWidget {
     // Alto mínimo de 72 dp que crece con el texto grande del sistema
     // (PRODUCT.md: hasta 200 % sin cortar).
     return ColoredBox(
-      color: GSColors.brand,
+      color: GSColors.shell,
       child: SafeArea(
         top: false,
         child: ConstrainedBox(
@@ -74,7 +74,7 @@ class _NavTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(GSRadius.full),
-        splashColor: GSColors.onBrand.withValues(alpha: 0.12),
+        splashColor: GSColors.onShell.withValues(alpha: 0.12),
         highlightColor: Colors.transparent,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -91,14 +91,14 @@ class _NavTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(GSRadius.sm),
                 color: isActive ? GSColors.surface : Colors.transparent,
                 border: isActive
-                    ? const Border(
+                    ? Border(
                         bottom: BorderSide(color: GSColors.stripe, width: 4))
                     : null,
               ),
               child: Icon(
                 item.icon,
                 size: GSSize.iconLg,
-                color: isActive ? GSColors.brand : GSColors.onBrandMuted,
+                color: isActive ? GSColors.brand : GSColors.onShellMuted,
               ),
             ),
             const SizedBox(height: 2),
@@ -110,7 +110,7 @@ class _NavTile extends StatelessWidget {
                 fontFamily: GSFonts.sans,
                 fontSize: 13,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                color: isActive ? GSColors.onBrand : GSColors.onBrandMuted,
+                color: isActive ? GSColors.onShell : GSColors.onShellMuted,
               ),
             ),
           ],

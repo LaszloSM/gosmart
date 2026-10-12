@@ -47,13 +47,13 @@ class BalanceHeader extends ConsumerWidget {
                     TextSpan(children: [
                       TextSpan(
                         text: formatCop(wallet.balance),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.w700,
                           color: GSColors.text,
                         ),
                       ),
-                      const TextSpan(
+                      TextSpan(
                         text: ' COP',
                         style: TextStyle(
                           fontSize: 17,
@@ -72,8 +72,8 @@ class BalanceHeader extends ConsumerWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Padding(
-                        padding: EdgeInsets.only(top: 2),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
                         child: Icon(Icons.science_outlined,
                             size: 18, color: GSColors.textMuted),
                       ),

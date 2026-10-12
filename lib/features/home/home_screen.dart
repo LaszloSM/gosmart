@@ -96,7 +96,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           AnnotatedRegion<SystemUiOverlayStyle>(
             value: SystemUiOverlayStyle.light,
             child: ColoredBox(
-              color: GSColors.brand,
+              color: GSColors.shell,
               child: SafeArea(
                 bottom: false,
                 child: Padding(
@@ -188,21 +188,21 @@ class _RouteBanner extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(selectedModeProvider);
     return Material(
-      color: GSColors.brand,
+      color: GSColors.shell,
       borderRadius:
           const BorderRadius.vertical(top: Radius.circular(GSRadius.lg)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => context.push(AppRoutes.routeDetail),
         child: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border:
                 Border(bottom: BorderSide(color: GSColors.stripe, width: 4)),
           ),
           padding: const EdgeInsets.only(left: GSSpacing.s4),
           child: Row(
             children: [
-              Icon(modeIconFor(mode), color: GSColors.onBrand),
+              Icon(modeIconFor(mode), color: GSColors.onShell),
               const SizedBox(width: GSSpacing.s3),
               Expanded(
                 child: Column(
@@ -212,19 +212,19 @@ class _RouteBanner extends ConsumerWidget {
                     Text(
                       '${route.durationMin} min · '
                       '${route.distanceKm.toStringAsFixed(1)} km',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: GSFonts.display,
                         fontFeatures: GSFonts.tabular,
-                        color: GSColors.onBrand,
+                        color: GSColors.onShell,
                         fontWeight: FontWeight.w800,
                         fontSize: 22,
                       ),
                     ),
-                    const Text(
+                    Text(
                       'Toca para ver los tramos',
                       style: TextStyle(
                         fontFamily: GSFonts.sans,
-                        color: GSColors.onBrandMuted,
+                        color: GSColors.onShellMuted,
                         fontSize: 14,
                       ),
                     ),
@@ -233,7 +233,7 @@ class _RouteBanner extends ConsumerWidget {
               ),
               IconButton(
                 tooltip: 'Quitar ruta',
-                icon: const Icon(Icons.close_rounded, color: GSColors.onBrand),
+                icon: Icon(Icons.close_rounded, color: GSColors.onShell),
                 onPressed: () =>
                     ref.read(activeRouteProvider.notifier).state = null,
               ),

@@ -36,7 +36,7 @@ class GSListRow extends StatelessWidget {
         (value != null
             ? Text(
                 value!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: GSFonts.mono,
                   fontFeatures: GSFonts.tabular,
                   fontSize: 17,
@@ -45,7 +45,7 @@ class GSListRow extends StatelessWidget {
                 ),
               )
             : onTap != null
-                ? const Icon(Icons.chevron_right_rounded,
+                ? Icon(Icons.chevron_right_rounded,
                     color: GSColors.textMuted)
                 : null);
 

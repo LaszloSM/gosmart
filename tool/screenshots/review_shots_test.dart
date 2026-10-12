@@ -76,7 +76,7 @@ void main() {
     dotenv.testLoad(fileInput: 'MAPBOX_PUBLIC_TOKEN=\n');
     await t.runAsync(loadFonts);
     const a = LatLng(11.54, -72.90), b = LatLng(11.55, -72.91), c = LatLng(11.38, -72.24);
-    const route = RouteResult(legs: [
+    final route = RouteResult(legs: [
       RouteLeg(mode: 'walk', points: [a, b], color: GSColors.walk, durationMin: 6, distanceKm: 0.5, instruction: 'Camina hasta la parada de la calle 15'),
       RouteLeg(mode: 'bus', points: [b, c], color: GSColors.bus, durationMin: 72, distanceKm: 74.2, instruction: 'Toma el colectivo hasta el terminal de Maicao', lineId: 'Colectivo'),
     ], distanceKm: 74.7, durationMin: 78, profile: 'driving', estimatedCostCop: 15000, category: 'public');
@@ -103,8 +103,10 @@ void main() {
         _tx(WalletTxType.bonus, 10000, const Duration(days: 12), 'Bono de bienvenida'),
       ]),
     ];
+    var dark = false;
     Future<void> shot(Widget w, String n, {bool settle = true}) async {
-      await t.pumpWidget(ProviderScope(key: UniqueKey(), overrides: ov, child: MaterialApp(debugShowCheckedModeBanner: false, theme: AppTheme.light,
+      GSColors.apply(dark ? Brightness.dark : Brightness.light);
+      await t.pumpWidget(ProviderScope(key: UniqueKey(), overrides: ov, child: MaterialApp(debugShowCheckedModeBanner: false, theme: dark ? AppTheme.dark : AppTheme.light,
           home: RepaintBoundary(key: const ValueKey('shot'), child: w))));
       if (settle) { await t.pumpAndSettle(); } else { await t.pump(const Duration(milliseconds: 400)); }
       await _save(t, n);
@@ -139,6 +141,18 @@ void main() {
     await shot(const LocationPermissionScreen(), 'phone-location', settle: false);
     await shot(const LoginScreen(), 'phone-login', settle: false);
     await shot(const RegisterScreen(), 'phone-register', settle: false);
+
+    // Noche: esquema propio.
+    dark = true;
+    await shot(const HomeScreen(), 'phone-dark-home', settle: false);
+    await t.pump(const Duration(milliseconds: 300));
+    await _save(t, 'phone-dark-home');
+    await shot(const WalletScreen(), 'phone-dark-wallet');
+    await shot(const RouteDetailScreen(), 'phone-dark-route-detail');
+    await shot(const ProfileScreen(), 'phone-dark-profile');
+    await shot(const LoginScreen(), 'phone-dark-login', settle: false);
+    await shot(const AiChatScreen(), 'phone-dark-assistant', settle: false);
+    dark = false;
 
     // Texto grande del sistema (PRODUCT.md: hasta 200 % sin cortar).
     for (final scale in [1.3, 2.0]) {

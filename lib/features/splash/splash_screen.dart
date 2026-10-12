@@ -34,10 +34,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const AnnotatedRegion<SystemUiOverlayStyle>(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: GSColors.brand,
+        backgroundColor: GSColors.shell,
         body: Center(
           child: Text(
             'GoSmart',
@@ -45,7 +45,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               fontFamily: GSFonts.display,
               fontSize: 48,
               fontWeight: FontWeight.w800,
-              color: GSColors.onBrand,
+              color: GSColors.onShell,
             ),
           ),
         ),

@@ -25,7 +25,8 @@ class DestinationPlate extends StatelessWidget {
   final FocusNode? focusNode;
   final bool autofocus;
 
-  static const _letters = TextStyle(
+  // Getter, no campo: lee la paleta activa (día/noche) cada vez.
+  static TextStyle get _letters => TextStyle(
     fontFamily: GSFonts.display,
     fontSize: 22,
     fontWeight: FontWeight.w800,
@@ -47,7 +48,7 @@ class DestinationPlate extends StatelessWidget {
             maxLines: 2,
             onTap: onClear,
             semanticLabel: 'Destino: $chosenLabel. Toca para cambiarlo',
-            trailing: const Icon(Icons.edit_outlined, color: GSColors.textMuted),
+            trailing: Icon(Icons.edit_outlined, color: GSColors.textMuted),
           )
         : TextField(
             key: const ValueKey('blank'),
@@ -60,17 +61,17 @@ class DestinationPlate extends StatelessWidget {
             decoration: InputDecoration(
               hintText: '¿A DÓNDE VAS?',
               hintStyle: _letters.copyWith(color: GSColors.textMuted),
-              prefixIcon: const Icon(Icons.search_rounded,
+              prefixIcon: Icon(Icons.search_rounded,
                   size: 26, color: GSColors.brand),
               contentPadding: const EdgeInsets.symmetric(
                   horizontal: GSSpacing.s4, vertical: GSSpacing.s4),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(GSRadius.md),
-                borderSide: const BorderSide(color: GSColors.line, width: 1.5),
+                borderSide: BorderSide(color: GSColors.line, width: 1.5),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(GSRadius.md),
-                borderSide: const BorderSide(color: GSColors.brand, width: 2),
+                borderSide: BorderSide(color: GSColors.brand, width: 2),
               ),
               suffixIcon: controller.text.isEmpty
                   ? null

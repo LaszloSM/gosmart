@@ -221,7 +221,7 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.info_outline_rounded,
+                    Icon(Icons.info_outline_rounded,
                         size: 16, color: GSColors.textMuted),
                     const SizedBox(width: GSSpacing.s1),
                     Text(
@@ -382,7 +382,7 @@ class _SuggestionChip extends StatelessWidget {
       color: GSColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(GSRadius.sm),
-        side: const BorderSide(color: GSColors.line, width: 1.5),
+        side: BorderSide(color: GSColors.line, width: 1.5),
       ),
       child: InkWell(
         onTap: onTap,
@@ -392,7 +392,7 @@ class _SuggestionChip extends StatelessWidget {
             widthFactor: 1,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: GSFonts.sans,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,

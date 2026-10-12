@@ -106,8 +106,8 @@ permiso de ubicación y splash. De paso se quitaron funciones falsas (interrupto
 que se perdía, sin forma de elegir el modo). Revisión final de impeccable en un agente nuevo: "fix" → dos rondas de arreglos → **ship**.
 Revisión de movimiento de Emil: "Block" → arreglada (pestañas sin animación, ease-out en la hoja,
 volver más rápido que entrar, "quitar animaciones" en todo). `DESIGN.md` reescrito por el
-documentador desde lo construido. **Queda pendiente el modo nocturno** (`AppTheme.dark` devuelve
-el claro): exige pasar los colores estáticos `GSColors` a colores del tema en toda la app.
+documentador desde lo construido. **Modo nocturno hecho** como esquema propio (paleta `GSPalette.dark`, todo texto ≥ 7:1,
+carrocería separada de la marca). Falta solo el estilo nocturno del mapa (Fase 3, Google Maps).
 
 **Orden de construcción (code-led, una pantalla por entrega):**
 1. **Base:** tokens, tema, fuentes, `GSRoutePlate`, `GSButton`, barra inferior, campos y hojas.

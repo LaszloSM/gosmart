@@ -95,7 +95,7 @@ class GSBottomSheet extends StatelessWidget {
                       Expanded(
                         child: Text(
                           title!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: GSFonts.display,
                             fontSize: 26,
                             fontWeight: FontWeight.w800,

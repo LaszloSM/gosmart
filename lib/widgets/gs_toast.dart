@@ -52,7 +52,7 @@ class GSToast {
               Expanded(
                 child: Text(
                   message,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: GSFonts.sans,
                     fontSize: 16,
                     fontWeight: FontWeight.w500,

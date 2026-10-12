@@ -207,7 +207,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                 // Desde: tu ubicación (o el destino anterior tras intercambiar).
                 Row(
                   children: [
-                    const Icon(Icons.my_location_rounded,
+                    Icon(Icons.my_location_rounded,
                         color: GSColors.textMuted),
                     const SizedBox(width: GSSpacing.s3),
                     Expanded(

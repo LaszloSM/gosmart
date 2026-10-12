@@ -86,7 +86,7 @@ class _SmsVerifyScreenState extends State<SmsVerifyScreen> {
             Text('Te lo enviamos por SMS al', style: text.bodyLarge),
             Text(
               widget.phone,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: GSFonts.mono,
                 fontFeatures: GSFonts.tabular,
                 fontSize: 20,
@@ -104,7 +104,7 @@ class _SmsVerifyScreenState extends State<SmsVerifyScreen> {
               maxLength: 6,
               autofillHints: const [AutofillHints.oneTimeCode],
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: GSFonts.display,
                 fontFeatures: GSFonts.tabular,
                 fontSize: 40,

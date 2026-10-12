@@ -9,6 +9,7 @@ import 'core/supabase_client.dart';
 import 'core/telemetry.dart';
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
+import 'theme/design_tokens.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,6 +52,19 @@ class GoSmartApp extends ConsumerWidget {
       title: 'GoSmart',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      // Noche: esquema propio que sigue al sistema (viajes nocturnos).
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system,
+      // GSColors lee la paleta activa. Al cambiar día/noche se aplica y se
+      // reconstruye el árbol (muchos widgets son const y no se repintarían).
+      builder: (context, child) {
+        final brightness = Theme.of(context).brightness;
+        GSColors.apply(brightness);
+        return KeyedSubtree(
+          key: ValueKey(brightness),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       routerConfig: router,
       locale: const Locale('es', 'CO'),
       localizationsDelegates: const [

@@ -7,103 +7,201 @@ import 'package:flutter/material.dart';
 // seleccionado. Rojo / ámbar / verde existen SOLO para el estado de la vía.
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// Paleta de un esquema (día o noche). Los valores salen de DESIGN.md; el
+/// esquema nocturno es propio, no una inversión: las superficies suben de
+/// luminosidad y la marca se aclara para leerse sobre ellas.
+class GSPalette {
+  const GSPalette({
+    required this.brand,
+    required this.brandPressed,
+    required this.onBrand,
+    required this.onBrandMuted,
+    required this.brandTint,
+    required this.shell,
+    required this.onShell,
+    required this.onShellMuted,
+    required this.stripe,
+    required this.background,
+    required this.surface,
+    required this.surfaceSunken,
+    required this.text,
+    required this.textMuted,
+    required this.textDisabled,
+    required this.line,
+    required this.roadOpen,
+    required this.roadCaution,
+    required this.roadCautionTint,
+    required this.roadClosed,
+    required this.roadClosedTint,
+    required this.roadUnknown,
+    required this.taxi,
+    required this.bike,
+    required this.cardGold,
+    required this.shadowInk,
+  });
+
+  final Color brand, brandPressed, onBrand, onBrandMuted, brandTint;
+  final Color shell, onShell, onShellMuted, stripe;
+  final Color background, surface, surfaceSunken;
+  final Color text, textMuted, textDisabled, line;
+  final Color roadOpen, roadCaution, roadCautionTint;
+  final Color roadClosed, roadClosedTint, roadUnknown;
+  final Color taxi, bike, cardGold, shadowInk;
+
+  /// Día: claro primero, legible al sol.
+  static const light = GSPalette(
+    brand: Color(0xFF1B3A8C), // ultramar de carrocería; blanco encima 10.3:1
+    brandPressed: Color(0xFF142C6B),
+    onBrand: Color(0xFFFFFFFF),
+    onBrandMuted: Color(0xFFCCD7F2), // 7:1 sobre ultramar
+    brandTint: Color(0xFFE3E9F6), // ultramar encima 8.5:1
+    shell: Color(0xFF1B3A8C),
+    onShell: Color(0xFFFFFFFF),
+    onShellMuted: Color(0xFFCCD7F2),
+    stripe: Color(0xFFC2185B),
+    background: Color(0xFFEEF1F5), // lámina
+    surface: Color(0xFFFFFFFF), // placa
+    surfaceSunken: Color(0xFFE2E7EE),
+    text: Color(0xFF111827), // 15.7:1 sobre lámina
+    textMuted: Color(0xFF465066), // 7.1:1 sobre lámina
+    textDisabled: Color(0xFF8A93A6),
+    line: Color(0xFFC9D0DC),
+    roadOpen: Color(0xFF17602F),
+    roadCaution: Color(0xFF6A3F00),
+    roadCautionTint: Color(0xFFFBE7C2),
+    roadClosed: Color(0xFF9E1F18),
+    roadClosedTint: Color(0xFFF6DAD6),
+    roadUnknown: Color(0xFF50576A),
+    taxi: Color(0xFF7A4E2D),
+    bike: Color(0xFF3D6B8C),
+    cardGold: Color(0xFFB08A3E),
+    shadowInk: Color(0xFF0E1A3A),
+  );
+
+  /// Noche: viajes nocturnos sin encandilar. Carrocería en ultramar profundo;
+  /// marca clara para leerse sobre las placas oscuras. Todo texto ≥ 7:1.
+  static const dark = GSPalette(
+    brand: Color(0xFF9DB2F2), // 8:1 sobre la placa nocturna
+    brandPressed: Color(0xFFB7C7F6),
+    onBrand: Color(0xFF0E1320), // 8.9:1 sobre la marca
+    onBrandMuted: Color(0xFF26345F),
+    brandTint: Color(0xFF22305A),
+    shell: Color(0xFF14295F),
+    onShell: Color(0xFFFFFFFF), // 13.9:1
+    onShellMuted: Color(0xFFC3CEEA), // 8.8:1
+    stripe: Color(0xFFFF6FA3),
+    background: Color(0xFF0E1320),
+    surface: Color(0xFF171E2D),
+    surfaceSunken: Color(0xFF0A0E17),
+    text: Color(0xFFEEF1F5), // 14.7:1 sobre la placa
+    textMuted: Color(0xFFAEB7CA), // 8.3:1
+    textDisabled: Color(0xFF6E778B),
+    line: Color(0xFF2C3649),
+    roadOpen: Color(0xFF73D69C),
+    roadCaution: Color(0xFFF2B65A),
+    roadCautionTint: Color(0xFF3A2A10),
+    roadClosed: Color(0xFFFF8F85),
+    roadClosedTint: Color(0xFF3F1916),
+    roadUnknown: Color(0xFFA3ABBA),
+    taxi: Color(0xFFD2A27C),
+    bike: Color(0xFF8FB6D6),
+    cardGold: Color(0xFFD4B06A),
+    shadowInk: Color(0xFF000000),
+  );
+}
+
 abstract class GSColors {
-  // ── Marca y shell ──────────────────────────────────────────────────────────
-  /// Ultramar de carrocería: barras, botón primario, letras de las placas.
-  /// Blanco encima 10.3:1.
-  static const brand = Color(0xFF1B3A8C);
-  static const brandPressed = Color(0xFF142C6B);
+  static GSPalette _p = GSPalette.light;
+
+  /// Esquema activo. Lo fija la app según el brillo del tema (main.dart).
+  static GSPalette get palette => _p;
+  static bool get isDark => identical(_p, GSPalette.dark);
+  static void apply(Brightness b) =>
+      _p = b == Brightness.dark ? GSPalette.dark : GSPalette.light;
+
+  // ── Marca y carrocería ─────────────────────────────────────────────────────
+  /// Marca: botón primario, letras de las placas, selección.
+  static Color get brand => _p.brand;
+  static Color get brandPressed => _p.brandPressed;
 
   /// Texto e íconos sobre [brand].
-  static const onBrand = Color(0xFFFFFFFF);
+  static Color get onBrand => _p.onBrand;
+  static Color get onBrandMuted => _p.onBrandMuted;
 
-  /// Texto secundario sobre [brand] (7:1).
-  static const onBrandMuted = Color(0xFFCCD7F2);
+  /// Fondos seleccionados con [brand] encima.
+  static Color get brandTint => _p.brandTint;
 
-  /// Tinte de ultramar para fondos seleccionados (ultramar encima 8.5:1).
-  static const brandTint = Color(0xFFE3E9F6);
+  /// Carrocería: barra superior, barra inferior, cabeceras. De día es la
+  /// misma marca; de noche un ultramar profundo.
+  static Color get shell => _p.shell;
+  static Color get onShell => _p.onShell;
+  static Color get onShellMuted => _p.onShellMuted;
 
   /// Franja fucsia: marca lo seleccionado y la placa activa. Nunca relleno.
-  static const stripe = Color(0xFFC2185B);
+  static Color get stripe => _p.stripe;
 
-  // ── Neutros fríos (lámina y placa) ─────────────────────────────────────────
-  /// Lámina: fondo de pantalla.
-  static const background = Color(0xFFEEF1F5);
-
-  /// Placa: hojas, superficies, campos.
-  static const surface = Color(0xFFFFFFFF);
-
-  /// Lámina un tono más oscura: agrupar, chips sin seleccionar.
-  static const surfaceSunken = Color(0xFFE2E7EE);
-
-  /// Tinta: texto principal (15.7:1 sobre lámina).
-  static const text = Color(0xFF111827);
-
-  /// Tinta suave: texto secundario (7.1:1 sobre lámina).
-  static const textMuted = Color(0xFF465066);
-
-  /// Solo divisores y bordes de placa; nunca texto encima.
-  static const line = Color(0xFFC9D0DC);
-
-  // ── Estado de la vía (siempre con ícono + texto) ───────────────────────────
-  static const roadOpen = Color(0xFF17602F);
-  static const roadCaution = Color(0xFF6A3F00);
-  static const roadCautionTint = Color(0xFFFBE7C2);
-  static const roadClosed = Color(0xFF9E1F18);
-  static const roadClosedTint = Color(0xFFF6DAD6);
-  static const roadUnknown = Color(0xFF545B69);
-
-  // ── Nombres anteriores (alias). Código nuevo: usar los de arriba. ──────────
-  /// Antes "fondo más oscuro"; ahora el fondo arena.
-  static const primary = background;
-  static const bg = background;
-  static const surfaceContainerLow = surfaceSunken;
-  static const surfaceDark = surfaceSunken;
-  static const surfaceContainerHigh = surface;
-  static const surfaceContainerHighest = surface;
-  static const surfaceBright = surfaceSunken;
-
-  static const accent = brand;
-  static const accentHover = brandPressed;
-  static const accentContainer = brand;
-  static const accentLight = brandTint;
-  static const accentAlt = brand;
-  static const accentAltLight = brandTint;
-  static const tertiary = brand;
-  static const tertiaryLight = brandTint;
-
-  /// Los eco-puntos no usan verde: el verde es de la vía.
-  static const eco = brand;
-  static const ecoLight = brandTint;
-  static const ecoDark = brandPressed;
-
-  static const border = line;
-  static const textPrimary = text;
-  static const textSecondary = textMuted;
+  // ── Neutros (lámina y placa) ───────────────────────────────────────────────
+  static Color get background => _p.background;
+  static Color get surface => _p.surface;
+  static Color get surfaceSunken => _p.surfaceSunken;
+  static Color get text => _p.text;
+  static Color get textMuted => _p.textMuted;
 
   /// Texto deshabilitado (exento del mínimo de contraste).
-  static const textDisabled = Color(0xFF8A93A6);
+  static Color get textDisabled => _p.textDisabled;
 
-  // Semánticos de formulario / avisos. El éxito usa la marca, no el verde.
-  static const success = brand;
-  static const successLight = brandTint;
-  static const warning = roadCaution;
-  static const warningLight = roadCautionTint;
-  static const error = roadClosed;
-  static const errorLight = roadClosedTint;
-  static const info = brand;
-  static const infoLight = brandTint;
+  /// Solo divisores y bordes de placa; nunca texto encima.
+  static Color get line => _p.line;
+
+  // ── Estado de la vía (siempre con ícono + texto) ───────────────────────────
+  static Color get roadOpen => _p.roadOpen;
+  static Color get roadCaution => _p.roadCaution;
+  static Color get roadCautionTint => _p.roadCautionTint;
+  static Color get roadClosed => _p.roadClosed;
+  static Color get roadClosedTint => _p.roadClosedTint;
+  static Color get roadUnknown => _p.roadUnknown;
+
+  // ── Nombres anteriores (alias). Código nuevo: usar los de arriba. ──────────
+  static Color get primary => background;
+  static Color get bg => background;
+  static Color get surfaceContainerLow => surfaceSunken;
+  static Color get surfaceDark => surfaceSunken;
+  static Color get surfaceContainerHigh => surface;
+  static Color get surfaceContainerHighest => surface;
+  static Color get surfaceBright => surfaceSunken;
+  static Color get accent => brand;
+  static Color get accentHover => brandPressed;
+  static Color get accentContainer => brand;
+  static Color get accentLight => brandTint;
+  static Color get accentAlt => brand;
+  static Color get accentAltLight => brandTint;
+  static Color get tertiary => brand;
+  static Color get tertiaryLight => brandTint;
+  static Color get eco => brand;
+  static Color get ecoLight => brandTint;
+  static Color get ecoDark => brandPressed;
+  static Color get border => line;
+  static Color get textPrimary => text;
+  static Color get textSecondary => textMuted;
+  static Color get success => brand;
+  static Color get successLight => brandTint;
+  static Color get warning => roadCaution;
+  static Color get warningLight => roadCautionTint;
+  static Color get error => roadClosed;
+  static Color get errorLight => roadClosedTint;
+  static Color get info => brand;
+  static Color get infoLight => brandTint;
 
   // ── Modos de transporte (distintos del rojo/ámbar/verde de la vía) ─────────
-  static const bus = brand; // TransPadilla, colectivo, intermunicipal
-  static const taxi = Color(0xFF7A4E2D); // mototaxi / taxi
-  static const car = text;
-  static const walk = textMuted;
-  static const bike = Color(0xFF3D6B8C);
-  static const metro = Color(0xFF3D6B8C);
+  static Color get bus => brand; // TransPadilla, colectivo, intermunicipal
+  static Color get taxi => _p.taxi; // mototaxi / taxi
+  static Color get car => text;
+  static Color get walk => textMuted;
+  static Color get bike => _p.bike;
+  static Color get metro => _p.bike;
 
   // ── Tarjeta GoSmart ────────────────────────────────────────────────────────
-  static const cardGold = Color(0xFFB08A3E);
+  static Color get cardGold => _p.cardGold;
 }
 
 abstract class GSSpacing {
@@ -145,8 +243,8 @@ abstract class GSRadius {
 
 /// Profundidad = desplazamiento + desenfoque suave en tinta. Sin brillos.
 abstract class GSShadow {
-  // Sombras teñidas del ultramar, no negro puro.
-  static const _ink = Color(0xFF0E1A3A);
+  // Sombras teñidas del ultramar de día; negras de noche.
+  static Color get _ink => GSColors.palette.shadowInk;
 
   static List<BoxShadow> get sm => [
         BoxShadow(
@@ -246,11 +344,11 @@ abstract class GSGlass {
 /// DESIGN.md: sin degradados. Se conservan los nombres con un color plano
 /// (dos paradas iguales) para no romper los usos existentes.
 abstract class GSGradient {
-  static List<Color> get accentPill => const [GSColors.brand, GSColors.brand];
+  static List<Color> get accentPill => [GSColors.brand, GSColors.brand];
   static List<Color> get cardGloss => const [Colors.transparent, Colors.transparent];
-  static List<Color> get avatarRing => const [GSColors.brand, GSColors.brand];
-  static List<Color> get primaryButton => const [GSColors.brand, GSColors.brand];
-  static List<Color> get smartCard => const [GSColors.brand, GSColors.brand];
+  static List<Color> get avatarRing => [GSColors.brand, GSColors.brand];
+  static List<Color> get primaryButton => [GSColors.brand, GSColors.brand];
+  static List<Color> get smartCard => [GSColors.brand, GSColors.brand];
 }
 
 /// Familias tipográficas empaquetadas en assets/fonts (OFL), sin red.

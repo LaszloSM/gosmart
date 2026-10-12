@@ -76,7 +76,7 @@ class _NoDataNote extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.help_outline_rounded, color: GSColors.roadUnknown),
+        Icon(Icons.help_outline_rounded, color: GSColors.roadUnknown),
         const SizedBox(width: GSSpacing.s3),
         Expanded(
           child: Column(
@@ -133,7 +133,7 @@ class _SegmentRow extends StatelessWidget {
           ),
           Text(
             'km ${segment.kmFrom.round()}–${segment.kmTo.round()}',
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
               fontSize: 14,
               fontWeight: FontWeight.w600,

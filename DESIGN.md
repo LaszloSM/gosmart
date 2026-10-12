@@ -21,10 +21,30 @@ colors:
   road-caution-tint: "#FBE7C2"
   road-closed: "#9E1F18"
   road-closed-tint: "#F6DAD6"
-  road-unknown: "#545B69"
+  road-unknown: "#50576A"
   mode-taxi: "#7A4E2D"
   mode-bike: "#3D6B8C"
   card-gold: "#B08A3E"
+  shell: "#1B3A8C"
+  on-shell: "#FFFFFF"
+  on-shell-muted: "#CCD7F2"
+  dark-brand: "#9DB2F2"
+  dark-on-brand: "#0E1320"
+  dark-brand-tint: "#22305A"
+  dark-shell: "#14295F"
+  dark-on-shell: "#FFFFFF"
+  dark-on-shell-muted: "#C3CEEA"
+  dark-stripe: "#FF6FA3"
+  dark-background: "#0E1320"
+  dark-surface: "#171E2D"
+  dark-surface-sunken: "#0A0E17"
+  dark-text: "#EEF1F5"
+  dark-text-muted: "#AEB7CA"
+  dark-line: "#2C3649"
+  dark-road-open: "#73D69C"
+  dark-road-caution: "#F2B65A"
+  dark-road-closed: "#FF8F85"
+  dark-road-unknown: "#A3ABBA"
 typography:
   display:
     fontFamily: "Barlow Condensed"
@@ -274,6 +294,12 @@ Un ultramar saturado de carrocería sobre neutros fríos de lámina, con un fucs
 - **Tinta suave** (text-muted): texto secundario, 7,1:1 sobre lámina; bordes de campos y de botón contorno.
 - **Tinta apagada** (text-disabled): solo pistas y deshabilitados, exenta del mínimo.
 - **Línea** (line): divisores y bordes de placa; nunca lleva texto encima.
+
+### Noche (esquema propio)
+- Sigue al sistema (`ThemeMode.system`). No es una inversión: el fondo (#0E1320) es el más oscuro y la placa (#171E2D) sube de luminosidad para dar jerarquía; las sombras pasan a negro.
+- **Carrocería** (shell, #14295F) se separa de la marca: de noche las barras y cabeceras siguen en ultramar profundo con blanco (13,9:1), mientras la **marca** se aclara a azul periwinkle (#9DB2F2, 8:1 sobre la placa) para letras de placa, íconos y botón primario con texto tinta (#0E1320, 8,9:1).
+- Fucsia de franja #FF6FA3; paleta vial aclarada (abierta #73D69C, precaución #F2B65A, cerrada #FF8F85, sin datos #A3ABBA), todas ≥ 7:1 sobre la placa nocturna.
+- En código: `GSColors` lee la paleta activa (`GSPalette.light` / `GSPalette.dark`); `main.dart` la aplica según el brillo del tema y reconstruye el árbol al cambiar. Pendiente: estilo nocturno del mapa (llega con Google Maps, Fase 3).
 
 ### Named Rules
 **The Carrocería Rule.** El ultramar es el shell (barras arriba y abajo, botón primario) y la tinta de las placas. No se usa como fondo de bloques de contenido ni de tarjetas.

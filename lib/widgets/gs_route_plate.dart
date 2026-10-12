@@ -155,7 +155,7 @@ class _GSRoutePlateState extends State<GSRoutePlate> {
                     widget.detail!,
                     maxLines: widget.detailMaxLines,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: GSFonts.sans,
                       fontFeatures: GSFonts.tabular,
                       fontSize: 15,

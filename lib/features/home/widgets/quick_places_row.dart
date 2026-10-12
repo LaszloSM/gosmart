@@ -190,9 +190,9 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
       ),
       child: Container(
         padding: const EdgeInsets.all(GSSpacing.s5),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: GSColors.surface,
-          borderRadius: BorderRadius.vertical(
+          borderRadius: const BorderRadius.vertical(
             top: Radius.circular(GSRadius.xxl),
           ),
         ),
@@ -227,7 +227,7 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
                 const SizedBox(width: GSSpacing.s3),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: GSColors.textPrimary,
@@ -247,22 +247,22 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
               ),
               child: TextField(
                 controller: _ctrl,
-                style: const TextStyle(
+                style: TextStyle(
                   color: GSColors.textPrimary,
                   fontSize: 14,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Buscar dirección...',
                   hintStyle:
-                      const TextStyle(color: GSColors.textSecondary, fontSize: 14),
-                  prefixIcon: const Icon(
+                      TextStyle(color: GSColors.textSecondary, fontSize: 14),
+                  prefixIcon: Icon(
                     Icons.search_rounded,
                     color: GSColors.textSecondary,
                     size: 20,
                   ),
                   suffixIcon: _searching
-                      ? const Padding(
-                          padding: EdgeInsets.all(12),
+                      ? Padding(
+                          padding: const EdgeInsets.all(12),
                           child: SizedBox(
                             width: 18,
                             height: 18,
@@ -313,7 +313,7 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
                       ),
                       title: Text(
                         s.placeName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           color: GSColors.textPrimary,
                           fontWeight: FontWeight.w500,
@@ -321,7 +321,7 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
                       ),
                       subtitle: Text(
                         s.fullAddress,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           color: GSColors.textSecondary,
                         ),
@@ -369,7 +369,7 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
                           ),
                           Text(
                             _selected!.fullAddress,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               color: GSColors.textSecondary,
                             ),
@@ -380,7 +380,7 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.close_rounded,
                         color: GSColors.textSecondary,
                         size: 16,

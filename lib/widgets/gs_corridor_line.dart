@@ -75,7 +75,7 @@ class GSCorridorLine extends StatelessWidget {
           child: Container(
             height: GSSize.corridorLine,
             padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: GSColors.line)),
             ),
             child: Row(
@@ -127,7 +127,7 @@ class _EndLabel extends StatelessWidget {
     return Text(
       text,
       maxLines: 1,
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: GSFonts.sans,
         fontSize: 14,
         fontWeight: FontWeight.w600,
@@ -177,7 +177,7 @@ class _SummaryTag extends StatelessWidget {
         if (detail != null)
           Text(
             detail!,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
               fontSize: 12,
               fontWeight: FontWeight.w600,

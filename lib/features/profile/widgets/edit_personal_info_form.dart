@@ -153,7 +153,7 @@ class _FieldLabel extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: GSSpacing.s2),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: GSFonts.sans,
           fontSize: 15,
           fontWeight: FontWeight.w600,
@@ -244,12 +244,12 @@ class _ReadOnlyField extends StatelessWidget {
             ),
             prefixIcon: Icon(icon, size: 22, color: GSColors.textMuted),
             helperText: helper,
-            helperStyle: const TextStyle(
+            helperStyle: TextStyle(
                 fontFamily: GSFonts.sans, fontSize: 14, color: GSColors.textMuted),
           ),
           child: Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: GSFonts.sans,
               fontFeatures: GSFonts.tabular,
               fontSize: 17,

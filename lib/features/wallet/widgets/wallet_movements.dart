@@ -131,7 +131,7 @@ class MovementRow extends StatelessWidget {
             const SizedBox(width: GSSpacing.s3),
             Text(
               tx.formattedAmount,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
