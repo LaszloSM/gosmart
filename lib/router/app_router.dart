@@ -25,6 +25,9 @@ import '../features/legal/legal_screen.dart';
 import '../features/driver/driver_home_screen.dart';
 import '../features/corridor/report_screen.dart';
 import '../features/trip/trip_screen.dart';
+import '../features/trip/receipt_screen.dart';
+import '../features/payments/scan_pay_screen.dart';
+import '../features/payments/charge_screen.dart';
 import '../features/driver/driver_signup_screen.dart';
 import '../features/legal/legal_texts.dart';
 
@@ -102,6 +105,9 @@ abstract class AppRoutes {
   static const driver           = '/driver';
   static const report           = '/report';
   static const trip             = '/trip';
+  static const receipt          = '/trip/receipt';   // ?id=<trip id>
+  static const scanPay          = '/pay/scan';       // ?leg=<trip leg id> opcional
+  static const driverCharge     = '/driver/charge';
   static const driverSignup     = '/driver/signup';
   static const terms            = '/legal/terms';
 }
@@ -211,6 +217,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.trip,
         pageBuilder: (context, state) => _tab(state, const TripScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.receipt,
+        pageBuilder: (context, state) => _page(state,
+            ReceiptScreen(tripId: state.uri.queryParameters['id'] ?? '')),
+      ),
+      GoRoute(
+        path: AppRoutes.scanPay,
+        pageBuilder: (context, state) => _page(state,
+            ScanPayScreen(tripLegId: state.uri.queryParameters['leg'])),
+      ),
+      GoRoute(
+        path: AppRoutes.driverCharge,
+        pageBuilder: (context, state) => _page(state, const ChargeScreen()),
       ),
       GoRoute(
         path: AppRoutes.report,

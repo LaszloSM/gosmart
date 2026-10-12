@@ -10,6 +10,10 @@ import '../../../core/money.dart';
 import '../../../models/dispatch_models.dart';
 import '../../../providers/dispatch_provider.dart';
 import '../../../services/dispatch_service.dart';
+import '../../../services/payment_service.dart';
+import '../../../providers/wallet_provider.dart';
+import 'package:go_router/go_router.dart';
+import '../../../router/app_router.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_button.dart';
 import '../../../widgets/gs_list_row.dart';
@@ -29,7 +33,10 @@ class CurrentLegPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return switch (leg.mode) {
       'mototaxi' || 'taxi' => RideLegPanel(leg: leg),
-      'colectivo' || 'transpadilla' || 'intermunicipal' => ScheduledLegPanel(leg: leg),
+      'colectivo' ||
+      'transpadilla' ||
+      'intermunicipal' =>
+        ScheduledLegPanel(leg: leg),
       _ => SimpleLegPanel(leg: leg),
     };
   }
@@ -37,7 +44,8 @@ class CurrentLegPanel extends ConsumerWidget {
 
 /// Avanza un tramo hasta [to], pasando por en curso si hace falta.
 Future<void> advanceLeg(WidgetRef ref, ScaffoldMessengerState messenger,
-    TripLegRow leg, LegStatus to, {int? agreedFare}) async {
+    TripLegRow leg, LegStatus to,
+    {int? agreedFare}) async {
   try {
     if (to == LegStatus.completed && leg.status != LegStatus.inProgress) {
       await dispatchService.legTransition(leg.id, LegStatus.inProgress,
@@ -62,7 +70,8 @@ class SimpleLegPanel extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Camina hasta ${leg.toLabel ?? 'el siguiente punto'}'
+        Text(
+            'Camina hasta ${leg.toLabel ?? 'el siguiente punto'}'
             '${leg.minutes == null ? '' : ' (unos ${leg.minutes} min)'}.',
             style: text.bodyLarge),
         const SizedBox(height: GSSpacing.s3),
@@ -108,7 +117,8 @@ class _ScheduledLegPanelState extends ConsumerState<ScheduledLegPanel> {
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _busy = d.id);
     try {
-      await dispatchService.reserveSeat(d.id, 1, _key, tripLegId: widget.leg.id);
+      await dispatchService.reserveSeat(d.id, 1, _key,
+          tripLegId: widget.leg.id);
       setState(() => _reservedId = d.id);
       GSToast.showWithMessenger(messenger,
           message: 'Cupo reservado', type: GSToastType.success);
@@ -167,23 +177,37 @@ class _ScheduledLegPanelState extends ConsumerState<ScheduledLegPanel> {
                         'hora estimada',
                     value: formatCop(d.fare),
                     trailing: _reservedId == d.id
-                        ? Icon(Icons.check_circle_rounded, color: GSColors.brand)
+                        ? Icon(Icons.check_circle_rounded,
+                            color: GSColors.brand)
                         : _busy == d.id
                             ? const SizedBox(
-                                width: 24, height: 24,
-                                child: CircularProgressIndicator(strokeWidth: 2.5))
+                                width: 24,
+                                height: 24,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2.5))
                             : null,
-                    onTap: _reservedId == null && _busy == null && d.seatsLeft > 0
-                        ? () => _reserve(d)
-                        : null,
+                    onTap:
+                        _reservedId == null && _busy == null && d.seatsLeft > 0
+                            ? () => _reserve(d)
+                            : null,
                   ),
               ]);
             },
           ),
         const SizedBox(height: GSSpacing.s3),
+        if (l.mode != 'transpadilla') ...[
+          GSButton(
+            label: 'Pagar con QR',
+            leadingIcon: Icons.qr_code_scanner_rounded,
+            variant: GSButtonVariant.outline,
+            onPressed: () => context.push('${AppRoutes.scanPay}?leg=${l.id}'),
+          ),
+          const SizedBox(height: GSSpacing.s2),
+        ],
         GSButton(
           label: onBoard ? 'Llegué' : 'Ya voy a bordo',
-          leadingIcon: onBoard ? Icons.check_rounded : Icons.directions_bus_rounded,
+          leadingIcon:
+              onBoard ? Icons.check_rounded : Icons.directions_bus_rounded,
           onPressed: () => advanceLeg(ref, messenger, l,
               onBoard ? LegStatus.completed : LegStatus.inProgress),
         ),
@@ -217,7 +241,10 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
   String _key = const Uuid().v4();
   bool _busy = false;
   bool _loaded = false;
+  bool _paid = false;
   Timer? _timer;
+  // Una llave por pago: reintentos sin señal no cobran dos veces.
+  final _payKey = const Uuid().v4();
 
   String get _service => widget.leg.mode;
 
@@ -278,13 +305,40 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
   Future<void> _syncLeg(RideRequest r) async {
     final leg = widget.leg;
     final messenger = ScaffoldMessenger.of(context);
-    if (r.status == RideStatus.inProgress && leg.status != LegStatus.inProgress) {
+    if (r.status == RideStatus.inProgress &&
+        leg.status != LegStatus.inProgress) {
       await advanceLeg(ref, messenger, leg, LegStatus.inProgress,
           agreedFare: r.agreedFare);
     } else if (r.status == RideStatus.completed) {
       _timer?.cancel();
-      await advanceLeg(ref, messenger, leg, LegStatus.completed,
-          agreedFare: r.agreedFare);
+      // D5: el tramo se cierra pagado. Si aún no se pagó, se espera el pago.
+      if (_paid || await paymentService.isRidePaid(r.id)) {
+        await advanceLeg(ref, messenger, leg, LegStatus.completed,
+            agreedFare: r.agreedFare);
+      }
+    }
+  }
+
+  Future<void> _pay(String method) async {
+    final r = _request;
+    if (r == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    try {
+      await paymentService.payRide(r.id, method, _payKey);
+      ref.invalidate(walletProvider);
+      setState(() => _paid = true);
+      GSToast.showWithMessenger(messenger,
+          message: method == 'cash'
+              ? 'Listo: paga ${formatCop(r.agreedFare ?? r.offeredFare)} en efectivo.'
+              : 'Pagaste ${formatCop(r.agreedFare ?? r.offeredFare)} con tu saldo.',
+          type: GSToastType.success);
+      if (r.status == RideStatus.completed) await _syncLeg(r);
+    } on PaymentException catch (e) {
+      GSToast.showWithMessenger(messenger,
+          message: e.message, type: GSToastType.error);
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -360,7 +414,8 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
     }
 
     // 1. Sin pedir: elegir tarifa y pedir.
-    if (r == null || r.status == RideStatus.cancelled ||
+    if (r == null ||
+        r.status == RideStatus.cancelled ||
         (r.status == RideStatus.open && !r.isLive(DateTime.now())) ||
         r.status == RideStatus.expired) {
       final expired = r != null && r.status != RideStatus.cancelled;
@@ -379,7 +434,8 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
             children: [
               IconButton(
                 tooltip: 'Bajar \$500',
-                onPressed: _fare > 1000 ? () => setState(() => _fare -= 500) : null,
+                onPressed:
+                    _fare > 1000 ? () => setState(() => _fare -= 500) : null,
                 icon: const Icon(Icons.remove_rounded),
               ),
               Expanded(
@@ -425,13 +481,15 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
 
     // 2. Esperando: ofertas.
     if (r.status == RideStatus.open) {
-      final left = r.expiresAt.difference(DateTime.now()).inSeconds.clamp(0, 999);
+      final left =
+          r.expiresAt.difference(DateTime.now()).inSeconds.clamp(0, 999);
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(children: [
             const SizedBox(
-                width: 20, height: 20,
+                width: 20,
+                height: 20,
                 child: CircularProgressIndicator(strokeWidth: 2.5)),
             const SizedBox(width: GSSpacing.s3),
             Expanded(
@@ -449,7 +507,9 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
               trailing: const Text('Aceptar'),
             ),
           const SizedBox(height: GSSpacing.s2),
-          TextButton(onPressed: _cancelRequest, child: const Text('Cancelar solicitud')),
+          TextButton(
+              onPressed: _cancelRequest,
+              child: const Text('Cancelar solicitud')),
         ],
       );
     }
@@ -471,9 +531,40 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
         Text('Tarifa acordada: ${formatCop(r.agreedFare ?? r.offeredFare)}',
             style: text.bodyMedium),
         const SizedBox(height: GSSpacing.s2),
-        Text('Revisa que la placa coincida antes de subir.', style: text.bodySmall),
+        if (r.status == RideStatus.accepted)
+          Text('Revisa que la placa coincida antes de subir.',
+              style: text.bodySmall),
         if (r.status == RideStatus.accepted)
           TextButton(onPressed: _cancelRequest, child: const Text('Cancelar')),
+        if (r.status != RideStatus.accepted && !_paid) ...[
+          const SizedBox(height: GSSpacing.s3),
+          Text(
+            r.status == RideStatus.completed
+                ? 'Llegaste. Paga el tramo para cerrarlo.'
+                : 'Puedes pagar ya o al llegar.',
+            style: text.bodyMedium,
+          ),
+          const SizedBox(height: GSSpacing.s2),
+          GSButton(
+            label:
+                'Pagar ${formatCop(r.agreedFare ?? r.offeredFare)} con saldo',
+            leadingIcon: Icons.account_balance_wallet_outlined,
+            isLoading: _busy,
+            onPressed: _busy ? null : () => _pay('wallet'),
+          ),
+          const SizedBox(height: GSSpacing.s2),
+          GSButton(
+            label: 'Pago en efectivo',
+            leadingIcon: Icons.payments_outlined,
+            variant: GSButtonVariant.outline,
+            onPressed: _busy ? null : () => _pay('cash'),
+          ),
+        ],
+        if (_paid)
+          Padding(
+            padding: const EdgeInsets.only(top: GSSpacing.s2),
+            child: Text('Tramo pagado.', style: text.bodyMedium),
+          ),
       ],
     );
   }

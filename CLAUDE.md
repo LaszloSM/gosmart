@@ -56,7 +56,9 @@ SHARE_BASE_URL=                # public_web on GitHub Pages; empty = share sends
 > Stripe was removed; recharges are simulated until Wompi (Fase 7).
 
 Edge Function secrets (Supabase Dashboard → Edge Functions → Secrets, never in `.env`):
-`GROQ_API_KEY` (ai-chat). GitHub Actions secrets for `supabase-maintenance.yml`:
+`GROQ_API_KEY` (ai-chat); `WOMPI_PUBLIC_KEY`, `WOMPI_INTEGRITY_SECRET`, `WOMPI_EVENTS_SECRET`
+(wompi, sandbox; deploy with `--no-verify-jwt` because Wompi's webhook has no JWT). Real top-ups
+only when `app_flags.wompi_enabled` is true; otherwise the simulated recharge stays. GitHub Actions secrets for `supabase-maintenance.yml`:
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_DB_URL` (all optional; steps skip if absent).
 
 ## Database Migrations
@@ -229,6 +231,9 @@ Future<void> updateProfile({...}) async {
   - `authorize` — NFC payment authorization (NOT currently deployed; simulator uses local mock)
   - `ai-chat` — Groq proxy used by `AiService` (model `llama-3.1-8b-instant`, falls back to 70b on 429/5xx)
   - `delete-account` — account deletion
+  - `wompi` — checkout URL with integrity signature + webhook (checksum verified) → `wallet_topup_settle`.
+    Signing in `signing.ts` (tested in `signing_test.ts`, no remote imports). NOT verified against the
+    real sandbox from this environment.
 - **Realtime**: `activeCardProvider` subscribes to `cards` table changes for live balance updates.
 
 ### AI Service — Edge Function `ai-chat` (function calling, Fase 5)
@@ -298,6 +303,9 @@ AppRoutes.nfcSimulator     // '/debug/nfc-simulator'
 AppRoutes.emergencyContacts // '/safety/contacts'  (needs account)
 AppRoutes.trip             // '/trip'    (pestaña Viaje; needs account)
 AppRoutes.report           // '/report'  (pestaña Reportar; needs account)
+AppRoutes.receipt          // '/trip/receipt?id=<trip>'  recibo único (D5)
+AppRoutes.scanPay          // '/pay/scan?leg=<leg>'      pagar el QR del conductor
+AppRoutes.driverCharge     // '/driver/charge'           cobrar con QR
 AppRoutes.driver           // '/driver'  (modo conductor; needs account)
 AppRoutes.driverSignup     // '/driver/signup'
 AppRoutes.privacy / .terms // '/legal/privacy', '/legal/terms' (public)
@@ -458,7 +466,10 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 | `flutter_localizations` | sdk | Spanish date picker support |
 | `uuid` | ^4.3.3 | Idempotency keys for NFC |
 | `shared_preferences` | ^2.2.2 | Persist `onboarding_complete` flag across launches |
-| `sentry_flutter` | ^8.14.2 | Optional error reporting (`SENTRY_DSN`) |
+| `sentry_flutter` | ^9.0.0 | Optional error reporting (`SENTRY_DSN`); 8.x broke the APK build (Kotlin 1.6) |
+| `url_launcher` | ^6.3 | WhatsApp/SMS/123, Wompi checkout |
+| `mobile_scanner` | ^6.0 | Scan the driver's payment QR |
+| `collection` | ^1.19 | PriorityQueue for the planner |
 
 ## Common Gotchas
 
@@ -486,6 +497,9 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 - **Dispatch** (`dispatchService`): never decide races on the client; call the RPC and show
   `DispatchException.message` ('already_taken', 'no_seats'…). Ride and driver screens poll (4–5 s)
   while open; there is no push yet, so a driver with the app closed gets no requests.
+- **Payments**: a mototaxi/taxi leg closes only once paid (`pay_ride`, wallet or cash); QR charges are
+  `gosmart:pay:<uuid>` (`chargeQrData` / `chargeIdFromQr`). Show `PaymentException.message`.
+  The QR is always drawn on white (also at night) so any camera reads it.
 - **Money formatting**: always `formatCop()` and `GSFonts.mono` for amounts the user compares.
   No red/green for income/expense — the sign carries it (red/green are road-only).
 - **`DateFormat(..., 'es')` throws** unless `initializeDateFormatting` ran (it doesn't in this app).

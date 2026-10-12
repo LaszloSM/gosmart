@@ -121,6 +121,12 @@ jobs:
           deno test normalizer_test.ts tools_test.ts
           deno check index.ts
 
+      - name: Test and type-check wompi
+        working-directory: backend/functions/wompi
+        run: |
+          deno test signing_test.ts
+          deno check index.ts
+
   build-android:
     name: Build APK (Android)
     runs-on: ubuntu-latest

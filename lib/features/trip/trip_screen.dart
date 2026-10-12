@@ -106,6 +106,7 @@ class TripScreen extends ConsumerWidget {
                   actionLabel: 'Planear un viaje',
                   onAction: () => context.push(AppRoutes.routePlanner),
                 ),
+                const _RecentTrips(),
               ])
             : RefreshIndicator(
                 onRefresh: () async => ref.invalidate(activeTripProvider),
@@ -185,6 +186,37 @@ class _LegRow extends StatelessWidget {
         detailMaxLines: 2,
         trailing: Icon(icon, color: GSColors.brand),
       ),
+    );
+  }
+}
+
+/// Viajes terminados con su recibo (D5: un recibo por viaje).
+class _RecentTrips extends ConsumerWidget {
+  const _RecentTrips();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final trips = ref.watch(recentTripsProvider).valueOrNull ?? const [];
+    if (trips.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const GSSectionTitle('Viajes recientes'),
+        for (final t in trips) ...[
+          GSListRow(
+            icon: t.status == 'completed'
+                ? Icons.receipt_long_rounded
+                : Icons.cancel_outlined,
+            title: t.dest ?? 'Viaje',
+            subtitle: '${t.at.day}/${t.at.month} · '
+                '${t.status == 'completed' ? 'Ver recibo' : 'Cancelado'}',
+            onTap: t.status == 'completed'
+                ? () => context.push('${AppRoutes.receipt}?id=${t.id}')
+                : null,
+          ),
+          const Divider(indent: GSSpacing.s4),
+        ],
+      ],
     );
   }
 }

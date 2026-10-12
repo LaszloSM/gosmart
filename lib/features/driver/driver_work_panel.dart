@@ -18,6 +18,7 @@ import '../../planner/graph.dart';
 import '../../providers/planner_provider.dart';
 import '../../services/dispatch_service.dart';
 import '../../services/location_service.dart';
+import '../../services/payment_service.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_choice_plates.dart';
@@ -46,6 +47,7 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
   RideRequest? _active;
   List<NearbyRequest> _nearby = const [];
   List<ColectivoDeparture> _departures = const [];
+  List<({String id, int amount, DateTime at})> _cash = const [];
   bool _gps = true;
   bool _loaded = false;
   String? _busy;
@@ -78,12 +80,14 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
         nearby = await dispatchService.nearby(at);
       }
       if (_isScheduled) deps = await dispatchService.myDepartures(widget.driver.userId);
+      final cash = await paymentService.pendingCash(widget.driver.userId);
       if (!mounted) return;
       setState(() {
         _gps = at != null;
         _active = active;
         _nearby = nearby;
         _departures = deps;
+        _cash = cash;
         _loaded = true;
       });
     } catch (_) {
@@ -103,6 +107,8 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
     } on DispatchException catch (e) {
       GSToast.showWithMessenger(messenger, message: e.message, type: GSToastType.error);
       await _tick();
+    } on PaymentException catch (e) {
+      GSToast.showWithMessenger(messenger, message: e.message, type: GSToastType.error);
     } finally {
       if (mounted) setState(() => _busy = null);
     }
@@ -118,9 +124,36 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
       );
     }
     final a = _active;
-    if (a != null) return _activeRide(a, text);
-    if (_isScheduled) return _scheduled(text);
+    final main = a != null
+        ? _activeRide(a, text)
+        : _isScheduled
+            ? _scheduled(text)
+            : _nearbyList(text);
+    if (_cash.isEmpty) return main;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const GSSectionTitle('Efectivo por confirmar'),
+        for (final c in _cash)
+          GSListRow(
+            icon: Icons.payments_outlined,
+            title: '¿Recibiste ${formatCop(c.amount)}?',
+            subtitle: 'Confírmalo para que el pasajero tenga su recibo',
+            trailing: TextButton(
+              onPressed: _busy != null
+                  ? null
+                  : () => _run('cash-${c.id}',
+                      () => paymentService.confirmCash(c.id),
+                      ok: 'Efectivo confirmado'),
+              child: const Text('Sí, recibí'),
+            ),
+          ),
+        main,
+      ],
+    );
+  }
 
+  Widget _nearbyList(TextTheme text) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

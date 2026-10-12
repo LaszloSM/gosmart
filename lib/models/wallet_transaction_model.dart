@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import '../core/money.dart';
 
-enum WalletTxType { recharge, trip, refund, bonus }
+enum WalletTxType { recharge, trip, refund, bonus, earning }
 
 class WalletTransactionModel {
   final String id;
@@ -37,6 +37,7 @@ class WalletTransactionModel {
         'trip' => WalletTxType.trip,
         'refund' => WalletTxType.refund,
         'bonus' => WalletTxType.bonus,
+        'earning' => WalletTxType.earning,
         _ => WalletTxType.recharge,
       };
 
@@ -51,6 +52,7 @@ class WalletTransactionModel {
         WalletTxType.trip => 'Viaje',
         WalletTxType.refund => 'Reembolso',
         WalletTxType.bonus => 'Bono',
+        WalletTxType.earning => 'Cobro de viaje',
       };
 
   IconData get icon => switch (type) {
@@ -58,6 +60,7 @@ class WalletTransactionModel {
         WalletTxType.trip => _tripIcon,
         WalletTxType.refund => Icons.replay_rounded,
         WalletTxType.bonus => Icons.card_giftcard_rounded,
+        WalletTxType.earning => Icons.payments_outlined,
       };
 
   /// El movimiento no guarda el modo; se deduce de la descripción con los

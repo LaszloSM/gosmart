@@ -173,6 +173,15 @@ class _DriverBodyState extends ConsumerState<_DriverBody> {
                   ].join(' · '),
                 ),
               ],
+              if (approved) ...[
+                const Divider(indent: GSSpacing.s4),
+                GSListRow(
+                  icon: Icons.qr_code_2_rounded,
+                  title: 'Cobrar con QR',
+                  subtitle: 'El pasajero escanea y te paga con su saldo',
+                  onTap: () => context.push(AppRoutes.driverCharge),
+                ),
+              ],
               const Divider(indent: GSSpacing.s4),
               GSListRow(
                 icon: Icons.edit_outlined,

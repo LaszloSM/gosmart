@@ -4,7 +4,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import '../../core/money.dart';
+import '../../router/app_router.dart';
+import '../../services/payment_service.dart';
 import '../../providers/wallet_provider.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
@@ -35,6 +40,19 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         onConfirm: (amount) async {
           Navigator.pop(context);
           final messenger = ScaffoldMessenger.of(context);
+          // Con Wompi activo, la recarga es real (sandbox) y la acredita el webhook.
+          if (await paymentService.wompiEnabled()) {
+            try {
+              final url = await paymentService.wompiCheckout(amount);
+              await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+              GSToast.showWithMessenger(messenger,
+                  message: 'Cuando Wompi confirme, el saldo aparece aquí.');
+            } on PaymentException catch (e) {
+              GSToast.showWithMessenger(messenger,
+                  message: e.message, type: GSToastType.error);
+            }
+            return;
+          }
           final ok = await ref
               .read(walletNotifierProvider.notifier)
               .recharge(amount);
@@ -85,9 +103,11 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(
                   GSSpacing.s4, GSSpacing.s2, GSSpacing.s4, 0),
-              child: Text(
-                'Pronto vas a poder pagar el viaje con el QR del conductor.',
-                style: text.bodySmall,
+              child: GSButton(
+                label: 'Pagar con QR',
+                leadingIcon: Icons.qr_code_scanner_rounded,
+                variant: GSButtonVariant.outline,
+                onPressed: () => context.push(AppRoutes.scanPay),
               ),
             ),
             const SizedBox(height: GSSpacing.s6),
