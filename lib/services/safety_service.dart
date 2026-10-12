@@ -4,6 +4,7 @@
 import 'package:latlong2/latlong.dart';
 
 import '../core/supabase_client.dart';
+import '../core/sync_queue.dart';
 import '../models/emergency_contact.dart';
 
 class TripShare {
@@ -44,30 +45,50 @@ class SafetyService {
     await GoSmartSupabase.client.from('emergency_contacts').delete().eq('id', id);
   }
 
-  /// Deja constancia del SOS. Mismo [idempotencyKey] = un solo registro,
-  /// aunque se reintente sin señal. Devuelve false si no se pudo guardar.
+  /// Deja constancia del SOS. Mismo [idempotencyKey] = un solo registro.
+  /// Sin señal queda en la cola y se envía al volver; devuelve false en ese caso.
   Future<bool> recordSos({
     required String userId,
     required String idempotencyKey,
     LatLng? at,
     List<String> channels = const [],
   }) async {
+    final row = {
+      'user_id': userId,
+      'idempotency_key': idempotencyKey,
+      'lat': at?.latitude,
+      'lng': at?.longitude,
+      'channels': channels,
+      // Hora real del aviso, aunque llegue al servidor más tarde.
+      'happened_at': DateTime.now().toUtc().toIso8601String(),
+    };
     try {
-      await GoSmartSupabase.client.from('sos_events').upsert(
-        {
-          'user_id': userId,
-          'idempotency_key': idempotencyKey,
-          'lat': at?.latitude,
-          'lng': at?.longitude,
-          'channels': channels,
-        },
+      await _insertSos(row);
+      return true;
+    } catch (_) {
+      await syncQueue.enqueue(SyncOp(
+        kind: 'sos',
+        key: idempotencyKey,
+        payload: row,
+        createdAt: DateTime.now(),
+      ));
+      return false;
+    }
+  }
+
+  Future<void> _insertSos(Map<String, dynamic> row) =>
+      GoSmartSupabase.client.from('sos_events').upsert(
+        row,
         onConflict: 'user_id,idempotency_key',
         ignoreDuplicates: true,
       );
+
+  /// Registra en la cola cómo reenviar lo de seguridad.
+  void registerSyncHandlers(SyncQueue queue) {
+    queue.register('sos', (op) async {
+      await _insertSos(op.payload);
       return true;
-    } catch (_) {
-      return false;
-    }
+    });
   }
 
   Future<TripShare> startShare({

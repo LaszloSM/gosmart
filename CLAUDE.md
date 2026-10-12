@@ -104,6 +104,8 @@ lib/
 │   ├── money.dart                # formatCop(37000) → "$37.000" (signed: "+$10.000" / "−$2.500")
 │   ├── region.dart               # GSRegion: Riohacha/Maicao centers + La Guajira bbox
 │   ├── telemetry.dart            # Optional Sentry; Telemetry.degraded(service, code)
+│   ├── sync_queue.dart           # Offline write queue (SharedPreferences JSON), idempotency key per op
+│   ├── safety_links.dart         # SOS/share texts, wa.me / sms: / tel:123 URIs (pure, tested)
 │   └── supabase_client.dart      # GoSmartSupabase.client singleton (initialized once in main)
 ├── features/                     # Screen-level UI (one folder per feature)
 │   ├── ai_chat/                  # AI assistant chat UI
@@ -452,6 +454,9 @@ Currency: `'cop'` | `'usd'` | `'eur'`
   plates (used by `ModeSelector` and driver signup). Prefer it over chips/radios.
 - **Driver status is server-only**: the client never writes `drivers.status`; a trigger rejects it and
   editing reviewed fields sends an approved driver back to `pending`.
+- **Offline writes** go through `syncQueue.enqueue(SyncOp(kind, key, payload))` with the op's
+  idempotency key; register a handler per kind (`safetyService.registerSyncHandlers`) in `main.dart`.
+  Flushed at startup and on app resume. Drift was not used (no codegen); fine for small volumes.
 - **Money formatting**: always `formatCop()` and `GSFonts.mono` for amounts the user compares.
   No red/green for income/expense — the sign carries it (red/green are road-only).
 - **`DateFormat(..., 'es')` throws** unless `initializeDateFormatting` ran (it doesn't in this app).

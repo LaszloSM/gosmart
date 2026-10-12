@@ -6,8 +6,10 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/supabase_client.dart';
+import 'core/sync_queue.dart';
 import 'core/telemetry.dart';
 import 'router/app_router.dart';
+import 'services/safety_service.dart';
 import 'theme/app_theme.dart';
 import 'theme/design_tokens.dart';
 
@@ -19,6 +21,13 @@ Future<void> main() async {
 
   // Initialize Supabase
   await GoSmartSupabase.initialize();
+
+  // Lo que quedó pendiente sin señal se reenvía al abrir y al volver a la app.
+  safetyService.registerSyncHandlers(syncQueue);
+  syncQueue.flush();
+  AppLifecycleListener(
+    onResume: () => syncQueue.flush(),
+  );
 
   // Portrait only
   await SystemChrome.setPreferredOrientations([
