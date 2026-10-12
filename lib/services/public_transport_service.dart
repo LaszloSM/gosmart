@@ -155,7 +155,7 @@ class PublicTransportService {
   String _modeName(String mode) => switch (mode) {
     'Metro'         => 'el Metro',
     'Cable'         => 'el Metrocable',
-    'BRT'           => 'el TransMilenio/BRT',
+    'BRT'           => 'el TransPadilla',
     'Intermunicipal'=> 'el bus intermunicipal',
     _               => 'el Bus',
   };
@@ -163,9 +163,9 @@ class PublicTransportService {
   int _publicFare(String mode) => switch (mode) {
     'Metro'          => 3400,
     'Cable'          => 0,    // integrado con Metro
-    'BRT'            => 3000, // TransMilenio / MIO
+    'BRT'            => 3000, // TransPadilla (Riohacha)
     'Intermunicipal' => 15000,
-    _                => 2800, // SITP / colectivo
+    _                => 3000, // colectivo urbano (dato por verificar en campo)
   };
 
   // Haversine distance en km

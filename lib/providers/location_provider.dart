@@ -1,6 +1,6 @@
 // lib/providers/location_provider.dart
 // FutureProvider — fires once, used for initial map center.
-// Returns null if GPS is unavailable; callers fall back to Bogotá.
+// Returns null if GPS is unavailable; callers fall back to GSRegion.riohacha.
 // For FAB re-center, call locationService.getCurrentPosition() directly.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';

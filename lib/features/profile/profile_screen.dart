@@ -818,7 +818,7 @@ class _EditPersonalInfoContentState extends State<_EditPersonalInfoContent> {
           const SizedBox(height: GSSpacing.s3),
           GSTextField(
             label: 'Ciudad de residencia',
-            hint: 'Bogotá, Medellín...',
+            hint: 'Riohacha, Maicao...',
             controller: widget.cityCtrl,
             prefixIcon: Icons.location_city_outlined,
             keyboardType: TextInputType.text,

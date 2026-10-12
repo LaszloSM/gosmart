@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import '../../core/region.dart';
 import '../../core/env.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -678,13 +679,11 @@ class _AppMap extends ConsumerStatefulWidget {
 
 class _AppMapState extends ConsumerState<_AppMap>
     with SingleTickerProviderStateMixin {
-  static const _bogota = LatLng(4.7110, -74.0721);
-
   late final MapController _mapController;
   late final AnimationController _pulseCtrl;
   late final Animation<double> _pulse;
 
-  LatLng _userPosition = _bogota;
+  LatLng _userPosition = GSRegion.riohacha;
   LatLng? _longPressPoint;
 
   @override

@@ -21,39 +21,30 @@ const ABBREVS: [RegExp, string][] = [
   [/\bTv\.?\s*/gi,             'Transversal '],
   [/\bTrv\.?\s*/gi,            'Transversal '],
   [/\bTrans(?!versal)\.?\s*/gi, 'Transversal '],
-  [/\bAc\b/gi,                 'Autopista Central'],
-  [/\bAk\b/gi,                 'Autopista Kennedy'],
   [/\bBv(?!ulevar)\.?\s*/gi,   'Bulevar '],
   [/\bNro?\./gi,               'Número'],
 ]
 
 // ── Topónimos con typos frecuentes ────────────────────────────────────────────
 const TOPONYMS: [RegExp, string][] = [
-  [/\bbogota\b/gi,             'Bogotá'],
-  [/\bmedellin\b/gi,           'Medellín'],
-  [/\bbarranquila\b/gi,        'Barranquilla'],
-  [/\bcartagena de indias\b/gi, 'Cartagena'],
+  [/\briohacha\b/gi,           'Riohacha'],
+  [/\brio hacha\b/gi,          'Riohacha'],
+  [/\bmaicao\b/gi,             'Maicao'],
+  [/\bparaguachon\b/gi,        'Paraguachón'],
+  [/\bcuestecitas\b/gi,        'Cuestecitas'],
 ]
 
-// ── Inferencia de ciudad desde sistema de transporte ─────────────────────────
+// ── Inferencia de ciudad desde sistema o lugar conocido ──────────────────────
 const TRANSPORT_CITY: [RegExp, string][] = [
-  [/transmilenio|sitp|\bTM\b|portal norte|portal sur|portal el dorado/i, 'Bogotá'],
-  [/metro de medell|metroplús|metroplus|metrocable/i,                     'Medellín'],
-  [/\bMIO\b|masivo integrado de occidente/i,                              'Cali'],
-  [/transmetro/i,                                                         'Barranquilla'],
-  [/transcaribe/i,                                                        'Cartagena'],
-  [/metrolínea|metrolinea/i,                                              'Bucaramanga'],
-  [/megabús|megabus/i,                                                    'Pereira'],
+  [/transpadilla|trans padilla/i,                    'Riohacha'],
+  [/paraguach[oó]n|carraip[ií]a/i,                   'Maicao'],
 ]
 
-// Ciudades mencionadas explícitamente
-const CITY_RE = /\b(bogot[aá]|medell[ií]n|cali|barranquilla|cartagena|bucaramanga|pereira|manizales)\b/i
+// Ciudades mencionadas explícitamente (alcance del MVP: Riohacha y Maicao)
+const CITY_RE = /\b(riohacha|rio hacha|maicao)\b/i
 const CITY_NORMALIZE: Record<string, string> = {
-  'bogota': 'Bogotá', 'bogotá': 'Bogotá',
-  'medellin': 'Medellín', 'medellín': 'Medellín',
-  'cali': 'Cali', 'barranquilla': 'Barranquilla',
-  'cartagena': 'Cartagena', 'bucaramanga': 'Bucaramanga',
-  'pereira': 'Pereira', 'manizales': 'Manizales',
+  'riohacha': 'Riohacha', 'rio hacha': 'Riohacha',
+  'maicao': 'Maicao',
 }
 
 // ── Intent detection ──────────────────────────────────────────────────────────
@@ -62,8 +53,8 @@ function detectIntent(text: string): NormalizedQuery['intent'] {
   if (/direcci[oó]n|calle|carrera|avenida|diagonal|transversal|cra|cl\b|av\b/.test(q)) return 'address'
   if (/estaci[oó]n|parada|paradero|portal|terminal/.test(q)) return 'station'
   if (/barrio|localidad|comuna|sector|zona/.test(q)) return 'neighborhood'
-  if (/ruta|llegar|como ir|bus|metro|transporte|línea/.test(q)) return 'route'
-  if (/tarifa|costo|precio|cuanto cuesta|valor|pesos/.test(q)) return 'fare'
+  if (/ruta|llegar|como ir|cómo ir|bus|colectivo|mototaxi|transporte|línea/.test(q)) return 'route'
+  if (/tarifa|costo|precio|cu[aá]nto (cuesta|vale)|valor|pasaje|pesos/.test(q)) return 'fare'
   return 'general'
 }
 

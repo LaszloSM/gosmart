@@ -1,6 +1,7 @@
 // lib/services/geocoding_service.dart
 // Mapbox Geocoding API v5 — address search for Colombia.
 // Uses the same MAPBOX_PUBLIC_TOKEN as DirectionsService and TileLayer.
+import '../core/region.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -17,7 +18,7 @@ class GeocodingService {
   /// [proximity]: optional LatLng to bias results toward user location.
   /// Returns [] if token is empty, query has fewer than 2 chars, or any error.
   /// Builds a tight bounding box around [proximity] (±0.35° ≈ 38 km).
-  /// Falls back to the full Colombia bbox when proximity is null.
+  /// Falls back to the La Guajira MVP bbox when proximity is null.
   String _buildBbox(LatLng? proximity) {
     if (proximity != null) {
       const d = 0.35;
@@ -27,7 +28,7 @@ class GeocodingService {
       final maxLat = (proximity.latitude + d).clamp(1.0, 13.4);
       return '$minLng,$minLat,$maxLng,$maxLat';
     }
-    return '-81.7,1.0,-66.8,13.4';
+    return GSRegion.bbox;
   }
 
   Future<List<GeocodeSuggestion>> search(

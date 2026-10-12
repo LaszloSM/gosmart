@@ -68,8 +68,8 @@ abstract class ITrafficService {
 /// └──────────────────┴─────────┴─────────┴─────────────┘
 ///
 /// Rationale:
-/// - Evening rush is worst (Bogotá avg speed drops to ~12 km/h on Autopista
-///   Norte during 5-7 PM per Secretaría de Movilidad 2024 data).
+/// - Evening rush is worst. These factors come from large-city data; Riohacha and
+///   Maicao values must be replaced with field data (Fase 1).
 /// - Morning rush is slightly lighter because school trips end by 8 AM.
 /// - Urban corridors get highest multipliers; residential zones barely affected.
 /// - Night is always 1.0 (free-flow baseline).

@@ -12,7 +12,7 @@ class RouteLeg {
   final int durationMin;
   final double distanceKm;
   final String? instruction; // e.g. "Toma el Metro Línea A hasta Industriales"
-  final String? lineId;      // e.g. "A", "B", "TransMilenio"
+  final String? lineId;      // e.g. "Ruta 1", "TransPadilla"
 
   const RouteLeg({
     required this.mode,

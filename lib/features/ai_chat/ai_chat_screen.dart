@@ -28,10 +28,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   LatLng? _currentLocation;
 
   static const _suggestions = [
-    '¿Cuánto cuesta el Metro de Medellín?',
-    '¿Cómo voy al centro en TransMilenio?',
-    'Horario del TransMilenio',
-    'Ruta más económica en Bogotá',
+    '¿Cómo llego a Maicao desde el centro?',
+    '¿Cuánto vale el TransPadilla?',
+    '¿Está abierta la Troncal hoy?',
+    '¿Cuánto debería costar un mototaxi al terminal?',
   ];
 
   @override

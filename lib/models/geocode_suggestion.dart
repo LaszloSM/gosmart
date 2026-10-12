@@ -7,7 +7,7 @@ class GeocodeSuggestion {
   /// Short display name, e.g. "Parque de la 93".
   final String placeName;
 
-  /// Full address string, e.g. "Parque de la 93, Bogotá, Colombia".
+  /// Full address string, e.g. "Parque Padilla, Riohacha, La Guajira".
   final String fullAddress;
 
   /// Geographic coordinates.
