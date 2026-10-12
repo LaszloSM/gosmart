@@ -9,6 +9,7 @@ import 'core/supabase_client.dart';
 import 'core/sync_queue.dart';
 import 'core/telemetry.dart';
 import 'router/app_router.dart';
+import 'services/corridor_service.dart';
 import 'services/safety_service.dart';
 import 'theme/app_theme.dart';
 import 'theme/design_tokens.dart';
@@ -24,6 +25,7 @@ Future<void> main() async {
 
   // Lo que quedó pendiente sin señal se reenvía al abrir y al volver a la app.
   safetyService.registerSyncHandlers(syncQueue);
+  corridorService.registerSyncHandlers(syncQueue);
   syncQueue.flush();
   AppLifecycleListener(
     onResume: () => syncQueue.flush(),

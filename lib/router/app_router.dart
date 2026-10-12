@@ -23,6 +23,7 @@ import '../features/nfc_simulator/nfc_auth_simulator_screen.dart';
 import '../features/safety/emergency_contacts_screen.dart';
 import '../features/legal/legal_screen.dart';
 import '../features/driver/driver_home_screen.dart';
+import '../features/corridor/report_screen.dart';
 import '../features/driver/driver_signup_screen.dart';
 import '../features/legal/legal_texts.dart';
 
@@ -98,6 +99,7 @@ abstract class AppRoutes {
   static const emergencyContacts = '/safety/contacts';
   static const privacy          = '/legal/privacy';
   static const driver           = '/driver';
+  static const report           = '/report';
   static const driverSignup     = '/driver/signup';
   static const terms            = '/legal/terms';
 }
@@ -203,6 +205,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.emergencyContacts,
         pageBuilder: (context, state) =>
             _page(state, const EmergencyContactsScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.report,
+        pageBuilder: (context, state) => _tab(state, const ReportScreen()),
       ),
       GoRoute(
         path: AppRoutes.driver,

@@ -87,8 +87,11 @@ jobs:
                    supabase/migrations/012_places_directory.sql \
                    supabase/migrations/012_places_directory.sql \
                    supabase/seed/places_seed.sql \
+                   supabase/migrations/013_corridor.sql \
+                   supabase/migrations/013_corridor.sql \
                    supabase/tests/011_roles_safety_test.sql \
-                   supabase/tests/012_places_directory_test.sql; do
+                   supabase/tests/012_places_directory_test.sql \
+                   supabase/tests/013_corridor_test.sql; do
             psql -d gosmart_core -v ON_ERROR_STOP=1 -q -f "$f"
           done
 

@@ -76,6 +76,7 @@ All migrations live in `supabase/migrations/`. Run them in order in the Supabase
 | `009_favorites_history.sql` | Tables: `favorite_places` (unique partial index per home/work per user), `trip_history`. RPC: `increment_favorite_use`. |
 | `011_roles_safety.sql` | `profiles.role` (passenger/driver/admin; trigger impide subirse de rol), `drivers` (solo admin aprueba vía `admin_review_driver`), `driver_documents` + bucket privado `driver-docs`, `vehicles`, `emergency_contacts` (+57, máx. 5), `sos_events` (idempotente), `trip_shares` + RPCs `trip_share_start/update/stop/view`. Sin PostGIS. |
 | `012_places_directory.sql` | `places` gazetteer (name + aliases, city, kind, lat/lng, `verified`), `gs_norm()` (sin tildes), trigram index, public RPC `search_places(q, lat, lng, limit)`. Seed (approximate, unverified): `supabase/seed/places_seed.sql`. |
+| `013_corridor.sql` | `road_segments` (Troncal por km + desvío, coords aprox.), `road_reports` (tipos cerrados, SIN texto libre), `road_report_votes`. RPCs: `report_road` (límite 6/h, 1 por tramo+tipo/30 min, idempotente), `vote_road_report`, públicas `road_status()` y `road_patterns()`. Cerrada exige confianza ≥ 0,9 (reputación + confirmaciones). |
 | `010_wallet_hardening.sql` | **Security fix for 008.** Drops user UPDATE on `wallets` and INSERT on `wallet_transactions`; revokes `recharge_wallet` from clients; adds `idempotency_key`; new RPC `wallet_recharge_simulated(p_amount, p_idempotency_key)` that uses `auth.uid()`. Backfills wallets for older users. |
 
 **SQL tests:** `supabase/tests/` runs on a plain Postgres 16 (CI job `sql-tests`). `_supabase_stub.sql`
@@ -83,7 +84,8 @@ fakes roles, `auth.users` and `auth.uid()` (read from `request.jwt.claim.sub`).
 Locally: apply the stub, then the migrations, then the `*_test.sql` file with `psql -v ON_ERROR_STOP=1`.
 `001_schema.sql` needs PostGIS (not in CI): tests for 011+ load `_profiles_fixture.sql` instead.
 
-**Public web** (`public_web/`, GitHub Pages via `pages.yml`): `viaje.html#t=<token>` shows a shared
+**Public web** (`public_web/`, GitHub Pages via `pages.yml`): `via.html` shows `road_status()` (what
+the WhatsApp share of the corridor links to); `viaje.html#t=<token>` shows a shared
 trip by calling `trip_share_view` with the anon key. Supabase Edge Functions can't serve HTML on
 `*.supabase.co`, so public pages live here. App env `SHARE_BASE_URL` points to it (empty = the
 message carries only a Google Maps point).
@@ -171,7 +173,8 @@ All providers in `lib/providers/`. Pattern: `StateNotifierProvider<Notifier, Asy
 | `authSessionProvider` | `StreamProvider` | Supabase auth stream |
 | `currentUserProvider` | derived from session | |
 | `isGuestProvider` | `Provider<bool>` | true without session (guest mode, DS3) |
-| `corridorStatusProvider` | `FutureProvider<CorridorStatus>` | Returns `CorridorStatus.noData()` until road reports exist (Fase 4). Never fake a state |
+| `corridorStatusProvider` | `FutureProvider<CorridorStatus>` | `road_status()`; offline → last cached copy marked `isStale`; never cached → `noData()`. Never fake a state |
+| `roadSegmentsProvider` | `FutureProvider<List<RoadSegmentGeo>>` | Segment geometry to place a report by GPS (`nearestSegment`) |
 | `activeCardProvider` | `AsyncValue<CardModel>` | Supabase Realtime for live balance |
 | `transactionListProvider` | `AsyncValue<List<TransactionModel>>` | paginated (20/page), `loadMore()` |
 | `profileProvider` | `AsyncValue<ProfileModel>` | load(), updateProfile(), updatePassword() |
@@ -274,6 +277,7 @@ AppRoutes.routeDetail      // '/routes/detail'
 AppRoutes.paymentValidation // '/payment-validation'
 AppRoutes.nfcSimulator     // '/debug/nfc-simulator'
 AppRoutes.emergencyContacts // '/safety/contacts'  (needs account)
+AppRoutes.report           // '/report'  (pestaña Reportar; needs account)
 AppRoutes.driver           // '/driver'  (modo conductor; needs account)
 AppRoutes.driverSignup     // '/driver/signup'
 AppRoutes.privacy / .terms // '/legal/privacy', '/legal/terms' (public)
@@ -335,8 +339,8 @@ GSSize.touchTarget=48 .touchTargetDriver=72 .corridorLine=56 .bottomNav=72 .topB
 - `GSCard`, `GSInfoCard`, `GSOptionCard`, `GSModeChip`
 - `GSCorridorLine` — DESIGN.md corridor line (56 px); state always icon + word, time in mono
 - `GSTextField`, `GSSearchBar`
-- `GSBottomNav(current: GSNavTab.home|wallet|profile)` — navigates by itself; 3 tabs today
-  (Viaje and Reportar join in Fases 6 and 4)
+- `GSBottomNav(current: GSNavTab.home|report|wallet|profile)` — navigates by itself; 4 tabs
+  (Viaje joins in Fase 6)
 - `GSBottomSheet`
 - `GSToast`, `GSSkeletonLoader`, `GSEmptyState`
 

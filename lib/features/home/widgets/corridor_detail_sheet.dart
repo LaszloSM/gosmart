@@ -1,8 +1,21 @@
 // lib/features/home/widgets/corridor_detail_sheet.dart
 // Detalle de la Línea del corredor: tramo por tramo, con hora y reportes.
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../../core/corridor_share.dart';
+import '../../../core/env.dart';
+import '../../../core/safety_links.dart' show whatsappUri;
 import '../../../models/corridor_status.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/corridor_provider.dart';
+import '../../../router/app_router.dart';
+import '../../../services/corridor_service.dart';
+import '../../../widgets/gs_button.dart';
+import '../../../widgets/gs_toast.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_corridor_line.dart';
 
@@ -17,7 +30,8 @@ Future<void> showCorridorDetailSheet(
         ? AnimationStyle.noAnimation
         : null,
     showDragHandle: true,
-    builder: (_) => CorridorDetailSheet(status: status),
+    builder: (_) =>
+        SingleChildScrollView(child: CorridorDetailSheet(status: status)),
   );
 }
 
@@ -60,6 +74,26 @@ class CorridorDetailSheet extends StatelessWidget {
                 _SegmentRow(segment: seg),
                 const Divider(),
               ],
+            const SizedBox(height: GSSpacing.s4),
+            GSButton(
+              label: 'Compartir por WhatsApp',
+              leadingIcon: Icons.share_rounded,
+              onPressed: () => launchUrl(
+                whatsappUri(corridorShareMessage(status,
+                    link: corridorPageLink(Env.shareBaseUrl))),
+                mode: LaunchMode.externalApplication,
+              ).catchError((_) => false),
+            ),
+            const SizedBox(height: GSSpacing.s2),
+            GSButton(
+              label: 'Reportar algo en la vía',
+              leadingIcon: Icons.campaign_outlined,
+              variant: GSButtonVariant.outline,
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.go(AppRoutes.report);
+              },
+            ),
           ],
         ),
       ),
@@ -86,8 +120,8 @@ class _NoDataNote extends StatelessWidget {
                   style: text.titleMedium),
               const SizedBox(height: GSSpacing.s1),
               Text(
-                'Pronto vas a poder ver y reportar bloqueos, retenes e '
-                'inundaciones de la Troncal aquí mismo.',
+                'Nadie ha reportado nada vigente. Si ves un bloqueo, un retén '
+                'o una inundación, avisa a los demás.',
                 style: text.bodyMedium,
               ),
             ],
@@ -100,6 +134,88 @@ class _NoDataNote extends StatelessWidget {
 
 class _SegmentRow extends StatelessWidget {
   const _SegmentRow({required this.segment});
+  final CorridorSegment segment;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _SegmentSummary(segment: segment),
+        if (segment.reportId != null) _VoteRow(reportId: segment.reportId!),
+      ],
+    );
+  }
+}
+
+/// "¿Sigue ahí?": la confirmación cruzada que decide si un tramo se cierra.
+class _VoteRow extends ConsumerStatefulWidget {
+  const _VoteRow({required this.reportId});
+  final String reportId;
+
+  @override
+  ConsumerState<_VoteRow> createState() => _VoteRowState();
+}
+
+class _VoteRowState extends ConsumerState<_VoteRow> {
+  bool _busy = false;
+  bool _done = false;
+
+  Future<void> _vote(bool stillThere) async {
+    if (ref.read(isGuestProvider)) {
+      Navigator.of(context).pop();
+      context.push(AppRoutes.login);
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    try {
+      await corridorService.vote(widget.reportId, stillThere: stillThere);
+      ref.invalidate(corridorStatusProvider);
+      setState(() => _done = true);
+    } catch (e) {
+      GSToast.showWithMessenger(messenger,
+          message: e.toString().contains('cannot_vote_own')
+              ? 'Ese reporte es tuyo: lo confirman otros.'
+              : 'No pudimos guardar tu respuesta. Revisa tu conexión.',
+          type: GSToastType.error);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    if (_done) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: GSSpacing.s3),
+        child: Text('Gracias: tu respuesta cuenta.', style: text.bodySmall),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: GSSpacing.s3),
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: GSSpacing.s2,
+        children: [
+          Text('¿Sigue ahí?', style: text.bodyMedium),
+          TextButton(
+            onPressed: _busy ? null : () => _vote(true),
+            child: const Text('Sí, sigue'),
+          ),
+          TextButton(
+            onPressed: _busy ? null : () => _vote(false),
+            child: const Text('Ya no está'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SegmentSummary extends StatelessWidget {
+  const _SegmentSummary({required this.segment});
   final CorridorSegment segment;
 
   @override

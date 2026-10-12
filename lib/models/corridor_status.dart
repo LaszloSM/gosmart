@@ -26,6 +26,13 @@ enum RoadState {
 
 /// Un tramo del corredor entre dos kilómetros.
 class CorridorSegment {
+  /// Id en `road_segments` ('troncal-30-40'); null en el estado sin datos.
+  final String? id;
+  final String? name;
+
+  /// Reporte que explica el estado (para confirmarlo o desmentirlo).
+  final String? reportId;
+
   final double kmFrom;
   final double kmTo;
   final RoadState state;
@@ -38,6 +45,9 @@ class CorridorSegment {
   final bool isBranch;
 
   const CorridorSegment({
+    this.id,
+    this.name,
+    this.reportId,
     required this.kmFrom,
     required this.kmTo,
     this.state = RoadState.unknown,
@@ -47,6 +57,9 @@ class CorridorSegment {
   });
 
   factory CorridorSegment.fromMap(Map<String, dynamic> map) => CorridorSegment(
+        id: map['segment_id'] as String?,
+        name: map['name'] as String?,
+        reportId: map['report_id'] as String?,
         kmFrom: (map['km_from'] as num).toDouble(),
         kmTo: (map['km_to'] as num).toDouble(),
         state: RoadState.fromName(map['state'] as String?),
@@ -54,6 +67,18 @@ class CorridorSegment {
         reports: (map['reports'] as num?)?.toInt() ?? 0,
         isBranch: map['is_branch'] as bool? ?? false,
       );
+
+  Map<String, dynamic> toMap() => {
+        'segment_id': id,
+        'name': name,
+        'report_id': reportId,
+        'km_from': kmFrom,
+        'km_to': kmTo,
+        'state': state.name,
+        'reason': reason,
+        'reports': reports,
+        'is_branch': isBranch,
+      };
 }
 
 class CorridorStatus {
@@ -82,6 +107,36 @@ class CorridorStatus {
         ],
         updatedAt = null,
         isStale = false;
+
+  /// Filas de `road_status()`. [updatedAt] es el reporte más reciente
+  /// (null si nadie ha reportado nada vigente).
+  factory CorridorStatus.fromRows(List<Map<String, dynamic>> rows) {
+    if (rows.isEmpty) return const CorridorStatus.noData();
+    DateTime? newest;
+    for (final r in rows) {
+      final t = DateTime.tryParse(r['updated_at'] as String? ?? '');
+      if (t != null && (newest == null || t.isAfter(newest))) newest = t;
+    }
+    return CorridorStatus(
+      segments: [for (final r in rows) CorridorSegment.fromMap(r)],
+      updatedAt: newest?.toLocal(),
+    );
+  }
+
+  /// Para guardar el último estado y mostrarlo sin señal.
+  Map<String, dynamic> toJson() => {
+        'segments': [for (final s in segments) s.toMap()],
+        'updated_at': updatedAt?.toUtc().toIso8601String(),
+      };
+
+  factory CorridorStatus.fromJson(Map<String, dynamic> j) => CorridorStatus(
+        segments: [
+          for (final s in j['segments'] as List)
+            CorridorSegment.fromMap(Map<String, dynamic>.from(s as Map))
+        ],
+        updatedAt:
+            DateTime.tryParse(j['updated_at'] as String? ?? '')?.toLocal(),
+      );
 
   Iterable<CorridorSegment> get mainSegments =>
       segments.where((s) => !s.isBranch);
