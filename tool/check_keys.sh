@@ -34,6 +34,8 @@ if [ -n "${SUPABASE_URL:-}" ] && [ -n "${SUPABASE_ANON_KEY:-}" ]; then
   [[ "$SUPABASE_URL" =~ ^https://[a-z0-9]+\.supabase\.co/?$ ]] ||
     say "- SUPABASE_URL no tiene la forma https://<ref>.supabase.co (revisa espacios o rutas de más)"
   base=${SUPABASE_URL%/}
+  [[ "$SUPABASE_ANON_KEY" == eyJ* || "$SUPABASE_ANON_KEY" == sb_publishable_* ]] ||
+    say "- SUPABASE_ANON_KEY no parece la clave anon/publishable (empieza por eyJ o sb_publishable_)"
   fn() {
     local body code
     body=$(curl -s -w '\n%{http_code}' -X POST "$base/functions/v1/maps" \

@@ -184,7 +184,14 @@ jobs:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
-          if [ -z "$SUPABASE_URL" ]; then export SUPABASE_URL="https://$PROJECT_REF.supabase.co"; fi
+          # Sin espacios ni saltos de línea; si el secret no es https://<ref>.supabase.co, se usa el del proyecto.
+          SUPABASE_URL=$(printf '%s' "$SUPABASE_URL" | tr -d '[:space:]'); SUPABASE_URL=${SUPABASE_URL%/}
+          if ! [[ "$SUPABASE_URL" =~ ^https://[a-z0-9]+\.supabase\.co$ ]]; then
+            [ -n "$SUPABASE_URL" ] && echo "::warning::El secret SUPABASE_URL no es https://<ref>.supabase.co; uso https://$PROJECT_REF.supabase.co."
+            SUPABASE_URL="https://$PROJECT_REF.supabase.co"
+          fi
+          export SUPABASE_URL
+          SUPABASE_ANON_KEY=$(printf '%s' "$SUPABASE_ANON_KEY" | tr -d '[:space:]')
           if [ -z "$SUPABASE_ANON_KEY" ] && [ -n "$SUPABASE_ACCESS_TOKEN" ]; then
             SUPABASE_ANON_KEY=$(supabase projects api-keys --project-ref "$PROJECT_REF" -o json |
               jq -r '[.[] | select(.name == "anon")][0].api_key // empty') || true
