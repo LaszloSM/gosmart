@@ -165,18 +165,35 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
       # Con los secrets del repo el APK sale conectado a tu Supabase, con mapa y push.
-      # Sin ellos sale con valores de ejemplo (compila igual).
+      # SUPABASE_URL / SUPABASE_ANON_KEY: si no están como secrets, se sacan del
+      # proyecto con SUPABASE_ACCESS_TOKEN (el anon key es público: va en el APK).
       - name: Create .env and google-services.json from secrets
         env:
+          PROJECT_REF: ndmsiznzvdvpewzkulep
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          GOOGLE_MAPS_SERVER_KEY: ${{ secrets.GOOGLE_MAPS_SERVER_KEY }}
           SHARE_BASE_URL: ${{ secrets.SHARE_BASE_URL }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
+          if [ -z "$SUPABASE_URL" ]; then export SUPABASE_URL="https://$PROJECT_REF.supabase.co"; fi
+          if [ -z "$SUPABASE_ANON_KEY" ] && [ -n "$SUPABASE_ACCESS_TOKEN" ]; then
+            SUPABASE_ANON_KEY=$(supabase projects api-keys --project-ref "$PROJECT_REF" -o json |
+              jq -r '[.[] | select(.name == "anon")][0].api_key // empty') || true
+            export SUPABASE_ANON_KEY
+          fi
+          if [ -n "$SUPABASE_ANON_KEY" ]; then echo "::add-mask::$SUPABASE_ANON_KEY"; echo "Supabase: $SUPABASE_URL (anon key listo)"
+          else echo "::warning::Sin SUPABASE_ANON_KEY: el APK no se conectará a Supabase."; fi
           bash tool/write_env.sh > .env
+          bash tool/check_keys.sh
           if [ -n "$GOOGLE_SERVICES_JSON" ]; then
             printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
             echo "Push activado (google-services.json desde secrets)."
