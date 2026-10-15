@@ -1,128 +1,128 @@
 ---
 # gstack: design-md-format=spec
 name: GoSmart
-description: Rótulo de colectivo para la Troncal del Caribe; cada destino, tramo y viaje es una placa de ruta que se lee a cinco metros, al sol y con una mano.
+description: Movilidad para Riohacha, Maicao y la Troncal del Caribe, con el acabado familiar de InDrive, Google Maps, Nequi y Uber/DiDi.
 colors:
-  brand: "#1B3A8C"
-  brand-pressed: "#142C6B"
+  # Día (GSPalette.light)
+  brand: "#0B4FC4"
+  brand-pressed: "#093F9D"
   on-brand: "#FFFFFF"
-  on-brand-muted: "#CCD7F2"
-  brand-tint: "#E3E9F6"
-  stripe: "#C2185B"
-  background: "#EEF1F5"
+  on-brand-muted: "#D6E2FA"
+  brand-tint: "#E8F0FE"
+  shell: "#FFFFFF"
+  on-shell: "#14161B"
+  on-shell-muted: "#4A5162"
+  background: "#F4F6FA"
   surface: "#FFFFFF"
-  surface-sunken: "#E2E7EE"
-  text: "#111827"
-  text-muted: "#465066"
-  text-disabled: "#8A93A6"
-  line: "#C9D0DC"
-  road-open: "#17602F"
-  road-caution: "#6A3F00"
-  road-caution-tint: "#FBE7C2"
-  road-closed: "#9E1F18"
-  road-closed-tint: "#F6DAD6"
-  road-unknown: "#50576A"
-  mode-taxi: "#7A4E2D"
-  mode-bike: "#3D6B8C"
-  card-gold: "#B08A3E"
-  shell: "#1B3A8C"
-  on-shell: "#FFFFFF"
-  on-shell-muted: "#CCD7F2"
-  dark-brand: "#9DB2F2"
-  dark-on-brand: "#0E1320"
-  dark-brand-tint: "#22305A"
-  dark-shell: "#14295F"
-  dark-on-shell: "#FFFFFF"
-  dark-on-shell-muted: "#C3CEEA"
-  dark-stripe: "#FF6FA3"
-  dark-background: "#0E1320"
-  dark-surface: "#171E2D"
-  dark-surface-sunken: "#0A0E17"
-  dark-text: "#EEF1F5"
-  dark-text-muted: "#AEB7CA"
-  dark-line: "#2C3649"
-  dark-road-open: "#73D69C"
-  dark-road-caution: "#F2B65A"
-  dark-road-closed: "#FF8F85"
-  dark-road-unknown: "#A3ABBA"
+  surface-sunken: "#EBEEF3"
+  text: "#14161B"
+  text-muted: "#4A5162"
+  text-disabled: "#9AA0AC"
+  line: "#DDE1E8"
+  road-open: "#0F5F30"
+  road-caution: "#734600"
+  road-caution-tint: "#FFF1D6"
+  road-closed: "#9C1E17"
+  road-closed-tint: "#FDE7E5"
+  road-unknown: "#4A5162"
+  mode-taxi: "#6941C6"
+  mode-bike: "#0E7490"
+  card-gold: "#FFC93C"
+  shadow-ink: "#1A2440"
+  # Noche (GSPalette.dark): esquema propio, no una inversión
+  brand-dark: "#A8C7FA"
+  brand-pressed-dark: "#C2D7FB"
+  on-brand-dark: "#0B1D3A"
+  on-brand-muted-dark: "#1E3560"
+  brand-tint-dark: "#1F2E4D"
+  shell-dark: "#1B1E25"
+  on-shell-dark: "#E6E8EE"
+  on-shell-muted-dark: "#A9AEBA"
+  background-dark: "#111318"
+  surface-dark: "#1B1E25"
+  surface-sunken-dark: "#262A33"
+  text-dark: "#E6E8EE"
+  text-muted-dark: "#A9AEBA"
+  text-disabled-dark: "#6E7482"
+  line-dark: "#2E333D"
+  road-open-dark: "#73D69C"
+  road-caution-dark: "#F2B65A"
+  road-caution-tint-dark: "#3A2A10"
+  road-closed-dark: "#FF8F85"
+  road-closed-tint-dark: "#3F1916"
+  road-unknown-dark: "#A3ABBA"
+  mode-taxi-dark: "#C4B1F4"
+  mode-bike-dark: "#7DD3E8"
+  card-gold-dark: "#FFD66B"
+  shadow-ink-dark: "#000000"
 typography:
   display:
-    fontFamily: "Barlow Condensed"
-    fontSize: "28px"
+    fontFamily: "Figtree"
+    fontSize: "34px"
     fontWeight: 800
     lineHeight: 1.1
+    letterSpacing: "-0.6px"
   headline:
-    fontFamily: "Barlow Condensed"
+    fontFamily: "Figtree"
     fontSize: "24px"
-    fontWeight: 700
-    lineHeight: 1.15
-  title:
-    fontFamily: "Barlow Condensed"
-    fontSize: "24px"
-    fontWeight: 700
-    lineHeight: 1.15
-  app-bar:
-    fontFamily: "Barlow Condensed"
-    fontSize: "26px"
     fontWeight: 800
-    letterSpacing: "0.2px"
-  plate:
-    fontFamily: "Barlow Condensed"
+    lineHeight: 1.2
+    letterSpacing: "-0.3px"
+  headline-small:
+    fontFamily: "Figtree"
     fontSize: "22px"
-    fontWeight: 800
-    lineHeight: 1.05
-    letterSpacing: "0.4px"
-  plate-lg:
-    fontFamily: "Barlow Condensed"
-    fontSize: "30px"
-    fontWeight: 800
-    lineHeight: 1.05
-    letterSpacing: "0.4px"
-  button:
-    fontFamily: "Barlow Condensed"
+    fontWeight: 700
+    lineHeight: 1.2
+    letterSpacing: "-0.2px"
+  title:
+    fontFamily: "Figtree"
     fontSize: "20px"
     fontWeight: 700
-    lineHeight: 1.1
-    letterSpacing: "0.3px"
-  row-title:
-    fontFamily: "Barlow"
+    lineHeight: 1.25
+    letterSpacing: "-0.1px"
+  title-medium:
+    fontFamily: "Figtree"
     fontSize: "17px"
     fontWeight: 600
     lineHeight: 1.3
   body:
-    fontFamily: "Barlow"
+    fontFamily: "Figtree"
     fontSize: "17px"
     fontWeight: 400
     lineHeight: 1.45
+  body-medium:
+    fontFamily: "Figtree"
+    fontSize: "16px"
+    fontWeight: 400
+    lineHeight: 1.45
   body-small:
-    fontFamily: "Barlow"
-    fontSize: "15px"
+    fontFamily: "Figtree"
+    fontSize: "14px"
     fontWeight: 400
     lineHeight: 1.4
   label:
-    fontFamily: "Barlow"
-    fontSize: "15px"
+    fontFamily: "Figtree"
+    fontSize: "16px"
     fontWeight: 600
-    letterSpacing: "0.15px"
   label-small:
-    fontFamily: "Barlow"
-    fontSize: "13px"
+    fontFamily: "Figtree"
+    fontSize: "12px"
     fontWeight: 600
-    letterSpacing: "0.2px"
-  figures:
-    fontFamily: "Barlow"
+    letterSpacing: "0.1px"
+  button:
+    fontFamily: "Figtree"
     fontSize: "17px"
-    fontWeight: 600
-    fontFeature: "tnum"
-  figures-display:
-    fontFamily: "Barlow"
-    fontSize: "32px"
     fontWeight: 700
+  amount:
+    fontFamily: "Figtree"
+    fontSize: "38px"
+    fontWeight: 800
     fontFeature: "tnum"
 rounded:
-  sm: "4px"
-  md: "8px"
-  lg: "12px"
+  sm: "8px"
+  md: "12px"
+  lg: "16px"
+  xl: "24px"
   full: "9999px"
 spacing:
   s1: "4px"
@@ -139,299 +139,272 @@ spacing:
   touch-driver: "72px"
   top-bar: "56px"
   bottom-nav: "72px"
-  corridor-line: "56px"
-  stripe: "4px"
+  button: "52px"
 components:
   button-primary:
     backgroundColor: "{colors.brand}"
     textColor: "{colors.on-brand}"
     typography: "{typography.button}"
-    rounded: "{rounded.md}"
+    rounded: "{rounded.full}"
     height: "52px"
-    padding: "0 20px"
-  button-primary-pressed:
-    backgroundColor: "{colors.brand}"
-    textColor: "{colors.on-brand}"
+    padding: "4px 22px"
   button-secondary:
     backgroundColor: "{colors.brand-tint}"
     textColor: "{colors.brand}"
     typography: "{typography.button}"
-    rounded: "{rounded.md}"
+    rounded: "{rounded.full}"
     height: "52px"
   button-outline:
     backgroundColor: "{colors.surface}"
-    textColor: "{colors.brand}"
+    textColor: "{colors.text}"
     typography: "{typography.button}"
-    rounded: "{rounded.md}"
+    rounded: "{rounded.full}"
     height: "52px"
   button-ghost:
-    backgroundColor: "transparent"
     textColor: "{colors.brand}"
     typography: "{typography.button}"
-    rounded: "{rounded.md}"
-    height: "{spacing.touch}"
-  button-danger:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.road-closed}"
-    typography: "{typography.button}"
-    rounded: "{rounded.md}"
+    rounded: "{rounded.full}"
     height: "52px"
-  route-plate:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.brand}"
-    typography: "{typography.plate}"
-    rounded: "{rounded.md}"
-    height: "56px"
-    padding: "8px 16px"
-  route-plate-placeholder:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.text-muted}"
-    typography: "{typography.plate}"
-    rounded: "{rounded.md}"
-  route-plate-sm:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.brand}"
-    rounded: "{rounded.md}"
-    height: "{spacing.touch}"
-    padding: "8px 12px"
-  top-bar:
+  button-danger:
+    backgroundColor: "{colors.road-closed-tint}"
+    textColor: "{colors.road-closed}"
+    rounded: "{rounded.full}"
+    height: "52px"
+  button-driver:
     backgroundColor: "{colors.brand}"
     textColor: "{colors.on-brand}"
-    typography: "{typography.app-bar}"
-    height: "{spacing.top-bar}"
-  bottom-nav:
-    backgroundColor: "{colors.brand}"
-    textColor: "{colors.on-brand-muted}"
-    typography: "{typography.label-small}"
-    height: "{spacing.bottom-nav}"
-  bottom-nav-active:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.brand}"
-    rounded: "{rounded.sm}"
-  input:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.text}"
-    typography: "{typography.body}"
-    rounded: "{rounded.md}"
-    padding: "12px 16px"
-  list-row:
-    backgroundColor: "transparent"
-    textColor: "{colors.text}"
-    typography: "{typography.row-title}"
-    height: "64px"
-    padding: "12px 16px"
-  chip:
+    rounded: "{rounded.full}"
+    height: "72px"
+    padding: "4px 24px"
+  search-pill:
     backgroundColor: "{colors.surface-sunken}"
     textColor: "{colors.text}"
-    rounded: "{rounded.sm}"
-    padding: "4px 12px"
-  chip-selected:
+    rounded: "{rounded.full}"
+  input-field:
+    backgroundColor: "{colors.surface-sunken}"
+    textColor: "{colors.text}"
+    rounded: "{rounded.md}"
+    padding: "16px"
+  choice-pill:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.text}"
+    rounded: "{rounded.full}"
+    height: "48px"
+    padding: "0 16px"
+  choice-pill-selected:
     backgroundColor: "{colors.brand-tint}"
     textColor: "{colors.brand}"
-    rounded: "{rounded.sm}"
-  segmented-selected:
-    backgroundColor: "{colors.brand}"
-    textColor: "{colors.on-brand}"
-    rounded: "{rounded.md}"
-    height: "{spacing.touch}"
-  sheet:
+    rounded: "{rounded.full}"
+  option-card:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.text}"
     rounded: "{rounded.lg}"
-  corridor-line:
+    padding: "12px 16px"
+  option-card-selected:
+    backgroundColor: "{colors.brand-tint}"
+    textColor: "{colors.text}"
+    rounded: "{rounded.lg}"
+  list-row:
     backgroundColor: "{colors.surface}"
-    textColor: "{colors.text-muted}"
-    height: "{spacing.corridor-line}"
-    padding: "0 16px"
-  toast:
-    backgroundColor: "{colors.text}"
+    textColor: "{colors.text}"
+    height: "64px"
+    padding: "12px 16px"
+  group-card:
+    backgroundColor: "{colors.surface}"
+    rounded: "{rounded.lg}"
+  balance-card:
+    backgroundColor: "{colors.brand}"
     textColor: "{colors.on-brand}"
-    rounded: "{rounded.md}"
+    typography: "{typography.amount}"
+    rounded: "{rounded.xl}"
+  fare-badge:
+    backgroundColor: "{colors.brand-tint}"
+    textColor: "{colors.brand}"
+    rounded: "{rounded.full}"
+  bottom-nav:
+    backgroundColor: "{colors.shell}"
+    textColor: "{colors.on-shell-muted}"
+    height: "72px"
+  bottom-nav-indicator:
+    backgroundColor: "{colors.brand-tint}"
+    rounded: "{rounded.full}"
+    width: "56px"
+    height: "32px"
+  bottom-sheet:
+    backgroundColor: "{colors.surface}"
+    rounded: "{rounded.xl}"
+  corridor-pill:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.text}"
+    rounded: "{rounded.lg}"
+    height: "56px"
 ---
 
 # Design System: GoSmart
 
 ## Overview
 
-**Creative North Star: "El rótulo de colectivo"**
+**Creative North Star: "Lo que ya sabes usar"**
 
-GoSmart se lee como los rótulos de ruta pintados en el parabrisas de los colectivos y busetas de la costa. Cada destino, tramo, viaje o nombre importante es una **placa de ruta**: blanca, con borde fino, letras condensadas gruesas en ultramar y, cuando está elegida o en curso, una franja fucsia debajo. La carrocería es el shell: la barra superior, la barra inferior y el botón primario son azul ultramar macizo; entre ellas, la pantalla es lámina blanca fría y las filas son planas, separadas por divisores.
+GoSmart se ve y se toca como las apps que la gente de la costa ya domina: mapa a pantalla completa como Google Maps, opciones de viaje con tiempo y precio como Uber/DiDi e InDrive, billetera de saldo grande como Nequi. Nada que aprender. Superficies blancas sobre un gris frío, un solo azul de marca, Figtree en caja normal, botones en píldora y tarjetas redondeadas con sombra suave.
 
-La densidad es de señalización, no de tablero: pocos elementos por pantalla, letras grandes, cifras tabulares, contraste pensado para pleno sol y una mano. La profundidad casi no existe; el sistema se sostiene con color plano, bordes de 1,5 dp y la franja. El movimiento es breve y funcional: la placa responde al dedo y su rótulo se "pinta" al cambiar; nada se anima por adorno.
+Se usa en la calle, al sol, con una mano y a veces con texto grande. Por eso el contraste es alto (7:1 en texto), los toques miden 48 dp (72 en modo conductor) y nada se corta con el texto al 200 %. La noche tiene su propio esquema: superficies que suben de luminosidad y la marca aclarada, sin encandilar.
 
-El mundo rechaza explícitamente el mapa blanco con hoja negra y un solo acento de las apps de transporte globales, y el arena-con-un-azul del diseño anterior de GoSmart.
+Reemplaza por completo el mundo anterior "Rótulo de colectivo" (placas condensadas en mayúsculas, ultramar macizo en barras, franja fucsia). Ninguno de esos recursos sigue vigente.
 
 **Key Characteristics:**
-- Shell en ultramar de carrocería; contenido en lámina fría y placas blancas.
-- Placas de ruta con letras Barlow Condensed 800 en mayúsculas como gesto distintivo.
-- Franja fucsia de 4 dp solo bajo lo seleccionado o activo.
-- Rojo, ámbar y verde reservados al estado de la vía, siempre con ícono y palabra.
-- Radios 4 / 8 / 12; sin degradados, sin vidrio, sin tarjetas por defecto.
-- Presión a 0,97 en 120 ms; cambio de placa con fundido y 8 dp en 200 ms.
+- Mapa primero; encima, controles flotantes blancos con sombra.
+- Un azul de marca para acción, selección, ruta y saldo.
+- Píldoras para botones, buscador y chips; tarjetas de 16, hojas de 24.
+- Verde, ámbar y rojo solo para el estado de la vía.
+- Cifras tabulares para todo lo que el usuario compara.
+- Movimiento corto y discreto; nada se anima al cambiar de pestaña.
 
 ## Colors
 
-Un ultramar saturado de carrocería sobre neutros fríos de lámina, con un fucsia de señal que nunca rellena y una paleta vial que solo habla del estado de la Troncal.
+Neutros fríos y claros con un único azul; el color fuerte se reserva para lo que importa.
 
 ### Primary
-- **Ultramar de carrocería** (brand): barra superior, barra inferior, botón primario, letras de las placas, íconos de filas y foco de campos. Blanco encima alcanza 10,3:1. Su versión presionada (brand-pressed) solo para estados de presión.
-- **Blanco sobre carrocería** (on-brand) y **Azul neblina** (on-brand-muted): texto e íconos sobre ultramar; el neblina para pestañas inactivas y textos secundarios dentro del shell (7:1).
-- **Tinte de ultramar** (brand-tint): fondos de lo seleccionado (chips, botón secundario, resaltado al tocar una placa); el ultramar encima da 8,5:1.
+- **Azul GoSmart** (brand): botón primario, selección, ruta en el mapa, tarjeta de saldo, ícono activo de la barra inferior. Blanco encima a 7.2:1. De noche se aclara (brand-dark) y el texto encima pasa a azul tinta.
+- **Azul presionado** (brand-pressed): estado presionado.
+- **Azul claro** (brand-tint): fondo de lo elegido (opción, chip, píldora de la pestaña activa, círculo de ícono, insignia de tarifa). La marca encima, en negrita.
 
 ### Secondary
-- **Fucsia de franja** (stripe): la franja de 4 dp bajo la placa activa, la placa del perfil, la Línea del corredor en el shell y el borde inferior de la pestaña activa. Nunca relleno, nunca texto, nunca fondo.
+- **Morado mototaxi** (mode-taxi) y **Cian bici** (mode-bike): colores de modo. El bus, colectivo e intermunicipal usan la marca; el carro, la tinta; a pie, el gris de texto secundario.
+- **Oro de tarjeta** (card-gold): chip de la tarjeta GoSmart y eco-puntos.
 
 ### Tertiary
-- **Paleta vial** (road-open, road-caution, road-closed, road-unknown, con sus tintes): exclusiva del estado de la vía en la Línea del corredor y sus detalles. Los rojos de error de formulario reutilizan road-closed porque Material los exige, pero siempre con ícono y texto.
-- **Modos de transporte**: TransPadilla, colectivo e intermunicipal usan el ultramar; mototaxi/taxi el café (mode-taxi); bicicleta el azul acero (mode-bike); a pie la tinta suave; carro la tinta. Ninguno coincide con la paleta vial.
-- **Oro de tarjeta** (card-gold): solo el chip de la tarjeta GoSmart.
+- **Vía abierta** (road-open), **Precaución** (road-caution + tint), **Cerrada** (road-closed + tint), **Sin datos** (road-unknown). Rojo también marca errores de campo y el botón de peligro.
 
 ### Neutral
-- **Lámina** (background): fondo de pantalla, frío y claro.
-- **Placa** (surface): placas, hojas, campos, la Línea del corredor.
-- **Lámina hundida** (surface-sunken): agrupar y chips sin seleccionar.
-- **Tinta** (text): texto principal, 15,7:1 sobre lámina; también fondo de los avisos.
-- **Tinta suave** (text-muted): texto secundario, 7,1:1 sobre lámina; bordes de campos y de botón contorno.
-- **Tinta apagada** (text-disabled): solo pistas y deshabilitados, exenta del mínimo.
-- **Línea** (line): divisores y bordes de placa; nunca lleva texto encima.
-
-### Noche (esquema propio)
-- Sigue al sistema (`ThemeMode.system`). No es una inversión: el fondo (#0E1320) es el más oscuro y la placa (#171E2D) sube de luminosidad para dar jerarquía; las sombras pasan a negro.
-- **Carrocería** (shell, #14295F) se separa de la marca: de noche las barras y cabeceras siguen en ultramar profundo con blanco (13,9:1), mientras la **marca** se aclara a azul periwinkle (#9DB2F2, 8:1 sobre la placa) para letras de placa, íconos y botón primario con texto tinta (#0E1320, 8,9:1).
-- Fucsia de franja #FF6FA3; paleta vial aclarada (abierta #73D69C, precaución #F2B65A, cerrada #FF8F85, sin datos #A3ABBA), todas ≥ 7:1 sobre la placa nocturna.
-- En código: `GSColors` lee la paleta activa (`GSPalette.light` / `GSPalette.dark`); `main.dart` la aplica según el brillo del tema y reconstruye el árbol al cambiar. Pendiente: estilo nocturno del mapa (llega con Google Maps, Fase 3).
+- **Gris frío** (background): fondo de pantalla.
+- **Blanco** (surface, shell): tarjetas, hojas, barras superior e inferior.
+- **Gris hundido** (surface-sunken): buscador, campos, círculos de ícono en filas.
+- **Tinta** (text): texto principal, 16.7:1 sobre el fondo.
+- **Tinta suave** (text-muted): texto secundario, 7.3:1 sobre el fondo.
+- **Línea** (line): divisores y bordes; nunca texto encima.
 
 ### Named Rules
-**The Carrocería Rule.** El ultramar es el shell (barras arriba y abajo, botón primario) y la tinta de las placas. No se usa como fondo de bloques de contenido ni de tarjetas.
+**La Regla del Azul Único.** Hay un solo color de marca, #0B4FC4 (de día). Botones, selección, ruta y saldo lo usan; ningún segundo acento compite con él.
 
-**The Franja Rule.** El fucsia aparece solo como franja bajo un elemento seleccionado o en curso, una por grupo. Si nada está activo, no hay fucsia en pantalla.
+**La Regla de la Vía.** Verde, ámbar y rojo existen solo para el estado de la vía, y siempre van con ícono y palabra ("Cerrada", "Precaución"). El color nunca va solo. Entradas y salidas de dinero no usan verde ni rojo: las lleva el signo.
 
-**The Semáforo Rule.** Rojo, ámbar y verde existen solo para el estado de la vía y siempre van con ícono y palabra ("Cerrada", "Precaución", "Abierta", "Sin datos"). El éxito usa el ultramar; los eco-puntos no son verdes; el dinero no lleva rojo ni verde, el signo lo dice.
+**La Regla del Modo.** Los colores de modo solo pintan tramos y marcadores (barra de tramos, línea de tiempo, polilínea del mapa), y se leen de la paleta activa en el momento de pintar (`liveColor`), nunca guardados.
 
-**The Siete a Uno Rule.** Todo texto principal y secundario cumple al menos 7:1 contra su fondo; solo deshabilitados y pistas quedan exentos.
+**La Regla del 7:1.** Todo texto legible mide al menos 7:1 contra su fondo, de día y de noche. Solo el texto deshabilitado queda exento.
 
 ## Typography
 
-**Display Font:** Barlow Condensed 600 / 700 / 800 (empaquetada, OFL)
-**Body Font:** Barlow 400 / 500 / 600 / 700 (empaquetada, OFL)
-**Label/Mono Font:** Barlow con cifras tabulares (no hay monoespaciada aparte)
+**Display Font:** Figtree (empaquetada en assets/fonts, OFL; instancias estáticas 400, 500, 600, 700, 800)
+**Body Font:** Figtree
+**Label/Mono Font:** Figtree con cifras tabulares (`GSFonts.tabular`)
 
-**Character:** Letra de rótulo pintado, condensada y gruesa, para lo que se lee de lejos (placas, títulos, botones); Barlow abierta y tranquila para el cuerpo. Las dos son de la misma familia, así que conviven sin fricción.
+**Character:** Una sola familia geométrica y amable. Títulos en caja normal y peso 700–800 con interletrado levemente negativo; cuerpo en 400.
 
 ### Hierarchy
-- **Display** (Barlow Condensed 800, 28–40 sp, 1,05–1,1): pantallas de bienvenida y cifras de portada; poco uso.
-- **Headline / Title** (Barlow Condensed 700, 22–28 sp, 1,1–1,15): títulos de sección dentro de una pantalla ("Tu cuenta", "Seguridad") y títulos de hoja (26 sp, 800).
-- **Barra superior** (Barlow Condensed 800, 26 sp): el nombre de la pantalla en blanco sobre ultramar.
-- **Placa** (Barlow Condensed 800, 18 / 22 / 30 sp según talla, 1,05, +0,4 de tracking, mayúsculas): el rótulo de cada placa de ruta y el campo "¿A DÓNDE VAS?".
-- **Botón** (Barlow Condensed 700, 17 / 20 / 22 sp según talla): etiquetas de botón en caja normal.
-- **Título de fila** (Barlow 600, 17 sp, 1,3): el título de cada fila y de las listas.
-- **Body** (Barlow 400, 17 sp, 1,45; 16 y 15 sp en tinta suave para lo secundario): texto corrido y subtítulos.
-- **Label** (Barlow 600, 13–15 sp, +0,15–0,2 de tracking): etiquetas de campos, pestañas, extremos de la Línea del corredor.
-- **Cifras** (Barlow 600 con tnum, 17 sp; 32 sp / 700 para el saldo): precios, saldo, km, horas y todo número que se compara.
+- **Display** (800, 30–40 px, 1.1): casi no se usa; saldo y pantallas de bienvenida.
+- **Headline** (800, 24–28 px, 1.15–1.2): títulos de pantalla; la barra superior usa 22 px en 800.
+- **Title** (700, 20 px, 1.25): títulos de sección (`GSSectionTitle`).
+- **Title medium** (600, 17 px, 1.3): título de fila y de tarjeta.
+- **Body** (400, 17 / 16 / 14 px, 1.45–1.4): texto corrido; 16 y 14 en tinta suave.
+- **Label** (600, 16 / 14 / 12 px): etiquetas, chips y barra inferior (12.5 px; 700 activa).
+- **Amount** (800, 38 px, tabular): saldo de la billetera. Precios, km y horas usan cifras tabulares a cualquier tamaño.
 
 ### Named Rules
-**The Rótulo Rule.** Las mayúsculas condensadas son de las placas: destinos, tramos, nombres. El resto del texto va en caja normal; no se inventan etiquetas pequeñas en mayúsculas sobre los títulos.
+**La Regla de los Doscientos.** El texto del sistema puede crecer hasta 200 % sin cortes a mitad de palabra: botones con alto mínimo (no fijo) que pasan a dos líneas, etiquetas de modo y de pestaña que se reducen para caber enteras (nunca "Colectiv/o" ni "Bille…").
 
-**The Cifra Tabular Rule.** Todo número que el usuario compara (pesos, km, minutos, horas) lleva cifras tabulares y se formatea con `formatCop()` cuando es dinero.
-
-**The Doscientos Rule.** Ningún texto se corta con el texto del sistema al 200 %: las placas crecen en alto, admiten 2 líneas en nombres largos, y la barra inferior crece desde 72 dp.
+**La Regla de la Cifra.** Todo número que el usuario compara (precio, saldo, minutos, km) va en cifras tabulares y se formatea con `formatCop()`.
 
 ## Layout
 
-Columna única de teléfono con margen lateral de 16 dp y escala de espaciado de 4 dp (4, 8, 12, 16, 20, 24, 32, 40, 48, 64). La estructura fija es: barra ultramar de 56 dp arriba (en Inicio, la Línea del corredor de 56 dp sobre una placa blanca dentro del shell), contenido en lámina, barra inferior ultramar de 72 dp mínimo con tres pestañas (Inicio, Billetera, Perfil).
+Pantalla de teléfono Android con margen lateral de 16 px (s4). Escala de espacio en múltiplos de 4: 4, 8, 12, 16, 20, 24, 32, 40, 48, 64.
 
-En Inicio el mapa ocupa el centro y una hoja blanca abajo lleva la placa "¿A DÓNDE VAS?" a todo el ancho (56 dp) con Casa y Trabajo como placas pequeñas debajo. En las demás pantallas el contenido son filas planas de 64 dp mínimo con divisor, agrupadas bajo títulos de sección condensados; una placa grande encabeza cuando hay un nombre o destino que mostrar (el nombre del usuario en Perfil).
+El inicio es mapa a pantalla completa: arriba, la píldora flotante del corredor; abajo, una hoja blanca con el buscador "¿A dónde vas?", accesos Casa/Trabajo en círculos y una fila de servicios por modo. Las demás pantallas usan barra superior blanca con título grande a la izquierda (56 + 8 px) y contenido en grupos blancos sobre el fondo gris. La barra inferior Material 3 tiene cinco pestañas y mide al menos 72 px; crece con el texto grande.
 
-Áreas táctiles de 48 dp mínimo; 72 dp en modo conductor. Todo contenido con scroll deja debajo el alto de la barra inferior más el área segura más 16 dp.
-
-### Named Rules
-**The Fila Plana Rule.** Las listas son filas planas con divisor, no tarjetas. Una tarjeta solo aparece si agrupa algo que se mueve junto, y entonces es plana con borde de línea y radio 12.
+Los toques miden al menos 48 dp; en modo conductor, 72 dp. Las filas de lista miden al menos 64 dp.
 
 ## Elevation & Depth
 
-Plano por defecto. La jerarquía la dan el color del shell, el borde de 1,5 dp de las placas y la franja. Hay un vocabulario corto de sombras teñidas de tinta ultramar (no negro puro) que se reserva para lo que flota sobre el mapa: la hoja inferior y los botones circulares de mapa. Placas, filas, botones y tarjetas no llevan sombra.
+Sistema híbrido: plano por capas tonales (gris de fondo, blanco encima, gris hundido para campos) y sombras suaves teñidas de azul tinta solo para lo que flota sobre el mapa o el fondo. De noche la sombra es negra y la profundidad la da la superficie más clara.
 
 ### Shadow Vocabulary
-- **Hoja** (`0 -2px 12px rgba(14,26,58,0.12)`): hoja inferior sobre el mapa y hojas modales.
-- **Flotante de mapa** (`0 2px 10px rgba(14,26,58,0.10)`): controles circulares sobre el mapa (ubicarme).
-- **Baja** (`0 1px 4px rgba(14,26,58,0.08)`): disponible para un botón de ícono que necesite separarse de un fondo variable.
+- **sm** (0 1px 4px tinta 8 %): tarjetas que lo necesitan.
+- **md** (0 2px 10px tinta 10 %).
+- **lg** (0 4px 16px tinta 12 %).
+- **sheet** (0 −4px 24px tinta 14 %): hoja inferior sobre el mapa.
+- **float** (0 4px 16px tinta 16 % + 0 1px 2px tinta 6 %): píldora del corredor, buscador y botón de ubicarme sobre el mapa.
 
 ### Named Rules
-**The Sin Vidrio Rule.** Superficies sólidas y opacas, legibles al sol: sin desenfoque de fondo, sin degradados, sin brillos de color.
+**La Regla del Flotante.** La sombra marca lo que flota sobre el mapa. Las tarjetas sobre el fondo gris se separan por tono, no por sombra.
 
 ## Shapes
 
-Esquinas apenas suavizadas, como una lámina cortada: 4 dp para chips, placas pequeñas y la pastilla de la pestaña activa; 8 dp para botones, campos y placas; 12 dp para hojas (solo arriba) y tarjetas. El sistema no pasa de 12. El círculo completo queda para los filtros de modo de transporte, los botones de ícono sobre el mapa, el asa de la hoja y los avatares. Los bordes son de 1,5 dp (placas, campos en reposo) o 2 dp (foco, botón contorno); la franja activa mide 4 dp y se pega al borde inferior de la placa, que se recorta con ella.
+Formas suaves y conocidas. Radios 8 (chips pequeños, etiquetas, barra de tramos), 12 (campos, toasts, tarjetas pequeñas), 16 (tarjetas, grupos, opciones, píldora del corredor) y 24 (hojas inferiores arriba, diálogos, tarjeta de saldo). Botones, buscador, chips de filtro, insignias y avatares son píldoras. Íconos de fila y accesos van en círculos.
+
+### Named Rules
+**La Regla de la Píldora.** Todo lo que se toca para actuar o filtrar (botón, buscador, chip) es una píldora. Las tarjetas y hojas usan 16/24, nunca esquinas rectas.
 
 ## Components
 
-### Placa de ruta (GSRoutePlate, gesto distintivo)
-La placa es la unidad del mundo: destino, tramo, viaje o nombre.
-- **Forma:** placa blanca, radio 8, borde de línea de 1,5 dp; tallas de 48, 56 y 72 dp de alto mínimo con rótulo de 18, 22 y 30 sp.
-- **Rótulo:** Barlow Condensed 800 en mayúsculas, en ultramar; en tinta suave cuando es una placa en blanco ("¿A DÓNDE VAS?"). Origen y destino se unen con un ícono de flecha, no con un glifo. Una línea pequeña opcional debajo (hora, precio, correo) en Barlow 500 tabular, 15 sp, tinta suave.
-- **Activa:** el borde pasa a ultramar y aparece la franja fucsia de 4 dp debajo. Anuncia "seleccionado" a TalkBack.
-- **Presión:** escala a 0,97 en 120 ms con GSCurve.enter, disparada al tocar (no al confirmar el gesto); resaltado con tinte de ultramar, sin salpicadura.
-- **Cambio de rótulo:** el nuevo entra con fundido y desplazamiento de 8 dp en 200 ms (cubic 0.23, 1, 0.32, 1); el anterior solo se desvanece. Con "quitar animaciones" queda un fundido de 150 ms sin desplazamiento ni escala.
-- **Destino pintado:** en el planificador, el campo de destino es una placa en blanco; al elegir una sugerencia se convierte en placa activa con la misma transición de 200 ms. Tocarla la borra para escribir otro.
-
 ### Buttons
-- **Shape:** radio 8 (rounded.md), sin elevación; 48 / 52 / 60 dp de alto según talla, ancho completo por defecto.
-- **Primary:** ultramar con texto blanco, etiqueta Barlow Condensed 700.
-- **Secondary:** tinte de ultramar con texto ultramar. **Outline:** placa blanca con borde ultramar de 2 dp. **Ghost:** transparente con texto ultramar. **Danger:** placa blanca con borde y texto rojo de vía cerrada (acciones destructivas, siempre con palabra explícita).
-- **Presión:** 0,97 en 120 ms GSCurve.enter, sin salpicadura; sin escala con "quitar animaciones". Deshabilitado a 38 % de opacidad; cargando muestra un indicador del color del texto.
+- **Shape:** píldora (9999 px).
+- **Primary:** azul de marca con texto blanco, Figtree 700 17 px; alto mínimo 52 px (sm 48, lg 56, conductor 72).
+- **Press:** escala a 0.97 en 120 ms con ease-out fuerte, desde el toque; sin salpicadura. Con "quitar animaciones" no escala. Deshabilitado: opacidad 0.38.
+- **Secondary / Outline / Ghost / Danger:** azul claro con texto azul; blanco con borde de línea 1.5 px; transparente con texto azul; rojo claro con texto rojo.
 
 ### Chips
-- **Style:** lámina hundida, borde de línea, radio 4, Barlow 600 14 sp.
-- **State:** seleccionado en tinte de ultramar. El selector segmentado nativo marca lo elegido en ultramar macizo con texto blanco en Barlow Condensed 700, sin animación de deslizamiento.
+- **Style:** `GSChoicePlates`: píldoras blancas con borde de línea 1 px, texto 16 px 600, alto 48.
+- **State:** la elegida en azul claro con borde azul 2 px y texto 700. Sin animación al cambiar.
 
 ### Cards / Containers
-- **Corner Style:** 12 dp.
-- **Background:** placa blanca.
-- **Shadow Strategy:** ninguna (ver Elevation & Depth).
-- **Border:** línea de 1 dp.
-- **Internal Padding:** 16 dp. Solo cuando agrupan algo; por defecto, filas planas.
+- **Corner Style:** 16 px.
+- **Background:** blanco sobre gris frío.
+- **Shadow Strategy:** ninguna en reposo, salvo lo que flota sobre el mapa.
+- **Border:** opción elegida con borde azul 2 px y fondo teñido; si no, línea 1 px.
+- **Internal Padding:** 12–16 px.
 
 ### Inputs / Fields
-- **Style:** placa blanca, borde de tinta suave de 1,5 dp, radio 8, padding 12 × 16, texto Barlow 17 sp; etiqueta encima en Barlow 600 15 sp.
-- **Focus:** borde ultramar de 2 dp.
-- **Error / Disabled:** borde de 2 dp en rojo de vía cerrada con mensaje de 14 sp; pistas en tinta apagada.
+- **Style:** relleno gris hundido, sin borde en reposo, radio 12, relleno 16.
+- **Focus:** borde azul 2 px; etiqueta flotante en azul 600.
+- **Error:** borde rojo 2 px y texto de error rojo 14 px.
 
 ### Navigation
-- **Barra superior:** ultramar, 56 dp, título Barlow Condensed 800 26 sp en blanco, íconos blancos, sin elevación.
-- **Barra inferior:** ultramar, 72 dp mínimo que crece con el texto grande. Pestaña activa: ícono ultramar sobre una pastilla blanca de radio 4 con franja fucsia en su borde inferior, etiqueta blanca en Barlow 700. Inactivas: ícono y etiqueta en azul neblina, Barlow 500. Etiqueta siempre visible debajo. Cambiar de pestaña no se anima.
+- **Barra inferior:** blanca con línea fina arriba; píldora azul clara de 56 × 32 detrás del ícono activo; ícono activo azul, inactivo tinta suave; etiqueta siempre visible. Cambiar de pestaña no se anima.
+- **Barra superior:** blanca, título 22 px 800 a la izquierda, sin elevación hasta que hay scroll.
 
-### Línea del corredor (GSCorridorLine)
-Diagrama tipo metro de la Troncal, Riohacha a Maicao, de 56 dp sobre placa blanca. Línea de 6 dp coloreada por tramo con la paleta vial y estaciones de anillo de tinta en los extremos; a la derecha, ícono + palabra del estado en el color vial y la antigüedad del dato en cifras tabulares ("hace 12 min"). Sin datos o dato viejo: todo en gris de vía desconocida con "Sin datos". Nunca un estado inventado.
+### Opción de viaje (option card)
+Tarjeta blanca de 16 con ícono en círculo, título, detalle y a la derecha tiempo y precio (como Uber/DiDi). La elegida lleva borde azul y fondo teñido. Si no hay regla de tarifa no se muestra precio.
 
-### Filas (GSListRow)
-Fila plana de 64 dp mínimo: ícono ultramar, título Barlow 600 17 sp, detalle hasta 3 líneas en tinta suave, y al final un valor en cifras tabulares, un interruptor o un chevron. Divisor de línea entre filas.
+### Billetera (balance card)
+Tarjeta azul de 24 con el saldo en 38 px 800 tabular, un ojo para ocultarlo y la etiqueta "Saldo de prueba" mientras la recarga sea simulada. De noche usa el azul tenue nocturno (brand-tint-dark) con texto claro: un bloque de marca aclarada encandilaría.
 
-### Hojas (GSBottomSheet)
-Placa blanca con radio 12 arriba, asa de 40 × 4 dp en línea, título Barlow Condensed 800 26 sp y divisor. La hoja de Inicio se mueve en 250 ms al abrir y 200 ms al cerrar (GSDuration.sheetIn / sheetOut); las hojas modales usan la transición nativa. Con "quitar animaciones", ninguna se desliza.
+### Línea del corredor
+Píldora flotante sobre el mapa (radio 16, sombra float, alto 56): Riohacha → Maicao como línea gruesa con un color por tramo, el estado con ícono + palabra y la hora del dato.
 
-### Avisos (GSToast)
-Snackbar flotante de Material sobre tinta, radio 8, texto blanco Barlow 500 16 sp y un ícono que nombra el tipo. El error no rellena en rojo.
+### Detalle de ruta
+Barra de tramos proporcional al tiempo (segmentos de 30 px, radio 8, color de modo; a pie en gris), línea de tiempo con el ícono del modo en un círculo de su color y la tarifa en una insignia píldora azul clara.
 
-### Estado vacío (GSEmptyState)
-Una placa en blanco (aún sin destino pintado), una frase que dice cómo llenarla y, si aplica, el botón que la llena.
+### Mapa
+Google Maps con estilo propio de día (assets/map_styles/light.json: negocios ocultos, terreno gris claro, calles blancas) y de noche (night.json, azul noche). La ruta se pinta con el color de cada modo.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** mostrar cada destino, tramo, viaje o nombre principal como placa de ruta: blanca, borde de 1,5 dp, Barlow Condensed 800 en mayúsculas y ultramar.
-- **Do** poner la franja fucsia de 4 dp solo bajo la placa activa o la pestaña seleccionada.
-- **Do** acompañar todo estado vial con ícono y palabra, y mostrar "Sin datos" con la hora cuando no hay dato.
-- **Do** usar cifras tabulares para todo número que se compara.
-- **Do** respetar 48 dp de área táctil (72 dp en modo conductor) y probar cada pantalla con texto al 200 %.
-- **Do** usar la presión de 0,97 en 120 ms con GSCurve.enter, el cambio de placa de 200 ms con 8 dp, y hojas de 250 / 200 ms; con "quitar animaciones", solo fundidos cortos.
-- **Do** usar los radios 4 / 8 / 12 y nada mayor salvo círculos completos.
+- **Do** usar el azul de marca (#0B4FC4) para la acción principal, la selección, la ruta y el saldo.
+- **Do** acompañar todo estado de la vía con ícono y palabra.
+- **Do** leer los colores de la paleta activa (getters de `GSColors`, `liveColor`); nunca guardarlos en un campo.
+- **Do** usar píldoras para botones, buscador y chips; radios 8/12/16/24 para lo demás.
+- **Do** medir los toques en 48 dp (72 en modo conductor).
+- **Do** usar presión 0.97 en 120 ms ease-out; hojas 250 ms al entrar y 200 ms al salir; respetar "quitar animaciones".
+- **Do** probar con texto al 130 % y 200 % sin cortes a mitad de palabra.
+- **Do** mostrar precios solo cuando hay una regla de tarifa; si no, sin precio.
 
 ### Don't:
-- **Don't** usar rojo, ámbar o verde para nada que no sea el estado de la vía (ni éxito, ni eco-puntos, ni ingresos y gastos).
-- **Don't** usar el fucsia como relleno, fondo, texto o decoración.
-- **Don't** poner el ultramar como fondo de bloques de contenido; es la carrocería y la tinta de las placas.
-- **Don't** usar degradados, vidrio esmerilado, brillos de color ni sombras en placas, filas y botones.
-- **Don't** envolver listas en tarjetas por defecto.
-- **Don't** animar el cambio de pestaña ni nada que el usuario repite muchas veces.
-- **Don't** usar iconografía ni patrones wayuu como decoración.
-- **Don't** escribir mayúsculas condensadas fuera de las placas, ni etiquetas pequeñas en mayúsculas sobre los títulos.
+- **Don't** inventar un precio.
+- **Don't** usar verde, ámbar o rojo fuera del estado de la vía (ni para entradas y salidas de dinero).
+- **Don't** usar colores de modo fuera de tramos y marcadores.
+- **Don't** animar el cambio de pestaña ni la selección de una opción.
+- **Don't** volver al mundo anterior: placas condensadas en mayúsculas, barras ultramar, franja fucsia.
+- **Don't** usar degradados ni vidrio; superficies sólidas y legibles al sol.
+- **Don't** bajar el contraste del texto de 7:1.
+- **Don't** presentar las recargas simuladas como dinero real.
