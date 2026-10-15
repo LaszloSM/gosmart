@@ -17,8 +17,9 @@ import 'widgets/corridor_detail_sheet.dart';
 import 'widgets/home_map.dart';
 import 'widgets/home_sheet.dart';
 
-/// Inicio (DS1): Línea del corredor → mapa de fondo → hoja "¿A dónde vas?".
-/// Funciona sin cuenta (DS3); las acciones que la necesitan la piden.
+/// Inicio, como Uber/DiDi con Google Maps: mapa a pantalla completa, la
+/// tarjeta del estado de la Troncal flotando arriba y una hoja blanca abajo
+/// con "¿A dónde vas?". Funciona sin cuenta (DS3).
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -87,75 +88,67 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final corridor = ref.watch(corridorStatusProvider);
     final route = ref.watch(activeRouteProvider);
 
+    final topInset = MediaQuery.of(context).padding.top;
+
     return Scaffold(
       extendBody: true,
       backgroundColor: GSColors.background,
-      body: Column(
-        children: [
-          // ── Línea del corredor: el estado de la vía en 1 segundo ──────────
-          // Shell ultramar con la Línea sobre una placa blanca.
-          AnnotatedRegion<SystemUiOverlayStyle>(
-            value: SystemUiOverlayStyle.light,
-            child: ColoredBox(
-              color: GSColors.shell,
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                      GSSpacing.s3, GSSpacing.s2, GSSpacing.s3, GSSpacing.s3),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(GSRadius.md),
-                    child: _CorridorHeader(corridor: corridor),
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: GSColors.isDark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
+        child: LayoutBuilder(builder: (context, box) {
+          final inset = MediaQuery.of(context).padding.bottom;
+          if (box.maxHeight != _stackHeight || inset != _bodyBottomInset) {
+            _stackHeight = box.maxHeight;
+            _bodyBottomInset = inset;
+            WidgetsBinding.instance
+                .addPostFrameCallback((_) => _measurePeek());
+          }
+          return Stack(
+            children: [
+              // El mapa ocupa toda la pantalla, también detrás de la barra
+              // de estado; sus controles empiezan bajo la tarjeta de la vía.
+              Positioned.fill(
+                child: HomeMap(controlsTop: topInset + 96),
+              ),
+
+              // ── Estado de la Troncal: flota sobre el mapa ─────────────────
+              Positioned(
+                left: GSSpacing.s3,
+                right: GSSpacing.s3,
+                top: topInset + GSSpacing.s2,
+                child: _CorridorHeader(corridor: corridor),
+              ),
+
+              DraggableScrollableSheet(
+                controller: _sheetCtrl,
+                initialChildSize: _sheetInitial,
+                // Sin ruta, la hoja no baja de su altura medida: nunca
+                // queda una fila cortada en reposo.
+                minChildSize: route != null ? _sheetHidden : _sheetInitial,
+                maxChildSize: 0.86,
+                snap: true,
+                builder: (context, scrollController) => DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: GSColors.surface,
+                    borderRadius: GSRadius.sheetRadius,
+                    boxShadow: GSShadow.sheet,
                   ),
+                  child: HomeSheetContent(
+                      scrollController: scrollController, peekKey: _peekKey),
                 ),
               ),
-            ),
-          ),
-
-          // ── Mapa + hoja inferior ───────────────────────────────────────────
-          Expanded(
-            child: LayoutBuilder(builder: (context, box) {
-              final inset = MediaQuery.of(context).padding.bottom;
-              if (box.maxHeight != _stackHeight || inset != _bodyBottomInset) {
-                _stackHeight = box.maxHeight;
-                _bodyBottomInset = inset;
-                WidgetsBinding.instance
-                    .addPostFrameCallback((_) => _measurePeek());
-              }
-              return Stack(
-                children: [
-                  const Positioned.fill(child: HomeMap()),
-                  DraggableScrollableSheet(
-                    controller: _sheetCtrl,
-                    initialChildSize: _sheetInitial,
-                    // Sin ruta, la hoja no baja de su altura medida: nunca
-                    // queda una fila cortada en reposo.
-                    minChildSize: route != null ? _sheetHidden : _sheetInitial,
-                    maxChildSize: 0.8,
-                    snap: true,
-                    builder: (context, scrollController) => DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: GSColors.surface,
-                        borderRadius: GSRadius.sheetRadius,
-                        boxShadow: GSShadow.sheet,
-                      ),
-                      child: HomeSheetContent(
-                          scrollController: scrollController,
-                          peekKey: _peekKey),
-                    ),
-                  ),
-                  if (route != null)
-                    Positioned(
-                      bottom: MediaQuery.of(context).padding.bottom,
-                      left: 0,
-                      right: 0,
-                      child: _RouteBanner(route: route),
-                    ),
-                ],
-              );
-            }),
-          ),
-        ],
+              if (route != null)
+                Positioned(
+                  bottom: MediaQuery.of(context).padding.bottom + GSSpacing.s3,
+                  left: GSSpacing.s3,
+                  right: GSSpacing.s3,
+                  child: _RouteBanner(route: route),
+                ),
+            ],
+          );
+        }),
       ),
       bottomNavigationBar: const GSBottomNav(current: GSNavTab.home),
     );
@@ -172,6 +165,7 @@ class _CorridorHeader extends StatelessWidget {
     return GSCorridorLine(
       status: status,
       isLoading: corridor.isLoading,
+      floating: true,
       onTap: () => showCorridorDetailSheet(
         context,
         status ?? const CorridorStatus.noData(),
@@ -180,7 +174,8 @@ class _CorridorHeader extends StatelessWidget {
   }
 }
 
-/// Ruta activa sobre la hoja: toca para ver los tramos, la X la quita.
+/// Ruta activa: tarjeta flotante como la de "viaje en curso" de Uber. Toca
+/// para ver los tramos; la X la quita.
 class _RouteBanner extends ConsumerWidget {
   const _RouteBanner({required this.route});
   final RouteResult route;
@@ -188,63 +183,69 @@ class _RouteBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(selectedModeProvider);
-    return Material(
-      color: GSColors.shell,
-      borderRadius:
-          const BorderRadius.vertical(top: Radius.circular(GSRadius.lg)),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => context.push(AppRoutes.routeDetail),
-        child: Container(
-          decoration: BoxDecoration(
-            border:
-                Border(bottom: BorderSide(color: GSColors.stripe, width: 4)),
-          ),
-          padding: const EdgeInsets.only(left: GSSpacing.s4),
-          child: Row(
-            children: [
-              Icon(modeIconFor(mode), color: GSColors.onShell),
-              const SizedBox(width: GSSpacing.s3),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${route.durationMin} min · '
-                      '${route.distanceKm.toStringAsFixed(1)} km',
-                      style: TextStyle(
-                        fontFamily: GSFonts.display,
-                        fontFeatures: GSFonts.tabular,
-                        color: GSColors.onShell,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 22,
-                      ),
-                    ),
-                    Text(
-                      'Toca para ver los tramos',
-                      style: TextStyle(
-                        fontFamily: GSFonts.sans,
-                        color: GSColors.onShellMuted,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+    final text = Theme.of(context).textTheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(GSRadius.xl),
+        boxShadow: GSShadow.float,
+      ),
+      child: Material(
+        color: GSColors.surface,
+        borderRadius: BorderRadius.circular(GSRadius.xl),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.push(AppRoutes.routeDetail),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+                GSSpacing.s4, GSSpacing.s3, GSSpacing.s1, GSSpacing.s3),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: GSColors.brand,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(modeIconFor(mode), color: GSColors.onBrand),
                 ),
-              ),
-              IconButton(
-                tooltip: 'Ayuda',
-                icon: Icon(Icons.health_and_safety_outlined,
-                    color: GSColors.onShell),
-                onPressed: () => showSosSheet(context),
-              ),
-              IconButton(
-                tooltip: 'Quitar ruta',
-                icon: Icon(Icons.close_rounded, color: GSColors.onShell),
-                onPressed: () =>
-                    ref.read(activeRouteProvider.notifier).state = null,
-              ),
-            ],
+                const SizedBox(width: GSSpacing.s3),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${route.durationMin} min · '
+                        '${route.distanceKm.toStringAsFixed(1)} km',
+                        style: text.titleLarge?.copyWith(
+                            fontFeatures: GSFonts.tabular),
+                      ),
+                      Text(
+                        route.destinationLabel == null
+                            ? 'Toca para ver los tramos'
+                            : 'A ${route.destinationLabel} · ver tramos',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: text.bodyMedium,
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Ayuda',
+                  icon: Icon(Icons.health_and_safety_outlined,
+                      color: GSColors.roadClosed),
+                  onPressed: () => showSosSheet(context),
+                ),
+                IconButton(
+                  tooltip: 'Quitar ruta',
+                  icon: Icon(Icons.close_rounded, color: GSColors.textMuted),
+                  onPressed: () =>
+                      ref.read(activeRouteProvider.notifier).state = null,
+                ),
+              ],
+            ),
           ),
         ),
       ),

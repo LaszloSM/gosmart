@@ -15,7 +15,10 @@ import '../../../theme/design_tokens.dart';
 import 'map_view.dart';
 
 class HomeMap extends ConsumerStatefulWidget {
-  const HomeMap({super.key});
+  const HomeMap({super.key, this.controlsTop = GSSpacing.s3});
+
+  /// Dónde empiezan los controles flotantes (bajo la tarjeta de la vía).
+  final double controlsTop;
 
   @override
   ConsumerState<HomeMap> createState() => _HomeMapState();
@@ -74,9 +77,9 @@ class _HomeMapState extends ConsumerState<HomeMap> {
         // Arriba del mapa: la hoja inferior tapa la parte de abajo.
         if (_longPressPoint != null)
           Positioned(
-            left: GSSpacing.s4,
-            right: GSSpacing.s4,
-            top: GSSpacing.s3,
+            left: GSSpacing.s3,
+            right: GSSpacing.s3,
+            top: widget.controlsTop,
             child: _GoHereCard(
               point: _longPressPoint!,
               onConfirm: () {
@@ -90,14 +93,16 @@ class _HomeMapState extends ConsumerState<HomeMap> {
           )
         else
           Positioned(
-            right: GSSpacing.s4,
-            top: GSSpacing.s3,
-            child: Material(
-              color: GSColors.surface,
-              shape: CircleBorder(
-                side: BorderSide(color: GSColors.line),
+            right: GSSpacing.s3,
+            top: widget.controlsTop,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: GSShadow.float,
               ),
-              elevation: 0,
+              child: Material(
+              color: GSColors.surface,
+              shape: const CircleBorder(),
               child: IconButton(
                 tooltip: 'Mi ubicación',
                 onPressed: _recenter,
@@ -105,8 +110,9 @@ class _HomeMapState extends ConsumerState<HomeMap> {
                   width: GSSize.touchTarget,
                   height: GSSize.touchTarget,
                 ),
-                icon: Icon(Icons.my_location, color: GSColors.brand),
+                icon: Icon(Icons.my_location_rounded, color: GSColors.brand),
               ),
+            ),
             ),
           ),
       ],
@@ -133,8 +139,7 @@ class _GoHereCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: GSColors.surface,
         borderRadius: BorderRadius.circular(GSRadius.lg),
-        border: Border.all(color: GSColors.line),
-        boxShadow: GSShadow.md,
+        boxShadow: GSShadow.float,
       ),
       child: Row(
         children: [

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/wallet_transaction_model.dart';
 import '../../../providers/wallet_provider.dart';
 import '../../../theme/design_tokens.dart';
+import '../../../widgets/gs_list_row.dart';
 import '../../../widgets/gs_skeleton_loader.dart';
 import '../../../widgets/gs_inline_error.dart';
 
@@ -75,19 +76,14 @@ class WalletMovements extends ConsumerWidget {
   }
 
   Widget _list(List<WalletTransactionModel> list, {required bool showMore}) {
-    return Column(
-      children: [
-        for (var i = 0; i < list.length; i++) ...[
-          if (i > 0) const Divider(indent: GSSpacing.s4),
-          MovementRow(tx: list[i]),
-        ],
-        if (showMore)
-          TextButton(
-            onPressed: onLoadMore,
-            child: const Text('Ver más movimientos'),
-          ),
-      ],
-    );
+    return GSGroup(children: [
+      for (final tx in list) MovementRow(tx: tx),
+      if (showMore)
+        TextButton(
+          onPressed: onLoadMore,
+          child: const Text('Ver más movimientos'),
+        ),
+    ]);
   }
 }
 
@@ -111,7 +107,17 @@ class MovementRow extends StatelessWidget {
             horizontal: GSSpacing.s4, vertical: GSSpacing.s3),
         child: Row(
           children: [
-            Icon(tx.icon, color: GSColors.textMuted),
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: tx.amount > 0 ? GSColors.brandTint : GSColors.surfaceSunken,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(tx.icon,
+                  size: 22,
+                  color: tx.amount > 0 ? GSColors.brand : GSColors.text),
+            ),
             const SizedBox(width: GSSpacing.s3),
             Expanded(
               child: Column(
@@ -134,8 +140,9 @@ class MovementRow extends StatelessWidget {
               style: TextStyle(
                 fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
                 fontSize: 17,
-                fontWeight: FontWeight.w600,
-                color: GSColors.text,
+                fontWeight: FontWeight.w700,
+                // Entradas en azul, salidas en tinta; el signo lo dice.
+                color: tx.amount > 0 ? GSColors.brand : GSColors.text,
               ),
             ),
           ],

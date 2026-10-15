@@ -44,7 +44,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(_app(_p));
     await tester.pumpAndSettle();
-    expect(find.text('YEINIS EPIAYÚ'), findsOneWidget);
+    expect(find.text('Yeinis Epiayú'), findsOneWidget);
     expect(find.text('Cédula 1124038745 · Riohacha'), findsOneWidget);
     expect(find.text('135'), findsOneWidget);
   });

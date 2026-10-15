@@ -253,7 +253,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     return Scaffold(
       backgroundColor: GSColors.background,
       appBar: AppBar(
-        title: const Text('Planear ruta'),
+        title: const Text('Planea tu viaje'),
         actions: [
           IconButton(
             icon: const Icon(Icons.chat_bubble_outline_rounded),
@@ -265,44 +265,83 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       body: ListView(
         padding: const EdgeInsets.only(bottom: GSSpacing.s6),
         children: [
+          // Origen y destino en una tarjeta, unidos por una línea punteada
+          // (como Uber): punto = desde, cuadro = hasta.
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                GSSpacing.s4, GSSpacing.s4, GSSpacing.s4, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Desde: tu ubicación (o el destino anterior tras intercambiar).
-                Row(
-                  children: [
-                    Icon(Icons.my_location_rounded,
-                        color: GSColors.textMuted),
-                    const SizedBox(width: GSSpacing.s3),
-                    Expanded(
-                      child: Text(
-                        'Desde: $originText',
-                        style: Theme.of(context).textTheme.titleMedium,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                GSSpacing.s4, GSSpacing.s3, GSSpacing.s4, 0),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(
+                  GSSpacing.s4, GSSpacing.s3, GSSpacing.s2, GSSpacing.s3),
+              decoration: BoxDecoration(
+                color: GSColors.surface,
+                borderRadius: BorderRadius.circular(GSRadius.lg),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: GSColors.brand, width: 3),
+                          ),
+                        ),
+                        for (var i = 0; i < 6; i++)
+                          Container(
+                            width: 2,
+                            height: 4,
+                            margin: const EdgeInsets.symmetric(vertical: 2),
+                            color: GSColors.line,
+                          ),
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: GSColors.text,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      tooltip: 'Intercambiar origen y destino',
-                      onPressed: _destLatLng != null && _originLatLng != null
-                          ? _swap
-                          : null,
-                      icon: const Icon(Icons.swap_vert_rounded),
-                      color: GSColors.brand,
+                  ),
+                  const SizedBox(width: GSSpacing.s3),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text('Desde', style: Theme.of(context).textTheme.labelSmall),
+                        Text(
+                          originText,
+                          style: Theme.of(context).textTheme.titleMedium,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: GSSpacing.s3),
+                        DestinationPlate(
+                          controller: _destCtrl,
+                          chosenLabel: _destLabel,
+                          autofocus: _destLabel == null,
+                          onClear: () => _setDest('', null),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: GSSpacing.s2),
-                DestinationPlate(
-                  controller: _destCtrl,
-                  chosenLabel: _destLabel,
-                  autofocus: _destLabel == null,
-                  onClear: () => _setDest('', null),
-                ),
-              ],
+                  ),
+                  IconButton(
+                    tooltip: 'Intercambiar origen y destino',
+                    onPressed: _destLatLng != null && _originLatLng != null
+                        ? _swap
+                        : null,
+                    icon: const Icon(Icons.swap_vert_rounded),
+                    color: GSColors.text,
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: GSSpacing.s2),
@@ -343,7 +382,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
               query: _searchedFor!,
             ),
           const GSSectionTitle('¿En qué vas?'),
-          const SizedBox(height: GSSpacing.s2),
+          const SizedBox(height: GSSpacing.s1),
           ModeSelector(
             selected: mode,
             onChanged: (m) =>
@@ -358,7 +397,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
               GSSpacing.s3 + MediaQuery.of(context).viewInsets.bottom),
           child: GSButton(
             label: 'Ver ruta',
-            leadingIcon: Icons.route_rounded,
+            leadingIcon: Icons.directions_rounded,
             isLoading: _loading,
             onPressed: _loading ? null : _search,
           ),

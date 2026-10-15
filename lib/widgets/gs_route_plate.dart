@@ -1,8 +1,8 @@
 // lib/widgets/gs_route_plate.dart
-// Gesto distintivo del mundo "rótulo de colectivo": la placa de ruta que los
-// colectivos de la costa llevan pintada en el parabrisas. Cada destino, tramo,
-// viaje o nombre importante se muestra en una placa: blanca, borde fino, letras
-// condensadas en ultramar y, si está activa, una franja fucsia debajo.
+// Tarjeta de lugar u opción (destino, tramo, viaje, nombre): blanca, radio 16,
+// ícono en un círculo de color, título en caja normal y una línea de detalle.
+// Elegida: borde azul y fondo apenas teñido, como las opciones de viaje de
+// Uber/InDrive. Se conserva el nombre GSRoutePlate para no romper los usos.
 import 'package:flutter/material.dart';
 
 import '../theme/design_tokens.dart';
@@ -26,11 +26,10 @@ class GSRoutePlate extends StatefulWidget {
     this.detailMaxLines = 1,
   });
 
-  /// Destino o nombre principal. Se pinta en mayúsculas.
+  /// Destino o nombre principal.
   final String text;
 
-  /// Origen opcional: "RIOHACHA → MAICAO" (la flecha es un ícono; Barlow no
-  /// trae el glifo →).
+  /// Origen opcional: "Riohacha → Maicao" (la flecha es un ícono).
   final String? from;
 
   /// Línea pequeña debajo (hora, precio, correo).
@@ -38,10 +37,10 @@ class GSRoutePlate extends StatefulWidget {
   final IconData? leading;
   final Widget? trailing;
 
-  /// Placa en blanco ("¿A dónde vas?"): letras en tinta suave.
+  /// Tarjeta en blanco ("¿A dónde vas?"): título en tinta suave.
   final bool isPlaceholder;
 
-  /// Franja fucsia de 4 dp: la placa seleccionada o en curso.
+  /// Seleccionada o en curso: borde azul y fondo teñido.
   final bool isActive;
   final GSPlateSize size;
   final VoidCallback? onTap;
@@ -66,22 +65,22 @@ class _GSRoutePlateState extends State<GSRoutePlate> {
 
   ({double minHeight, double font, double pad, double icon}) get _dims =>
       switch (widget.size) {
-        GSPlateSize.sm => (minHeight: 48, font: 18, pad: 12, icon: 18),
-        GSPlateSize.md => (minHeight: 56, font: 22, pad: 16, icon: 22),
-        GSPlateSize.lg => (minHeight: 72, font: 30, pad: 16, icon: 26),
+        GSPlateSize.sm => (minHeight: 56, font: 16, pad: 12, icon: 20),
+        GSPlateSize.md => (minHeight: 64, font: 18, pad: 16, icon: 22),
+        GSPlateSize.lg => (minHeight: 80, font: 24, pad: 20, icon: 26),
       };
 
   @override
   Widget build(BuildContext context) {
     final d = _dims;
     final reduceMotion = MediaQuery.of(context).disableAnimations;
-    final ink = widget.isPlaceholder ? GSColors.textMuted : GSColors.brand;
+    final ink = widget.isPlaceholder ? GSColors.textMuted : GSColors.text;
     final letters = TextStyle(
       fontFamily: GSFonts.display,
       fontSize: d.font,
-      fontWeight: FontWeight.w800,
-      height: 1.05,
-      letterSpacing: 0.4,
+      fontWeight: widget.isPlaceholder ? FontWeight.w600 : FontWeight.w700,
+      height: 1.2,
+      letterSpacing: d.font > 20 ? -0.3 : -0.1,
       color: ink,
     );
 
@@ -89,16 +88,16 @@ class _GSRoutePlateState extends State<GSRoutePlate> {
       children: [
         if (widget.from != null) ...[
           Flexible(
-            child: Text(widget.from!.toUpperCase(),
+            child: Text(widget.from!,
                 style: letters, maxLines: 1, overflow: TextOverflow.ellipsis),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s2),
-            child: Icon(Icons.arrow_forward_rounded, size: d.icon, color: ink),
+            child: Icon(Icons.arrow_forward_rounded, size: d.icon - 4, color: GSColors.textMuted),
           ),
         ],
         Flexible(
-          child: Text(widget.text.toUpperCase(),
+          child: Text(widget.text,
               style: letters,
               maxLines: widget.maxLines,
               overflow: TextOverflow.ellipsis),
@@ -106,7 +105,7 @@ class _GSRoutePlateState extends State<GSRoutePlate> {
       ],
     );
 
-    // Cambio de rótulo: el nuevo entra con fundido + 8 dp en 200 ms y
+    // Cambio de título: el nuevo entra con fundido + 6 dp en 200 ms y
     // ease-out fuerte; el que sale solo se desvanece (Emil). Con "quitar
     // animaciones" queda un fundido corto, sin desplazamiento.
     final currentKey = ValueKey('${widget.from}|${widget.text}');
@@ -124,7 +123,7 @@ class _GSRoutePlateState extends State<GSRoutePlate> {
         return AnimatedBuilder(
           animation: anim,
           builder: (_, c) => Transform.translate(
-            offset: Offset(0, 8 * (1 - anim.value)),
+            offset: Offset(0, 6 * (1 - anim.value)),
             child: c,
           ),
           child: fade,
@@ -135,13 +134,23 @@ class _GSRoutePlateState extends State<GSRoutePlate> {
 
     final body = Container(
       constraints: BoxConstraints(minHeight: d.minHeight),
-      padding: EdgeInsets.fromLTRB(
-          d.pad, GSSpacing.s2, d.pad, GSSpacing.s2 + (widget.isActive ? 0 : 4)),
+      padding: EdgeInsets.symmetric(horizontal: d.pad, vertical: GSSpacing.s3),
       child: Row(
         children: [
           if (widget.leading != null) ...[
-            Icon(widget.leading, size: d.icon, color: ink),
-            SizedBox(width: d.pad * 0.75),
+            // Ícono en círculo teñido, como los accesos de Google Maps.
+            Container(
+              width: d.icon + 18,
+              height: d.icon + 18,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: widget.isActive ? GSColors.brand : GSColors.brandTint,
+              ),
+              child: Icon(widget.leading,
+                  size: d.icon,
+                  color: widget.isActive ? GSColors.onBrand : GSColors.brand),
+            ),
+            const SizedBox(width: GSSpacing.s3),
           ],
           Expanded(
             child: Column(
@@ -160,6 +169,7 @@ class _GSRoutePlateState extends State<GSRoutePlate> {
                       fontFeatures: GSFonts.tabular,
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
+                      height: 1.35,
                       color: GSColors.textMuted,
                     ),
                   ),
@@ -176,12 +186,14 @@ class _GSRoutePlateState extends State<GSRoutePlate> {
     );
 
     final plate = Material(
-      color: GSColors.surface,
+      color: widget.isActive
+          ? Color.alphaBlend(GSColors.brandTint.withValues(alpha: 0.55), GSColors.surface)
+          : GSColors.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(GSRadius.md),
+        borderRadius: BorderRadius.circular(GSRadius.lg),
         side: BorderSide(
           color: widget.isActive ? GSColors.brand : GSColors.line,
-          width: 1.5,
+          width: widget.isActive ? 2 : 1,
         ),
       ),
       clipBehavior: Clip.antiAlias,
@@ -189,14 +201,7 @@ class _GSRoutePlateState extends State<GSRoutePlate> {
         onTap: widget.onTap,
         splashFactory: NoSplash.splashFactory,
         highlightColor: GSColors.brandTint.withValues(alpha: 0.6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            body,
-            if (widget.isActive)
-              Container(height: 4, color: GSColors.stripe),
-          ],
-        ),
+        child: body,
       ),
     );
 

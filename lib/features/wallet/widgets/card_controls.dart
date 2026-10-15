@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../providers/card_provider.dart';
 import '../../../theme/design_tokens.dart';
+import '../../../widgets/gs_list_row.dart';
 import '../../../widgets/gs_toast.dart';
 
 class CardControls extends ConsumerWidget {
@@ -39,14 +40,23 @@ class CardControls extends ConsumerWidget {
     final card = ref.watch(activeCardProvider).valueOrNull;
     if (card == null) return const SizedBox.shrink();
 
-    return Column(
+    return GSGroup(
       children: [
         SwitchListTile(
           contentPadding:
               const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
-          secondary: Icon(
-            card.isLocked ? Icons.lock_rounded : Icons.lock_open_rounded,
-            color: card.isLocked ? GSColors.brand : GSColors.textMuted,
+          secondary: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: GSColors.surfaceSunken,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              card.isLocked ? Icons.lock_rounded : Icons.lock_open_rounded,
+              size: 22,
+              color: card.isLocked ? GSColors.brand : GSColors.text,
+            ),
           ),
           title: const Text('Bloquear tarjeta'),
           subtitle: Text(card.isLocked
@@ -55,14 +65,10 @@ class CardControls extends ConsumerWidget {
           value: card.isLocked,
           onChanged: (_) => _toggleLock(context, ref),
         ),
-        const Divider(indent: GSSpacing.s4),
-        ListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
-          leading: const Icon(Icons.support_agent_rounded),
-          title: const Text('Reportar pérdida'),
-          subtitle: const Text('Bloquéala y pide una nueva'),
-          trailing: const Icon(Icons.chevron_right_rounded),
+        GSListRow(
+          icon: Icons.support_agent_rounded,
+          title: 'Reportar pérdida',
+          subtitle: 'Bloquéala y pide una nueva',
           onTap: () => ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Contacta con soporte al cliente')),
           ),

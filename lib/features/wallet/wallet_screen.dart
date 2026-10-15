@@ -14,7 +14,8 @@ import '../../providers/wallet_provider.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
 import '../../widgets/gs_bottom_sheet.dart';
-import '../../widgets/gs_button.dart';
+import '../../widgets/gs_list_row.dart';
+import '../../widgets/gs_pressable.dart';
 import '../../widgets/gs_toast.dart';
 import 'widgets/balance_header.dart';
 import 'widgets/card_controls.dart';
@@ -75,7 +76,6 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
     final recharging = ref.watch(walletNotifierProvider).isLoading;
 
     return Scaffold(
@@ -93,32 +93,35 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             const BalanceHeader(),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
-              child: GSButton(
-                label: 'Recargar saldo',
-                leadingIcon: Icons.add_rounded,
-                isLoading: recharging,
-                onPressed: recharging ? null : _showRechargeSheet,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _WalletAction(
+                      icon: Icons.add_rounded,
+                      label: 'Recargar',
+                      primary: true,
+                      busy: recharging,
+                      onTap: recharging ? null : _showRechargeSheet,
+                    ),
+                  ),
+                  const SizedBox(width: GSSpacing.s3),
+                  Expanded(
+                    child: _WalletAction(
+                      icon: Icons.qr_code_scanner_rounded,
+                      label: 'Pagar con QR',
+                      onTap: () => context.push(AppRoutes.scanPay),
+                    ),
+                  ),
+                ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                  GSSpacing.s4, GSSpacing.s2, GSSpacing.s4, 0),
-              child: GSButton(
-                label: 'Pagar con QR',
-                leadingIcon: Icons.qr_code_scanner_rounded,
-                variant: GSButtonVariant.outline,
-                onPressed: () => context.push(AppRoutes.scanPay),
-              ),
-            ),
-            const SizedBox(height: GSSpacing.s6),
-            _SectionTitle('Movimientos', style: text.titleLarge),
+            const GSSectionTitle('Movimientos'),
             WalletMovements(
               limit: _limit,
               onLoadMore: () =>
                   setState(() => _limit += walletPageSize),
             ),
-            const SizedBox(height: GSSpacing.s6),
-            _SectionTitle('Tarjeta GoSmart', style: text.titleLarge),
+            const GSSectionTitle('Tarjeta GoSmart'),
             const CardControls(),
             SizedBox(
               height: MediaQuery.of(context).padding.bottom +
@@ -132,17 +135,63 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.label, {this.style});
+/// Acción rápida de la billetera (Nequi): tarjeta con un círculo de color
+/// y la etiqueta. La primaria va en azul.
+class _WalletAction extends StatelessWidget {
+  const _WalletAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.primary = false,
+    this.busy = false,
+  });
+  final IconData icon;
   final String label;
-  final TextStyle? style;
+  final VoidCallback? onTap;
+  final bool primary;
+  final bool busy;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          GSSpacing.s4, 0, GSSpacing.s4, GSSpacing.s2),
-      child: Text(label, style: style),
+    return GSPressable(
+      onTap: onTap,
+      semanticLabel: label,
+      // Ícono arriba y etiqueta debajo: con texto grande la palabra baja
+      // entera a otra línea en vez de partirse ("Reca-rgar").
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: GSSpacing.s2, vertical: GSSpacing.s4),
+        decoration: BoxDecoration(
+          color: GSColors.surface,
+          borderRadius: BorderRadius.circular(GSRadius.lg),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: primary ? GSColors.brand : GSColors.brandTint,
+                shape: BoxShape.circle,
+              ),
+              child: busy
+                  ? Padding(
+                      padding: const EdgeInsets.all(13),
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2.5, color: GSColors.onBrand),
+                    )
+                  : Icon(icon,
+                      color: primary ? GSColors.onBrand : GSColors.brand),
+            ),
+            const SizedBox(height: GSSpacing.s2),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

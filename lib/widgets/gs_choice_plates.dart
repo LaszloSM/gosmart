@@ -1,7 +1,7 @@
 // lib/widgets/gs_choice_plates.dart
-// Elegir una opción entre pocas, como placas pequeñas: la elegida va en
-// ultramar con la franja fucsia. Sin animación (acción repetida). En varias
-// filas: todo a la vista y cabe con texto grande.
+// Elegir una opción entre pocas, como píldoras (los filtros de Google Maps):
+// la elegida va en azul claro con borde azul. Sin animación (acción repetida).
+// En varias filas: todo a la vista y cabe con texto grande.
 import 'package:flutter/material.dart';
 
 import '../theme/design_tokens.dart';
@@ -49,7 +49,7 @@ class GSChoicePlate extends StatelessWidget {
     this.stripe = true,
   });
 
-  /// false en selección múltiple: la franja fucsia es una por grupo (Regla de la Franja).
+  /// Se conserva por compatibilidad; ya no hay franja.
   final bool stripe;
   final String label;
   final IconData? icon;
@@ -58,48 +58,39 @@ class GSChoicePlate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = selected ? GSColors.onBrand : GSColors.text;
+    final fg = selected ? GSColors.brand : GSColors.text;
     return Semantics(
       button: true,
       selected: selected,
       label: label,
       excludeSemantics: true,
       child: Material(
-        color: selected ? GSColors.brand : GSColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(GSRadius.sm),
+        color: selected ? GSColors.brandTint : GSColors.surface,
+        shape: StadiumBorder(
           side: BorderSide(
-              color: selected ? GSColors.brand : GSColors.line, width: 1.5),
+              color: selected ? GSColors.brand : GSColors.line,
+              width: selected ? 2 : 1),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           child: Container(
-            constraints:
-                const BoxConstraints(minHeight: GSSize.touchTarget + 4),
-            padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s3),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: selected && stripe ? GSColors.stripe : Colors.transparent,
-                  width: 4,
-                ),
-              ),
-            ),
+            constraints: const BoxConstraints(minHeight: GSSize.touchTarget),
+            padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (icon != null) ...[
-                  Icon(icon, size: 22, color: fg),
+                  Icon(icon, size: 20, color: fg),
                   const SizedBox(width: GSSpacing.s2),
                 ],
                 Flexible(
                   child: Text(
                     label,
                     style: TextStyle(
-                      fontFamily: GSFonts.display,
-                      fontSize: 19,
-                      fontWeight: FontWeight.w700,
+                      fontFamily: GSFonts.sans,
+                      fontSize: 16,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                       color: fg,
                     ),
                   ),

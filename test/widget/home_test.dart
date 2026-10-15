@@ -71,15 +71,15 @@ void main() {
         (tester) async {
       await tester.pumpWidget(_app(const HomeSheetContent()));
       await tester.pump();
-      expect(find.text('¿A DÓNDE VAS?'), findsOneWidget);
+      expect(find.text('¿A dónde vas?'), findsOneWidget);
       expect(find.bySemanticsLabel('Agregar casa'), findsOneWidget);
-      expect(find.text('Entrar o crear cuenta'), findsOneWidget);
+      expect(find.text('Entra o crea tu cuenta'), findsOneWidget);
     });
 
     testWidgets('con cuenta no muestra la invitación', (tester) async {
       await tester.pumpWidget(_app(const HomeSheetContent(), guest: false));
       await tester.pump();
-      expect(find.text('Entrar o crear cuenta'), findsNothing);
+      expect(find.text('Entra o crea tu cuenta'), findsNothing);
     });
   });
 }

@@ -26,7 +26,7 @@ void main() {
       child: MaterialApp(theme: AppTheme.light, home: const AdminScreen()),
     ));
     await tester.pumpAndSettle();
-    expect(find.text('SOLO ADMINISTRADORES'), findsOneWidget);
+    expect(find.text('Solo administradores'), findsOneWidget);
     expect(find.byType(TabBar), findsNothing);
   });
 

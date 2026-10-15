@@ -21,7 +21,7 @@ void main() {
   testWidgets('sin viaje invita a planear', (tester) async {
     await tester.pumpWidget(_app(null));
     await tester.pumpAndSettle();
-    expect(find.text('SIN VIAJE EN CURSO'), findsOneWidget);
+    expect(find.text('Sin viaje en curso'), findsOneWidget);
   });
 
   testWidgets('muestra la cadena de tramos y lo que toca ahora', (tester) async {
@@ -37,7 +37,7 @@ void main() {
     });
     await tester.pumpWidget(_app(t));
     await tester.pumpAndSettle();
-    expect(find.text('CENTRO DE MAICAO'), findsOneWidget);
+    expect(find.text('Centro de Maicao'), findsOneWidget);
     expect(find.text('Hecho · hasta Terminal de Riohacha'), findsOneWidget);
     expect(find.textContaining('Camina hasta Punto de colectivos'), findsOneWidget);
     expect(find.text('Ya llegué'), findsOneWidget);

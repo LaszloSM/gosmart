@@ -227,86 +227,94 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             uploadingPhoto: _uploadingPhoto,
           ),
           const GSSectionTitle('Tu cuenta'),
-          GSListRow(
-            icon: Icons.badge_outlined,
-            title: 'Tus datos',
-            subtitle: _personalSummary(profile),
-            onTap: _showEditPersonalInfo,
-          ),
-          const Divider(indent: GSSpacing.s4),
-          GSListRow(
-            icon: Icons.photo_camera_outlined,
-            title: 'Foto de perfil',
-            subtitle: 'La ve el conductor cuando pidas un viaje',
-            onTap: _uploadingPhoto ? null : _pickAndUploadPhoto,
-          ),
-          const Divider(indent: GSSpacing.s4),
-          GSListRow(
-            icon: Icons.directions_walk_rounded,
-            title: 'Eco-puntos',
-            subtitle: 'Los sumas cuando eliges ir a pie',
-            value: profile?.formattedEcoPoints ?? '0',
-          ),
+          GSGroup(children: [
+            GSListRow(
+              icon: Icons.badge_outlined,
+              title: 'Tus datos',
+              subtitle: _personalSummary(profile),
+              onTap: _showEditPersonalInfo,
+            ),
+            GSListRow(
+              icon: Icons.photo_camera_outlined,
+              title: 'Foto de perfil',
+              subtitle: 'La ve el conductor cuando pidas un viaje',
+              onTap: _uploadingPhoto ? null : _pickAndUploadPhoto,
+            ),
+            GSListRow(
+              icon: Icons.directions_walk_rounded,
+              title: 'Eco-puntos',
+              subtitle: 'Los sumas cuando eliges ir a pie',
+              value: profile?.formattedEcoPoints ?? '0',
+            ),
+          ]),
           const GSSectionTitle('Conducir'),
-          GSListRow(
-            icon: Icons.two_wheeler_rounded,
-            title: (profile?.isDriver ?? false)
-                ? 'Modo conductor'
-                : 'Quiero ser conductor',
-            subtitle: (profile?.isDriver ?? false)
-                ? 'Tu disponibilidad y tus datos'
-                : 'Mototaxi, taxi, colectivo o intermunicipal',
-            onTap: () => context.push(AppRoutes.driver),
-          ),
+          GSGroup(children: [
+            GSListRow(
+              icon: Icons.two_wheeler_rounded,
+              title: (profile?.isDriver ?? false)
+                  ? 'Modo conductor'
+                  : 'Quiero ser conductor',
+              subtitle: (profile?.isDriver ?? false)
+                  ? 'Tu disponibilidad y tus datos'
+                  : 'Mototaxi, taxi, colectivo o intermunicipal',
+              onTap: () => context.push(AppRoutes.driver),
+            ),
+          ]),
           const GSSectionTitle('Seguridad'),
-          GSListRow(
-            icon: Icons.group_outlined,
-            title: 'Contactos de emergencia',
-            subtitle: 'Reciben tu ubicación cuando pides ayuda',
-            onTap: () => context.push(AppRoutes.emergencyContacts),
-          ),
-          const Divider(indent: GSSpacing.s4),
-          GSListRow(
-            icon: Icons.lock_outline_rounded,
-            title: 'Cambiar contraseña',
-            onTap: _showChangePassword,
-          ),
+          GSGroup(children: [
+            GSListRow(
+              icon: Icons.group_outlined,
+              title: 'Contactos de emergencia',
+              subtitle: 'Reciben tu ubicación cuando pides ayuda',
+              onTap: () => context.push(AppRoutes.emergencyContacts),
+            ),
+            GSListRow(
+              icon: Icons.lock_outline_rounded,
+              title: 'Cambiar contraseña',
+              onTap: _showChangePassword,
+            ),
+          ]),
           if (profile?.isAdmin ?? false) ...[
             const GSSectionTitle('Administración'),
-            GSListRow(
-              icon: Icons.admin_panel_settings_outlined,
-              title: 'Panel admin',
-              subtitle: 'Conductores, reportes, métricas y ajustes',
-              onTap: () => context.push(AppRoutes.admin),
-            ),
+            GSGroup(children: [
+              GSListRow(
+                icon: Icons.admin_panel_settings_outlined,
+                title: 'Panel admin',
+                subtitle: 'Conductores, reportes, métricas y ajustes',
+                onTap: () => context.push(AppRoutes.admin),
+              ),
+            ]),
           ],
           const GSSectionTitle('Tus datos y la ley'),
-          GSListRow(
-            icon: Icons.privacy_tip_outlined,
-            title: 'Cómo usamos tus datos',
-            onTap: () => context.push(AppRoutes.privacy),
-          ),
-          const Divider(indent: GSSpacing.s4),
-          GSListRow(
-            icon: Icons.description_outlined,
-            title: 'Términos de uso',
-            onTap: () => context.push(AppRoutes.terms),
-          ),
-          const Divider(indent: GSSpacing.s4),
-          GSListRow(
-            icon: Icons.delete_forever_outlined,
-            title: 'Eliminar mi cuenta',
-            subtitle: 'Borra tu perfil, billetera, contactos y viajes',
-            onTap: _confirmDeleteAccount,
-          ),
+          GSGroup(children: [
+            GSListRow(
+              icon: Icons.privacy_tip_outlined,
+              title: 'Cómo usamos tus datos',
+              onTap: () => context.push(AppRoutes.privacy),
+            ),
+            GSListRow(
+              icon: Icons.description_outlined,
+              title: 'Términos de uso',
+              onTap: () => context.push(AppRoutes.terms),
+            ),
+            GSListRow(
+              icon: Icons.delete_forever_outlined,
+              iconColor: GSColors.roadClosed,
+              title: 'Eliminar mi cuenta',
+              subtitle: 'Borra tu perfil, billetera, contactos y viajes',
+              onTap: _confirmDeleteAccount,
+            ),
+          ]),
           if (kDebugMode) ...[
             const GSSectionTitle('Desarrollo'),
-            GSListRow(
-              icon: Icons.nfc_rounded,
-              title: 'Simulador NFC',
-              subtitle: 'Solo en builds de depuración',
-              onTap: () => context.push(AppRoutes.nfcSimulator),
-            ),
+            GSGroup(children: [
+              GSListRow(
+                icon: Icons.nfc_rounded,
+                title: 'Simulador NFC',
+                subtitle: 'Solo en builds de depuración',
+                onTap: () => context.push(AppRoutes.nfcSimulator),
+              ),
+            ]),
           ],
           Padding(
             padding: const EdgeInsets.fromLTRB(

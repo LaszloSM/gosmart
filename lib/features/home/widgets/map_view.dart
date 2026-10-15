@@ -1,7 +1,7 @@
 // lib/features/home/widgets/map_view.dart
 // El mapa detrás de una sola interfaz (Fase 3): Google Maps cuando hay clave
 // (gestos nativos, rotar e inclinar con brújula, estilo nocturno propio,
-// cámara limitada a La Guajira). Sin clave (pruebas, web del admin) queda
+// cámara limitada a La Guajira, estilo claro y nocturno propios). Sin clave (pruebas, web del admin) queda
 // flutter_map con OpenStreetMap como respaldo.
 // Lo demás de la app no sabe cuál se usa.
 import 'package:flutter/material.dart';
@@ -70,6 +70,7 @@ class _GoogleMapView extends StatefulWidget {
 class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewController {
   gm.GoogleMapController? _c;
   String? _nightStyle;
+  String? _lightStyle;
 
   static gm.LatLng _g(LatLng p) => gm.LatLng(p.latitude, p.longitude);
 
@@ -78,6 +79,11 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
     super.initState();
     rootBundle.loadString('assets/map_styles/night.json').then((s) {
       if (mounted) setState(() => _nightStyle = s);
+    });
+    // De día: menos comercios y colores más calmos, para que la ruta y los
+    // marcadores se lean primero (como Google Maps en modo navegación).
+    rootBundle.loadString('assets/map_styles/light.json').then((s) {
+      if (mounted) setState(() => _lightStyle = s);
     });
   }
 
@@ -105,7 +111,7 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
     final night = Theme.of(context).brightness == Brightness.dark;
     return gm.GoogleMap(
       initialCameraPosition: gm.CameraPosition(target: _g(v.initialCenter), zoom: 14),
-      style: night ? _nightStyle : null,
+      style: night ? _nightStyle : _lightStyle,
       onMapCreated: (c) {
         _c = c;
         v.onCreated(this);
@@ -127,8 +133,11 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
             gm.Polyline(
               polylineId: gm.PolylineId('leg$i'),
               points: [for (final p in v.route!.legs[i].points) _g(p)],
-              width: 6,
+              width: 7,
               color: v.route!.legs[i].color,
+              startCap: gm.Cap.roundCap,
+              endCap: gm.Cap.roundCap,
+              jointType: gm.JointType.round,
               patterns: v.route!.legs[i].mode == 'walk'
                   ? [gm.PatternItem.dot, gm.PatternItem.gap(8)]
                   : const [],

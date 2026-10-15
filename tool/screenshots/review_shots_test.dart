@@ -113,15 +113,12 @@ void main() {
     }
     // Inicio: el mapa real carga teselas de red, que no hay en tests; se usa
     // un fondo liso en su lugar (dicho en el paquete de revisión).
-    await shot(Scaffold(extendBody: true, body: Column(children: [
-      ColoredBox(color: GSColors.brand, child: SafeArea(bottom: false, child: Padding(padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-        child: ClipRRect(borderRadius: BorderRadius.circular(GSRadius.md), child: GSCorridorLine(status: status, onTap: () {}))))),
-      Expanded(child: Stack(children: [
-        const Positioned.fill(child: ColoredBox(color: Color(0xFFDDE3EA))),
-        Positioned(left: 0, right: 0, bottom: 0, height: 430, child: DecoratedBox(
-          decoration: BoxDecoration(color: GSColors.surface, borderRadius: GSRadius.sheetRadius, boxShadow: GSShadow.sheet),
-          child: const HomeSheetContent())),
-      ])),
+    await shot(Scaffold(extendBody: true, body: Stack(children: [
+      const Positioned.fill(child: ColoredBox(color: Color(0xFFE7EBF0))),
+      Positioned(left: 12, right: 12, top: 32, child: GSCorridorLine(status: status, onTap: () {}, floating: true)),
+      Positioned(left: 0, right: 0, bottom: 0, height: 470, child: DecoratedBox(
+        decoration: BoxDecoration(color: GSColors.surface, borderRadius: GSRadius.sheetRadius, boxShadow: GSShadow.sheet),
+        child: const HomeSheetContent())),
     ]), bottomNavigationBar: const GSBottomNav(current: GSNavTab.home)), 'phone-home');
     await shot(const HomeScreen(), 'phone-home-real', settle: false);
     await t.pump(const Duration(milliseconds: 300));

@@ -12,7 +12,7 @@ import '../../../router/app_router.dart';
 import '../../../services/place_search.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_button.dart';
-import '../../../widgets/gs_route_plate.dart';
+import '../../../widgets/gs_pressable.dart';
 
 class QuickPlacesRow extends ConsumerWidget {
   final Function(FavoritePlace) onPlaceSelected;
@@ -135,15 +135,44 @@ class _QuickChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Placa pequeña; sin lugar guardado es una placa en blanco con "+".
-    return IntrinsicWidth(
-      child: GSRoutePlate(
-        text: label,
-        size: GSPlateSize.sm,
-        leading: isSet ? icon : Icons.add_rounded,
-        isPlaceholder: !isSet,
-        onTap: onTap,
-        semanticLabel: isSet ? label : 'Agregar ${label.toLowerCase()}',
+    // Píldora como los accesos de Google Maps; sin lugar guardado muestra "+".
+    return GSPressable(
+      onTap: onTap,
+      semanticLabel: isSet ? label : 'Agregar ${label.toLowerCase()}',
+      child: Container(
+        constraints: const BoxConstraints(minHeight: GSSize.touchTarget),
+        padding: const EdgeInsets.fromLTRB(6, 6, GSSpacing.s4, 6),
+        decoration: BoxDecoration(
+          color: GSColors.surface,
+          borderRadius: BorderRadius.circular(GSRadius.full),
+          border: Border.all(color: GSColors.line),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: isSet ? GSColors.brandTint : GSColors.surfaceSunken,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(isSet ? icon : Icons.add_rounded,
+                  size: 20,
+                  color: isSet ? GSColors.brand : GSColors.textMuted),
+            ),
+            const SizedBox(width: GSSpacing.s2),
+            Text(
+              isSet ? label : 'Agregar ${label.toLowerCase()}',
+              style: TextStyle(
+                fontFamily: GSFonts.sans,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: GSColors.text,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -37,12 +37,17 @@ class GSCorridorLine extends StatelessWidget {
     required this.status,
     this.isLoading = false,
     this.onTap,
+    this.floating = false,
   });
 
   /// null mientras carga por primera vez.
   final CorridorStatus? status;
   final bool isLoading;
   final VoidCallback? onTap;
+
+  /// Sobre el mapa: tarjeta flotante redondeada con sombra (como la píldora de
+  /// tráfico de Google Maps). Si no, una franja con línea inferior.
+  final bool floating;
 
   @override
   Widget build(BuildContext context) {
@@ -68,48 +73,63 @@ class GSCorridorLine extends StatelessWidget {
       button: onTap != null,
       label: semantics.toString(),
       excludeSemantics: true,
-      child: Material(
-        color: GSColors.surface,
-        child: InkWell(
-          onTap: onTap,
-          child: Container(
-            height: GSSize.corridorLine,
-            padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
-            decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: GSColors.line)),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Row(
-                        children: [
-                          _EndLabel('Riohacha'),
-                          Spacer(),
-                          _EndLabel('Maicao'),
-                        ],
-                      ),
-                      const SizedBox(height: GSSpacing.s1),
-                      SizedBox(
-                        height: 14,
-                        width: double.infinity,
-                        child: CustomPaint(
-                          painter: _CorridorPainter(status: data, grey: grey),
+      child: Container(
+        decoration: floating
+            ? BoxDecoration(
+                borderRadius: BorderRadius.circular(GSRadius.lg),
+                boxShadow: GSShadow.float,
+              )
+            : null,
+        child: Material(
+          color: GSColors.surface,
+          borderRadius: floating ? BorderRadius.circular(GSRadius.lg) : null,
+          clipBehavior: floating ? Clip.antiAlias : Clip.none,
+          child: InkWell(
+            onTap: onTap,
+            child: Container(
+              constraints: BoxConstraints(
+                  minHeight: floating ? 64 : GSSize.corridorLine),
+              padding: EdgeInsets.symmetric(
+                  horizontal: GSSpacing.s4,
+                  vertical: floating ? GSSpacing.s3 : 0),
+              decoration: floating
+                  ? null
+                  : BoxDecoration(
+                      border: Border(bottom: BorderSide(color: GSColors.line)),
+                    ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Row(
+                          children: [
+                            _EndLabel('Riohacha'),
+                            Spacer(),
+                            _EndLabel('Maicao'),
+                          ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: GSSpacing.s1),
+                        SizedBox(
+                          height: 14,
+                          width: double.infinity,
+                          child: CustomPaint(
+                            painter: _CorridorPainter(status: data, grey: grey),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: GSSpacing.s3),
-                _SummaryTag(
-                  state: summary,
-                  word: word,
-                  detail: detail,
-                  grey: grey,
-                ),
-              ],
+                  const SizedBox(width: GSSpacing.s3),
+                  _SummaryTag(
+                    state: summary,
+                    word: word,
+                    detail: detail,
+                    grey: grey,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -178,7 +198,8 @@ class _SummaryTag extends StatelessWidget {
           Text(
             detail!,
             style: TextStyle(
-              fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
+              fontFamily: GSFonts.mono,
+              fontFeatures: GSFonts.tabular,
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: GSColors.textMuted,
@@ -213,7 +234,7 @@ class _CorridorPainter extends CustomPainter {
     Paint linePaint(RoadState s) => Paint()
       ..color = grey ? GSColors.roadUnknown : roadColor(s)
       ..strokeWidth = _stroke
-      ..strokeCap = StrokeCap.butt;
+      ..strokeCap = StrokeCap.round;
 
     // El ramal Albania–Cuestecitas no se dibuja a 56 dp: sin sus km reales
     // (Fase 4) un trazo sin etiqueta se lee como un error. Va en el detalle.
@@ -234,6 +255,7 @@ class _CorridorPainter extends CustomPainter {
     }
 
     // Estaciones en los extremos: anillo de tinta sobre la superficie.
+    // (Las puntas redondas de cada tramo se tocan sin dejar huecos.)
     final fill = Paint()..color = GSColors.surface;
     final ring = Paint()
       ..color = GSColors.text
