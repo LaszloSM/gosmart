@@ -120,7 +120,7 @@ abstract class GSColors {
   static void apply(Brightness b) =>
       _p = b == Brightness.dark ? GSPalette.dark : GSPalette.light;
 
-  // ── Marca y carrocería ─────────────────────────────────────────────────────
+  // ── Marca y barras ─────────────────────────────────────────────────────
   /// Marca: botón primario, selección, ruta en el mapa, cabecera de saldo.
   static Color get brand => _p.brand;
   static Color get brandPressed => _p.brandPressed;
@@ -309,7 +309,7 @@ abstract class GSDuration {
   static const normal = Duration(milliseconds: 250);
   static const page = Duration(milliseconds: 250);
 
-  /// Cambio de rótulo de una placa (contrato: 200 ms).
+  /// Cambio de título de una tarjeta (200 ms).
   static const plate = Duration(milliseconds: 200);
 
   /// Hojas: entrada 250 ms, salida 200 ms.
@@ -369,7 +369,7 @@ abstract class GSFonts {
   /// Todo el texto.
   static const sans = 'Figtree';
 
-  /// Títulos: la misma familia en peso 700–800 (no hay letra de rótulo).
+  /// Títulos: la misma familia en peso 700–800.
   static const display = 'Figtree';
 
   /// Números que el usuario compara (precios, km, horas): usar con [tabular].

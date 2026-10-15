@@ -35,7 +35,7 @@ class IntroScreen extends StatelessWidget {
         backgroundColor: GSColors.background,
         body: Column(
           children: [
-            // Carrocería: el nombre y la Línea de ejemplo.
+            // Encabezado: el nombre y la Línea de ejemplo.
             ColoredBox(
               color: GSColors.shell,
               child: SafeArea(

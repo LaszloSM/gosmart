@@ -5,8 +5,7 @@ enum GSButtonVariant { primary, secondary, outline, ghost, eco, danger }
 /// `driver`: 72 dp, para el modo conductor (DS6, una mano).
 enum GSButtonSize { sm, md, lg, driver }
 
-/// Botón GoSmart (mundo "rótulo de colectivo"): plano, radio md, etiqueta en
-/// letra condensada de rótulo. Al presionar baja a 0.97 en 120 ms ease-out
+/// Botón GoSmart: píldora plana, etiqueta en Figtree 700. Al presionar baja a 0.97 en 120 ms ease-out
 /// (Emil Kowalski); con "quitar animaciones" del sistema no escala.
 /// Toda talla mide al menos 48 dp de alto (área táctil de Android).
 class GSButton extends StatefulWidget {

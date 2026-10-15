@@ -46,7 +46,7 @@ class GSRoutePlate extends StatefulWidget {
   final VoidCallback? onTap;
   final String? semanticLabel;
 
-  /// Líneas del rótulo principal (2 para nombres largos).
+  /// Líneas del título (2 para nombres largos).
   final int maxLines;
 
   /// Líneas de la línea pequeña (más con texto grande del sistema).
