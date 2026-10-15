@@ -335,51 +335,55 @@ AppRoutes.privacy / .terms // '/legal/privacy', '/legal/terms' (public)
 
 ### Design System
 
-**`DESIGN.md` (repo root) is the source of truth** — mundo "Rótulo de colectivo" (rediseño total
-2026-10-12), escrito por el documentador de impeccable desde lo construido; sidecar de tokens en
-`.impeccable/design.json`. Léelo antes de cualquier trabajo de UI y pregunta al usuario antes de
-apartarte de él. También mandan `PRODUCT.md` (verdad del producto) y el contrato de dirección
-`.impeccable/surfaces/lib-main-dart.md`. `lib/theme/design_tokens.dart` lo refleja.
+**`DESIGN.md` (repo root) is the source of truth**: redesign of 2026-10-15, "familiar e intuitivo",
+built to the craft level of InDrive, Google Maps, Nequi and Uber/DiDi (the user's choice, recorded
+in PRODUCT.md). It replaces the old "rótulo de colectivo" world (Barlow Condensed, ultramar shell,
+uppercase plates, fuchsia stripe): don't bring any of that back. Token sidecar: `.impeccable/design.json`.
+Direction contract: `.impeccable/surfaces/lib-main-dart.md`. `lib/theme/design_tokens.dart` mirrors it.
 
-**Skills de diseño instaladas en `.claude/skills/`** (úsalas en todo trabajo de UI):
-`impeccable` (proceso, `critique`/`audit`/`polish`/`harden`, reglas Android, `reference/craft-floor.md`),
-`taste-skill` + `redesign-skill` (AI tells prohibidos, estados completos), `emil-design-eng` +
-`animate` + `review-animations` (movimiento). Plan de la fase: `docs/PLAN_MVP_GUAJIRA.md` → Fase 2. Capturas para revisar UI:
-`flutter test tool/screenshots/review_shots_test.dart` → `.impeccable/review/`.
+**Design skills in `.claude/skills/`** (use them for every UI task): `impeccable` (process,
+critique/audit/polish/harden, Android rules, `reference/craft-floor.md`), `taste-skill` + `redesign-skill`
+(anti-slop, complete states), `emil-design-eng` + `animate` + `review-animations` (motion). Review
+screenshots: `flutter test tool/screenshots/review_shots_test.dart` writes `.impeccable/review/`
+(git-ignored; map tiles never load in tests).
 
-Reglas del mundo: shell en ultramar (`GSColors.brand` #1B3A8C: AppBar, barra inferior, botón
-primario); fondo lámina fría; placas blancas con letras Barlow Condensed en ultramar
-(`GSRoutePlate`, el gesto distintivo); franja fucsia `GSColors.stripe` SOLO en lo seleccionado;
-rojo/ámbar/verde (`road*`) solo para el estado de la vía, siempre con ícono + palabra; radios
-4/8/12; sin degradados, vidrio ni tarjetas por defecto; 48 dp (72 en conductor); contraste 7:1.
-Movimiento: presión 0.97 en 120 ms `GSCurve.enter`; nada animado al cambiar de pestaña; respetar
-`MediaQuery.disableAnimations`.
+World rules:
+- White surfaces on a cool light grey (`#F4F6FA`) and white top and bottom bars.
+- One brand blue, `GSColors.brand` `#0B4FC4`: primary buttons, selection, route, wallet balance card.
+- Figtree 400–800, bundled as static instances, in sentence case with tabular figures for numbers.
+- Pills for buttons, search, chips and avatars; radii 8/12/16/24 (cards 16, sheets 24).
+- Soft tinted shadows only on things floating over the map.
+- Red/amber/green (`road*`) only for road state, always with icon and word.
+- Mode colours only for legs and markers: use `RouteLeg.liveColor`, never `leg.color` (that one is fixed at creation and goes dark at night).
+- Contrast 7:1; 48 dp touch targets (72 in driver mode).
+- Motion: press scale 0.97 in 120 ms `GSCurve.enter` (`GSPressable`, `GSButton`); sheets 250/200 ms; no tab-change animation; respect `MediaQuery.disableAnimations`.
+- Large text up to 200 % with no mid-word breaks: use a single line with `FittedBox(scaleDown)` for short labels.
+- Never show a made-up price: modes without a fare rule say "Precio en la ruta".
 
-`GSColors.primary` es un alias del fondo (lámina), nunca detrás de texto blanco. Código nuevo usa
-los nombres nuevos.
-
-**Día y noche:** `GSColors.*` son getters que leen la paleta activa (`GSPalette.light` /
-`GSPalette.dark`); `main.dart` la aplica según el brillo del tema (`ThemeMode.system`) y reconstruye
-el árbol al cambiar. Por eso los colores NO son `const`: nunca guardes un color en un campo
-`static final` (se quedaría con el de la primera vez); usa getters. Barras y cabeceras usan
-`shell/onShell/onShellMuted` (ultramar profundo de noche); letras, íconos y botones usan `brand`.
+**Day and night:** `GSColors.*` are getters over the active palette (`GSPalette.light` / `.dark`);
+`main.dart` applies it from the theme brightness and rebuilds the tree on change. Colors are NOT
+`const`: never keep a color in a `static final` (it would freeze the first scheme). In tests,
+call `GSColors.apply(...)` BEFORE building a widget tree whose colors you read.
 
 ```dart
-GSColors.shell / .onShell / .onShellMuted     // carrocería: AppBar, barra inferior, cabeceras
-GSColors.brand / .brandPressed / .onBrand / .onBrandMuted / .brandTint / .stripe
+GSColors.shell / .onShell / .onShellMuted     // bars: white by day, surface at night
+GSColors.brand / .brandPressed / .onBrand / .onBrandMuted / .brandTint
 GSColors.background / .surface / .surfaceSunken / .text / .textMuted / .line
 GSColors.roadOpen / .roadCaution(+Tint) / .roadClosed(+Tint) / .roadUnknown  // road status ONLY
-GSFonts.sans ('Barlow') / .display ('BarlowCondensed') / .mono + .tabular (cifras tabulares)
+GSColors.bus / .taxi / .walk / .bike / .car                                    // legs and markers only
+GSFonts.sans = .display = .mono = 'Figtree'; GSFonts.tabular for numbers
 GSCurve.enter / .exit / .move    GSDuration.press / .fast / .sheetIn / .sheetOut
-GSSpacing.s1=4 s2=8 s3=12 s4=16 s5=20 s6=24 s8=32    GSRadius.sm=4 .md=8 .lg=12
-GSSize.touchTarget=48 .touchTargetDriver=72 .corridorLine=56 .bottomNav=72 .topBar=56
+GSSpacing.s1=4 s2=8 s3=12 s4=16 s5=20 s6=24 s8=32    GSRadius.sm=8 .md=12 .lg=16 .xl=24 .full
+GSShadow.float (over the map) / .sheet    GSSize.touchTarget=48 .touchTargetDriver=72 .button=52
 ```
 
 **Reusable widgets** (all in `lib/widgets/`, prefixed `GS*`):
-- `GSRoutePlate(text:, from:, detail:, leading:, isActive:, isPlaceholder:, size:)` — placa de ruta
-- `GSButton` (etiqueta condensada, presión 0.97, mín. 48 dp), `GSIconButton`
+- `GSRoutePlate(text:, from:, detail:, leading:, isActive:, isPlaceholder:, size:)`: place/option card (old name kept)
+- `GSPressable(onTap:, semanticLabel:, child:)`: anything tappable that isn't a button (0.97 press)
+- `GSGroup(children:)`: rows in a white 16-radius card with inset dividers (Nequi/settings style)
+- `GSButton` (pill, Figtree 700, press 0.97, min 48 dp), `GSIconButton`
 - `GSCard`, `GSInfoCard`, `GSOptionCard`, `GSModeChip`
-- `GSCorridorLine` — DESIGN.md corridor line (56 px); state always icon + word, time in mono
+- `GSCorridorLine(floating:)`: corridor line; `floating: true` over the map on Home; state always icon + word
 - `GSTextField`, `GSSearchBar`
 - `GSBottomNav(current: GSNavTab.home|trip|report|wallet|profile)` — navigates by itself; 5 tabs (DS1)
 - `GSBottomSheet`
@@ -500,8 +504,8 @@ Currency: `'cop'` | `'usd'` | `'eur'`
   `items` and `limited`), not `geocodingService` directly. Directory rows with `verified=false` show "aprox.".
   Google suggestions come WITHOUT coordinates: call `placeSearch.resolve(s)` when the user picks one
   (null = show a notice). That closes the Google session, so typing is billed once per pick.
-- **`GSChoicePlates<T>`** (`lib/widgets/gs_choice_plates.dart`): pick one of a few options as small
-  plates (used by `ModeSelector` and driver signup). Prefer it over chips/radios.
+- **`GSChoicePlates<T>`** (`lib/widgets/gs_choice_plates.dart`): pick one of a few options as pills
+  (driver signup). The planner uses `ModeSelector` (tiles) and, once both points exist, `ModeOptions` (rows with ~ETA and fare).
 - **Driver status is server-only**: the client never writes `drivers.status`; a trigger rejects it and
   editing reviewed fields sends an approved driver back to `pending`.
 - **Offline writes** go through `syncQueue.enqueue(SyncOp(kind, key, payload))` with the op's
@@ -532,8 +536,8 @@ Currency: `'cop'` | `'usd'` | `'eur'`
   kept for trips (Fase 6). Money movements come from `walletTransactionsProvider`.
 - **Wallet vs cards**: `wallets` / `wallet_transactions` (`walletProvider`) is the money model. `cards` / `activeCardProvider` is only the card UI (lock/NFC, future public-transport validators). Never write balances from the client; use RPCs.
 - **`AnimatedDefaultTextStyle` / `DefaultTextStyle` replace the inherited style**: always set `fontFamily: GSFonts.sans`, or the text falls back to Roboto.
-- **Fonts are bundled** (`pubspec.yaml` → `fonts:` Barlow + BarlowCondensed); no `google_fonts`, no runtime download.
-- **`ThemeData(fontFamily:)` overrides every textTheme family**: condensed titles are re-applied with
+- **Fonts are bundled** (`pubspec.yaml` → `fonts:` Figtree, static 400–800 made from the variable file with fontTools); no `google_fonts`, no runtime download.
+- **`ThemeData(fontFamily:)` overrides every textTheme family**: the type scale is re-applied with
   `base.copyWith(textTheme: base.textTheme.merge(textTheme))` in `app_theme.dart`. Keep that.
-- **Barlow has no → glyph**: draw arrows with `Icons.arrow_forward_rounded`, never the character.
+- **Draw arrows with `Icons.arrow_forward_rounded`**, never a text glyph.
 - **`GSCard` wraps its child in a transparent `Material`** so `ListTile`s inside it render ripples (newer Flutter asserts otherwise).
