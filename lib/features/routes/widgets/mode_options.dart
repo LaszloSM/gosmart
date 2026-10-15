@@ -154,7 +154,13 @@ class _OptionRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(mode, style: text.titleMedium),
+                  // Una línea que se reduce si no cabe: nunca "Intermunicipa/l".
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(mode,
+                        maxLines: 1, softWrap: false, style: text.titleMedium),
+                  ),
                   Text(
                     '~${estimate.minutes} min',
                     style:
@@ -165,7 +171,7 @@ class _OptionRow extends StatelessWidget {
             ),
             const SizedBox(width: GSSpacing.s2),
             ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 150),
+              constraints: const BoxConstraints(maxWidth: 124),
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerRight,

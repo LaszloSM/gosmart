@@ -175,11 +175,15 @@ void main() {
 
     // Opciones de viaje con destino ya elegido (en tests no hay GPS, así que
     // se muestran sueltas con un origen y destino de Riohacha).
+    for (final scale in [1.0, 1.3, 2.0]) {
+      phone(t, scale: scale);
+      final tag = scale == 1.0 ? '' : '-text${(scale * 100).round()}';
+      await shot(Scaffold(body: SafeArea(child: ListView(children: const [
+        SizedBox(height: 12),
+        ModeOptions(from: LatLng(11.5444, -72.9072), to: LatLng(11.5320, -72.8990), selected: 'Mototaxi', onChanged: _noop),
+      ]))), 'phone-mode-options$tag');
+    }
     phone(t);
-    await shot(Scaffold(body: SafeArea(child: ListView(children: const [
-      SizedBox(height: 12),
-      ModeOptions(from: LatLng(11.5444, -72.9072), to: LatLng(11.5320, -72.8990), selected: 'Mototaxi', onChanged: _noop),
-    ]))), 'phone-mode-options');
     debugDisableShadows = true;
   });
 }
