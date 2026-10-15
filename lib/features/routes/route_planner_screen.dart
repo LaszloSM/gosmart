@@ -33,6 +33,7 @@ import '../../widgets/gs_button.dart';
 import '../../widgets/gs_list_row.dart';
 import '../../widgets/gs_toast.dart';
 import 'widgets/destination_plate.dart';
+import 'widgets/mode_options.dart';
 import 'widgets/mode_selector.dart';
 
 class RoutePlannerScreen extends ConsumerStatefulWidget {
@@ -51,7 +52,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   String? _destLabel; // destino elegido (placa pintada)
   List<GeocodeSuggestion> _suggestions = [];
   bool _searchLimited = false; // el proveedor externo no respondió (D8)
-  String? _searchedFor;        // última búsqueda terminada
+  String? _searchedFor; // última búsqueda terminada
   Timer? _debounce;
   bool _loading = false;
   bool _locating = true;
@@ -96,7 +97,8 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     setState(() => _loading = false);
     if (place?.latLng == null) {
       GSToast.showWithMessenger(messenger,
-          message: 'No pudimos ubicar ese lugar. Revisa tu conexión o elige otro.',
+          message:
+              'No pudimos ubicar ese lugar. Revisa tu conexión o elige otro.',
           type: GSToastType.error);
       return;
     }
@@ -248,7 +250,9 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
         (home != null || work != null);
     final originText = _originLatLng != null
         ? _originLabel
-        : (_locating ? 'Buscando tu ubicación…' : 'Sin ubicación: activa el GPS');
+        : (_locating
+            ? 'Buscando tu ubicación…'
+            : 'Sin ubicación: activa el GPS');
 
     return Scaffold(
       backgroundColor: GSColors.background,
@@ -315,7 +319,8 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text('Desde', style: Theme.of(context).textTheme.labelSmall),
+                        Text('Desde',
+                            style: Theme.of(context).textTheme.labelSmall),
                         Text(
                           originText,
                           style: Theme.of(context).textTheme.titleMedium,
@@ -374,26 +379,58 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                 onTap: () => _pickSuggestion(_suggestions[i]),
               ),
             ],
-          if (typing && _searchedFor != null &&
+          if (typing &&
+              _searchedFor != null &&
               (_suggestions.isEmpty || _searchLimited))
             _SearchNotice(
               empty: _suggestions.isEmpty,
               limited: _searchLimited,
               query: _searchedFor!,
             ),
-          const GSSectionTitle('¿En qué vas?'),
-          const SizedBox(height: GSSpacing.s1),
-          ModeSelector(
-            selected: mode,
-            onChanged: (m) =>
-                ref.read(selectedModeProvider.notifier).state = m,
-          ),
+          // Sin destino todavía: accesos que siempre sirven (Google Maps).
+          if (typing && _destCtrl.text.trim().length < 3) ...[
+            const SizedBox(height: GSSpacing.s3),
+            GSGroup(children: [
+              GSListRow(
+                icon: Icons.push_pin_outlined,
+                title: 'Elegir en el mapa',
+                subtitle: 'Mantén presionado el mapa del inicio en el punto',
+                onTap: () {
+                  GSToast.show(context,
+                      message: 'Mantén presionado el mapa en tu destino.');
+                  context.go(AppRoutes.home);
+                },
+              ),
+              GSListRow(
+                icon: Icons.auto_awesome_outlined,
+                title: 'Pregúntale al asistente',
+                subtitle: '"¿Cómo llego al terminal de Maicao?"',
+                onTap: () => context.push(AppRoutes.aiChat),
+              ),
+            ]),
+          ],
+          if (_destLatLng != null && _originLatLng != null) ...[
+            const GSSectionTitle('Elige cómo ir'),
+            ModeOptions(
+              from: _originLatLng!,
+              to: _destLatLng!,
+              selected: mode,
+              onChanged: (m) =>
+                  ref.read(selectedModeProvider.notifier).state = m,
+            ),
+          ] else ...[
+            const GSSectionTitle('¿En qué vas?'),
+            ModeSelector(
+              selected: mode,
+              onChanged: (m) =>
+                  ref.read(selectedModeProvider.notifier).state = m,
+            ),
+          ],
         ],
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: EdgeInsets.fromLTRB(GSSpacing.s4, GSSpacing.s2,
-              GSSpacing.s4,
+          padding: EdgeInsets.fromLTRB(GSSpacing.s4, GSSpacing.s2, GSSpacing.s4,
               GSSpacing.s3 + MediaQuery.of(context).viewInsets.bottom),
           child: GSButton(
             label: 'Ver ruta',

@@ -93,7 +93,10 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             const BalanceHeader(),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
-              child: Row(
+              // Mismo alto para las dos, también con texto grande.
+              child: IntrinsicHeight(
+                child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Expanded(
                     child: _WalletAction(
@@ -113,6 +116,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                     ),
                   ),
                 ],
+              ),
               ),
             ),
             const GSSectionTitle('Movimientos'),
@@ -166,6 +170,7 @@ class _WalletAction extends StatelessWidget {
           borderRadius: BorderRadius.circular(GSRadius.lg),
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               width: 48,

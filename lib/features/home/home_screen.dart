@@ -223,8 +223,8 @@ class _RouteBanner extends ConsumerWidget {
                       ),
                       Text(
                         route.destinationLabel == null
-                            ? 'Toca para ver los tramos'
-                            : 'A ${route.destinationLabel} · ver tramos',
+                            ? 'Ver tramos'
+                            : 'A ${route.destinationLabel}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: text.bodyMedium,

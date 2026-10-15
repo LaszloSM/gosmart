@@ -64,7 +64,8 @@ class ProfileHeader extends ConsumerWidget {
                       if (p.email.isNotEmpty) ...[
                         const SizedBox(height: 2),
                         Text(p.email,
-                            maxLines: 2,
+                            maxLines: 1,
+                            softWrap: false,
                             overflow: TextOverflow.ellipsis,
                             style: text.bodyMedium),
                       ],

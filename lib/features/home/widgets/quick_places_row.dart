@@ -135,42 +135,50 @@ class _QuickChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Píldora como los accesos de Google Maps; sin lugar guardado muestra "+".
+    // Círculo con el ícono y la etiqueta debajo (accesos de Uber/DiDi). Sin
+    // lugar guardado, el círculo es gris con "+" y la etiqueta dice
+    // "Agregar".
     return GSPressable(
       onTap: onTap,
       semanticLabel: isSet ? label : 'Agregar ${label.toLowerCase()}',
-      child: Container(
-        constraints: const BoxConstraints(minHeight: GSSize.touchTarget),
-        padding: const EdgeInsets.fromLTRB(6, 6, GSSpacing.s4, 6),
-        decoration: BoxDecoration(
-          color: GSColors.surface,
-          borderRadius: BorderRadius.circular(GSRadius.full),
-          border: Border.all(color: GSColors.line),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+      child: SizedBox(
+        width: 76,
+        child: Column(
           children: [
             Container(
-              width: 34,
-              height: 34,
+              width: 52,
+              height: 52,
               decoration: BoxDecoration(
                 color: isSet ? GSColors.brandTint : GSColors.surfaceSunken,
                 shape: BoxShape.circle,
               ),
               child: Icon(isSet ? icon : Icons.add_rounded,
-                  size: 20,
-                  color: isSet ? GSColors.brand : GSColors.textMuted),
+                  size: 24,
+                  color: isSet ? GSColors.brand : GSColors.text),
             ),
-            const SizedBox(width: GSSpacing.s2),
+            const SizedBox(height: 6),
             Text(
-              isSet ? label : 'Agregar ${label.toLowerCase()}',
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: GSFonts.sans,
-                fontSize: 15,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: GSColors.text,
               ),
             ),
+            if (!isSet)
+              Text(
+                'Agregar',
+                style: TextStyle(
+                  fontFamily: GSFonts.sans,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w500,
+                  color: GSColors.textMuted,
+                ),
+              ),
           ],
         ),
       ),

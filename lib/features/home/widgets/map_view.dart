@@ -120,6 +120,9 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
       rotateGesturesEnabled: true,
       tiltGesturesEnabled: true,
       compassEnabled: true,
+      // Punto azul nativo de "estás aquí" (como Google Maps); el botón propio
+      // de ubicarme vive en el inicio.
+      myLocationEnabled: v.user != null,
       myLocationButtonEnabled: false,
       mapToolbarEnabled: false,
       zoomControlsEnabled: false,
@@ -134,7 +137,7 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
               polylineId: gm.PolylineId('leg$i'),
               points: [for (final p in v.route!.legs[i].points) _g(p)],
               width: 7,
-              color: v.route!.legs[i].color,
+              color: v.route!.legs[i].liveColor,
               startCap: gm.Cap.roundCap,
               endCap: gm.Cap.roundCap,
               jointType: gm.JointType.round,
@@ -144,13 +147,6 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
             ),
       },
       markers: {
-        if (v.user != null)
-          gm.Marker(
-            markerId: const gm.MarkerId('user'),
-            position: _g(v.user!),
-            icon: gm.BitmapDescriptor.defaultMarkerWithHue(gm.BitmapDescriptor.hueAzure),
-            infoWindow: const gm.InfoWindow(title: 'Estás aquí'),
-          ),
         if (v.route != null && v.route!.legs.isNotEmpty)
           gm.Marker(
             markerId: const gm.MarkerId('dest'),
@@ -224,7 +220,7 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
                 fm.Polyline(
                   points: leg.points,
                   strokeWidth: 5.0,
-                  color: leg.color,
+                  color: leg.liveColor,
                   borderColor: GSColors.surface,
                   borderStrokeWidth: 1.5,
                 ),
@@ -236,14 +232,27 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
               point: v.route!.legs.first.points.first,
               width: 36,
               height: 36,
-              child: _Dot(color: GSColors.brand, icon: Icons.my_location),
+              alignment: Alignment.center,
+              // Origen: punto con borde blanco (no el ícono de "ubicarme").
+              child: Center(
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    color: GSColors.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: GSColors.text, width: 5),
+                  ),
+                ),
+              ),
             ),
             fm.Marker(
               point: v.route!.legs.last.points.last,
-              width: 40,
-              height: 40,
-              // Destino en tinta: el rojo es solo para la vía.
-              child: _Dot(color: GSColors.text, icon: Icons.location_on),
+              width: 44,
+              height: 44,
+              alignment: Alignment.topCenter,
+              // Destino: alfiler en tinta (el rojo es solo para la vía).
+              child: Icon(Icons.location_on, color: GSColors.text, size: 44),
             ),
           ],
           // Posición del usuario (sin animación: nada en bucle).
@@ -271,25 +280,6 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
             ),
         ]),
       ],
-    );
-  }
-}
-
-class _Dot extends StatelessWidget {
-  const _Dot({required this.color, required this.icon});
-  final Color color;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        border: Border.all(color: GSColors.surface, width: 2),
-        boxShadow: GSShadow.md,
-      ),
-      child: Icon(icon, color: GSColors.onBrand, size: 18),
     );
   }
 }

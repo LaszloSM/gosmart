@@ -24,6 +24,19 @@ class RouteLeg {
   final int fareMin;
   final int fareMax;
 
+  /// Color del modo con la paleta ACTIVA (día o noche). Usar este y no
+  /// [color], que se fija al crear la ruta y de noche queda oscuro.
+  Color get liveColor => switch (transitMode ?? mode) {
+        'walk' => GSColors.walk,
+        'mototaxi' || 'taxi' => GSColors.taxi,
+        'bike' => GSColors.bike,
+        'car' => GSColors.car,
+        _ => GSColors.bus,
+      };
+
+  /// Ícono o texto encima de [liveColor].
+  Color get onLiveColor => GSColors.isDark ? GSColors.background : GSColors.onBrand;
+
   const RouteLeg({
     required this.mode,
     required this.points,

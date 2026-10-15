@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:gosmart/features/routes/widgets/mode_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -103,6 +104,8 @@ void main() {
         _tx(WalletTxType.bonus, 10000, const Duration(days: 12), 'Bono de bienvenida'),
       ]),
     ];
+    // Sombras reales en las capturas (flutter_test las apaga por defecto).
+    debugDisableShadows = false;
     var dark = false;
     Future<void> shot(Widget w, String n, {bool settle = true}) async {
       GSColors.apply(dark ? Brightness.dark : Brightness.light);
@@ -141,6 +144,15 @@ void main() {
 
     // Noche: esquema propio.
     dark = true;
+    // Los colores del árbol se leen al construirlo: aplicar la noche antes.
+    GSColors.apply(Brightness.dark);
+    await shot(Scaffold(extendBody: true, backgroundColor: GSColors.background, body: Stack(children: [
+      const Positioned.fill(child: ColoredBox(color: Color(0xFF1D222B))),
+      Positioned(left: 12, right: 12, top: 32, child: GSCorridorLine(status: status, onTap: () {}, floating: true)),
+      Positioned(left: 0, right: 0, bottom: 0, height: 470, child: DecoratedBox(
+        decoration: BoxDecoration(color: GSColors.surface, borderRadius: GSRadius.sheetRadius, boxShadow: GSShadow.sheet),
+        child: const HomeSheetContent())),
+    ]), bottomNavigationBar: const GSBottomNav(current: GSNavTab.home)), 'phone-dark-home-sheet');
     await shot(const HomeScreen(), 'phone-dark-home', settle: false);
     await t.pump(const Duration(milliseconds: 300));
     await _save(t, 'phone-dark-home');
@@ -160,5 +172,16 @@ void main() {
       await shot(const ProfileScreen(), 'phone-profile-text$tag');
       await shot(const LoginScreen(), 'phone-login-text$tag', settle: false);
     }
+
+    // Opciones de viaje con destino ya elegido (en tests no hay GPS, así que
+    // se muestran sueltas con un origen y destino de Riohacha).
+    phone(t);
+    await shot(Scaffold(body: SafeArea(child: ListView(children: const [
+      SizedBox(height: 12),
+      ModeOptions(from: LatLng(11.5444, -72.9072), to: LatLng(11.5320, -72.8990), selected: 'Mototaxi', onChanged: _noop),
+    ]))), 'phone-mode-options');
+    debugDisableShadows = true;
   });
 }
+
+void _noop(String _) {}

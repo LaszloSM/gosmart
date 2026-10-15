@@ -9,7 +9,8 @@ import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_pressable.dart';
 
 class ModeSelector extends StatelessWidget {
-  const ModeSelector({super.key, required this.selected, required this.onChanged});
+  const ModeSelector(
+      {super.key, required this.selected, required this.onChanged});
 
   final String selected;
   final ValueChanged<String> onChanged;
@@ -19,18 +20,21 @@ class ModeSelector extends StatelessWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (final m in travelModes) ...[
-            _ModeTile(
-              mode: m,
-              selected: m == selected,
-              onTap: () => onChanged(m),
-            ),
-            if (m != travelModes.last) const SizedBox(width: GSSpacing.s2),
+      // Mismo alto para todas: con texto grande ninguna queda más alta.
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final m in travelModes) ...[
+              _ModeTile(
+                mode: m,
+                selected: m == selected,
+                onTap: () => onChanged(m),
+              ),
+              if (m != travelModes.last) const SizedBox(width: GSSpacing.s2),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -68,21 +72,26 @@ class _ModeTile extends StatelessWidget {
           ),
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(modeIconFor(mode),
                 size: 30, color: selected ? GSColors.brand : GSColors.text),
             const SizedBox(height: 6),
-            Text(
-              mode,
-              maxLines: 2,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: GSFonts.sans,
-                fontSize: 14,
-                height: 1.2,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                color: selected ? GSColors.brand : GSColors.text,
+            // Una línea que se reduce si no cabe: nunca "Colectiv/o".
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                mode,
+                maxLines: 1,
+                softWrap: false,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: GSFonts.sans,
+                  fontSize: 14,
+                  height: 1.2,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  color: selected ? GSColors.brand : GSColors.text,
+                ),
               ),
             ),
           ],

@@ -27,11 +27,11 @@ class DestinationPlate extends StatelessWidget {
 
   // Getter, no campo: lee la paleta activa (día/noche) cada vez.
   static TextStyle get _letters => TextStyle(
-    fontFamily: GSFonts.sans,
-    fontSize: 18,
-    fontWeight: FontWeight.w600,
-    color: GSColors.text,
-  );
+        fontFamily: GSFonts.sans,
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: GSColors.text,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -59,9 +59,10 @@ class DestinationPlate extends StatelessWidget {
             style: _letters,
             decoration: InputDecoration(
               hintText: '¿A dónde vas?',
+              hintMaxLines: 2,
               hintStyle: _letters.copyWith(color: GSColors.textMuted),
-              prefixIcon: Icon(Icons.search_rounded,
-                  size: 24, color: GSColors.text),
+              prefixIcon:
+                  Icon(Icons.search_rounded, size: 24, color: GSColors.text),
               contentPadding: const EdgeInsets.symmetric(
                   horizontal: GSSpacing.s4, vertical: GSSpacing.s4),
               suffixIcon: controller.text.isEmpty

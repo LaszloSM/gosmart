@@ -84,28 +84,35 @@ class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen> {
           : _RouteBody(route: route, mode: mode),
       bottomNavigationBar: route == null
           ? null
-          : SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                    GSSpacing.s4, GSSpacing.s2, GSSpacing.s4, GSSpacing.s3),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    GSButton(
-                      label: 'Iniciar viaje',
-                      leadingIcon: Icons.play_arrow_rounded,
-                      isLoading: _starting,
-                      onPressed: _starting ? null : () => _startTrip(route),
-                    ),
-                    const SizedBox(height: GSSpacing.s2),
-                    GSButton(
-                      label: 'Ver en el mapa',
-                      leadingIcon: Icons.map_outlined,
-                      variant: GSButtonVariant.outline,
-                      onPressed: () => context.go(AppRoutes.home),
-                    ),
-                  ],
+          : DecoratedBox(
+              // Superficie propia: el contenido no se ve a medias detrás.
+              decoration: BoxDecoration(
+                color: GSColors.surface,
+                boxShadow: GSShadow.sheet,
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      GSSpacing.s4, GSSpacing.s2, GSSpacing.s4, GSSpacing.s3),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      GSButton(
+                        label: 'Iniciar viaje',
+                        leadingIcon: Icons.play_arrow_rounded,
+                        isLoading: _starting,
+                        onPressed: _starting ? null : () => _startTrip(route),
+                      ),
+                      const SizedBox(height: GSSpacing.s2),
+                      GSButton(
+                        label: 'Ver en el mapa',
+                        leadingIcon: Icons.map_outlined,
+                        variant: GSButtonVariant.outline,
+                        onPressed: () => context.go(AppRoutes.home),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -156,14 +163,14 @@ class _RouteBody extends StatelessWidget {
                         children: [
                           Text(
                             '${route.durationMin} min',
-                            style: text.displaySmall?.copyWith(
-                                fontFeatures: GSFonts.tabular),
+                            style: text.displaySmall
+                                ?.copyWith(fontFeatures: GSFonts.tabular),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '${route.distanceKm.toStringAsFixed(1)} km · en $mode',
-                            style: text.bodyMedium?.copyWith(
-                                fontFeatures: GSFonts.tabular),
+                            style: text.bodyMedium
+                                ?.copyWith(fontFeatures: GSFonts.tabular),
                           ),
                           if (route.destinationLabel != null)
                             Text(
@@ -229,8 +236,8 @@ class _RouteBody extends StatelessWidget {
                   const SizedBox(width: GSSpacing.s2),
                   Expanded(
                       child: Text(note,
-                          style: text.bodyMedium
-                              ?.copyWith(color: GSColors.text))),
+                          style:
+                              text.bodyMedium?.copyWith(color: GSColors.text))),
                 ],
               ),
             ),
@@ -339,7 +346,7 @@ class _LegBar extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: route.legs[i].mode == 'walk'
                       ? GSColors.surfaceSunken
-                      : route.legs[i].color,
+                      : route.legs[i].liveColor,
                   borderRadius: BorderRadius.circular(GSRadius.sm),
                 ),
                 child: Icon(
@@ -347,7 +354,7 @@ class _LegBar extends StatelessWidget {
                   size: 18,
                   color: route.legs[i].mode == 'walk'
                       ? GSColors.text
-                      : (GSColors.isDark ? GSColors.background : GSColors.onBrand),
+                      : route.legs[i].onLiveColor,
                 ),
               ),
             ),
@@ -387,15 +394,13 @@ class _LegStep extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: walk ? GSColors.surfaceSunken : leg.color,
+                    color: walk ? GSColors.surfaceSunken : leg.liveColor,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     _legIcon(leg, routeMode),
                     size: 22,
-                    color: walk
-                        ? GSColors.text
-                        : (GSColors.isDark ? GSColors.background : GSColors.onBrand),
+                    color: walk ? GSColors.text : leg.onLiveColor,
                   ),
                 ),
                 if (!isLast)
@@ -419,7 +424,7 @@ class _LegStep extends StatelessWidget {
                             width: 4,
                             margin: const EdgeInsets.symmetric(vertical: 4),
                             decoration: BoxDecoration(
-                              color: leg.color,
+                              color: leg.liveColor,
                               borderRadius:
                                   BorderRadius.circular(GSRadius.full),
                             ),
