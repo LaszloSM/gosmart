@@ -151,7 +151,7 @@ class _SearchPill extends StatelessWidget {
                 '¿A dónde vas?',
                 style: TextStyle(
                   fontFamily: GSFonts.sans,
-                  fontSize: 19,
+                  fontSize: 17,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.2,
                   color: GSColors.text,

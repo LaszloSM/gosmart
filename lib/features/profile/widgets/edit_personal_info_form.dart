@@ -202,7 +202,7 @@ class _TapField extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: GSFonts.sans,
                   fontFeatures: GSFonts.tabular,
-                  fontSize: 17,
+                  fontSize: 16,
                   fontWeight: FontWeight.w500,
                   color: value != null ? GSColors.text : GSColors.textMuted,
                 ),
@@ -252,7 +252,7 @@ class _ReadOnlyField extends StatelessWidget {
             style: TextStyle(
               fontFamily: GSFonts.sans,
               fontFeatures: GSFonts.tabular,
-              fontSize: 17,
+              fontSize: 16,
               fontWeight: FontWeight.w500,
               color: GSColors.text,
             ),

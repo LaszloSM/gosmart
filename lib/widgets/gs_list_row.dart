@@ -40,7 +40,7 @@ class GSListRow extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: GSFonts.mono,
                   fontFeatures: GSFonts.tabular,
-                  fontSize: 17,
+                  fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: GSColors.text,
                 ),

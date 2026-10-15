@@ -265,7 +265,7 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 17,
+                    fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: GSColors.textPrimary,
                   ),

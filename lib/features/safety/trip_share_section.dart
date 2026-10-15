@@ -89,39 +89,42 @@ class _TripShareSectionState extends ConsumerState<TripShareSection> {
     final active = share != null && share.isActive;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const GSSectionTitle('Seguridad'),
-        if (active)
+        GSGroup(children: [
+          if (active)
+            GSListRow(
+              icon: Icons.share_location_rounded,
+              iconColor: GSColors.brand,
+              title: 'Compartiendo tu viaje',
+              subtitle: 'Hasta las ${clock12(share.expiresAt)}. '
+                  'Se actualiza cada minuto con la app abierta.',
+              trailing:
+                  TextButton(onPressed: _stop, child: const Text('Detener')),
+            )
+          else
+            GSListRow(
+              icon: Icons.share_location_rounded,
+              title: 'Compartir mi viaje',
+              subtitle: Env.shareBaseUrl.isEmpty
+                  ? 'Manda a dónde vas y desde dónde sales por WhatsApp'
+                  : 'Un link por WhatsApp que vence en 4 horas',
+              trailing: _busy
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2.5))
+                  : null,
+              onTap: _busy ? null : _share,
+            ),
           GSListRow(
-            icon: Icons.share_location_rounded,
-            iconColor: GSColors.brand,
-            title: 'Compartiendo tu viaje',
-            subtitle: 'Hasta las ${clock12(share.expiresAt)}. '
-                'Se actualiza cada minuto con la app abierta.',
-            trailing: TextButton(onPressed: _stop, child: const Text('Detener')),
-          )
-        else
-          GSListRow(
-            icon: Icons.share_location_rounded,
-            title: 'Compartir mi viaje',
-            subtitle: Env.shareBaseUrl.isEmpty
-                ? 'Manda a dónde vas y desde dónde sales por WhatsApp'
-                : 'Un link por WhatsApp que vence en 4 horas',
-            trailing: _busy
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2.5))
-                : null,
-            onTap: _busy ? null : _share,
+            icon: Icons.health_and_safety_outlined,
+            title: 'Ayuda',
+            subtitle: 'Llamar al 123 o avisar a tus contactos',
+            onTap: () => showSosSheet(context),
           ),
-        const Divider(indent: GSSpacing.s4),
-        GSListRow(
-          icon: Icons.health_and_safety_outlined,
-          title: 'Ayuda',
-          subtitle: 'Llamar al 123 o avisar a tus contactos',
-          onTap: () => showSosSheet(context),
-        ),
+        ]),
       ],
     );
   }

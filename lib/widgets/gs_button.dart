@@ -165,9 +165,9 @@ class _GSButtonState extends State<GSButton> {
       case GSButtonSize.sm:
         return const _SizeDims(height: 48, hPad: 18, fontSize: 15, iconSize: 18);
       case GSButtonSize.md:
-        return const _SizeDims(height: 52, hPad: 22, fontSize: 17, iconSize: 20);
+        return const _SizeDims(height: 52, hPad: 22, fontSize: 16, iconSize: 20);
       case GSButtonSize.lg:
-        return const _SizeDims(height: 56, hPad: 24, fontSize: 18, iconSize: 22);
+        return const _SizeDims(height: 56, hPad: 24, fontSize: 17, iconSize: 22);
       case GSButtonSize.driver:
         return const _SizeDims(
             height: GSSize.touchTargetDriver, hPad: 24, fontSize: 20, iconSize: 26);

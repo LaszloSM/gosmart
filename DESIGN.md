@@ -58,51 +58,51 @@ colors:
 typography:
   display:
     fontFamily: "Figtree"
-    fontSize: "34px"
+    fontSize: "30px"
     fontWeight: 800
     lineHeight: 1.1
     letterSpacing: "-0.6px"
   headline:
     fontFamily: "Figtree"
-    fontSize: "24px"
+    fontSize: "22px"
     fontWeight: 800
     lineHeight: 1.2
     letterSpacing: "-0.3px"
   headline-small:
     fontFamily: "Figtree"
-    fontSize: "22px"
+    fontSize: "20px"
     fontWeight: 700
     lineHeight: 1.2
     letterSpacing: "-0.2px"
   title:
     fontFamily: "Figtree"
-    fontSize: "20px"
+    fontSize: "18px"
     fontWeight: 700
     lineHeight: 1.25
     letterSpacing: "-0.1px"
   title-medium:
     fontFamily: "Figtree"
-    fontSize: "17px"
+    fontSize: "16px"
     fontWeight: 600
     lineHeight: 1.3
   body:
     fontFamily: "Figtree"
-    fontSize: "17px"
+    fontSize: "16px"
     fontWeight: 400
     lineHeight: 1.45
   body-medium:
     fontFamily: "Figtree"
-    fontSize: "16px"
+    fontSize: "14px"
     fontWeight: 400
     lineHeight: 1.45
   body-small:
     fontFamily: "Figtree"
-    fontSize: "14px"
+    fontSize: "13px"
     fontWeight: 400
     lineHeight: 1.4
   label:
     fontFamily: "Figtree"
-    fontSize: "16px"
+    fontSize: "15px"
     fontWeight: 600
   label-small:
     fontFamily: "Figtree"
@@ -111,11 +111,11 @@ typography:
     letterSpacing: "0.1px"
   button:
     fontFamily: "Figtree"
-    fontSize: "17px"
+    fontSize: "16px"
     fontWeight: 700
   amount:
     fontFamily: "Figtree"
-    fontSize: "38px"
+    fontSize: "32px"
     fontWeight: 800
     fontFeature: "tnum"
 rounded:
@@ -302,15 +302,17 @@ Neutros fríos y claros con un único azul; el color fuerte se reserva para lo q
 **Character:** Una sola familia geométrica y amable. Títulos en caja normal y peso 700–800 con interletrado levemente negativo; cuerpo en 400.
 
 ### Hierarchy
-- **Display** (800, 30–40 px, 1.1): casi no se usa; saldo y pantallas de bienvenida.
-- **Headline** (800, 24–28 px, 1.15–1.2): títulos de pantalla; la barra superior usa 22 px en 800.
-- **Title** (700, 20 px, 1.25): títulos de sección (`GSSectionTitle`).
-- **Title medium** (600, 17 px, 1.3): título de fila y de tarjeta.
-- **Body** (400, 17 / 16 / 14 px, 1.45–1.4): texto corrido; 16 y 14 en tinta suave.
-- **Label** (600, 16 / 14 / 12 px): etiquetas, chips y barra inferior (12.5 px; 700 activa).
-- **Amount** (800, 38 px, tabular): saldo de la billetera. Precios, km y horas usan cifras tabulares a cualquier tamaño.
+- **Display** (800, 26–34 px, 1.1): casi no se usa; duración de la ruta y pantallas de bienvenida.
+- **Headline** (800, 20–24 px, 1.15–1.2): títulos de pantalla; la barra superior usa 20 px en 800.
+- **Title** (700, 18 px, 1.25): títulos de sección (`GSSectionTitle`).
+- **Title medium** (600, 16 px, 1.3): título de fila y de tarjeta.
+- **Body** (400, 16 / 14 / 13 px, 1.45–1.4): texto corrido; 14 y 13 en tinta suave.
+- **Label** (600, 15 / 13 / 12 px): etiquetas, chips y barra inferior (12.5 px; 700 activa). Botones 16 px en 700.
+- **Amount** (800, 32 px, tabular): saldo de la billetera. Precios, km y horas usan cifras tabulares a cualquier tamaño.
 
 ### Named Rules
+**La Regla del Tamaño Justo** (2026-10-15). La escala sigue la de Material 3 y las apps de referencia (Uber, Google Maps, Nequi): cuerpo de 16, filas de 16/14, nada por encima de 34. Lo grande lo pone el usuario con el tamaño de texto del sistema, no la app.
+
 **La Regla de los Doscientos.** El texto del sistema puede crecer hasta 200 % sin cortes a mitad de palabra: botones con alto mínimo (no fijo) que pasan a dos líneas, etiquetas de modo y de pestaña que se reducen para caber enteras (nunca "Colectiv/o" ni "Bille…").
 
 **La Regla de la Cifra.** Todo número que el usuario compara (precio, saldo, minutos, km) va en cifras tabulares y se formatea con `formatCop()`.

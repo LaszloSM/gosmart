@@ -43,7 +43,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             'GoSmart',
             style: TextStyle(
               fontFamily: GSFonts.display,
-              fontSize: 48,
+              fontSize: 40,
               fontWeight: FontWeight.w800,
               letterSpacing: -1.2,
               color: GSColors.isDark ? GSColors.brand : GSColors.onBrand,

@@ -69,7 +69,7 @@ class _ChargeScreenState extends State<ChargeScreen> {
     final big = TextStyle(
       fontFamily: GSFonts.display,
       fontFeatures: GSFonts.tabular,
-      fontSize: 40,
+      fontSize: 34,
       fontWeight: FontWeight.w800,
       color: GSColors.text,
     );

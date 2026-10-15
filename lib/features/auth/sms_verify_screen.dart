@@ -89,7 +89,7 @@ class _SmsVerifyScreenState extends State<SmsVerifyScreen> {
               style: TextStyle(
                 fontFamily: GSFonts.mono,
                 fontFeatures: GSFonts.tabular,
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: GSColors.text,
               ),
@@ -107,7 +107,7 @@ class _SmsVerifyScreenState extends State<SmsVerifyScreen> {
               style: TextStyle(
                 fontFamily: GSFonts.display,
                 fontFeatures: GSFonts.tabular,
-                fontSize: 40,
+                fontSize: 32,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 12,
                 color: GSColors.brand,

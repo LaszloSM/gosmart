@@ -50,7 +50,7 @@ class IntroScreen extends StatelessWidget {
                         'GoSmart',
                         style: TextStyle(
                           fontFamily: GSFonts.display,
-                          fontSize: 40,
+                          fontSize: 30,
                           fontWeight: FontWeight.w800,
                           height: 1,
                           color: GSColors.onShell,
@@ -61,7 +61,7 @@ class IntroScreen extends StatelessWidget {
                         'Antes de salir, ya sabes cómo está la vía.',
                         style: TextStyle(
                           fontFamily: GSFonts.sans,
-                          fontSize: 19,
+                          fontSize: 16,
                           fontWeight: FontWeight.w500,
                           color: GSColors.onShell,
                         ),

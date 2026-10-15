@@ -893,7 +893,7 @@
       "refersTo": "button-primary",
       "description": "Acción principal: píldora azul, presión 0.97.",
       "html": "<button class=\"ds-btn-primary\">Ver ruta</button>",
-      "css": ".ds-btn-primary{font-family: Figtree, system-ui, sans-serif;background:#0B4FC4;color:#FFFFFF;font-size:17px;font-weight:700;min-height:52px;padding:4px 22px;border:none;border-radius:9999px;cursor:pointer;transition:transform 120ms cubic-bezier(0.23,1,0.32,1);}.ds-btn-primary:hover{background:#093F9D;}.ds-btn-primary:active{transform:scale(0.97);}.ds-btn-primary:focus-visible{outline:2px solid #0B4FC4;outline-offset:3px;}"
+      "css": ".ds-btn-primary{font-family: Figtree, system-ui, sans-serif;background:#0B4FC4;color:#FFFFFF;font-size:16px;font-weight:700;min-height:52px;padding:4px 22px;border:none;border-radius:9999px;cursor:pointer;transition:transform 120ms cubic-bezier(0.23,1,0.32,1);}.ds-btn-primary:hover{background:#093F9D;}.ds-btn-primary:active{transform:scale(0.97);}.ds-btn-primary:focus-visible{outline:2px solid #0B4FC4;outline-offset:3px;}"
     },
     {
       "name": "Botón secundario",
@@ -901,7 +901,7 @@
       "refersTo": "button-secondary",
       "description": "Acción secundaria en azul claro.",
       "html": "<button class=\"ds-btn-secondary\">Recargar</button>",
-      "css": ".ds-btn-secondary{font-family: Figtree, system-ui, sans-serif;background:#E8F0FE;color:#0B4FC4;font-size:17px;font-weight:700;min-height:52px;padding:4px 22px;border:none;border-radius:9999px;cursor:pointer;transition:transform 120ms cubic-bezier(0.23,1,0.32,1);}.ds-btn-secondary:active{transform:scale(0.97);}.ds-btn-secondary:focus-visible{outline:2px solid #0B4FC4;outline-offset:3px;}"
+      "css": ".ds-btn-secondary{font-family: Figtree, system-ui, sans-serif;background:#E8F0FE;color:#0B4FC4;font-size:16px;font-weight:700;min-height:52px;padding:4px 22px;border:none;border-radius:9999px;cursor:pointer;transition:transform 120ms cubic-bezier(0.23,1,0.32,1);}.ds-btn-secondary:active{transform:scale(0.97);}.ds-btn-secondary:focus-visible{outline:2px solid #0B4FC4;outline-offset:3px;}"
     },
     {
       "name": "Botón con borde",
@@ -909,7 +909,7 @@
       "refersTo": "button-outline",
       "description": "Alternativa neutra: blanco con borde de línea.",
       "html": "<button class=\"ds-btn-outline\">Cancelar</button>",
-      "css": ".ds-btn-outline{font-family: Figtree, system-ui, sans-serif;background:#FFFFFF;color:#14161B;font-size:17px;font-weight:700;min-height:52px;padding:4px 22px;border:1.5px solid #DDE1E8;border-radius:9999px;cursor:pointer;transition:transform 120ms cubic-bezier(0.23,1,0.32,1);}.ds-btn-outline:active{transform:scale(0.97);}.ds-btn-outline:focus-visible{outline:2px solid #0B4FC4;outline-offset:3px;}"
+      "css": ".ds-btn-outline{font-family: Figtree, system-ui, sans-serif;background:#FFFFFF;color:#14161B;font-size:16px;font-weight:700;min-height:52px;padding:4px 22px;border:1.5px solid #DDE1E8;border-radius:9999px;cursor:pointer;transition:transform 120ms cubic-bezier(0.23,1,0.32,1);}.ds-btn-outline:active{transform:scale(0.97);}.ds-btn-outline:focus-visible{outline:2px solid #0B4FC4;outline-offset:3px;}"
     },
     {
       "name": "Buscador en píldora",
@@ -917,7 +917,7 @@
       "refersTo": "search-pill",
       "description": "\"¿A dónde vas?\" en la hoja del inicio.",
       "html": "<div class=\"ds-search\"><svg width=\"26\" height=\"26\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#14161B\" stroke-width=\"2.2\" stroke-linecap=\"round\"><circle cx=\"10.5\" cy=\"10.5\" r=\"6.5\"/><path d=\"M15.5 15.5L20 20\"/></svg><span>¿A dónde vas?</span><span class=\"ds-search-now\">Ahora</span></div>",
-      "css": ".ds-search{font-family: Figtree, system-ui, sans-serif;display:flex;align-items:center;gap:12px;background:#EBEEF3;color:#14161B;border-radius:9999px;padding:12px 12px 12px 18px;font-size:19px;font-weight:700;cursor:pointer;}.ds-search span:first-of-type{flex:1;}.ds-search-now{background:#FFFFFF;border-radius:9999px;padding:8px 14px;font-size:14px;font-weight:700;}.ds-search:focus-visible{outline:2px solid #0B4FC4;}"
+      "css": ".ds-search{font-family: Figtree, system-ui, sans-serif;display:flex;align-items:center;gap:12px;background:#EBEEF3;color:#14161B;border-radius:9999px;padding:12px 12px 12px 18px;font-size:17px;font-weight:700;cursor:pointer;}.ds-search span:first-of-type{flex:1;}.ds-search-now{background:#FFFFFF;border-radius:9999px;padding:8px 14px;font-size:14px;font-weight:700;}.ds-search:focus-visible{outline:2px solid #0B4FC4;}"
     },
     {
       "name": "Campo de texto",
@@ -925,7 +925,7 @@
       "refersTo": "input-field",
       "description": "Relleno gris, borde azul al enfocar.",
       "html": "<input class=\"ds-input\" placeholder=\"Correo\">",
-      "css": ".ds-input{font-family: Figtree, system-ui, sans-serif;background:#EBEEF3;color:#14161B;border:2px solid transparent;border-radius:12px;padding:14px 16px;font-size:17px;}.ds-input::placeholder{color:#4A5162;}.ds-input:focus-visible{outline:none;border-color:#0B4FC4;}"
+      "css": ".ds-input{font-family: Figtree, system-ui, sans-serif;background:#EBEEF3;color:#14161B;border:2px solid transparent;border-radius:12px;padding:14px 16px;font-size:16px;}.ds-input::placeholder{color:#4A5162;}.ds-input:focus-visible{outline:none;border-color:#0B4FC4;}"
     },
     {
       "name": "Píldoras de elección",
@@ -933,7 +933,7 @@
       "refersTo": "choice-pill",
       "description": "Elegir una opción entre pocas (GSChoicePlates).",
       "html": "<div class=\"ds-chips\"><button class=\"ds-chip ds-chip-on\">Mototaxi</button><button class=\"ds-chip\">Taxi</button><button class=\"ds-chip\">Colectivo</button></div>",
-      "css": ".ds-chips{display:flex;gap:8px;flex-wrap:wrap;}.ds-chip{font-family: Figtree, system-ui, sans-serif;min-height:48px;padding:0 16px;border-radius:9999px;background:#FFFFFF;color:#14161B;border:1px solid #DDE1E8;font-size:16px;font-weight:600;cursor:pointer;}.ds-chip-on{background:#E8F0FE;color:#0B4FC4;border:2px solid #0B4FC4;font-weight:700;}.ds-chip:focus-visible{outline:2px solid #0B4FC4;outline-offset:2px;}"
+      "css": ".ds-chips{display:flex;gap:8px;flex-wrap:wrap;}.ds-chip{font-family: Figtree, system-ui, sans-serif;min-height:48px;padding:0 16px;border-radius:9999px;background:#FFFFFF;color:#14161B;border:1px solid #DDE1E8;font-size:15px;font-weight:600;cursor:pointer;}.ds-chip-on{background:#E8F0FE;color:#0B4FC4;border:2px solid #0B4FC4;font-weight:700;}.ds-chip:focus-visible{outline:2px solid #0B4FC4;outline-offset:2px;}"
     },
     {
       "name": "Opción de viaje",
@@ -941,7 +941,7 @@
       "refersTo": "option-card-selected",
       "description": "Fila de modo con tiempo y precio; la elegida con borde azul.",
       "html": "<div class=\"ds-opt ds-opt-on\"><span class=\"ds-opt-ic\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"2\"><circle cx=\"6\" cy=\"16\" r=\"3\"/><circle cx=\"18\" cy=\"16\" r=\"3\"/><path d=\"M9 16h6l-3-6h4\"/></svg></span><div class=\"ds-opt-t\"><b>Mototaxi</b><small>12 min</small></div><b class=\"ds-opt-p\">$3.000 - 5.000</b></div>",
-      "css": ".ds-opt{font-family: Figtree, system-ui, sans-serif;display:flex;align-items:center;gap:12px;background:#FFFFFF;border:1px solid #DDE1E8;border-radius:16px;padding:12px 16px;color:#14161B;}.ds-opt-on{border:2px solid #0B4FC4;background:#F1F6FE;}.ds-opt-ic{width:44px;height:44px;border-radius:50%;background:#0B4FC4;display:grid;place-items:center;}.ds-opt-t{flex:1;display:flex;flex-direction:column;font-size:17px;}.ds-opt-t small{font-size:15px;color:#4A5162;}.ds-opt-p{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;}"
+      "css": ".ds-opt{font-family: Figtree, system-ui, sans-serif;display:flex;align-items:center;gap:12px;background:#FFFFFF;border:1px solid #DDE1E8;border-radius:16px;padding:12px 16px;color:#14161B;}.ds-opt-on{border:2px solid #0B4FC4;background:#F1F6FE;}.ds-opt-ic{width:44px;height:44px;border-radius:50%;background:#0B4FC4;display:grid;place-items:center;}.ds-opt-t{flex:1;display:flex;flex-direction:column;font-size:16px;}.ds-opt-t small{font-size:14px;color:#4A5162;}.ds-opt-p{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;}"
     },
     {
       "name": "Tarjeta de saldo",
@@ -949,7 +949,7 @@
       "refersTo": "balance-card",
       "description": "Billetera tipo Nequi con saldo grande tabular.",
       "html": "<div class=\"ds-bal\"><small>Saldo disponible</small><div class=\"ds-bal-n\">$37.500 <span>COP</span></div><span class=\"ds-bal-tag\">Saldo de prueba</span></div>",
-      "css": ".ds-bal{font-family: Figtree, system-ui, sans-serif;background:#0B4FC4;color:#FFFFFF;border-radius:24px;padding:16px 20px 20px;}.ds-bal small{color:#D6E2FA;font-size:15px;font-weight:600;}.ds-bal-n{font-size:38px;font-weight:800;font-variant-numeric:tabular-nums;}.ds-bal-n span{font-size:16px;font-weight:700;color:#D6E2FA;}.ds-bal-tag{display:inline-block;margin-top:8px;padding:6px 12px;border-radius:9999px;background:rgba(255,255,255,0.16);font-size:13px;font-weight:600;}"
+      "css": ".ds-bal{font-family: Figtree, system-ui, sans-serif;background:#0B4FC4;color:#FFFFFF;border-radius:24px;padding:16px 20px 20px;}.ds-bal small{color:#D6E2FA;font-size:15px;font-weight:600;}.ds-bal-n{font-size:32px;font-weight:800;font-variant-numeric:tabular-nums;}.ds-bal-n span{font-size:15px;font-weight:700;color:#D6E2FA;}.ds-bal-tag{display:inline-block;margin-top:8px;padding:6px 12px;border-radius:9999px;background:rgba(255,255,255,0.16);font-size:13px;font-weight:600;}"
     },
     {
       "name": "Barra inferior",

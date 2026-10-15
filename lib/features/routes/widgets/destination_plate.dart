@@ -28,7 +28,7 @@ class DestinationPlate extends StatelessWidget {
   // Getter, no campo: lee la paleta activa (día/noche) cada vez.
   static TextStyle get _letters => TextStyle(
         fontFamily: GSFonts.sans,
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: FontWeight.w600,
         color: GSColors.text,
       );

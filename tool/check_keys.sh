@@ -31,14 +31,25 @@ google GOOGLE_MAPS_SERVER_KEY "${GOOGLE_MAPS_SERVER_KEY:-}"
 say "(El mapa del celular usa Maps SDK for Android con GOOGLE_MAPS_API_KEY; eso no se puede probar desde aquí.)"
 
 if [ -n "${SUPABASE_URL:-}" ] && [ -n "${SUPABASE_ANON_KEY:-}" ]; then
+  [[ "$SUPABASE_URL" =~ ^https://[a-z0-9]+\.supabase\.co/?$ ]] ||
+    say "- SUPABASE_URL no tiene la forma https://<ref>.supabase.co (revisa espacios o rutas de más)"
+  base=${SUPABASE_URL%/}
   fn() {
-    curl -s -X POST "$SUPABASE_URL/functions/v1/maps" \
+    local body code
+    body=$(curl -s -w '\n%{http_code}' -X POST "$base/functions/v1/maps" \
       -H "Authorization: Bearer $SUPABASE_ANON_KEY" -H "apikey: $SUPABASE_ANON_KEY" \
-      -H 'Content-Type: application/json' -d "$1" |
-      jq -r 'if .error then "error \(.error)" elif .items then "ok (\(.items|length) sugerencias)" elif .route then "ok (ruta)" else (tostring|.[0:120]) end' 2>/dev/null || echo "sin respuesta JSON"
+      -H 'Content-Type: application/json' -d "$1")
+    code=${body##*$'\n'}; body=${body%$'\n'*}
+    printf 'HTTP %s · ' "$code"
+    echo "$body" | jq -r 'if .error then "error \(.error)" elif .items then "ok (\(.items|length) sugerencias)" elif .route then "ok (ruta)" else (tostring|.[0:160]) end' 2>/dev/null ||
+      echo "$body" | head -c 160
   }
   say "- Edge Function maps → buscar: $(fn '{"action":"autocomplete","input":"Riohacha"}')"
   say "- Edge Function maps → ruta: $(fn '{"action":"route","from":{"lat":11.5444,"lng":-72.9072},"to":{"lat":11.378,"lng":-72.239},"mode":"drive"}')"
+  # La app también lee la base: road_status() es pública.
+  code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$base/rest/v1/rpc/road_status" \
+    -H "apikey: $SUPABASE_ANON_KEY" -H "Authorization: Bearer $SUPABASE_ANON_KEY" -H 'Content-Type: application/json' -d '{}')
+  say "- Base de datos (road_status): HTTP $code"
 else
   say "- Edge Function maps: sin SUPABASE_URL / SUPABASE_ANON_KEY, no se probó"
 fi

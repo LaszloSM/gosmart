@@ -54,7 +54,7 @@ class GSToast {
                   message,
                   style: TextStyle(
                     fontFamily: GSFonts.sans,
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w500,
                     color: GSColors.onBrand,
                   ),

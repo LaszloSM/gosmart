@@ -89,7 +89,7 @@ class GSChoicePlate extends StatelessWidget {
                     label,
                     style: TextStyle(
                       fontFamily: GSFonts.sans,
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                       color: fg,
                     ),

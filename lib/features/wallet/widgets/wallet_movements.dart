@@ -139,7 +139,7 @@ class MovementRow extends StatelessWidget {
               tx.formattedAmount,
               style: TextStyle(
                 fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
-                fontSize: 17,
+                fontSize: 16,
                 fontWeight: FontWeight.w700,
                 // Entradas en azul, salidas en tinta; el signo lo dice.
                 color: tx.amount > 0 ? GSColors.brand : GSColors.text,

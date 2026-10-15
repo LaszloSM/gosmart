@@ -214,7 +214,7 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
                     message.content,
                     style: TextStyle(
                       fontFamily: GSFonts.sans,
-                      fontSize: 17,
+                      fontSize: 16,
                       height: 1.45,
                       color: isUser ? GSColors.onBrand : GSColors.text,
                     ),
@@ -410,7 +410,7 @@ class _ChatInput extends StatelessWidget {
               minLines: 1,
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
-              style: const TextStyle(fontFamily: GSFonts.sans, fontSize: 17),
+              style: const TextStyle(fontFamily: GSFonts.sans, fontSize: 16),
               decoration: const InputDecoration(
                 hintText: 'Escribe tu pregunta',
               ),

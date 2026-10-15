@@ -61,7 +61,7 @@ class GSTextField extends StatelessWidget {
       textCapitalization: textCapitalization,
       style: TextStyle(
         fontFamily: GSFonts.sans,
-        fontSize: 17,
+        fontSize: 16,
         color: GSColors.text,
         fontWeight: FontWeight.w500,
       ),

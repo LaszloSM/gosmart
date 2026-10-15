@@ -91,7 +91,7 @@ class _BalanceHeaderState extends ConsumerState<BalanceHeader> {
                       TextSpan(
                         text: _hidden ? r'$ • • • • •' : formatCop(wallet.balance),
                         style: TextStyle(
-                          fontSize: 38,
+                          fontSize: 32,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.8,
                           color: on,
@@ -100,7 +100,7 @@ class _BalanceHeaderState extends ConsumerState<BalanceHeader> {
                       TextSpan(
                         text: '  COP',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 15,
                           fontWeight: FontWeight.w700,
                           color: onMuted,
                         ),

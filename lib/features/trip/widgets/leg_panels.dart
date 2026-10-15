@@ -491,7 +491,7 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
                   style: TextStyle(
                     fontFamily: GSFonts.display,
                     fontFeatures: GSFonts.tabular,
-                    fontSize: 32,
+                    fontSize: 28,
                     fontWeight: FontWeight.w800,
                     color: GSColors.text,
                   ),
