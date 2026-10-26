@@ -22,14 +22,14 @@ Deno.test('polilínea: el ejemplo de la documentación de Google', () => {
   assertEquals(decodePolyline(''), [])
 })
 
-Deno.test('autocompletar: solo Colombia, en español, sesgo al corredor sin GPS', () => {
+Deno.test('autocompletar: solo La Guajira, en español, ordenado desde la persona', () => {
   const b = autocompleteBody('muelle', null, 'tok-1')
   assertEquals(b.includedRegionCodes, ['co'])
   assertEquals(b.languageCode, 'es')
   assertEquals(b.sessionToken, 'tok-1')
-  assertEquals(b.locationBias.circle.radius, 50000)
+  assertEquals(b.locationRestriction.rectangle.low, { latitude: 10.3, longitude: -73.7 })
   const near = autocompleteBody('muelle', { lat: 11.54, lng: -72.9 })
-  assertEquals(near.locationBias.circle.center, { latitude: 11.54, longitude: -72.9 })
+  assertEquals(near.origin, { latitude: 11.54, longitude: -72.9 })
   assert(!('sessionToken' in near))
 })
 

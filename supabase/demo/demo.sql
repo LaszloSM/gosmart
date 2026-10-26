@@ -175,7 +175,8 @@ BEGIN
   -- Billetera: saldo y movimientos de los últimos días (simulados).
   SELECT id INTO v_wal FROM wallets WHERE user_id = v_pas;
   IF v_wal IS NOT NULL THEN
-    DELETE FROM wallet_transactions WHERE wallet_id = v_wal AND (metadata->>'demo') = 'true';
+    -- Todo lo de la pasajera vuelve al punto de partida (también lo de las pruebas).
+    DELETE FROM wallet_transactions WHERE wallet_id = v_wal;
     INSERT INTO wallet_transactions (wallet_id, type, amount, description, metadata, created_at) VALUES
       (v_wal, 'recharge', 50000, 'Recarga de saldo (simulada)', '{"demo":true}', now() - interval '6 days'),
       (v_wal, 'trip', -5000, 'Viaje en mototaxi · Centro → Uniguajira', '{"demo":true}', now() - interval '5 days'),
@@ -190,6 +191,11 @@ BEGIN
     WHERE id = v_wal;
   END IF;
 
+  -- Los viajes de las pruebas automáticas no quedan en el historial.
+  DELETE FROM leg_payments WHERE passenger_id = v_pas
+    AND idempotency_key <> 'dddddddd-0000-0000-0000-000000000002';
+  DELETE FROM ride_requests WHERE passenger_id = v_pas
+    AND idempotency_key <> 'dddddddd-0000-0000-0000-000000000001';
   -- Un viaje de mototaxi ya terminado y calificado (aparece en el historial).
   IF NOT EXISTS (SELECT 1 FROM ride_requests WHERE passenger_id = v_pas
                  AND idempotency_key = 'dddddddd-0000-0000-0000-000000000001') THEN

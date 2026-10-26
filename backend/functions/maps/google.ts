@@ -43,20 +43,25 @@ export function detailsUrl(placeId: string, session?: string): string {
   return `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}?${q}`
 }
 
+/// La Guajira y alrededores: las sugerencias no salen de aquí (sin esto, Google
+/// trae universidades de Santa Marta o Barranquilla).
+export const GUAJIRA_BOUNDS = {
+  low: { latitude: 10.3, longitude: -73.7 },
+  high: { latitude: 12.6, longitude: -71.0 },
+}
+
 export function autocompleteBody(input: string, near?: LatLng | null, session?: string) {
+  // El sesgo va en el orden (cerca de la persona primero); la restricción
+  // deja fuera lo que no es de La Guajira. Google no acepta las dos a la vez,
+  // así que el "cerca" se pasa como origen para ordenar por distancia.
   const c = near ?? GUAJIRA_CENTER
   return {
     input,
     languageCode: 'es',
     regionCode: 'co',
     includedRegionCodes: ['co'],
-    // Con GPS, cerca de la persona; sin GPS, todo el corredor (máx. 50 km).
-    locationBias: {
-      circle: {
-        center: { latitude: c.lat, longitude: c.lng },
-        radius: near ? 30000 : 50000,
-      },
-    },
+    locationRestriction: { rectangle: GUAJIRA_BOUNDS },
+    origin: { latitude: c.lat, longitude: c.lng },
     ...(session ? { sessionToken: session } : {}),
   }
 }
