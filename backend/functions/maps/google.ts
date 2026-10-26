@@ -180,12 +180,13 @@ export function nearbyBody(p: LatLng) {
   }
 }
 
-/// "Parque Almirante Padilla" (o su dirección corta si no tiene nombre).
+/// La dirección corta del lugar más cercano ("Cl. 2 #7-08, Riohacha"); si no
+/// trae dirección, "Cerca de <nombre>".
 // deno-lint-ignore no-explicit-any
 export function parseNearby(json: any): string | null {
   const pl = json?.places?.[0]
-  const name = pl?.displayName?.text
-  if (typeof name === 'string' && name) return `Cerca de ${name}`
   const a = pl?.shortFormattedAddress
-  return typeof a === 'string' && a ? shortAddress(a) : null
+  if (typeof a === 'string' && a) return shortAddress(a)
+  const name = pl?.displayName?.text
+  return typeof name === 'string' && name ? `Cerca de ${name}` : null
 }

@@ -103,5 +103,7 @@ Deno.test('dirección de un punto: calle corta o lugar cercano', () => {
   assertEquals(parseGeocode({ status: 'REQUEST_DENIED', results: [] }), null)
   assertEquals(parseNearby({ places: [{ displayName: { text: 'Parque Almirante Padilla' } }] }),
     'Cerca de Parque Almirante Padilla')
+  assertEquals(parseNearby({ places: [{ displayName: { text: 'Tienda' }, shortFormattedAddress: 'Cl. 2 #7-08, Riohacha' }] }),
+    'Cl. 2 #7-08, Riohacha')
   assertEquals(parseNearby({}), null)
 })
