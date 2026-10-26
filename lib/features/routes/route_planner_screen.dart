@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../models/corridor_status.dart';
+import '../../planner/fares.dart';
 import '../../planner/graph.dart';
 import '../../planner/planner.dart';
 import '../../planner/to_route.dart';
@@ -189,8 +190,19 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
           type: GSToastType.error);
       return;
     }
+    // Mototaxi y taxi: precio único por la distancia real de la vía.
+    var priced = result;
+    final transit = TransitMode.fromName(mode.toLowerCase());
+    if (transit == TransitMode.mototaxi || transit == TransitMode.taxi) {
+      final rules = ref.read(transportGraphProvider).valueOrNull?.fareRules ??
+          defaultFareRules;
+      final fare = estimateFare(transit!, result.distanceKm,
+          at: DateTime.now(), rules: rules);
+      priced = result.withFare(
+          fare.price, transit == TransitMode.taxi ? 'oficial' : 'sugerida');
+    }
     ref.read(activeRouteProvider.notifier).state =
-        result.withDestination(_destLabel);
+        priced.withDestination(_destLabel);
     _awardEcoPoints(result, messenger);
     context.pop();
   }

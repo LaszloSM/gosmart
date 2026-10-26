@@ -21,10 +21,11 @@ import '../../../widgets/gs_button.dart';
 import '../../../widgets/gs_list_row.dart';
 import '../../../widgets/gs_toast.dart';
 
-/// Tarifa sugerida para pedir: el medio del rango de referencia, en $500.
+/// Tarifa con la que se pide: el precio del tramo (taxi: oficial; mototaxi:
+/// sugerida), en múltiplos de $100.
 int suggestedFare(TripLegRow l) {
-  final mid = l.fareMax > 0 ? (l.fareMin + l.fareMax) / 2 : 5000;
-  return ((mid / 500).round() * 500).clamp(1000, 500000).toInt();
+  final v = l.fareMax > 0 ? l.fareMax : 5000;
+  return ((v / 100).round() * 100).clamp(1000, 500000).toInt();
 }
 
 class CurrentLegPanel extends ConsumerWidget {
@@ -506,7 +507,9 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
           ),
           if (widget.leg.fareMax > 0)
             Text(
-              'Referencia: ${formatCop(widget.leg.fareMin)}–${formatCop(widget.leg.fareMax)}',
+              widget.leg.mode == 'taxi'
+                  ? 'Tarifa oficial: ${formatCop(widget.leg.fareMax)}'
+                  : 'Tarifa sugerida: ${formatCop(widget.leg.fareMax)}. Puedes ofrecer otra.',
               textAlign: TextAlign.center,
               style: text.bodySmall,
             ),

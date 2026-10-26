@@ -13,9 +13,9 @@ List<GraphEdge> both(String a, String b, TransitMode m, int min, int wait,
         int fMin, int fMax, {List<String> segs = const [], bool night = true}) =>
     [
       GraphEdge(from: a, to: b, mode: m, minutes: min, waitMinutes: wait,
-          fareMin: fMin, fareMax: fMax, segmentIds: segs, nightOk: night),
+          fareMin: fMax, fareMax: fMax, segmentIds: segs, nightOk: night),
       GraphEdge(from: b, to: a, mode: m, minutes: min, waitMinutes: wait,
-          fareMin: fMin, fareMax: fMax,
+          fareMin: fMax, fareMax: fMax,
           segmentIds: segs.reversed.toList(), nightOk: night),
     ];
 

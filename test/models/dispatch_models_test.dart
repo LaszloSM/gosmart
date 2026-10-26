@@ -26,9 +26,9 @@ void main() {
     expect(t.isFinished, isFalse);
   });
 
-  test('tarifa sugerida: el medio del rango, redondeado a \$500', () {
+  test('tarifa para pedir: el precio del tramo (no un rango)', () {
     final l = TripLegRow.fromJson(_leg(0, 'mototaxi', 'planned'));
-    expect(suggestedFare(l), 4000);
+    expect(suggestedFare(l), 5000);
     final noRange = TripLegRow.fromJson(
         {'id': 'x', 'seq': 0, 'mode': 'taxi', 'status': 'planned'});
     expect(suggestedFare(noRange), 5000);

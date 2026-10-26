@@ -45,7 +45,17 @@ ModeEstimate estimateMode(String mode, LatLng from, LatLng to, DateTime at) {
   final (kmh, wait) = _speed[mode] ?? (30.0, 0);
   final minutes = (km / kmh * 60).round() + wait;
   final t = _transit[mode];
-  final fare = t == null ? null : estimateFare(t, km, at: at);
+  var fare = t == null ? null : estimateFare(t, km, at: at);
+  // Pasajes de ruta (los mismos del grafo, 014/020): TransPadilla dentro de
+  // Riohacha; colectivo e intermunicipal solo entre ciudades (> 25 km).
+  if (fare == null || fare.isZero) {
+    fare = switch (mode) {
+      'TransPadilla' => const FareRange.exact(2500),
+      'Colectivo' when km > 25 => const FareRange.exact(15000),
+      'Intermunicipal' when km > 25 => const FareRange.exact(16000),
+      _ => fare,
+    };
+  }
   return ModeEstimate(
       minutes < 1 ? 1 : minutes, fare == null || fare.max == 0 ? null : fare);
 }
@@ -114,10 +124,7 @@ class _OptionRow extends StatelessWidget {
             'Carro' => 'Tu carro',
             _ => 'Precio en la ruta',
           }
-        : fare.min == fare.max
-            ? formatCop(fare.min)
-            // "$3.000 - 5.000": un solo signo, cabe en una línea.
-            : '${formatCop(fare.min)} - ${formatCop(fare.max).replaceFirst(r'$', '')}';
+        : formatCop(fare.price);
     return GSPressable(
       onTap: onTap,
       selected: selected,

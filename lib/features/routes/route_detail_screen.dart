@@ -132,11 +132,12 @@ class _RouteBody extends StatelessWidget {
         profile: route.profile, distanceKm: route.distanceKm);
     final fare = route.estimatedCostCop <= 0
         ? null
-        : route.fareMin != null &&
-                route.fareMax != null &&
-                route.fareMax! > route.fareMin!
-            ? '${formatCop(route.fareMin!)} - ${formatCop(route.fareMax!)}'
-            : formatCop(route.estimatedCostCop);
+        : formatCop(route.fareMax ?? route.estimatedCostCop);
+    final (fareTitle, fareNote) = switch (route.fareKind) {
+      'oficial' => ('Tarifa de taxi', 'Tarifa oficial de Riohacha (Instramd). De noche y en domingo sube.'),
+      'sugerida' => ('Tarifa sugerida', 'El mototaxi no tiene tarifa oficial: al pedir puedes ofrecer otra.'),
+      _ => ('Pasaje', 'Lo que cobra la ruta hoy; confírmalo al subir.'),
+    };
 
     return ListView(
       padding: const EdgeInsets.only(bottom: GSSpacing.s6),
@@ -248,8 +249,8 @@ class _RouteBody extends StatelessWidget {
             if (fare != null)
               GSListRow(
                 icon: Icons.payments_outlined,
-                title: 'Precio de referencia',
-                subtitle: 'Aún sin verificar en la calle; puede variar.',
+                title: fareTitle,
+                subtitle: fareNote,
                 value: fare,
               ),
             if (co2 > 0)

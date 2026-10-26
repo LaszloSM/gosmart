@@ -1,14 +1,27 @@
 // lib/planner/fares.dart
-// Tarifa justa: un RANGO de referencia por distancia y hora para los tramos
-// informales (mototaxi, taxi). Los valores son provisionales hasta el
-// levantamiento de campo (Fase 1) y la app los muestra como "referencia".
+// Precio de los tramos de mototaxi y taxi: UN valor, como el que se cobra.
+// - Taxi: tarifa oficial de Riohacha (Instramd, Resolución 0922 de 2025):
+//   $6.300 el primer kilómetro y $1.300 cada kilómetro adicional o fracción;
+//   recargo nocturno y dominical. Se redondea a $100 como el taxímetro.
+// - Mototaxi: servicio informal sin tarifa oficial. Se muestra la tarifa
+//   SUGERIDA (estilo InDrive): base por los primeros km y un tanto por km,
+//   redondeada a $500. El pasajero puede ofrecer otra al pedir.
+// Los valores vienen de `fare_rules` (014/020); estos son el respaldo offline.
 import 'graph.dart';
 
+/// Precio de un tramo o de un viaje. [min] == [max] cuando hay un solo
+/// precio; con varios tramos se suman. La app muestra [price].
 class FareRange {
   const FareRange(this.min, this.max);
+  const FareRange.exact(int v) : this(v, v);
   final int min;
   final int max;
   int get mid => (min + max) ~/ 2;
+
+  /// El precio que se muestra: el valor único (o el alto si viene un rango
+  /// de datos viejos, para no prometer menos de lo que se cobra).
+  int get price => max;
+  bool get isZero => max == 0;
   FareRange operator +(FareRange o) => FareRange(min + o.min, max + o.max);
   static const zero = FareRange(0, 0);
 }
@@ -17,32 +30,36 @@ class FareRule {
   const FareRule({
     required this.base,
     required this.perKm,
+    this.includedKm = 0,
     this.minimum = 0,
     this.nightFactor = 1.2,
-    this.spread = 0.25,
+    this.roundTo = 500,
   });
 
-  /// Arranque en COP.
+  /// Lo que cuesta arrancar, con [includedKm] incluidos.
   final int base;
+
+  /// Por cada km adicional o fracción.
   final int perKm;
+  final double includedKm;
   final int minimum;
 
-  /// Recargo nocturno (21:00–5:00).
+  /// Recargo nocturno (21:00–5:00) y dominical.
   final double nightFactor;
-
-  /// Ancho del rango: ±25 % alrededor del valor central.
-  final double spread;
+  final int roundTo;
 }
 
-/// Reglas por modo. PROVISIONALES: se reemplazan por `fare_rules` (014).
 const defaultFareRules = <TransitMode, FareRule>{
-  TransitMode.mototaxi: FareRule(base: 2000, perKm: 700, minimum: 3000),
-  TransitMode.taxi: FareRule(base: 4000, perKm: 1300, minimum: 7000),
+  TransitMode.mototaxi:
+      FareRule(base: 3000, perKm: 500, includedKm: 2, minimum: 3000, roundTo: 500),
+  TransitMode.taxi: FareRule(
+      base: 6300, perKm: 1300, includedKm: 1, minimum: 6300, nightFactor: 1.15, roundTo: 100),
 };
 
 bool isNight(DateTime t) => t.hour >= 21 || t.hour < 5;
+bool _surcharge(DateTime t) => isNight(t) || t.weekday == DateTime.sunday;
 
-/// Rango redondeado a $500, como se cobra en la calle.
+/// Precio único del tramo según la regla del modo; cero si el modo no tiene regla.
 FareRange estimateFare(
   TransitMode mode,
   double km, {
@@ -51,9 +68,11 @@ FareRange estimateFare(
 }) {
   final r = rules[mode];
   if (r == null) return FareRange.zero;
-  var mid = r.base + r.perKm * km;
-  if (mid < r.minimum) mid = r.minimum.toDouble();
-  if (isNight(at)) mid *= r.nightFactor;
-  int round500(double v) => ((v / 500).round() * 500).clamp(500, 1 << 31);
-  return FareRange(round500(mid * (1 - r.spread)), round500(mid * (1 + r.spread)));
+  final extraKm = (km - r.includedKm).clamp(0, double.infinity);
+  var v = (r.base + r.perKm * extraKm.ceil()).toDouble();
+  if (v < r.minimum) v = r.minimum.toDouble();
+  if (_surcharge(at)) v *= r.nightFactor;
+  final step = r.roundTo <= 0 ? 100 : r.roundTo;
+  final price = ((v / step).ceil() * step).toInt();
+  return FareRange.exact(price);
 }

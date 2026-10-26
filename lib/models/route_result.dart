@@ -73,6 +73,10 @@ class RouteResult {
   /// Avisos del planificador: desvío por bloqueo, tramos en precaución.
   final List<String> notes;
 
+  /// De dónde sale el precio: 'oficial' (taxímetro), 'sugerida' (mototaxi)
+  /// o 'ruta' (pasaje de colectivo, TransPadilla, intermunicipal).
+  final String? fareKind;
+
   const RouteResult({
     required this.legs,
     required this.distanceKm,
@@ -84,7 +88,23 @@ class RouteResult {
     this.fareMin,
     this.fareMax,
     this.notes = const [],
+    this.fareKind,
   });
+
+  /// Con un precio único del tramo (mototaxi o taxi por la distancia de la vía).
+  RouteResult withFare(int price, String kind) => RouteResult(
+        legs: legs,
+        distanceKm: distanceKm,
+        durationMin: durationMin,
+        profile: profile,
+        estimatedCostCop: price,
+        category: category,
+        destinationLabel: destinationLabel,
+        fareMin: price,
+        fareMax: price,
+        notes: notes,
+        fareKind: kind,
+      );
 
   RouteResult withDestination(String? label) => RouteResult(
         legs: legs,
@@ -97,6 +117,7 @@ class RouteResult {
         fareMin: fareMin,
         fareMax: fareMax,
         notes: notes,
+        fareKind: fareKind,
       );
 }
 
