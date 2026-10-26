@@ -1,7 +1,6 @@
 // integration_test/demo_flow_test.dart
 // Recorre la demo del MVP en un Android de verdad (emulador de CI, workflow
-// android-emulator.yml) contra el Supabase real: mapa de Google, mapa
-// alternativo, buscar destino, entrar como pasajera demo, pedir un mototaxi
+// android-emulator.yml) contra el Supabase real: mapa de Google, buscar destino, entrar como pasajera demo, pedir un mototaxi
 // que acepta el conductor de demo, pagar y ver la billetera.
 // El workflow toma capturas con adb mientras corre; cada paso imprime
 // "STEP <nombre> <epoch ms>" para ubicarlas. Un paso que falla se anota y la
@@ -56,7 +55,6 @@ void main() {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_complete', true);
-    await prefs.remove('map_provider');
 
     app.main();
     if (!await waitFor(find.text('¿A dónde vas?'), seconds: 60)) {
@@ -65,18 +63,6 @@ void main() {
     // Tiempo para que Google baje las teselas del mapa.
     await wait(25);
     step('inicio-google');
-
-    if (await tap(find.byTooltip('Tipo de mapa'), 'botón de capas')) {
-      await wait(2);
-      step('elegir-mapa');
-      await tap(find.text('Mapa alternativo'), 'opción mapa alternativo');
-      await wait(15);
-      step('inicio-osm');
-      await tap(find.byTooltip('Tipo de mapa'), 'botón de capas');
-      await wait(2);
-      await tap(find.text('Google Maps'), 'opción Google Maps');
-      await wait(8);
-    }
 
     // Entrar como pasajera demo.
     if (_password.isNotEmpty && await tap(find.text('Perfil'), 'pestaña Perfil')) {

@@ -95,106 +95,29 @@ class _HomeMapState extends ConsumerState<HomeMap> {
           Positioned(
             right: GSSpacing.s3,
             top: widget.controlsTop,
-            child: Column(
-              children: [
-                _MapButton(
-                  tooltip: 'Mi ubicación',
-                  icon: Icons.my_location_rounded,
-                  onPressed: _recenter,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: GSShadow.float,
+              ),
+              child: Material(
+              color: GSColors.surface,
+              shape: const CircleBorder(),
+              child: IconButton(
+                tooltip: 'Mi ubicación',
+                onPressed: _recenter,
+                constraints: const BoxConstraints.tightFor(
+                  width: GSSize.touchTarget,
+                  height: GSSize.touchTarget,
                 ),
-                if (googleMapsAvailable) ...[
-                  const SizedBox(height: GSSpacing.s2),
-                  _MapButton(
-                    tooltip: 'Tipo de mapa',
-                    icon: Icons.layers_outlined,
-                    onPressed: () => _chooseMap(context),
-                  ),
-                ],
-              ],
+                icon: Icon(Icons.my_location_rounded, color: GSColors.brand),
+              ),
+            ),
             ),
           ),
       ],
     );
   }
-}
-
-/// Botón redondo flotante sobre el mapa (como el de Google Maps).
-class _MapButton extends StatelessWidget {
-  const _MapButton({
-    required this.tooltip,
-    required this.icon,
-    required this.onPressed,
-  });
-  final String tooltip;
-  final IconData icon;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(shape: BoxShape.circle, boxShadow: GSShadow.float),
-      child: Material(
-        color: GSColors.surface,
-        shape: const CircleBorder(),
-        child: IconButton(
-          tooltip: tooltip,
-          onPressed: onPressed,
-          constraints: const BoxConstraints.tightFor(
-            width: GSSize.touchTarget,
-            height: GSSize.touchTarget,
-          ),
-          icon: Icon(icon, color: GSColors.brand),
-        ),
-      ),
-    );
-  }
-}
-
-/// Elegir el mapa: Google o el alternativo (OpenStreetMap). El alternativo no
-/// necesita llave; sirve si Google se ve gris en un teléfono.
-void _chooseMap(BuildContext context) {
-  final current = useGoogleMaps ? 'google' : 'osm';
-  showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    builder: (sheet) {
-      final text = Theme.of(sheet).textTheme;
-      Widget option(String value, IconData icon, String title, String detail) {
-        final selected = current == value;
-        return ListTile(
-          leading: Icon(icon, color: selected ? GSColors.brand : GSColors.textMuted),
-          title: Text(title),
-          subtitle: Text(detail),
-          trailing: selected
-              ? Icon(Icons.check_circle_rounded, color: GSColors.brand)
-              : null,
-          onTap: () {
-            setMapChoice(value);
-            Navigator.of(sheet).pop();
-          },
-        );
-      }
-
-      return SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                  GSSpacing.s4, 0, GSSpacing.s4, GSSpacing.s2),
-              child: Text('Tipo de mapa', style: text.titleLarge),
-            ),
-            option('google', Icons.map_rounded, 'Google Maps',
-                'Gira, inclina y muestra lugares'),
-            option('osm', Icons.public_rounded, 'Mapa alternativo',
-                'OpenStreetMap; úsalo si el mapa se ve gris'),
-            const SizedBox(height: GSSpacing.s3),
-          ],
-        ),
-      );
-    },
-  );
 }
 
 class _GoHereCard extends StatelessWidget {

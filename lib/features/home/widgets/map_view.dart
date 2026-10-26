@@ -9,7 +9,6 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gm;
 import 'package:latlong2/latlong.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/env.dart';
 import '../../../core/region.dart';
@@ -22,42 +21,12 @@ abstract class MapViewController {
   Future<void> fit(List<LatLng> points);
 }
 
-/// true si hay una clave de Google con forma válida en el .env.
-bool get googleMapsAvailable {
+/// true si hay una clave de Google con forma válida y el proveedor es google.
+bool get useGoogleMaps {
   try {
-    return Env.googleMapsApiKey.startsWith('AIza');
+    return Env.mapProvider == 'google' && Env.googleMapsApiKey.startsWith('AIza');
   } catch (_) {
     return false; // sin .env (pruebas)
-  }
-}
-
-/// Mapa elegido con el botón de capas del inicio ('google' u 'osm');
-/// null = el de MAP_PROVIDER. Es el plan B si Google no carga en un teléfono.
-final mapChoice = ValueNotifier<String?>(null);
-const _mapChoiceKey = 'map_provider';
-
-Future<void> loadMapChoice() async {
-  try {
-    final prefs = await SharedPreferences.getInstance();
-    mapChoice.value = prefs.getString(_mapChoiceKey);
-  } catch (_) {}
-}
-
-Future<void> setMapChoice(String provider) async {
-  mapChoice.value = provider;
-  try {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_mapChoiceKey, provider);
-  } catch (_) {}
-}
-
-/// true si hay clave de Google y el mapa elegido (o el de .env) es google.
-bool get useGoogleMaps {
-  if (!googleMapsAvailable) return false;
-  try {
-    return (mapChoice.value ?? Env.mapProvider) == 'google';
-  } catch (_) {
-    return false;
   }
 }
 
@@ -84,12 +53,9 @@ class MapView extends StatelessWidget {
   final LatLng? pin;
 
   @override
-  Widget build(BuildContext context) => ValueListenableBuilder<String?>(
-        valueListenable: mapChoice,
-        builder: (_, __, ___) => useGoogleMaps
-            ? _GoogleMapView(view: this)
-            : _FlutterMapView(view: this),
-      );
+  Widget build(BuildContext context) => useGoogleMaps
+      ? _GoogleMapView(view: this)
+      : _FlutterMapView(view: this);
 }
 
 // ── Google Maps ──────────────────────────────────────────────────────────────
