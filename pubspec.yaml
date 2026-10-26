@@ -81,6 +81,7 @@ flutter:
     - assets/animations/
     - .env
     - assets/map_styles/
+    - assets/vehicles/
 
   fonts:
     # Figtree (OFL), instancias estáticas del archivo variable de google/fonts,

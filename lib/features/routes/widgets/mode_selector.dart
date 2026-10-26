@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../../../providers/selected_mode_provider.dart';
 import '../../../theme/design_tokens.dart';
+import '../../../widgets/gs_mode_visual.dart';
 import '../../../widgets/gs_pressable.dart';
 
 class ModeSelector extends StatelessWidget {
@@ -74,8 +75,10 @@ class _ModeTile extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(modeIconFor(mode),
-                size: 30, color: selected ? GSColors.brand : GSColors.text),
+            GSModeVisual(
+                mode: mode,
+                height: 36,
+                iconColor: selected ? GSColors.brand : GSColors.text),
             const SizedBox(height: 6),
             // Una línea que se reduce si no cabe: nunca "Colectiv/o".
             FittedBox(

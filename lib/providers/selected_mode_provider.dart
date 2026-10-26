@@ -35,3 +35,14 @@ IconData modeIconFor(String mode) => switch (mode) {
       'A pie' => Icons.directions_walk_rounded,
       _ => Icons.directions_car_rounded,
     };
+
+/// Ilustración del vehículo (assets/vehicles, dibujadas en tool/vehicles);
+/// null para los modos sin vehículo propio (a pie, carro): se usa el ícono.
+String? modeImageFor(String mode) => switch (mode) {
+      'Mototaxi' => 'assets/vehicles/mototaxi.png',
+      'Taxi' => 'assets/vehicles/taxi.png',
+      'Colectivo' => 'assets/vehicles/colectivo.png',
+      'TransPadilla' => 'assets/vehicles/transpadilla.png',
+      'Intermunicipal' => 'assets/vehicles/intermunicipal.png',
+      _ => null,
+    };

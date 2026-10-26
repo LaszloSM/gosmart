@@ -10,6 +10,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/selected_mode_provider.dart';
 import '../../../router/app_router.dart';
 import '../../../theme/design_tokens.dart';
+import '../../../widgets/gs_mode_visual.dart';
 import '../../../widgets/gs_pressable.dart';
 import 'quick_places_row.dart';
 
@@ -75,7 +76,7 @@ class HomeSheetContent extends ConsumerWidget {
                   ])
                     Expanded(
                       child: _ServiceTile(
-                        icon: modeIconFor(m.$1),
+                        mode: m.$1,
                         label: m.$2,
                         semanticLabel: m.$1,
                         onTap: () => openPlanner(m.$1),
@@ -195,12 +196,12 @@ class _SearchPill extends StatelessWidget {
 /// etiqueta debajo. Elige el modo y abre el planificador.
 class _ServiceTile extends StatelessWidget {
   const _ServiceTile({
-    required this.icon,
+    required this.mode,
     required this.label,
     required this.semanticLabel,
     required this.onTap,
   });
-  final IconData icon;
+  final String mode;
   final String label;
   final String semanticLabel;
   final VoidCallback onTap;
@@ -221,7 +222,8 @@ class _ServiceTile extends StatelessWidget {
                 color: GSColors.brandTint,
                 borderRadius: BorderRadius.circular(GSRadius.lg),
               ),
-              child: Icon(icon, size: 30, color: GSColors.brand),
+              padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s1),
+              child: Center(child: GSModeVisual(mode: mode, height: 44)),
             ),
             const SizedBox(height: 6),
             MediaQuery.withClampedTextScaling(

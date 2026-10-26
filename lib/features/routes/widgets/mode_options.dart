@@ -11,6 +11,7 @@ import '../../../planner/fares.dart';
 import '../../../planner/graph.dart';
 import '../../../providers/selected_mode_provider.dart';
 import '../../../theme/design_tokens.dart';
+import '../../../widgets/gs_mode_visual.dart';
 import '../../../widgets/gs_pressable.dart';
 
 /// Estimado de un modo: minutos y rango de tarifa (null = sin tarifa).
@@ -146,15 +147,14 @@ class _OptionRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Container(
-              width: 48,
+            // El vehículo dibujado, como las opciones de Uber/DiDi.
+            SizedBox(
+              width: 64,
               height: 48,
-              decoration: BoxDecoration(
-                color: selected ? GSColors.brand : GSColors.surfaceSunken,
-                shape: BoxShape.circle,
+              child: Center(
+                child: GSModeVisual(
+                    mode: mode, height: 40, iconColor: GSColors.text),
               ),
-              child: Icon(modeIconFor(mode),
-                  color: selected ? GSColors.onBrand : GSColors.text),
             ),
             const SizedBox(width: GSSpacing.s3),
             Expanded(

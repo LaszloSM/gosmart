@@ -15,6 +15,7 @@ import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_corridor_line.dart';
+import '../../widgets/gs_mode_visual.dart';
 import 'widgets/corridor_detail_sheet.dart';
 import 'widgets/home_map.dart';
 import 'widgets/home_sheet.dart';
@@ -233,14 +234,10 @@ class _RouteCard extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  Container(
-                    width: 48,
+                  SizedBox(
+                    width: 64,
                     height: 48,
-                    decoration: BoxDecoration(
-                      color: GSColors.brandTint,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(modeIconFor(mode), color: GSColors.brand),
+                    child: Center(child: GSModeVisual(mode: mode, height: 40)),
                   ),
                   const SizedBox(width: GSSpacing.s3),
                   Expanded(
@@ -258,7 +255,7 @@ class _RouteCard extends ConsumerWidget {
                         ),
                         Text(
                           '${route.durationMin} min · '
-                          '${route.distanceKm.toStringAsFixed(1)} km',
+                          '${route.distanceKm.toStringAsFixed(route.distanceKm < 10 ? 1 : 0)} km',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: text.bodyMedium
