@@ -127,6 +127,19 @@ jobs:
           if [ ${#args[@]} -gt 0 ]; then supabase secrets set --project-ref "$PROJECT_REF" "${args[@]}"; fi
           supabase secrets list --project-ref "$PROJECT_REF"
 
+      - name: Revisar la llave de Groq
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          if [ -z "$GROQ_API_KEY" ]; then echo "::warning::Falta GROQ_API_KEY: el asistente no responderá."; exit 0; fi
+          for m in llama-3.1-8b-instant llama-3.3-70b-versatile; do
+            r=$(curl -s -w '\n%{http_code}' https://api.groq.com/openai/v1/chat/completions \
+              -H "Authorization: Bearer $GROQ_API_KEY" -H 'Content-Type: application/json' \
+              -d "{\"model\":\"$m\",\"messages\":[{\"role\":\"user\",\"content\":\"Di hola\"}],\"max_tokens\":10}")
+            code=${r##*$'\n'}; body=${r%$'\n'*}
+            echo "Groq $m: HTTP $code $(echo "$body" | jq -r '.error.message // .choices[0].message.content // empty' | head -c 160)"
+          done
+
       - name: Desplegar Edge Functions
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
