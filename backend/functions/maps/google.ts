@@ -136,3 +136,56 @@ export function decodePolyline(s: string): [number, number][] {
   }
   return pts
 }
+
+// ── Dirección de un punto (geocodificación inversa) ─────────────────────────
+// Primero Geocoding API (calle y número); si no está habilitada o no hay
+// resultado, el lugar conocido más cercano con Places API (New), que ya se usa.
+
+export const GEOCODE_URL = 'https://maps.googleapis.com/maps/api/geocode/json'
+
+export function geocodeUrl(p: LatLng, key: string): string {
+  const q = new URLSearchParams({
+    latlng: `${p.lat},${p.lng}`,
+    language: 'es',
+    result_type: 'street_address|premise|route|intersection',
+    key,
+  })
+  return `${GEOCODE_URL}?${q}`
+}
+
+/// "Cl. 2 #7-30, Riohacha, La Guajira, Colombia" → "Cl. 2 #7-30, Riohacha".
+export function shortAddress(a: string): string {
+  return a.replace(/,?\s*(La Guajira|Colombia)\b/g, '').replace(/,\s*\d{5,6}\b/g, '').trim()
+}
+
+// deno-lint-ignore no-explicit-any
+export function parseGeocode(json: any): string | null {
+  if (json?.status !== 'OK') return null
+  const a = json.results?.[0]?.formatted_address
+  return typeof a === 'string' && a ? shortAddress(a) : null
+}
+
+export const NEARBY_URL = 'https://places.googleapis.com/v1/places:searchNearby'
+export const NEARBY_FIELDS = 'places.displayName,places.shortFormattedAddress'
+
+export function nearbyBody(p: LatLng) {
+  return {
+    maxResultCount: 1,
+    rankPreference: 'DISTANCE',
+    languageCode: 'es',
+    regionCode: 'co',
+    locationRestriction: {
+      circle: { center: { latitude: p.lat, longitude: p.lng }, radius: 120 },
+    },
+  }
+}
+
+/// "Parque Almirante Padilla" (o su dirección corta si no tiene nombre).
+// deno-lint-ignore no-explicit-any
+export function parseNearby(json: any): string | null {
+  const pl = json?.places?.[0]
+  const name = pl?.displayName?.text
+  if (typeof name === 'string' && name) return `Cerca de ${name}`
+  const a = pl?.shortFormattedAddress
+  return typeof a === 'string' && a ? shortAddress(a) : null
+}

@@ -10,6 +10,7 @@ import '../../../core/region.dart';
 import '../../../models/route_result.dart';
 import '../../../providers/active_route_provider.dart';
 import '../../../router/app_router.dart';
+import '../../../services/geocoding_service.dart';
 import '../../../services/location_service.dart';
 import '../../../theme/design_tokens.dart';
 import 'map_view.dart';
@@ -158,14 +159,17 @@ class _GoHereCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text('¿Ir aquí?', style: text.titleMedium),
-                Text(
-                  '${point.latitude.toStringAsFixed(4)}, '
-                  '${point.longitude.toStringAsFixed(4)}',
-                  style: TextStyle(
-                    fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: GSColors.textMuted,
+                // La dirección del punto (calle o lugar cercano), no coordenadas.
+                FutureBuilder<String?>(
+                  future: geocodingService.reverse(point),
+                  builder: (context, snap) => Text(
+                    snap.data ??
+                        (snap.connectionState == ConnectionState.done
+                            ? 'Punto en el mapa'
+                            : 'Buscando la dirección…'),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: text.bodySmall,
                   ),
                 ),
               ],

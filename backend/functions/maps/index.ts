@@ -3,6 +3,7 @@
 //   { action: 'autocomplete', input, near?: {lat,lng}, session? } → { items }
 //   { action: 'details', place_id, session? }                    → { place }
 //   { action: 'route', from, to, mode: 'walk'|'drive' }           → { route }
+//   { action: 'reverse', at: {lat,lng} }                          → { address }
 // Errores como { error: 'no_key' | 'bad_request' | 'http_<n>' | 'not_found' }
 // con 200, para que la app degrade con aviso (D8).
 // Secret: GOOGLE_MAPS_SERVER_KEY (Places API New + Routes API habilitadas).
@@ -14,6 +15,12 @@ import {
   autocompleteBody,
   DETAILS_FIELDS,
   detailsUrl,
+  geocodeUrl,
+  NEARBY_FIELDS,
+  NEARBY_URL,
+  nearbyBody,
+  parseGeocode,
+  parseNearby,
   inColombia,
   LatLng,
   parseAutocomplete,
@@ -89,6 +96,19 @@ serve(async (req) => {
         if (r.error) return json({ error: r.error })
         const route = parseRoute(r.data)
         return json(route ? { route } : { error: 'not_found' })
+      }
+      case 'reverse': {
+        const at = point(b.at)
+        if (!at) return json({ error: 'bad_request' })
+        try {
+          const res = await fetch(geocodeUrl(at, key), { signal: AbortSignal.timeout(8000) })
+          const address = res.ok ? parseGeocode(await res.json()) : null
+          if (address) return json({ address })
+        } catch (_) { /* sigue con Places */ }
+        const r = await google(NEARBY_URL, key, NEARBY_FIELDS, nearbyBody(at))
+        if (r.error) return json({ error: r.error })
+        const address = parseNearby(r.data)
+        return json(address ? { address } : { error: 'not_found' })
       }
       default:
         return json({ error: 'bad_request' })

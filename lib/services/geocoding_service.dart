@@ -50,6 +50,29 @@ class GeocodingService {
   final String Function() _newSession;
   String? _session;
 
+  final _reverseCache = <String, String>{};
+
+  /// Dirección corta de un punto ("Cl. 2 #7-30, Riohacha" o "Cerca de
+  /// Parque Padilla"); null si no se pudo. Guarda las últimas por ~50 m.
+  Future<String?> reverse(LatLng p) async {
+    final key = '${p.latitude.toStringAsFixed(4)},${p.longitude.toStringAsFixed(4)}';
+    final cached = _reverseCache[key];
+    if (cached != null) return cached;
+    try {
+      final data = await _invoke({
+        'action': 'reverse',
+        'at': {'lat': p.latitude, 'lng': p.longitude},
+      });
+      final a = (data['address'] as String?)?.trim();
+      if (a == null || a.isEmpty) return null;
+      if (_reverseCache.length > 50) _reverseCache.clear();
+      return _reverseCache[key] = a;
+    } catch (e) {
+      debugPrint('[GeocodingService] reverse error: $e');
+      return null;
+    }
+  }
+
   /// Igual que [searchStrict], pero nunca falla: devuelve [] ante cualquier error.
   Future<List<GeocodeSuggestion>> search(String query, {LatLng? proximity}) async {
     try {

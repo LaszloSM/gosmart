@@ -26,6 +26,7 @@ import '../../providers/profile_provider.dart';
 import '../../providers/selected_mode_provider.dart';
 import '../../router/app_router.dart';
 import '../../services/directions_service.dart';
+import '../../services/geocoding_service.dart';
 import '../../services/eco_service.dart';
 import '../../services/place_search.dart';
 import '../../services/location_service.dart';
@@ -111,6 +112,10 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     if (pending == null) return;
     _setDest('Punto en el mapa', pending);
     ref.read(pendingDestinationProvider.notifier).state = null;
+    // La dirección real del punto, cuando llegue.
+    geocodingService.reverse(pending).then((a) {
+      if (a != null && mounted && _destLatLng == pending) _setDest(a, pending);
+    });
   }
 
   void _swap() {
@@ -131,6 +136,12 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       _locating = false;
       if (pos != null) _originLatLng = pos;
     });
+    if (pos == null) return;
+    // "Mi ubicación" → la calle donde estás (como Uber).
+    final address = await geocodingService.reverse(pos);
+    if (address != null && mounted && _originLatLng == pos && _originLabel == 'Mi ubicación') {
+      setState(() => _originLabel = address);
+    }
   }
 
   void _onDestChanged() {

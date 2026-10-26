@@ -50,6 +50,10 @@ r=$(curl -s -X POST "$U/functions/v1/maps" -H "apikey: $A" -H "Authorization: Be
   -d '{"action":"route","from":{"lat":11.5441,"lng":-72.9071},"to":{"lat":11.5275,"lng":-72.888},"mode":"drive"}')
 check "Google Routes (función maps): ruta Centro → Uniguajira" \
   "$(echo "$r" | jq -e '.route' >/dev/null 2>&1 && echo 1)" "$(echo "$r" | head -c 200)"
+r=$(curl -s -X POST "$U/functions/v1/maps" -H "apikey: $A" -H "Authorization: Bearer $A" \
+  -H 'Content-Type: application/json' -d '{"action":"reverse","at":{"lat":11.5441,"lng":-72.9071}}')
+check "Dirección de un punto (Parque Padilla): $(echo "$r" | jq -r '.address // .error' 2>/dev/null)" \
+  "$(echo "$r" | jq -e '.address' >/dev/null 2>&1 && echo 1)" "$(echo "$r" | head -c 200)"
 r=$(curl -s -X POST "$U/functions/v1/ai-chat" -H "apikey: $A" -H "Authorization: Bearer $A" \
   -H 'Content-Type: application/json' -d '{"query":"¿Cómo está la Troncal hacia Maicao?","history":[]}')
 check "Asistente (Groq): responde ($(echo "$r" | jq -r '.source // "?"' 2>/dev/null))" \

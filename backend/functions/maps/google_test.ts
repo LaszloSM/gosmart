@@ -6,8 +6,11 @@ import {
   inColombia,
   parseAutocomplete,
   parseDetails,
+  parseGeocode,
+  parseNearby,
   parseRoute,
   routeBody,
+  shortAddress,
 } from './google.ts'
 
 Deno.test('polilínea: el ejemplo de la documentación de Google', () => {
@@ -91,4 +94,14 @@ Deno.test('solo puntos dentro de Colombia', () => {
   assert(inColombia({ lat: 11.54, lng: -72.9 }))
   assert(!inColombia({ lat: 40.4, lng: -3.7 }))
   assert(!inColombia({ lat: NaN, lng: -72 }))
+})
+
+Deno.test('dirección de un punto: calle corta o lugar cercano', () => {
+  assertEquals(shortAddress('Cl. 2 #7-30, Riohacha, La Guajira, Colombia'), 'Cl. 2 #7-30, Riohacha')
+  assertEquals(parseGeocode({ status: 'OK', results: [{ formatted_address: 'Cra. 7 #1-10, Riohacha, La Guajira, Colombia' }] }),
+    'Cra. 7 #1-10, Riohacha')
+  assertEquals(parseGeocode({ status: 'REQUEST_DENIED', results: [] }), null)
+  assertEquals(parseNearby({ places: [{ displayName: { text: 'Parque Almirante Padilla' } }] }),
+    'Cerca de Parque Almirante Padilla')
+  assertEquals(parseNearby({}), null)
 })
