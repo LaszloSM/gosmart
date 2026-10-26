@@ -46,8 +46,10 @@ END $$;
 SELECT demo_seed('normal');
 DO $$
 BEGIN
-  IF (SELECT state FROM road_status() WHERE segment_id = 'troncal-40-50') <> 'open' THEN
-    RAISE EXCEPTION 'normal: troncal-40-50 debía quedar abierta';
+  -- Otras pruebas dejan reportes propios en ese tramo: se mira solo el de la demo.
+  IF EXISTS (SELECT 1 FROM road_reports WHERE user_id = '00000000-0000-0000-0000-00000000de03'
+             AND segment_id = 'troncal-40-50' AND kind = 'bloqueo' AND expires_at > now()) THEN
+    RAISE EXCEPTION 'normal: quedó el bloqueo de la demo en troncal-40-50';
   END IF;
 END $$;
 
