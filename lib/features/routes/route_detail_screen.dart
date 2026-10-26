@@ -55,8 +55,16 @@ class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen> {
       ref.invalidate(activeTripProvider);
       router.go(AppRoutes.trip);
     } on DispatchException catch (e) {
-      GSToast.showWithMessenger(messenger,
-          message: e.message, type: GSToastType.error);
+      if (e.code == 'trip_in_progress') {
+        // Ya hay uno: se abre ese viaje en vez de dejar a la persona aquí.
+        GSToast.showWithMessenger(messenger,
+            message: 'Ya tienes un viaje en curso. Te llevamos a él.');
+        ref.invalidate(activeTripProvider);
+        router.go(AppRoutes.trip);
+      } else {
+        GSToast.showWithMessenger(messenger,
+            message: e.message, type: GSToastType.error);
+      }
     } finally {
       if (mounted) setState(() => _starting = false);
     }

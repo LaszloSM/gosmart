@@ -91,3 +91,13 @@ jobs:
           git -c user.name='GoSmart CI' -c user.email='ci@users.noreply.github.com' commit -qm "Capturas de ${GITHUB_SHA::7}"
           git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-shots
           echo "Capturas: https://github.com/${{ github.repository }}/tree/ci-shots"
+
+      # La prueba entra como la pasajera demo y deja un viaje: se limpia para
+      # que la cuenta quede lista para presentar.
+      - name: Dejar la demo limpia
+        if: always()
+        env:
+          DB: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          [ -n "$DB" ] || exit 0
+          psql "$DB" -v ON_ERROR_STOP=1 -q -tAc "select demo_seed('normal')" || echo "::warning::No se pudo limpiar la demo"

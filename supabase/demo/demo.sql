@@ -209,6 +209,13 @@ BEGIN
       (v_req, v_pas, v_drv, 5, '{}'), (v_req, v_drv, v_pas, 5, '{}')
     ON CONFLICT DO NOTHING;
   END IF;
+  -- Ningún viaje encadenado abierto que estorbe al iniciar uno en vivo.
+  UPDATE trip_legs SET status = 'cancelled'
+  WHERE status IN ('planned', 'awaiting_dispatch', 'in_progress')
+    AND trip_id IN (SELECT id FROM chained_trips WHERE passenger_id IN (v_pas, v_drv, v_col)
+                    AND status IN ('planned', 'in_progress'));
+  UPDATE chained_trips SET status = 'cancelled', updated_at = now()
+  WHERE passenger_id IN (v_pas, v_drv, v_col) AND status IN ('planned', 'in_progress');
   -- Nada abierto que estorbe al pedir en vivo.
   UPDATE ride_requests SET status = 'cancelled', finished_at = now()
   WHERE (passenger_id IN (v_pas, v_drv, v_col) OR driver_id IN (v_drv, v_col))
