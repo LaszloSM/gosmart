@@ -27,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _isLoading = false;
-  bool _useSms = true;
+  bool _useSms = false; // SMS necesita un proveedor (Twilio) en Supabase; el correo funciona ya.
   bool _showPassword = false;
 
   @override

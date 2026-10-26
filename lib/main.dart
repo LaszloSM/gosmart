@@ -1,4 +1,5 @@
 // lib/main.dart
+import 'features/home/widgets/map_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -20,6 +21,8 @@ Future<void> main() async {
 
   // Load environment variables from .env file
   await dotenv.load(fileName: '.env');
+  // Mapa elegido en el botón de capas (plan B si Google no carga).
+  await loadMapChoice();
 
   // Initialize Supabase
   await GoSmartSupabase.initialize();

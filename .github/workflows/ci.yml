@@ -110,6 +110,10 @@ jobs:
           run supabase/tests/016_payments_test.sql
           run supabase/tests/017_trust_admin_test.sql
           run supabase/tests/018_push_test.sql
+          # Datos de demo y conductor automático (sin pg_cron aquí: se llama el tick a mano)
+          run supabase/demo/demo.sql
+          run supabase/demo/demo.sql
+          run supabase/tests/019_demo_test.sql
 
   edge-functions:
     name: Edge Functions (Deno)
@@ -193,7 +197,7 @@ jobs:
           export SUPABASE_URL
           SUPABASE_ANON_KEY=$(printf '%s' "$SUPABASE_ANON_KEY" | tr -d '[:space:]')
           if [ -z "$SUPABASE_ANON_KEY" ] && [ -n "$SUPABASE_ACCESS_TOKEN" ]; then
-            SUPABASE_ANON_KEY=$(supabase projects api-keys --project-ref "$PROJECT_REF" -o json |
+            SUPABASE_ANON_KEY=$({ supabase projects api-keys --project-ref "$PROJECT_REF" --reveal -o json 2>/dev/null || supabase projects api-keys --project-ref "$PROJECT_REF" -o json; } |
               jq -r '[.[] | select(.name == "anon")][0].api_key // empty') || true
             export SUPABASE_ANON_KEY
           fi
