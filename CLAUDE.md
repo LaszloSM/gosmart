@@ -234,7 +234,9 @@ Future<void> updateProfile({...}) async {
 - **RLS**: All user tables (`profiles`, `cards`, `transactions`, `trips`) filter by `auth.uid()` — never add manual user ID filters in queries.
 - **Edge Functions** (Deno/TypeScript in `backend/functions/`):
   - `authorize` — NFC payment authorization (NOT currently deployed; simulator uses local mock)
-  - `ai-chat` — Groq proxy used by `AiService` (model `llama-3.1-8b-instant`, falls back to 70b on 429/5xx)
+  - `ai-chat` — Groq proxy used by `AiService`. Models come from the secrets `GROQ_MODEL` / `GROQ_FALLBACK_MODEL`,
+    which the deploy workflow picks from Groq's live model list (Groq retires models; the llama-3.x ones are gone).
+    Any error retries the fallback; a 400 retries once more without tools.
   - `delete-account` — account deletion
   - `push` — FCM HTTP v1 (JWT RS256 en `fcm.ts`, probado). Disparada por Database Webhooks en INSERT de
     `ride_requests` y `road_reports` con header `x-webhook-secret`. Secrets `FCM_SERVICE_ACCOUNT`,
@@ -252,7 +254,7 @@ Future<void> updateProfile({...}) async {
 
 ```
 Flutter AiService                       Edge Function ai-chat (Deno)
-  query + history + client_context  ──▶  KG context → Groq 8b (70b fallback) with TOOLS (tools.ts)
+  query + history + client_context  ──▶  KG context → Groq GROQ_MODEL (fallback) with TOOLS (tools.ts)
                                           server tools: get_corridor_status, search_place, estimate_fare
   ◀── { source: 'tool_call', tool_call: {id,name:'plan_trip',args}, tool_messages }
   TripTool runs the planner ON THE PHONE (D6), then calls again with

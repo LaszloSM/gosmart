@@ -19,8 +19,10 @@ import {
 
 const GROQ_URL      = 'https://api.groq.com/openai/v1/chat/completions'
 // El 8b tiene cuota diaria mucho mayor que el 70b en el plan gratis (E1).
-const PRIMARY_MODEL  = 'llama-3.1-8b-instant'
-const FALLBACK_MODEL = 'llama-3.3-70b-versatile'
+// Groq retira modelos seguido: el despliegue elige los que haya y los deja en
+// los secrets GROQ_MODEL / GROQ_FALLBACK_MODEL (ver supabase-deploy.yml).
+const PRIMARY_MODEL  = Deno.env.get('GROQ_MODEL') || 'openai/gpt-oss-20b'
+const FALLBACK_MODEL = Deno.env.get('GROQ_FALLBACK_MODEL') || 'openai/gpt-oss-120b'
 const GROQ_TIMEOUT   = 12_000
 const MAX_HISTORY    = 6
 const MAX_CLIENT_CONTEXT_CHARS = 1500

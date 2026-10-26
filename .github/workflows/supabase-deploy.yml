@@ -127,18 +127,30 @@ jobs:
           if [ ${#args[@]} -gt 0 ]; then supabase secrets set --project-ref "$PROJECT_REF" "${args[@]}"; fi
           supabase secrets list --project-ref "$PROJECT_REF"
 
-      - name: Revisar la llave de Groq
+      - name: Elegir modelos de Groq
         env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           if [ -z "$GROQ_API_KEY" ]; then echo "::warning::Falta GROQ_API_KEY: el asistente no responderá."; exit 0; fi
-          for m in llama-3.1-8b-instant llama-3.3-70b-versatile; do
+          models=$(curl -s https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_API_KEY")
+          ids=$(echo "$models" | jq -r '.data[]?.id' | sort)
+          [ -n "$ids" ] || { echo "::error::Groq no devolvió modelos: $(echo "$models" | jq -r '.error.message // .' | head -c 200)"; exit 1; }
+          echo "Modelos de Groq disponibles:"; echo "$ids" | sed 's/^/  /'
+          # Preferencia: rápidos y buenos con herramientas primero.
+          pick() { for m in "$@"; do echo "$ids" | grep -qx "$m" && { echo "$m"; return; }; done; }
+          prim=$(pick openai/gpt-oss-20b llama-3.1-8b-instant meta-llama/llama-4-scout-17b-16e-instruct qwen/qwen3-32b openai/gpt-oss-120b llama-3.3-70b-versatile)
+          fall=$(pick openai/gpt-oss-120b llama-3.3-70b-versatile moonshotai/kimi-k2-instruct qwen/qwen3-32b meta-llama/llama-4-maverick-17b-128e-instruct "$prim")
+          [ -n "$prim" ] || prim=$(echo "$ids" | grep -viE 'whisper|guard|tts|playai|orpheus|prompt' | head -1)
+          [ -n "$fall" ] || fall=$prim
+          for m in "$prim" "$fall"; do
             r=$(curl -s -w '\n%{http_code}' https://api.groq.com/openai/v1/chat/completions \
               -H "Authorization: Bearer $GROQ_API_KEY" -H 'Content-Type: application/json' \
-              -d "{\"model\":\"$m\",\"messages\":[{\"role\":\"user\",\"content\":\"Di hola\"}],\"max_tokens\":10}")
-            code=${r##*$'\n'}; body=${r%$'\n'*}
-            echo "Groq $m: HTTP $code $(echo "$body" | jq -r '.error.message // .choices[0].message.content // empty' | head -c 160)"
+              -d "$(jq -n --arg m "$m" '{model:$m,messages:[{role:"user",content:"Di hola"}],max_tokens:20}')")
+            echo "Prueba $m: HTTP ${r##*$'\n'}"
           done
+          echo "Asistente: GROQ_MODEL=$prim, GROQ_FALLBACK_MODEL=$fall"
+          supabase secrets set --project-ref "$PROJECT_REF" "GROQ_MODEL=$prim" "GROQ_FALLBACK_MODEL=$fall"
 
       - name: Desplegar Edge Functions
         env:
