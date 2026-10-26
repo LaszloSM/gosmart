@@ -100,6 +100,12 @@ void main() {
           await wait(1);
           if (await tap(find.text('Ver ruta'), 'botón Ver ruta')) {
             await wait(8);
+            step('ruta-en-mapa');
+            // Mototaxi y taxi vuelven al mapa con la ruta: el aviso abre el detalle.
+            if (find.text('Iniciar viaje').evaluate().isEmpty) {
+              await tap(find.textContaining('A Universidad'), 'aviso de la ruta');
+              await wait(4);
+            }
             step('detalle-ruta');
             if (await tap(find.text('Iniciar viaje'), 'botón Iniciar viaje')) {
               await wait(6);

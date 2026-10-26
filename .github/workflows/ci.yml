@@ -91,7 +91,7 @@ jobs:
           run supabase/migrations/008_wallet_mock.sql
           run supabase/migrations/010_wallet_hardening.sql
           # Cada migración dos veces: deben ser seguras de re-ejecutar.
-          for m in 011_roles_safety 012_places_directory 013_corridor \
+          for m in 011_roles_safety 012_places_directory 013_corridor 019_signup_fix \
                    014_transport_graph 015_dispatch 016_payments 017_trust_admin 018_push; do
             run "supabase/migrations/$m.sql"
             run "supabase/migrations/$m.sql"
