@@ -9,9 +9,11 @@ import '../../models/route_result.dart';
 import '../../providers/active_route_provider.dart';
 import '../../providers/corridor_provider.dart';
 import '../../providers/selected_mode_provider.dart';
+import '../../core/money.dart';
 import '../../router/app_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
+import '../../widgets/gs_button.dart';
 import '../../widgets/gs_corridor_line.dart';
 import 'widgets/corridor_detail_sheet.dart';
 import 'widgets/home_map.dart';
@@ -30,9 +32,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _sheetCtrl = DraggableScrollableController();
   final _peekKey = GlobalKey();
-
-  /// Con ruta activa la hoja se oculta: el banner de la ruta es el asomo.
-  static const _sheetHidden = 0.0;
+  final _routeCardKey = GlobalKey();
+  final _corridorKey = GlobalKey();
 
   /// Altura de reposo de la hoja: se mide para que termine justo después de
   /// la pista (sin filas cortadas a la mitad bajo la barra), con cualquier
@@ -40,21 +41,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   double _sheetInitial = 0.36;
   double _stackHeight = 0;
 
+  /// Cuánto de la pantalla cubre la hoja ahora (cambia al arrastrarla): el
+  /// mapa centra y encuadra en lo que queda libre, como en Uber.
+  double _sheetExtent = 0.36;
+
+  /// Alto del resumen de la ruta y de la tarjeta de la vía (medidos).
+  double _routeCardHeight = 0;
+  double _corridorBottom = 0;
+
   /// Relleno inferior visto DENTRO del Scaffold (incluye la barra, porque
   /// extendBody suma su alto); el context del State no lo ve.
   double _bodyBottomInset = 0;
 
-  void _measurePeek() {
+  void _measure() {
+    if (!mounted) return;
+    final cb = _corridorKey.currentContext?.findRenderObject() as RenderBox?;
+    if (cb != null && cb.hasSize) {
+      final bottom = cb.localToGlobal(Offset.zero).dy + cb.size.height;
+      if ((bottom - _corridorBottom).abs() > 1) setState(() => _corridorBottom = bottom);
+    }
+    final rb = _routeCardKey.currentContext?.findRenderObject() as RenderBox?;
+    if (rb != null && rb.hasSize && (rb.size.height - _routeCardHeight).abs() > 1) {
+      setState(() => _routeCardHeight = rb.size.height);
+    }
     final box = _peekKey.currentContext?.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize || _stackHeight <= 0 || !mounted) return;
+    if (box == null || !box.hasSize || _stackHeight <= 0) return;
     final visible = box.size.height + _bodyBottomInset;
     final fraction = (visible / _stackHeight).clamp(0.2, 0.75);
     if ((fraction - _sheetInitial).abs() < 0.005) return;
-    setState(() => _sheetInitial = fraction);
-    if (_sheetCtrl.isAttached) {
-      _sheetCtrl.jumpTo(
-          ref.read(activeRouteProvider) == null ? fraction : _sheetHidden);
-    }
+    setState(() {
+      _sheetInitial = fraction;
+      _sheetExtent = fraction;
+    });
+    if (_sheetCtrl.isAttached) _sheetCtrl.jumpTo(fraction);
   }
 
   @override
@@ -65,29 +84,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Con una ruta activa la hoja baja para dejar ver el mapa.
-    ref.listen<RouteResult?>(activeRouteProvider, (prev, next) {
-      if (!_sheetCtrl.isAttached) return;
-      final double? target = next != null && prev == null
-          ? _sheetHidden
-          : next == null && prev != null
-              ? _sheetInitial
-              : null;
-      if (target == null) return;
-      if (MediaQuery.of(context).disableAnimations) {
-        _sheetCtrl.jumpTo(target);
-      } else {
-        _sheetCtrl.animateTo(target,
-            duration: target == _sheetHidden
-                ? GSDuration.sheetOut
-                : GSDuration.sheetIn,
-            curve: GSCurve.enter);
-      }
-    });
-
     final corridor = ref.watch(corridorStatusProvider);
     final route = ref.watch(activeRouteProvider);
-
     final topInset = MediaQuery.of(context).padding.top;
 
     return Scaffold(
@@ -102,15 +100,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           if (box.maxHeight != _stackHeight || inset != _bodyBottomInset) {
             _stackHeight = box.maxHeight;
             _bodyBottomInset = inset;
-            WidgetsBinding.instance
-                .addPostFrameCallback((_) => _measurePeek());
           }
+          WidgetsBinding.instance.addPostFrameCallback((_) => _measure());
+
+          // Lo que tapa el mapa: arriba la tarjeta de la vía; abajo la hoja
+          // (sigue al dedo al arrastrarla) o, con ruta, su resumen.
+          final covered = route != null
+              ? _routeCardHeight + inset + GSSpacing.s3
+              : _sheetExtent * _stackHeight;
+          final mapPadding = EdgeInsets.only(
+            top: (_corridorBottom > 0 ? _corridorBottom : topInset + 96) + GSSpacing.s2,
+            bottom: covered.clamp(0, _stackHeight * 0.8).toDouble(),
+          );
+
           return Stack(
             children: [
               // El mapa ocupa toda la pantalla, también detrás de la barra
               // de estado; sus controles empiezan bajo la tarjeta de la vía.
               Positioned.fill(
-                child: HomeMap(controlsTop: topInset + 96),
+                child: HomeMap(
+                  controlsTop: mapPadding.top,
+                  padding: mapPadding,
+                ),
               ),
 
               // ── Estado de la Troncal: flota sobre el mapa ─────────────────
@@ -118,33 +129,50 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 left: GSSpacing.s3,
                 right: GSSpacing.s3,
                 top: topInset + GSSpacing.s2,
-                child: _CorridorHeader(corridor: corridor),
-              ),
-
-              DraggableScrollableSheet(
-                controller: _sheetCtrl,
-                initialChildSize: _sheetInitial,
-                // Sin ruta, la hoja no baja de su altura medida: nunca
-                // queda una fila cortada en reposo.
-                minChildSize: route != null ? _sheetHidden : _sheetInitial,
-                maxChildSize: 0.86,
-                snap: true,
-                builder: (context, scrollController) => DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: GSColors.surface,
-                    borderRadius: GSRadius.sheetRadius,
-                    boxShadow: GSShadow.sheet,
-                  ),
-                  child: HomeSheetContent(
-                      scrollController: scrollController, peekKey: _peekKey),
+                child: KeyedSubtree(
+                  key: _corridorKey,
+                  child: _CorridorHeader(corridor: corridor),
                 ),
               ),
-              if (route != null)
+
+              // Sin ruta: la hoja "¿A dónde vas?". Con ruta: solo su resumen,
+              // para que nada quede tapado a medias.
+              if (route == null)
+                NotificationListener<DraggableScrollableNotification>(
+                  onNotification: (n) {
+                    if ((n.extent - _sheetExtent).abs() > 0.004) {
+                      setState(() => _sheetExtent = n.extent);
+                    }
+                    return false;
+                  },
+                  child: DraggableScrollableSheet(
+                    controller: _sheetCtrl,
+                    initialChildSize: _sheetInitial,
+                    // La hoja no baja de su altura medida: nunca queda una
+                    // fila cortada en reposo.
+                    minChildSize: _sheetInitial,
+                    maxChildSize: 0.86,
+                    snap: true,
+                    builder: (context, scrollController) => DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: GSColors.surface,
+                        borderRadius: GSRadius.sheetRadius,
+                        boxShadow: GSShadow.sheet,
+                      ),
+                      child: HomeSheetContent(
+                          scrollController: scrollController, peekKey: _peekKey),
+                    ),
+                  ),
+                )
+              else
                 Positioned(
-                  bottom: MediaQuery.of(context).padding.bottom + GSSpacing.s3,
+                  bottom: inset + GSSpacing.s3,
                   left: GSSpacing.s3,
                   right: GSSpacing.s3,
-                  child: _RouteBanner(route: route),
+                  child: KeyedSubtree(
+                    key: _routeCardKey,
+                    child: _RouteCard(route: route),
+                  ),
                 ),
             ],
           );
@@ -174,16 +202,19 @@ class _CorridorHeader extends StatelessWidget {
   }
 }
 
-/// Ruta activa: tarjeta flotante como la de "viaje en curso" de Uber. Toca
-/// para ver los tramos; la X la quita.
-class _RouteBanner extends ConsumerWidget {
-  const _RouteBanner({required this.route});
+/// Ruta activa, como el resumen de Uber/DiDi antes de pedir: modo, tiempo,
+/// distancia, precio y un botón para seguir. La X la quita.
+class _RouteCard extends ConsumerWidget {
+  const _RouteCard({required this.route});
   final RouteResult route;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(selectedModeProvider);
     final text = Theme.of(context).textTheme;
+    final price = route.estimatedCostCop > 0
+        ? formatCop(route.fareMax ?? route.estimatedCostCop)
+        : null;
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(GSRadius.xl),
@@ -193,59 +224,87 @@ class _RouteBanner extends ConsumerWidget {
         color: GSColors.surface,
         borderRadius: BorderRadius.circular(GSRadius.xl),
         clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => context.push(AppRoutes.routeDetail),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-                GSSpacing.s4, GSSpacing.s3, GSSpacing.s1, GSSpacing.s3),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: GSColors.brand,
-                    shape: BoxShape.circle,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+              GSSpacing.s4, GSSpacing.s3, GSSpacing.s2, GSSpacing.s4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: GSColors.brandTint,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(modeIconFor(mode), color: GSColors.brand),
                   ),
-                  child: Icon(modeIconFor(mode), color: GSColors.onBrand),
-                ),
-                const SizedBox(width: GSSpacing.s3),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '${route.durationMin} min · '
-                        '${route.distanceKm.toStringAsFixed(1)} km',
-                        style: text.titleLarge?.copyWith(
-                            fontFeatures: GSFonts.tabular),
-                      ),
-                      Text(
-                        route.destinationLabel == null
-                            ? 'Ver tramos'
-                            : 'A ${route.destinationLabel}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: text.bodyMedium,
-                      ),
-                    ],
+                  const SizedBox(width: GSSpacing.s3),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          route.destinationLabel == null
+                              ? mode
+                              : 'A ${route.destinationLabel}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: text.titleMedium,
+                        ),
+                        Text(
+                          '${route.durationMin} min · '
+                          '${route.distanceKm.toStringAsFixed(1)} km',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: text.bodyMedium
+                              ?.copyWith(fontFeatures: GSFonts.tabular),
+                        ),
+                      ],
+                    ),
                   ),
+                  if (price != null)
+                    Padding(
+                      padding: const EdgeInsets.only(left: GSSpacing.s2),
+                      child: Text(price,
+                          style: text.titleLarge
+                              ?.copyWith(fontFeatures: GSFonts.tabular)),
+                    ),
+                  IconButton(
+                    tooltip: 'Quitar ruta',
+                    icon: Icon(Icons.close_rounded, color: GSColors.textMuted),
+                    onPressed: () =>
+                        ref.read(activeRouteProvider.notifier).state = null,
+                  ),
+                ],
+              ),
+              const SizedBox(height: GSSpacing.s3),
+              Padding(
+                padding: const EdgeInsets.only(right: GSSpacing.s2),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GSButton(
+                        label: 'Ver viaje',
+                        isFullWidth: true,
+                        onPressed: () => context.push(AppRoutes.routeDetail),
+                      ),
+                    ),
+                    const SizedBox(width: GSSpacing.s2),
+                    GSIconButton(
+                      icon: Icons.health_and_safety_outlined,
+                      tooltip: 'Ayuda',
+                      iconColor: GSColors.roadClosed,
+                      onPressed: () => showSosSheet(context),
+                    ),
+                  ],
                 ),
-                IconButton(
-                  tooltip: 'Ayuda',
-                  icon: Icon(Icons.health_and_safety_outlined,
-                      color: GSColors.roadClosed),
-                  onPressed: () => showSosSheet(context),
-                ),
-                IconButton(
-                  tooltip: 'Quitar ruta',
-                  icon: Icon(Icons.close_rounded, color: GSColors.textMuted),
-                  onPressed: () =>
-                      ref.read(activeRouteProvider.notifier).state = null,
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

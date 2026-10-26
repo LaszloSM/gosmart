@@ -87,9 +87,10 @@ class HomeSheetContent extends ConsumerWidget {
             const SizedBox(height: GSSpacing.s4),
           ],
         ),
+        // Lo de abajo empieza con aire: en reposo no asoma cortado sobre la barra.
         Padding(
           padding: const EdgeInsets.fromLTRB(
-              GSSpacing.s4, GSSpacing.s2, GSSpacing.s4, 0),
+              GSSpacing.s4, GSSpacing.s8, GSSpacing.s4, 0),
           child: Column(
             children: [
               _SheetAction(

@@ -15,10 +15,17 @@ import '../../../theme/design_tokens.dart';
 import 'map_view.dart';
 
 class HomeMap extends ConsumerStatefulWidget {
-  const HomeMap({super.key, this.controlsTop = GSSpacing.s3});
+  const HomeMap({
+    super.key,
+    this.controlsTop = GSSpacing.s3,
+    this.padding = EdgeInsets.zero,
+  });
 
   /// Dónde empiezan los controles flotantes (bajo la tarjeta de la vía).
   final double controlsTop;
+
+  /// Parte del mapa tapada arriba y abajo (ver MapView.padding).
+  final EdgeInsets padding;
 
   @override
   ConsumerState<HomeMap> createState() => _HomeMapState();
@@ -56,7 +63,8 @@ class _HomeMapState extends ConsumerState<HomeMap> {
     // Encuadrar la ruta cuando se activa una nueva.
     ref.listen<RouteResult?>(activeRouteProvider, (prev, next) {
       if (next != null && next.legs.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Tras aplicar el relleno nuevo (resumen de la ruta abajo) se encuadra.
+        Future.delayed(const Duration(milliseconds: 350), () {
           if (!mounted) return;
           _map?.fit(next.legs.expand((l) => l.points).toList());
         });
@@ -72,6 +80,7 @@ class _HomeMapState extends ConsumerState<HomeMap> {
           route: activeRoute,
           user: _hasFix ? _userPosition : null,
           pin: _longPressPoint,
+          padding: widget.padding,
         ),
 
         // Arriba del mapa: la hoja inferior tapa la parte de abajo.

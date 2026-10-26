@@ -43,8 +43,12 @@ class MapView extends StatelessWidget {
     this.route,
     this.user,
     this.pin,
+    this.padding = EdgeInsets.zero,
   });
 
+  /// Lo que tapan la tarjeta de la vía (arriba) y la hoja o el resumen de la
+  /// ruta (abajo): la cámara centra y encuadra en lo que queda visible.
+  final EdgeInsets padding;
   final LatLng initialCenter;
   final ValueChanged<MapViewController> onCreated;
   final ValueChanged<LatLng> onLongPress;
@@ -88,7 +92,7 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
   }
 
   @override
-  Future<void> moveTo(LatLng p, {double zoom = 14}) async =>
+  Future<void> moveTo(LatLng p, {double zoom = 15.5}) async =>
       _c?.animateCamera(gm.CameraUpdate.newLatLngZoom(_g(p), zoom));
 
   @override
@@ -102,15 +106,17 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
       if (p.longitude > e) e = p.longitude;
     }
     await _c!.animateCamera(gm.CameraUpdate.newLatLngBounds(
-        gm.LatLngBounds(southwest: gm.LatLng(s, w), northeast: gm.LatLng(n, e)), 64));
+        gm.LatLngBounds(southwest: gm.LatLng(s, w), northeast: gm.LatLng(n, e)), 56));
   }
 
   @override
   Widget build(BuildContext context) {
     final v = widget.view;
     final night = Theme.of(context).brightness == Brightness.dark;
+    final legs = v.route?.legs ?? const [];
     return gm.GoogleMap(
-      initialCameraPosition: gm.CameraPosition(target: _g(v.initialCenter), zoom: 14),
+      initialCameraPosition: gm.CameraPosition(target: _g(v.initialCenter), zoom: 15.5),
+      padding: v.padding,
       style: night ? _nightStyle : _lightStyle,
       onMapCreated: (c) {
         _c = c;
@@ -147,10 +153,17 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
             ),
       },
       markers: {
-        if (v.route != null && v.route!.legs.isNotEmpty)
+        if (legs.isNotEmpty && legs.first.points.isNotEmpty)
+          gm.Marker(
+            markerId: const gm.MarkerId('origin'),
+            position: _g(legs.first.points.first),
+            icon: gm.BitmapDescriptor.defaultMarkerWithHue(gm.BitmapDescriptor.hueAzure),
+            infoWindow: const gm.InfoWindow(title: 'Salida'),
+          ),
+        if (legs.isNotEmpty && legs.last.points.isNotEmpty)
           gm.Marker(
             markerId: const gm.MarkerId('dest'),
-            position: _g(v.route!.legs.last.points.last),
+            position: _g(legs.last.points.last),
             infoWindow: gm.InfoWindow(title: v.route!.destinationLabel ?? 'Destino'),
           ),
         if (v.pin != null)
