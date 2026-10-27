@@ -100,15 +100,23 @@ serve(async (req) => {
       case 'reverse': {
         const at = point(b.at)
         if (!at) return json({ error: 'bad_request' })
+        // geocode_status dice por qué no sirvió la Geocoding API (p. ej. REQUEST_DENIED
+        // si la llave no la tiene habilitada); no lleva la llave ni datos del usuario.
+        let geocodeStatus = 'error'
         try {
           const res = await fetch(geocodeUrl(at, key), { signal: AbortSignal.timeout(8000) })
-          const address = res.ok ? parseGeocode(await res.json()) : null
-          if (address) return json({ address })
+          // deno-lint-ignore no-explicit-any
+          const g: any = res.ok ? await res.json() : null
+          geocodeStatus = g?.status ?? `http_${res.status}`
+          const address = parseGeocode(g)
+          if (address) return json({ address, source: 'geocode' })
         } catch (_) { /* sigue con Places */ }
         const r = await google(NEARBY_URL, key, NEARBY_FIELDS, nearbyBody(at))
-        if (r.error) return json({ error: r.error })
+        if (r.error) return json({ error: r.error, geocode_status: geocodeStatus })
         const address = parseNearby(r.data)
-        return json(address ? { address } : { error: 'not_found' })
+        return json(address
+          ? { address, source: 'places', geocode_status: geocodeStatus }
+          : { error: 'not_found', geocode_status: geocodeStatus })
       }
       default:
         return json({ error: 'bad_request' })
