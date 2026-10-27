@@ -383,6 +383,8 @@ GSShadow.float (over the map) / .sheet    GSSize.touchTarget=48 .touchTargetDriv
 - `GSRoutePlate(text:, from:, detail:, leading:, isActive:, isPlaceholder:, size:)`: place/option card (old name kept)
 - `GSPressable(onTap:, semanticLabel:, child:)`: anything tappable that isn't a button (0.97 press)
 - `GSGroup(children:)`: rows in a white 16-radius card with inset dividers (Nequi/settings style)
+- `GSBrandHero(title:, trailing:, child:)` + `GSHeroBody(child:)` + `GSHeroAction`: deep-blue header band (`GSColors.brandDeep`) with the body riding over it in a 24-radius sheet (wallet, profile; login builds its own)
+- `GSMetaChip(icon:, label:, emphasis:)`: grey pill with icon + tabular text for trip facts (min, km, arrival, fare kind)
 - `GSButton` (pill, Figtree 700, press 0.97, min 48 dp), `GSIconButton`
 - `GSCard`, `GSInfoCard`, `GSOptionCard`, `GSModeChip`
 - `GSCorridorLine(floating:)`: corridor line; `floating: true` over the map on Home; state always icon + word

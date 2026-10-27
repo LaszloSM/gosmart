@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-15T02:17:38+00:00",
+  "generatedAt": "2026-10-27T00:00:00Z",
   "title": "Design System: GoSmart",
   "extensions": {
     "colorMeta": {
@@ -753,6 +753,21 @@
           "#C7C7C7",
           "#EEEEEE"
         ]
+      },
+      "brand-deep": {
+        "role": "primary",
+        "displayName": "Azul hondo de cabecera",
+        "canonical": "#0A3A94"
+      },
+      "on-brand-deep": {
+        "role": "neutral",
+        "displayName": "Texto sobre la cabecera",
+        "canonical": "#FFFFFF"
+      },
+      "on-brand-deep-muted": {
+        "role": "neutral",
+        "displayName": "Texto secundario sobre la cabecera",
+        "canonical": "#CBD9F6"
       }
     },
     "typographyMeta": {

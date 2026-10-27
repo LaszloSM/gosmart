@@ -55,6 +55,13 @@ colors:
   mode-bike-dark: "#7DD3E8"
   card-gold-dark: "#FFD66B"
   shadow-ink-dark: "#000000"
+  # Cabecera honda (billetera, perfil, entrada; asistente en el inicio)
+  brand-deep: "#0A3A94"
+  on-brand-deep: "#FFFFFF"
+  on-brand-deep-muted: "#CBD9F6"
+  brand-deep-dark: "#17284A"
+  on-brand-deep-dark: "#E6E8EE"
+  on-brand-deep-muted-dark: "#B4C3E0"
 typography:
   display:
     fontFamily: "Figtree"
@@ -237,7 +244,34 @@ components:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.text}"
     rounded: "{rounded.lg}"
-    height: "56px"
+    height: "88px"
+  brand-hero:
+    backgroundColor: "{colors.brand-deep}"
+    textColor: "{colors.on-brand-deep}"
+    padding: "12px 20px 40px"
+  hero-body:
+    backgroundColor: "{colors.background}"
+    rounded: "{rounded.xl}"
+  hero-action:
+    backgroundColor: "{colors.on-brand-deep}"
+    textColor: "{colors.brand-deep}"
+    rounded: "{rounded.full}"
+    size: "56px"
+  meta-chip:
+    backgroundColor: "{colors.surface-sunken}"
+    textColor: "{colors.text}"
+    rounded: "{rounded.full}"
+    padding: "6px 10px"
+  service-tile-hero:
+    backgroundColor: "{colors.brand-tint}"
+    textColor: "{colors.text}"
+    rounded: "{rounded.lg}"
+    height: "128px"
+  service-tile:
+    backgroundColor: "{colors.surface-sunken}"
+    textColor: "{colors.text}"
+    rounded: "{rounded.lg}"
+    height: "60px"
 ---
 
 # Design System: GoSmart
@@ -258,6 +292,8 @@ Reemplaza por completo el mundo anterior "Rótulo de colectivo" (placas condensa
 - Píldoras para botones, buscador y chips; tarjetas de 16, hojas de 24.
 - Verde, ámbar y rojo solo para el estado de la vía.
 - Cifras tabulares para todo lo que el usuario compara.
+- Cabecera honda de marca en billetera, perfil y entrada: la pantalla monta encima en una hoja de 24, como Nequi o DiDi.
+- Formas con jerarquía: una tarjeta grande manda (mototaxi, saldo, resumen del viaje) y las pequeñas la acompañan; nada de filas de cuadros iguales.
 - Movimiento corto y discreto; nada se anima al cambiar de pestaña.
 
 ## Colors
@@ -321,7 +357,9 @@ Neutros fríos y claros con un único azul; el color fuerte se reserva para lo q
 
 Pantalla de teléfono Android con margen lateral de 16 px (s4). Escala de espacio en múltiplos de 4: 4, 8, 12, 16, 20, 24, 32, 40, 48, 64.
 
-El inicio es mapa a pantalla completa: arriba, la píldora flotante del corredor; abajo, una hoja blanca con el buscador "¿A dónde vas?", accesos Casa/Trabajo en círculos y una fila de servicios por modo. Las demás pantallas usan barra superior blanca con título grande a la izquierda (56 + 8 px) y contenido en grupos blancos sobre el fondo gris. La barra inferior Material 3 tiene cinco pestañas y mide al menos 72 px; crece con el texto grande.
+El inicio es mapa a pantalla completa: arriba, la tarjeta flotante del corredor; abajo, una hoja blanca con el saludo, el buscador "¿A dónde vas?" (lupa en un círculo de marca), accesos Casa/Trabajo en píldoras y los servicios en rejilla desigual: el mototaxi en una tarjeta grande con la moto saliendo del borde, taxi y colectivo apilados a su lado; intermunicipal, TransPadilla y el asistente (en azul hondo) quedan bajo el pliegue. Con una ruta activa la hoja se cambia por el resumen del viaje.
+
+Billetera, perfil y entrada empiezan con la cabecera honda (`GSBrandHero`): banda azul profunda desde el borde con el título, el dato principal y las acciones en blanco; el cuerpo (`GSHeroBody`) sube 24 px y redondea sus esquinas encima. Las demás pantallas usan barra superior blanca con título grande a la izquierda (56 + 8 px) y contenido en grupos blancos sobre el fondo gris. La barra inferior Material 3 tiene cinco pestañas y mide al menos 72 px; crece con el texto grande.
 
 Los toques miden al menos 48 dp; en modo conductor, 72 dp. Las filas de lista miden al menos 64 dp.
 
@@ -337,7 +375,7 @@ Sistema híbrido: plano por capas tonales (gris de fondo, blanco encima, gris hu
 - **float** (0 4px 16px tinta 16 % + 0 1px 2px tinta 6 %): píldora del corredor, buscador y botón de ubicarme sobre el mapa.
 
 ### Named Rules
-**La Regla del Flotante.** La sombra marca lo que flota sobre el mapa. Las tarjetas sobre el fondo gris se separan por tono, no por sombra.
+**La Regla del Flotante.** La sombra marca lo que flota: sobre el mapa, sobre la cabecera honda (la tarjeta de accesos del perfil) o lo que manda en la pantalla (resumen de la ruta, `sm`). Los grupos sobre el fondo gris se separan por tono, no por sombra. La barra inferior lleva una sombra suave hacia arriba en vez de línea.
 
 ## Shapes
 
@@ -371,17 +409,29 @@ Formas suaves y conocidas. Radios 8 (chips pequeños, etiquetas, barra de tramos
 - **Error:** borde rojo 2 px y texto de error rojo 14 px.
 
 ### Navigation
-- **Barra inferior:** blanca con línea fina arriba; píldora azul clara de 56 × 32 detrás del ícono activo; ícono activo azul, inactivo tinta suave; etiqueta siempre visible. Cambiar de pestaña no se anima.
+- **Barra inferior:** blanca con sombra suave hacia arriba; píldora azul clara de 56 × 32 detrás del ícono activo; ícono y etiqueta activos en azul, inactivos en tinta suave; etiqueta siempre visible. Cambiar de pestaña no se anima.
 - **Barra superior:** blanca, título 22 px 800 a la izquierda, sin elevación hasta que hay scroll.
 
 ### Opción de viaje (option card)
-Tarjeta blanca de 16 con ícono en círculo, título, detalle y a la derecha tiempo y precio (como Uber/DiDi). La elegida lleva borde azul y fondo teñido. Si no hay regla de tarifa no se muestra precio.
+Tarjeta blanca de 16 con el vehículo dibujado, nombre, "min · quién cabe" y a la derecha el precio con "llegas h:mm" debajo (como Uber/DiDi). Insignias en píldora: "Más rápido" y "Más económico" (solo entre los modos que llevan a alguien). La elegida lleva borde azul y fondo teñido; el cambio funde en 150 ms ease-out, sin mover nada. Si no hay regla de tarifa no se muestra precio.
 
-### Billetera (balance card)
-Tarjeta azul de 24 con el saldo en 38 px 800 tabular, un ojo para ocultarlo y la etiqueta "Saldo de prueba" mientras la recarga sea simulada. De noche usa el azul tenue nocturno (brand-tint-dark) con texto claro: un bloque de marca aclarada encandilaría.
+### Servicios del inicio (service bento)
+Rejilla desigual: tarjeta grande azul clara para el mototaxi (128 px, nombre 19 px 800, "Pide uno ya →" en azul, moto de 62 px saliendo por la esquina) y tarjetas grises de 60 px para los demás, con el vehículo asomando por la esquina y el nombre a todo el ancho. Tocar elige el modo y abre el planificador.
+
+### Resumen del viaje (route card)
+Tarjeta flotante de 24 sobre el mapa y tarjeta de resumen en el detalle: el vehículo en un cuadro azul claro de 68 × 56, el modo y "Llegas h:mm", el precio en 22 px 800 tabular y los datos en `GSMetaChip` (píldoras grises con ícono: minutos, km, tipo de tarifa en azul). Botón "Ver viaje →" y SOS en un círculo rojo claro. Entra subiendo 16 px con fundido en 250 ms ease-out (no se ve más de unas veces por sesión); con "quitar animaciones", aparece sin más.
+
+### Cabecera honda (brand hero)
+Banda `brand-deep` con dos trazos muy tenues de carretera (la Troncal, 7–10 % de opacidad) como firma. Título 22 px 800 en blanco, el dato principal en grande (saldo 40 px 800 tabular) y acciones redondas de 56 px con etiqueta debajo: la primaria en blanco lleno con el ícono en la marca, las demás translúcidas. Barra de estado clara. De noche la banda es azul noche (#17284A) con texto claro.
+
+### Billetera
+Cabecera honda con el saldo, el ojo para ocultarlo, las etiquetas "Saldo de prueba" y número de tarjeta, y tres acciones redondas: Recargar (primaria), Pagar con QR y Mis viajes. Movimientos y tarjeta en grupos blancos sobre la hoja que monta encima.
+
+### Perfil y entrada
+Perfil: cabecera honda con la foto en anillo blanco, nombre, correo y píldoras "Editar perfil" (blanca) y rol; debajo, una tarjeta blanca flotante con tres accesos (Contactos SOS, Conducir, Billetera) y los grupos de siempre. Entrada: cabecera honda con el logo en un cuadro blanco, "Entra a GoSmart" en 30 px 800 y el formulario en la hoja.
 
 ### Línea del corredor
-Píldora flotante sobre el mapa (radio 16, sombra float, alto 56): Riohacha → Maicao como línea gruesa con un color por tramo, el estado con ícono + palabra y la hora del dato.
+Tarjeta flotante sobre el mapa (radio 16, sombra float): "Troncal del Caribe" en 15 px 800 con el estado en píldora (ícono + palabra; tinte de su color para Precaución y Cerrada, borde para Abierta y Sin datos), la línea gruesa con un color por tramo y debajo Riohacha · hora del dato · Maicao.
 
 ### Detalle de ruta
 Barra de tramos proporcional al tiempo (segmentos de 30 px, radio 8, color de modo; a pie en gris), línea de tiempo con el ícono del modo en un círculo de su color y la tarifa en una insignia píldora azul clara.
@@ -405,8 +455,9 @@ Google Maps con estilo propio de día (assets/map_styles/light.json: negocios oc
 - **Don't** inventar un precio.
 - **Don't** usar verde, ámbar o rojo fuera del estado de la vía (ni para entradas y salidas de dinero).
 - **Don't** usar colores de modo fuera de tramos y marcadores.
-- **Don't** animar el cambio de pestaña ni la selección de una opción.
+- **Don't** animar el cambio de pestaña ni mover nada al elegir una opción (solo funde el color en 150 ms).
 - **Don't** volver al mundo anterior: placas condensadas en mayúsculas, barras ultramar, franja fucsia.
-- **Don't** usar degradados ni vidrio; superficies sólidas y legibles al sol.
+- **Don't** usar degradados ni vidrio; superficies sólidas y legibles al sol. La cabecera honda es un color sólido.
+- **Don't** hacer filas de cuadros iguales con ícono y etiqueta: una pieza manda y las demás la acompañan.
 - **Don't** bajar el contraste del texto de 7:1.
 - **Don't** presentar las recargas simuladas como dinero real.
