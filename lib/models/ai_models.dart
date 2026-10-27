@@ -35,7 +35,7 @@ class AiMessage {
   final List<RouteOption>? routes;
   final int? latencyMs;
   final String? source; // 'groq' | 'heuristic' | 'cache'
-  /// Real Mapbox polylines for "Ver en mapa".
+  /// Real route polylines for "Ver en mapa".
   /// Outer null = no real route data (heuristic fallback used).
   /// Inner null = that specific profile (walking/driving/cycling) failed.
   /// Index 0 = walking, 1 = driving, 2 = cycling.

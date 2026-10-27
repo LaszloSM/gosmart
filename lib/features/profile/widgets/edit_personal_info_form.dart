@@ -75,7 +75,7 @@ class _EditPersonalInfoFormState extends State<EditPersonalInfoForm> {
             label: 'Nombre completo',
             hint: 'Como aparece en tu cédula',
             controller: widget.nameCtrl,
-            prefixIcon: Icons.person_outline_rounded,
+            prefixIcon: Icons.person_rounded,
             keyboardType: TextInputType.name,
             textCapitalization: TextCapitalization.words,
             validator: (v) =>
@@ -86,7 +86,7 @@ class _EditPersonalInfoFormState extends State<EditPersonalInfoForm> {
             label: 'Celular',
             hint: '300 000 0000',
             controller: widget.phoneCtrl,
-            prefixIcon: Icons.phone_outlined,
+            prefixIcon: Icons.phone_rounded,
             keyboardType: TextInputType.phone,
           ),
           const SizedBox(height: GSSpacing.s4),
@@ -94,7 +94,7 @@ class _EditPersonalInfoFormState extends State<EditPersonalInfoForm> {
             _ReadOnlyField(
               label: 'Cédula de ciudadanía',
               value: widget.cedulaCtrl.text,
-              icon: Icons.lock_outline_rounded,
+              icon: Icons.lock_rounded,
               helper: 'Ya está registrada y no se puede cambiar.',
             )
           else
@@ -102,7 +102,7 @@ class _EditPersonalInfoFormState extends State<EditPersonalInfoForm> {
               label: 'Cédula de ciudadanía',
               hint: 'Solo números',
               controller: widget.cedulaCtrl,
-              prefixIcon: Icons.badge_outlined,
+              prefixIcon: Icons.badge_rounded,
               keyboardType: TextInputType.number,
             ),
           const SizedBox(height: GSSpacing.s4),
@@ -110,7 +110,7 @@ class _EditPersonalInfoFormState extends State<EditPersonalInfoForm> {
             label: 'Ciudad donde vives',
             hint: 'Riohacha o Maicao',
             controller: widget.cityCtrl,
-            prefixIcon: Icons.location_city_outlined,
+            prefixIcon: Icons.location_city_rounded,
             textCapitalization: TextCapitalization.words,
           ),
           const SizedBox(height: GSSpacing.s4),
@@ -120,7 +120,7 @@ class _EditPersonalInfoFormState extends State<EditPersonalInfoForm> {
                 ? DateFormat('dd/MM/yyyy').format(_birthDate!)
                 : null,
             hint: 'Elegir fecha',
-            icon: Icons.calendar_today_outlined,
+            icon: Icons.calendar_today_rounded,
             onTap: _pickBirthDate,
           ),
           const SizedBox(height: GSSpacing.s6),
@@ -195,14 +195,14 @@ class _TapField extends StatelessWidget {
             borderRadius: BorderRadius.circular(GSRadius.md),
             child: InputDecorator(
               decoration: InputDecoration(
-                prefixIcon: Icon(icon, size: 22, color: GSColors.textMuted),
+                prefixIcon: Icon(icon, size: GSSize.iconLg, color: GSColors.textMuted),
               ),
               child: Text(
                 value ?? hint,
                 style: TextStyle(
                   fontFamily: GSFonts.sans,
                   fontFeatures: GSFonts.tabular,
-                  fontSize: 17,
+                  fontSize: 16,
                   fontWeight: FontWeight.w500,
                   color: value != null ? GSColors.text : GSColors.textMuted,
                 ),
@@ -242,17 +242,19 @@ class _ReadOnlyField extends StatelessWidget {
               borderRadius: BorderRadius.circular(GSRadius.md),
               borderSide: BorderSide.none,
             ),
-            prefixIcon: Icon(icon, size: 22, color: GSColors.textMuted),
+            prefixIcon: Icon(icon, size: GSSize.iconLg, color: GSColors.textMuted),
             helperText: helper,
             helperStyle: TextStyle(
-                fontFamily: GSFonts.sans, fontSize: 14, color: GSColors.textMuted),
+                fontFamily: GSFonts.sans,
+                fontSize: 14,
+                color: GSColors.textMuted),
           ),
           child: Text(
             value,
             style: TextStyle(
               fontFamily: GSFonts.sans,
               fontFeatures: GSFonts.tabular,
-              fontSize: 17,
+              fontSize: 16,
               fontWeight: FontWeight.w500,
               color: GSColors.text,
             ),

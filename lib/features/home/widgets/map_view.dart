@@ -1,7 +1,8 @@
 // lib/features/home/widgets/map_view.dart
 // El mapa detrás de una sola interfaz (Fase 3): Google Maps cuando hay clave
 // (gestos nativos, rotar e inclinar con brújula, estilo nocturno propio,
-// cámara limitada a La Guajira); si no, flutter_map con Mapbox u OSM.
+// cámara limitada a La Guajira, estilo claro y nocturno propios). Sin clave (pruebas, web del admin) queda
+// flutter_map con OpenStreetMap como respaldo.
 // Lo demás de la app no sabe cuál se usa.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -42,8 +43,12 @@ class MapView extends StatelessWidget {
     this.route,
     this.user,
     this.pin,
+    this.padding = EdgeInsets.zero,
   });
 
+  /// Lo que tapan la tarjeta de la vía (arriba) y la hoja o el resumen de la
+  /// ruta (abajo): la cámara centra y encuadra en lo que queda visible.
+  final EdgeInsets padding;
   final LatLng initialCenter;
   final ValueChanged<MapViewController> onCreated;
   final ValueChanged<LatLng> onLongPress;
@@ -69,6 +74,7 @@ class _GoogleMapView extends StatefulWidget {
 class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewController {
   gm.GoogleMapController? _c;
   String? _nightStyle;
+  String? _lightStyle;
 
   static gm.LatLng _g(LatLng p) => gm.LatLng(p.latitude, p.longitude);
 
@@ -78,10 +84,15 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
     rootBundle.loadString('assets/map_styles/night.json').then((s) {
       if (mounted) setState(() => _nightStyle = s);
     });
+    // De día: menos comercios y colores más calmos, para que la ruta y los
+    // marcadores se lean primero (como Google Maps en modo navegación).
+    rootBundle.loadString('assets/map_styles/light.json').then((s) {
+      if (mounted) setState(() => _lightStyle = s);
+    });
   }
 
   @override
-  Future<void> moveTo(LatLng p, {double zoom = 14}) async =>
+  Future<void> moveTo(LatLng p, {double zoom = 15.5}) async =>
       _c?.animateCamera(gm.CameraUpdate.newLatLngZoom(_g(p), zoom));
 
   @override
@@ -95,16 +106,18 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
       if (p.longitude > e) e = p.longitude;
     }
     await _c!.animateCamera(gm.CameraUpdate.newLatLngBounds(
-        gm.LatLngBounds(southwest: gm.LatLng(s, w), northeast: gm.LatLng(n, e)), 64));
+        gm.LatLngBounds(southwest: gm.LatLng(s, w), northeast: gm.LatLng(n, e)), 56));
   }
 
   @override
   Widget build(BuildContext context) {
     final v = widget.view;
     final night = Theme.of(context).brightness == Brightness.dark;
+    final legs = v.route?.legs ?? const [];
     return gm.GoogleMap(
-      initialCameraPosition: gm.CameraPosition(target: _g(v.initialCenter), zoom: 14),
-      style: night ? _nightStyle : null,
+      initialCameraPosition: gm.CameraPosition(target: _g(v.initialCenter), zoom: 15.5),
+      padding: v.padding,
+      style: night ? _nightStyle : _lightStyle,
       onMapCreated: (c) {
         _c = c;
         v.onCreated(this);
@@ -113,6 +126,9 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
       rotateGesturesEnabled: true,
       tiltGesturesEnabled: true,
       compassEnabled: true,
+      // Punto azul nativo de "estás aquí" (como Google Maps); el botón propio
+      // de ubicarme vive en el inicio.
+      myLocationEnabled: v.user != null,
       myLocationButtonEnabled: false,
       mapToolbarEnabled: false,
       zoomControlsEnabled: false,
@@ -126,25 +142,28 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
             gm.Polyline(
               polylineId: gm.PolylineId('leg$i'),
               points: [for (final p in v.route!.legs[i].points) _g(p)],
-              width: 6,
-              color: v.route!.legs[i].color,
+              width: 7,
+              color: v.route!.legs[i].liveColor,
+              startCap: gm.Cap.roundCap,
+              endCap: gm.Cap.roundCap,
+              jointType: gm.JointType.round,
               patterns: v.route!.legs[i].mode == 'walk'
                   ? [gm.PatternItem.dot, gm.PatternItem.gap(8)]
                   : const [],
             ),
       },
       markers: {
-        if (v.user != null)
+        if (legs.isNotEmpty && legs.first.points.isNotEmpty)
           gm.Marker(
-            markerId: const gm.MarkerId('user'),
-            position: _g(v.user!),
+            markerId: const gm.MarkerId('origin'),
+            position: _g(legs.first.points.first),
             icon: gm.BitmapDescriptor.defaultMarkerWithHue(gm.BitmapDescriptor.hueAzure),
-            infoWindow: const gm.InfoWindow(title: 'Estás aquí'),
+            infoWindow: const gm.InfoWindow(title: 'Salida'),
           ),
-        if (v.route != null && v.route!.legs.isNotEmpty)
+        if (legs.isNotEmpty && legs.last.points.isNotEmpty)
           gm.Marker(
             markerId: const gm.MarkerId('dest'),
-            position: _g(v.route!.legs.last.points.last),
+            position: _g(legs.last.points.last),
             infoWindow: gm.InfoWindow(title: v.route!.destinationLabel ?? 'Destino'),
           ),
         if (v.pin != null)
@@ -154,7 +173,7 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
   }
 }
 
-// ── flutter_map (Mapbox u OSM) ───────────────────────────────────────────────
+// ── flutter_map (OSM, respaldo) ───────────────────────────────────────────────
 class _FlutterMapView extends StatefulWidget {
   const _FlutterMapView({required this.view});
   final MapView view;
@@ -187,10 +206,6 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
   @override
   Widget build(BuildContext context) {
     final v = widget.view;
-    String token = '';
-    try {
-      token = Env.mapboxToken;
-    } catch (_) {}
     return fm.FlutterMap(
       mapController: _c,
       options: fm.MapOptions(
@@ -207,12 +222,7 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
       children: [
         // Estilo claro: DESIGN.md pide legibilidad al sol.
         fm.TileLayer(
-          urlTemplate: token.isNotEmpty
-              ? 'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}@2x'
-                  '?access_token=$token'
-              : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          tileSize: token.isNotEmpty ? 512 : 256,
-          zoomOffset: token.isNotEmpty ? -1 : 0,
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
           userAgentPackageName: 'com.gosmart.app',
           maxNativeZoom: 19,
         ),
@@ -223,7 +233,7 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
                 fm.Polyline(
                   points: leg.points,
                   strokeWidth: 5.0,
-                  color: leg.color,
+                  color: leg.liveColor,
                   borderColor: GSColors.surface,
                   borderStrokeWidth: 1.5,
                 ),
@@ -235,14 +245,27 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
               point: v.route!.legs.first.points.first,
               width: 36,
               height: 36,
-              child: _Dot(color: GSColors.brand, icon: Icons.my_location),
+              alignment: Alignment.center,
+              // Origen: punto con borde blanco (no el ícono de "ubicarme").
+              child: Center(
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    color: GSColors.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: GSColors.text, width: 5),
+                  ),
+                ),
+              ),
             ),
             fm.Marker(
               point: v.route!.legs.last.points.last,
-              width: 40,
-              height: 40,
-              // Destino en tinta: el rojo es solo para la vía.
-              child: _Dot(color: GSColors.text, icon: Icons.location_on),
+              width: 44,
+              height: 44,
+              alignment: Alignment.topCenter,
+              // Destino: alfiler en tinta (el rojo es solo para la vía).
+              child: Icon(Icons.location_on_rounded, color: GSColors.text, size: 44),
             ),
           ],
           // Posición del usuario (sin animación: nada en bucle).
@@ -266,29 +289,10 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
               width: 44,
               height: 44,
               alignment: Alignment.topCenter,
-              child: Icon(Icons.location_on, color: GSColors.text, size: 44),
+              child: Icon(Icons.location_on_rounded, color: GSColors.text, size: 44),
             ),
         ]),
       ],
-    );
-  }
-}
-
-class _Dot extends StatelessWidget {
-  const _Dot({required this.color, required this.icon});
-  final Color color;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        border: Border.all(color: GSColors.surface, width: 2),
-        boxShadow: GSShadow.md,
-      ),
-      child: Icon(icon, color: GSColors.onBrand, size: 18),
     );
   }
 }

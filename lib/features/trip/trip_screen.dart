@@ -21,6 +21,8 @@ import '../../widgets/gs_route_plate.dart';
 import '../../widgets/gs_toast.dart';
 import '../safety/sos_sheet.dart';
 import 'widgets/leg_panels.dart';
+import '../../widgets/gs_button.dart';
+import '../../widgets/gs_nav_spacer.dart';
 
 String legModeLabel(String mode) => switch (mode) {
       'walk' => 'A pie',
@@ -83,7 +85,7 @@ class TripScreen extends ConsumerWidget {
         actions: [
           IconButton(
             tooltip: 'Ayuda',
-            icon: const Icon(Icons.health_and_safety_outlined),
+            icon: const Icon(Icons.health_and_safety_rounded),
             onPressed: () => showSosSheet(context),
           ),
         ],
@@ -149,15 +151,14 @@ class TripScreen extends ConsumerWidget {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(
                           GSSpacing.s4, GSSpacing.s6, GSSpacing.s4, 0),
-                      child: TextButton.icon(
+                      child: GSButton(
+                        label: 'Cancelar viaje',
+                        variant: GSButtonVariant.danger,
+                        leadingIcon: Icons.close_rounded,
                         onPressed: () => _cancel(context, ref, t),
-                        icon: const Icon(Icons.close_rounded),
-                        label: const Text('Cancelar viaje'),
                       ),
                     ),
-                    SizedBox(
-                        height: MediaQuery.of(context).padding.bottom +
-                            GSSpacing.s4),
+                    const GSNavSpacer(),
                   ],
                 ),
               ),
@@ -176,8 +177,8 @@ class _LegRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final (icon, word) = switch (leg.status) {
       LegStatus.completed => (Icons.check_circle_rounded, 'Hecho'),
-      LegStatus.cancelled => (Icons.cancel_outlined, 'Cancelado'),
-      LegStatus.failed => (Icons.error_outline_rounded, 'No se pudo'),
+      LegStatus.cancelled => (Icons.cancel_rounded, 'Cancelado'),
+      LegStatus.failed => (Icons.error_rounded, 'No se pudo'),
       LegStatus.inProgress => (Icons.radio_button_checked_rounded, 'En camino'),
       LegStatus.awaitingDispatch => (Icons.hourglass_top_rounded, 'Esperando'),
       LegStatus.planned => (Icons.radio_button_unchecked_rounded, 'Pendiente'),
@@ -215,7 +216,7 @@ class _RecentTrips extends ConsumerWidget {
           GSListRow(
             icon: t.status == 'completed'
                 ? Icons.receipt_long_rounded
-                : Icons.cancel_outlined,
+                : Icons.cancel_rounded,
             title: t.dest ?? 'Viaje',
             subtitle: '${t.at.day}/${t.at.month} · '
                 '${t.status == 'completed' ? 'Ver recibo' : 'Cancelado'}',

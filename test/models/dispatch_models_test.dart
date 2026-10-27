@@ -26,9 +26,9 @@ void main() {
     expect(t.isFinished, isFalse);
   });
 
-  test('tarifa sugerida: el medio del rango, redondeado a \$500', () {
+  test('tarifa para pedir: el precio del tramo (no un rango)', () {
     final l = TripLegRow.fromJson(_leg(0, 'mototaxi', 'planned'));
-    expect(suggestedFare(l), 4000);
+    expect(suggestedFare(l), 5000);
     final noRange = TripLegRow.fromJson(
         {'id': 'x', 'seq': 0, 'mode': 'taxi', 'status': 'planned'});
     expect(suggestedFare(noRange), 5000);
@@ -55,7 +55,7 @@ void main() {
     expect(p['from_node'], 'rio-terminal');
     expect(p['to_lat'], 11.38);
     expect(p['fare_max'], 15000);
-    // Una ruta de Mapbox sin modo del planificador se toma como mototaxi.
+    // Una ruta por calles sin modo del planificador se toma como mototaxi.
     const plain = RouteLeg(mode: 'bus', points: [], color: Colors.blue,
         durationMin: 10, distanceKm: 3);
     expect(DispatchService.legPayload(plain)['mode'], 'mototaxi');

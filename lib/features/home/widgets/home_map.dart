@@ -10,12 +10,23 @@ import '../../../core/region.dart';
 import '../../../models/route_result.dart';
 import '../../../providers/active_route_provider.dart';
 import '../../../router/app_router.dart';
+import '../../../services/geocoding_service.dart';
 import '../../../services/location_service.dart';
 import '../../../theme/design_tokens.dart';
 import 'map_view.dart';
 
 class HomeMap extends ConsumerStatefulWidget {
-  const HomeMap({super.key});
+  const HomeMap({
+    super.key,
+    this.controlsTop = GSSpacing.s3,
+    this.padding = EdgeInsets.zero,
+  });
+
+  /// Dónde empiezan los controles flotantes (bajo la tarjeta de la vía).
+  final double controlsTop;
+
+  /// Parte del mapa tapada arriba y abajo (ver MapView.padding).
+  final EdgeInsets padding;
 
   @override
   ConsumerState<HomeMap> createState() => _HomeMapState();
@@ -53,7 +64,8 @@ class _HomeMapState extends ConsumerState<HomeMap> {
     // Encuadrar la ruta cuando se activa una nueva.
     ref.listen<RouteResult?>(activeRouteProvider, (prev, next) {
       if (next != null && next.legs.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Tras aplicar el relleno nuevo (resumen de la ruta abajo) se encuadra.
+        Future.delayed(const Duration(milliseconds: 350), () {
           if (!mounted) return;
           _map?.fit(next.legs.expand((l) => l.points).toList());
         });
@@ -69,14 +81,15 @@ class _HomeMapState extends ConsumerState<HomeMap> {
           route: activeRoute,
           user: _hasFix ? _userPosition : null,
           pin: _longPressPoint,
+          padding: widget.padding,
         ),
 
         // Arriba del mapa: la hoja inferior tapa la parte de abajo.
         if (_longPressPoint != null)
           Positioned(
-            left: GSSpacing.s4,
-            right: GSSpacing.s4,
-            top: GSSpacing.s3,
+            left: GSSpacing.s3,
+            right: GSSpacing.s3,
+            top: widget.controlsTop,
             child: _GoHereCard(
               point: _longPressPoint!,
               onConfirm: () {
@@ -90,14 +103,16 @@ class _HomeMapState extends ConsumerState<HomeMap> {
           )
         else
           Positioned(
-            right: GSSpacing.s4,
-            top: GSSpacing.s3,
-            child: Material(
-              color: GSColors.surface,
-              shape: CircleBorder(
-                side: BorderSide(color: GSColors.line),
+            right: GSSpacing.s3,
+            top: widget.controlsTop,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: GSShadow.float,
               ),
-              elevation: 0,
+              child: Material(
+              color: GSColors.surface,
+              shape: const CircleBorder(),
               child: IconButton(
                 tooltip: 'Mi ubicación',
                 onPressed: _recenter,
@@ -105,8 +120,9 @@ class _HomeMapState extends ConsumerState<HomeMap> {
                   width: GSSize.touchTarget,
                   height: GSSize.touchTarget,
                 ),
-                icon: Icon(Icons.my_location, color: GSColors.brand),
+                icon: Icon(Icons.my_location_rounded, color: GSColors.brand),
               ),
+            ),
             ),
           ),
       ],
@@ -133,8 +149,7 @@ class _GoHereCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: GSColors.surface,
         borderRadius: BorderRadius.circular(GSRadius.lg),
-        border: Border.all(color: GSColors.line),
-        boxShadow: GSShadow.md,
+        boxShadow: GSShadow.float,
       ),
       child: Row(
         children: [
@@ -144,14 +159,17 @@ class _GoHereCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text('¿Ir aquí?', style: text.titleMedium),
-                Text(
-                  '${point.latitude.toStringAsFixed(4)}, '
-                  '${point.longitude.toStringAsFixed(4)}',
-                  style: TextStyle(
-                    fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: GSColors.textMuted,
+                // La dirección del punto (calle o lugar cercano), no coordenadas.
+                FutureBuilder<String?>(
+                  future: geocodingService.reverse(point),
+                  builder: (context, snap) => Text(
+                    snap.data ??
+                        (snap.connectionState == ConnectionState.done
+                            ? 'Punto en el mapa'
+                            : 'Buscando la dirección…'),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: text.bodySmall,
                   ),
                 ),
               ],

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GoSmart Design Tokens — mundo "rótulo de colectivo" (rediseño 2026-10).
-// Contrato: .impeccable/surfaces/lib-main-dart.md. Shell en ultramar de
-// carrocería, placas blancas con letras condensadas, franja fucsia solo en lo
-// seleccionado. Rojo / ámbar / verde existen SOLO para el estado de la vía.
+// GoSmart Design Tokens — rediseño 2026-10-15: familiar e intuitivo, al nivel
+// de InDrive, Google Maps, Nequi y Uber/DiDi. Contrato:
+// .impeccable/surfaces/lib-main-dart.md. Superficies blancas sobre gris frío,
+// un solo azul de marca, Figtree, píldoras y radios suaves. Verde / ámbar /
+// rojo existen SOLO para el estado de la vía, siempre con ícono y palabra.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Paleta de un esquema (día o noche). Los valores salen de DESIGN.md; el
@@ -38,6 +39,9 @@ class GSPalette {
     required this.bike,
     required this.cardGold,
     required this.shadowInk,
+    required this.brandDeep,
+    required this.onBrandDeep,
+    required this.onBrandDeepMuted,
   });
 
   final Color brand, brandPressed, onBrand, onBrandMuted, brandTint;
@@ -48,65 +52,75 @@ class GSPalette {
   final Color roadClosed, roadClosedTint, roadUnknown;
   final Color taxi, bike, cardGold, shadowInk;
 
+  /// Cabecera honda (billetera, perfil, entrada): el azul de la marca en su
+  /// tono más profundo, para que las tarjetas blancas monten encima.
+  final Color brandDeep, onBrandDeep, onBrandDeepMuted;
+
   /// Día: claro primero, legible al sol.
   static const light = GSPalette(
-    brand: Color(0xFF1B3A8C), // ultramar de carrocería; blanco encima 10.3:1
-    brandPressed: Color(0xFF142C6B),
+    brand: Color(0xFF0B4FC4), // azul GoSmart; blanco encima 7.2:1
+    brandPressed: Color(0xFF093F9D),
     onBrand: Color(0xFFFFFFFF),
-    onBrandMuted: Color(0xFFCCD7F2), // 7:1 sobre ultramar
-    brandTint: Color(0xFFE3E9F6), // ultramar encima 8.5:1
-    shell: Color(0xFF1B3A8C),
-    onShell: Color(0xFFFFFFFF),
-    onShellMuted: Color(0xFFCCD7F2),
-    stripe: Color(0xFFC2185B),
-    background: Color(0xFFEEF1F5), // lámina
-    surface: Color(0xFFFFFFFF), // placa
-    surfaceSunken: Color(0xFFE2E7EE),
-    text: Color(0xFF111827), // 15.7:1 sobre lámina
-    textMuted: Color(0xFF465066), // 7.1:1 sobre lámina
-    textDisabled: Color(0xFF8A93A6),
-    line: Color(0xFFC9D0DC),
-    roadOpen: Color(0xFF17602F),
-    roadCaution: Color(0xFF6A3F00),
-    roadCautionTint: Color(0xFFFBE7C2),
-    roadClosed: Color(0xFF9E1F18),
-    roadClosedTint: Color(0xFFF6DAD6),
-    roadUnknown: Color(0xFF50576A),
-    taxi: Color(0xFF7A4E2D),
-    bike: Color(0xFF3D6B8C),
-    cardGold: Color(0xFFB08A3E),
-    shadowInk: Color(0xFF0E1A3A),
+    onBrandMuted: Color(0xFFD6E2FA), // texto secundario sobre la marca
+    brandTint: Color(0xFFE8F0FE), // selección; la marca encima 6.3:1 (texto en negrita)
+    shell: Color(0xFFFFFFFF), // barras blancas, como las apps de referencia
+    onShell: Color(0xFF14161B),
+    onShellMuted: Color(0xFF4A5162),
+    stripe: Color(0xFF0B4FC4), // indicador de selección = la marca
+    background: Color(0xFFF4F6FA), // gris frío claro
+    surface: Color(0xFFFFFFFF),
+    surfaceSunken: Color(0xFFEBEEF3), // campos de búsqueda y chips
+    text: Color(0xFF14161B), // 16.7:1 sobre el fondo
+    textMuted: Color(0xFF4A5162), // 7.3:1 sobre el fondo, 7.9:1 sobre blanco
+    textDisabled: Color(0xFF9AA0AC),
+    line: Color(0xFFDDE1E8),
+    roadOpen: Color(0xFF0F5F30),
+    roadCaution: Color(0xFF734600),
+    roadCautionTint: Color(0xFFFFF1D6),
+    roadClosed: Color(0xFF9C1E17),
+    roadClosedTint: Color(0xFFFDE7E5),
+    roadUnknown: Color(0xFF4A5162),
+    taxi: Color(0xFF6941C6), // mototaxi / taxi en tramos y marcadores
+    bike: Color(0xFF0E7490),
+    cardGold: Color(0xFFFFC93C),
+    shadowInk: Color(0xFF1A2440),
+    brandDeep: Color(0xFF0A3A94), // blanco encima 10.3:1
+    onBrandDeep: Color(0xFFFFFFFF),
+    onBrandDeepMuted: Color(0xFFCBD9F6), // 7.2:1 sobre brandDeep
   );
 
-  /// Noche: viajes nocturnos sin encandilar. Carrocería en ultramar profundo;
-  /// marca clara para leerse sobre las placas oscuras. Todo texto ≥ 7:1.
+  /// Noche: viajes nocturnos sin encandilar. Superficies que suben de
+  /// luminosidad y marca aclarada. Todo texto principal ≥ 7:1.
   static const dark = GSPalette(
-    brand: Color(0xFF9DB2F2), // 8:1 sobre la placa nocturna
-    brandPressed: Color(0xFFB7C7F6),
-    onBrand: Color(0xFF0E1320), // 8.9:1 sobre la marca
-    onBrandMuted: Color(0xFF26345F),
-    brandTint: Color(0xFF22305A),
-    shell: Color(0xFF14295F),
-    onShell: Color(0xFFFFFFFF), // 13.9:1
-    onShellMuted: Color(0xFFC3CEEA), // 8.8:1
-    stripe: Color(0xFFFF6FA3),
-    background: Color(0xFF0E1320),
-    surface: Color(0xFF171E2D),
-    surfaceSunken: Color(0xFF0A0E17),
-    text: Color(0xFFEEF1F5), // 14.7:1 sobre la placa
-    textMuted: Color(0xFFAEB7CA), // 8.3:1
-    textDisabled: Color(0xFF6E778B),
-    line: Color(0xFF2C3649),
+    brand: Color(0xFFA8C7FA), // 9.7:1 sobre la superficie nocturna
+    brandPressed: Color(0xFFC2D7FB),
+    onBrand: Color(0xFF0B1D3A), // 9.8:1 sobre la marca
+    onBrandMuted: Color(0xFF1E3560),
+    brandTint: Color(0xFF1F2E4D),
+    shell: Color(0xFF1B1E25),
+    onShell: Color(0xFFE6E8EE),
+    onShellMuted: Color(0xFFA9AEBA),
+    stripe: Color(0xFFA8C7FA),
+    background: Color(0xFF111318),
+    surface: Color(0xFF1B1E25),
+    surfaceSunken: Color(0xFF262A33),
+    text: Color(0xFFE6E8EE), // 15.2:1
+    textMuted: Color(0xFFA9AEBA), // 7.5:1 sobre la superficie
+    textDisabled: Color(0xFF6E7482),
+    line: Color(0xFF2E333D),
     roadOpen: Color(0xFF73D69C),
     roadCaution: Color(0xFFF2B65A),
     roadCautionTint: Color(0xFF3A2A10),
     roadClosed: Color(0xFFFF8F85),
     roadClosedTint: Color(0xFF3F1916),
     roadUnknown: Color(0xFFA3ABBA),
-    taxi: Color(0xFFD2A27C),
-    bike: Color(0xFF8FB6D6),
-    cardGold: Color(0xFFD4B06A),
+    taxi: Color(0xFFC4B1F4),
+    bike: Color(0xFF7DD3E8),
+    cardGold: Color(0xFFFFD66B),
     shadowInk: Color(0xFF000000),
+    brandDeep: Color(0xFF17284A), // sube sobre el fondo nocturno
+    onBrandDeep: Color(0xFFE6E8EE), // 11.9:1
+    onBrandDeepMuted: Color(0xFFB4C3E0), // 8.2:1
   );
 }
 
@@ -119,8 +133,8 @@ abstract class GSColors {
   static void apply(Brightness b) =>
       _p = b == Brightness.dark ? GSPalette.dark : GSPalette.light;
 
-  // ── Marca y carrocería ─────────────────────────────────────────────────────
-  /// Marca: botón primario, letras de las placas, selección.
+  // ── Marca y barras ─────────────────────────────────────────────────────
+  /// Marca: botón primario, selección, ruta en el mapa, cabecera de saldo.
   static Color get brand => _p.brand;
   static Color get brandPressed => _p.brandPressed;
 
@@ -128,19 +142,23 @@ abstract class GSColors {
   static Color get onBrand => _p.onBrand;
   static Color get onBrandMuted => _p.onBrandMuted;
 
+  /// Cabecera honda de marca y su texto (ver [GSPalette.brandDeep]).
+  static Color get brandDeep => _p.brandDeep;
+  static Color get onBrandDeep => _p.onBrandDeep;
+  static Color get onBrandDeepMuted => _p.onBrandDeepMuted;
+
   /// Fondos seleccionados con [brand] encima.
   static Color get brandTint => _p.brandTint;
 
-  /// Carrocería: barra superior, barra inferior, cabeceras. De día es la
-  /// misma marca; de noche un ultramar profundo.
+  /// Barras superior e inferior: blancas de día, superficie de noche.
   static Color get shell => _p.shell;
   static Color get onShell => _p.onShell;
   static Color get onShellMuted => _p.onShellMuted;
 
-  /// Franja fucsia: marca lo seleccionado y la placa activa. Nunca relleno.
+  /// Indicador de selección (pestaña activa, opción elegida). Es la marca.
   static Color get stripe => _p.stripe;
 
-  // ── Neutros (lámina y placa) ───────────────────────────────────────────────
+  // ── Neutros ───────────────────────────────────────────────
   static Color get background => _p.background;
   static Color get surface => _p.surface;
   static Color get surfaceSunken => _p.surfaceSunken;
@@ -200,7 +218,7 @@ abstract class GSColors {
   static Color get bike => _p.bike;
   static Color get metro => _p.bike;
 
-  // ── Tarjeta GoSmart ────────────────────────────────────────────────────────
+  // ── Tarjeta GoSmart: chip de la tarjeta y eco-puntos ───────────────────────
   static Color get cardGold => _p.cardGold;
 }
 
@@ -218,32 +236,32 @@ abstract class GSSpacing {
 }
 
 abstract class GSRadius {
-  /// Chips y placas pequeñas.
-  static const double sm = 4;
+  /// Chips pequeños y etiquetas.
+  static const double sm = 8;
 
-  /// Botones, campos y placas.
-  static const double md = 8;
+  /// Campos, filas agrupadas y tarjetas pequeñas.
+  static const double md = 12;
 
-  /// Hojas y la solicitud del conductor.
-  static const double lg = 12;
+  /// Tarjetas.
+  static const double lg = 16;
 
-  // Alias anteriores: el sistema no pasa de 12.
-  static const double xl = lg;
-  static const double xxl = lg;
+  /// Hojas inferiores (solo arriba) y la tarjeta de saldo.
+  static const double xl = 24;
+  static const double xxl = 28;
 
-  /// Solo filtros de modo de transporte.
+  /// Botones, buscador, chips de filtro y avatares: píldora.
   static const double full = 9999;
 
   static BorderRadius get cardRadius => BorderRadius.circular(lg);
-  static BorderRadius get buttonRadius => BorderRadius.circular(md);
+  static BorderRadius get buttonRadius => BorderRadius.circular(full);
   static BorderRadius get chipRadius => BorderRadius.circular(full);
   static BorderRadius get sheetRadius =>
-      const BorderRadius.vertical(top: Radius.circular(lg));
+      const BorderRadius.vertical(top: Radius.circular(xl));
 }
 
 /// Profundidad = desplazamiento + desenfoque suave en tinta. Sin brillos.
 abstract class GSShadow {
-  // Sombras teñidas del ultramar de día; negras de noche.
+  // Sombras teñidas de azul tinta de día; negras de noche.
   static Color get _ink => GSColors.palette.shadowInk;
 
   static List<BoxShadow> get sm => [
@@ -270,12 +288,26 @@ abstract class GSShadow {
         ),
       ];
 
-  /// Hoja inferior sobre el mapa (DESIGN.md: 0 -2, blur 12, tinta 12%).
+  /// Hoja inferior sobre el mapa.
   static List<BoxShadow> get sheet => [
         BoxShadow(
-          color: _ink.withValues(alpha: 0.12),
-          blurRadius: 12,
-          offset: const Offset(0, -2),
+          color: _ink.withValues(alpha: 0.14),
+          blurRadius: 24,
+          offset: const Offset(0, -4),
+        ),
+      ];
+
+  /// Controles flotantes sobre el mapa (buscador, píldora de la vía, ubicarme).
+  static List<BoxShadow> get float => [
+        BoxShadow(
+          color: _ink.withValues(alpha: 0.16),
+          blurRadius: 16,
+          offset: const Offset(0, 4),
+        ),
+        BoxShadow(
+          color: _ink.withValues(alpha: 0.06),
+          blurRadius: 2,
+          offset: const Offset(0, 1),
         ),
       ];
 
@@ -295,7 +327,7 @@ abstract class GSDuration {
   static const normal = Duration(milliseconds: 250);
   static const page = Duration(milliseconds: 250);
 
-  /// Cambio de rótulo de una placa (contrato: 200 ms).
+  /// Cambio de título de una tarjeta (200 ms).
   static const plate = Duration(milliseconds: 200);
 
   /// Hojas: entrada 250 ms, salida 200 ms.
@@ -326,14 +358,14 @@ abstract class GSSize {
   static const double avatarMd = 44;
   static const double avatarLg = 64;
   static const double bottomNav = 72;
+  static const double button = 52;
   static const double topBar = 56;
 
   /// Línea del corredor arriba del mapa.
   static const double corridorLine = 56;
 }
 
-/// Superficies translúcidas: DESIGN.md no usa vidrio esmerilado; la opacidad
-/// queda en 1 para que las superficies sean sólidas y legibles al sol.
+/// Sin vidrio: superficies sólidas y legibles al sol.
 abstract class GSGlass {
   static const double blur = 0;
   static const double backgroundOpacity = 1.0;
@@ -341,8 +373,7 @@ abstract class GSGlass {
   static const double borderWidth = 1.0;
 }
 
-/// DESIGN.md: sin degradados. Se conservan los nombres con un color plano
-/// (dos paradas iguales) para no romper los usos existentes.
+/// Colores planos; se conservan los nombres para los usos existentes.
 abstract class GSGradient {
   static List<Color> get accentPill => [GSColors.brand, GSColors.brand];
   static List<Color> get cardGloss => const [Colors.transparent, Colors.transparent];
@@ -351,17 +382,16 @@ abstract class GSGradient {
   static List<Color> get smartCard => [GSColors.brand, GSColors.brand];
 }
 
-/// Familias tipográficas empaquetadas en assets/fonts (OFL), sin red.
+/// Figtree empaquetada en assets/fonts (OFL), sin red.
 abstract class GSFonts {
-  /// Cuerpo, etiquetas y controles.
-  static const sans = 'Barlow';
+  /// Todo el texto.
+  static const sans = 'Figtree';
 
-  /// Placas de ruta y títulos: letra condensada de rótulo.
-  static const display = 'BarlowCondensed';
+  /// Títulos: la misma familia en peso 700–800.
+  static const display = 'Figtree';
 
-  /// Números que el usuario compara (precios, km, horas). Barlow con cifras
-  /// tabulares: usar siempre junto a [tabular].
-  static const mono = 'Barlow';
+  /// Números que el usuario compara (precios, km, horas): usar con [tabular].
+  static const mono = 'Figtree';
 
   static const tabular = [FontFeature.tabularFigures()];
 }

@@ -1,5 +1,5 @@
 // lib/features/splash/splash_screen.dart
-// Arranque: carrocería ultramar con el nombre. Sin espera artificial ni
+// Arranque: el nombre en blanco sobre el azul de marca (como Nequi o DiDi). Sin espera artificial ni
 // rebote: pasa en cuanto lee si ya se vio la intro.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -37,15 +37,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: GSColors.shell,
+        backgroundColor: GSColors.isDark ? GSColors.background : GSColors.brand,
         body: Center(
           child: Text(
             'GoSmart',
             style: TextStyle(
               fontFamily: GSFonts.display,
-              fontSize: 48,
+              fontSize: 40,
               fontWeight: FontWeight.w800,
-              color: GSColors.onShell,
+              letterSpacing: -1.2,
+              color: GSColors.isDark ? GSColors.brand : GSColors.onBrand,
             ),
           ),
         ),

@@ -20,11 +20,13 @@ import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_button.dart';
 import '../../../widgets/gs_list_row.dart';
 import '../../../widgets/gs_toast.dart';
+import '../../../core/clock.dart';
 
-/// Tarifa sugerida para pedir: el medio del rango de referencia, en $500.
+/// Tarifa con la que se pide: el precio del tramo (taxi: oficial; mototaxi:
+/// sugerida), en múltiplos de $100.
 int suggestedFare(TripLegRow l) {
-  final mid = l.fareMax > 0 ? (l.fareMin + l.fareMax) / 2 : 5000;
-  return ((mid / 500).round() * 500).clamp(1000, 500000).toInt();
+  final v = l.fareMax > 0 ? l.fareMax : 5000;
+  return ((v / 100).round() * 100).clamp(1000, 500000).toInt();
 }
 
 class CurrentLegPanel extends ConsumerWidget {
@@ -188,8 +190,8 @@ class _ScheduledLegPanelState extends ConsumerState<ScheduledLegPanel> {
               return Column(children: [
                 for (final d in deps)
                   GSListRow(
-                    icon: Icons.event_seat_outlined,
-                    title: 'Sale cerca de las ${_hhmm(d.departAt)}',
+                    icon: Icons.event_seat_rounded,
+                    title: 'Sale cerca de las ${formatClock(d.departAt)}',
                     subtitle: '${d.seatsLeft} '
                         '${d.seatsLeft == 1 ? 'cupo libre' : 'cupos libres'} · '
                         'hora estimada',
@@ -234,10 +236,6 @@ class _ScheduledLegPanelState extends ConsumerState<ScheduledLegPanel> {
   }
 }
 
-String _hhmm(DateTime t) {
-  final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
-  return '$h:${t.minute.toString().padLeft(2, '0')} ${t.hour < 12 ? 'a. m.' : 'p. m.'}';
-}
 
 // ── Mototaxi / taxi (estilo InDrive) ────────────────────────────────────────
 class RideLegPanel extends ConsumerStatefulWidget {
@@ -491,7 +489,7 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
                   style: TextStyle(
                     fontFamily: GSFonts.display,
                     fontFeatures: GSFonts.tabular,
-                    fontSize: 32,
+                    fontSize: 28,
                     fontWeight: FontWeight.w800,
                     color: GSColors.text,
                   ),
@@ -506,7 +504,9 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
           ),
           if (widget.leg.fareMax > 0)
             Text(
-              'Referencia: ${formatCop(widget.leg.fareMin)}–${formatCop(widget.leg.fareMax)}',
+              widget.leg.mode == 'taxi'
+                  ? 'Tarifa oficial: ${formatCop(widget.leg.fareMax)}'
+                  : 'Tarifa sugerida: ${formatCop(widget.leg.fareMax)}. Puedes ofrecer otra.',
               textAlign: TextAlign.center,
               style: text.bodySmall,
             ),
@@ -547,7 +547,7 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
           ]),
           for (final o in _offers)
             GSListRow(
-              icon: Icons.local_offer_outlined,
+              icon: Icons.local_offer_rounded,
               title: 'Un conductor ofrece ${formatCop(o.fare)}',
               onTap: _busy ? null : () => _acceptOffer(o),
               trailing: const Text('Aceptar'),
@@ -565,24 +565,14 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          r.status == RideStatus.inProgress
+        _DriverCard(
+          title: r.status == RideStatus.inProgress
               ? 'Vas con ${d?.firstName ?? 'tu conductor'}.'
               : '${d?.firstName ?? 'Tu conductor'} viene por ti.',
-          style: text.titleLarge,
+          driver: d,
+          fare: formatCop(r.agreedFare ?? r.offeredFare),
+          onTheWay: r.status == RideStatus.accepted,
         ),
-        if (d?.plate != null)
-          Text('Placa ${d!.plate}${d.vehicle == null ? '' : ' · ${d.vehicle}'}',
-              style: text.bodyLarge?.copyWith(fontFeatures: GSFonts.tabular)),
-        if (d != null)
-          Text(
-            d.rating == null
-                ? 'Conductor nuevo en GoSmart'
-                : '${d.rating!.toStringAsFixed(1)} de 5 · ${d.ratings} calificaciones',
-            style: text.bodyMedium?.copyWith(fontFeatures: GSFonts.tabular),
-          ),
-        Text('Tarifa acordada: ${formatCop(r.agreedFare ?? r.offeredFare)}',
-            style: text.bodyMedium),
         const SizedBox(height: GSSpacing.s2),
         if (r.status == RideStatus.accepted)
           Text('Revisa que la placa coincida antes de subir.',
@@ -601,14 +591,14 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
           GSButton(
             label:
                 'Pagar ${formatCop(r.agreedFare ?? r.offeredFare)} con saldo de prueba',
-            leadingIcon: Icons.account_balance_wallet_outlined,
+            leadingIcon: Icons.account_balance_wallet_rounded,
             isLoading: _busy,
             onPressed: _busy ? null : () => _pay('wallet'),
           ),
           const SizedBox(height: GSSpacing.s2),
           GSButton(
             label: 'Pago en efectivo',
-            leadingIcon: Icons.payments_outlined,
+            leadingIcon: Icons.payments_rounded,
             variant: GSButtonVariant.outline,
             onPressed: _busy ? null : () => _pay('cash'),
           ),
@@ -619,6 +609,162 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
             child: Text('Tramo pagado.', style: text.bodyMedium),
           ),
       ],
+    );
+  }
+}
+
+/// Conductor asignado como en InDrive/DiDi: estado arriba, foto (inicial) con
+/// la calificación, la placa como una placa de verdad y la tarifa acordada.
+class _DriverCard extends StatelessWidget {
+  const _DriverCard({
+    required this.title,
+    required this.driver,
+    required this.fare,
+    required this.onTheWay,
+  });
+
+  final String title;
+  final AssignedDriver? driver;
+  final String fare;
+  final bool onTheWay;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final d = driver;
+    final initial = (d?.firstName.trim().isNotEmpty ?? false)
+        ? d!.firstName.trim()[0].toUpperCase()
+        : '?';
+    return Container(
+      padding: const EdgeInsets.all(GSSpacing.s4),
+      decoration: BoxDecoration(
+        color: GSColors.surface,
+        borderRadius: BorderRadius.circular(GSRadius.lg),
+        border: Border.all(color: GSColors.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(
+                onTheWay
+                    ? Icons.near_me_rounded
+                    : Icons.route_rounded,
+                size: 20,
+                color: GSColors.brand,
+              ),
+              const SizedBox(width: GSSpacing.s2),
+              Expanded(child: Text(title, style: text.titleLarge)),
+            ],
+          ),
+          const SizedBox(height: GSSpacing.s3),
+          Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: GSColors.brandTint,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  initial,
+                  style: TextStyle(
+                    fontFamily: GSFonts.sans,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: GSColors.brand,
+                  ),
+                ),
+              ),
+              const SizedBox(width: GSSpacing.s3),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      d?.vehicle ?? d?.firstName ?? 'Tu conductor',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.titleMedium,
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Icon(Icons.star_rounded,
+                            size: GSSize.iconSm, color: GSColors.text),
+                        const SizedBox(width: 2),
+                        Flexible(
+                          child: Text(
+                            d?.rating == null
+                                ? 'Conductor nuevo en GoSmart'
+                                : '${d!.rating!.toStringAsFixed(1)} · ${d.ratings} calificaciones',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: text.bodySmall
+                                ?.copyWith(fontFeatures: GSFonts.tabular),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              if (d?.plate != null) ...[
+                const SizedBox(width: GSSpacing.s2),
+                _Plate(d!.plate!),
+              ],
+            ],
+          ),
+          const SizedBox(height: GSSpacing.s3),
+          Row(
+            children: [
+              Text('Tarifa acordada', style: text.bodyMedium),
+              const Spacer(),
+              Text(
+                fare,
+                style: text.titleLarge?.copyWith(fontFeatures: GSFonts.tabular),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Placa colombiana: fondo amarillo, borde de tinta y letras gruesas
+/// tabulares. Se lee de un vistazo para compararla con la moto.
+class _Plate extends StatelessWidget {
+  const _Plate(this.plate);
+  final String plate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Placa $plate',
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFD43B),
+          borderRadius: BorderRadius.circular(GSRadius.sm),
+          border: Border.all(color: const Color(0xFF14161B), width: 2),
+        ),
+        child: Text(
+          plate,
+          style: const TextStyle(
+            fontFamily: GSFonts.sans,
+            fontFeatures: GSFonts.tabular,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1,
+            color: Color(0xFF14161B),
+          ),
+        ),
+      ),
     );
   }
 }

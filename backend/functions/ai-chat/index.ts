@@ -19,8 +19,10 @@ import {
 
 const GROQ_URL      = 'https://api.groq.com/openai/v1/chat/completions'
 // El 8b tiene cuota diaria mucho mayor que el 70b en el plan gratis (E1).
-const PRIMARY_MODEL  = 'llama-3.1-8b-instant'
-const FALLBACK_MODEL = 'llama-3.3-70b-versatile'
+// Groq retira modelos seguido: el despliegue elige los que haya y los deja en
+// los secrets GROQ_MODEL / GROQ_FALLBACK_MODEL (ver supabase-deploy.yml).
+const PRIMARY_MODEL  = Deno.env.get('GROQ_MODEL') || 'openai/gpt-oss-20b'
+const FALLBACK_MODEL = Deno.env.get('GROQ_FALLBACK_MODEL') || 'openai/gpt-oss-120b'
 const GROQ_TIMEOUT   = 12_000
 const MAX_HISTORY    = 6
 const MAX_CLIENT_CONTEXT_CHARS = 1500
@@ -181,16 +183,19 @@ const UNAVAILABLE =
   'El asistente no está disponible ahora. Puedes planear tu viaje desde el mapa.'
 
 // Intenta el modelo principal; si Groq responde 429 (cuota) o 5xx, usa el 70b una vez.
+// Un 400 suele ser una llamada a herramienta mal formada del 8b ("tool_use_failed"):
+// se reintenta con el 70b y, si tampoco, sin herramientas (respuesta en texto).
 async function callGroqWithFallback(messages: ChatMessage[], key: string): Promise<GroqResult> {
   const first = await callGroq(PRIMARY_MODEL, messages, key)
-  if (first.ok) return first
-  if (first.error === 'rate_limited' || first.error === 'server_error') {
-    return await callGroq(FALLBACK_MODEL, messages, key)
-  }
-  return first
+  if (first.ok || first.error === 'invalid_key') return first
+  const second = await callGroq(FALLBACK_MODEL, messages, key)
+  if (second.ok || second.error !== 'bad_request') return second
+  return await callGroq(FALLBACK_MODEL, messages, key, false)
 }
 
-async function callGroq(model: string, messages: ChatMessage[], key: string): Promise<GroqResult> {
+async function callGroq(
+  model: string, messages: ChatMessage[], key: string, withTools = true,
+): Promise<GroqResult> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), GROQ_TIMEOUT)
   try {
@@ -200,8 +205,7 @@ async function callGroq(model: string, messages: ChatMessage[], key: string): Pr
       body: JSON.stringify({
         model,
         messages,
-        tools: TOOLS,
-        tool_choice: 'auto',
+        ...(withTools ? { tools: TOOLS, tool_choice: 'auto' } : {}),
         max_tokens: 450,
         temperature: 0.5,
       }),
@@ -210,6 +214,7 @@ async function callGroq(model: string, messages: ChatMessage[], key: string): Pr
     if (!res.ok) {
       console.error('[Groq]', model, res.status, await res.text())
       const error = res.status === 429 ? 'rate_limited'
+        : res.status === 401 || res.status === 403 ? 'invalid_key'
         : res.status >= 500 ? 'server_error' : 'bad_request'
       return { ok: false, content: UNAVAILABLE, model, error }
     }

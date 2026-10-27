@@ -1,44 +1,80 @@
 // lib/services/geocoding_service.dart
-// Mapbox Geocoding API v5 — address search for Colombia.
-// Uses the same MAPBOX_PUBLIC_TOKEN as DirectionsService and TileLayer.
-import '../core/region.dart';
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
-import 'package:latlong2/latlong.dart';
+// Búsqueda de direcciones con Google Places (Autocomplete New + Place Details)
+// a través de la Edge Function `maps`: la clave de Google no va en el APK.
+// Una sesión = escribir + elegir; Google cobra la sesión, no cada letra.
+import 'dart:async';
 
-import '../core/env.dart';
+import 'package:flutter/foundation.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
+
+import '../core/supabase_client.dart';
 import '../models/geocode_suggestion.dart';
 
-class GeocodingService {
-  static const _base = 'https://api.mapbox.com/geocoding/v5/mapbox.places';
+typedef MapsInvoke = Future<Map<String, dynamic>> Function(
+    Map<String, dynamic> body);
 
-  /// Returns up to 8 address suggestions for [query].
-  ///
-  /// [proximity]: optional LatLng to bias results toward user location.
-  /// Returns [] if token is empty, query has fewer than 2 chars, or any error.
-  /// Builds a tight bounding box around [proximity] (±0.35° ≈ 38 km).
-  /// Falls back to the La Guajira MVP bbox when proximity is null.
-  String _buildBbox(LatLng? proximity) {
-    if (proximity != null) {
-      const d = 0.35;
-      final minLng = (proximity.longitude - d).clamp(-81.7, -66.8);
-      final minLat = (proximity.latitude - d).clamp(1.0, 13.4);
-      final maxLng = (proximity.longitude + d).clamp(-81.7, -66.8);
-      final maxLat = (proximity.latitude + d).clamp(1.0, 13.4);
-      return '$minLng,$minLat,$maxLng,$maxLat';
+/// Llama la función `maps`. Errores → [GeocodingException] con el código.
+Future<Map<String, dynamic>> invokeMaps(Map<String, dynamic> body) async {
+  try {
+    final res = await GoSmartSupabase.client.functions
+        .invoke('maps', body: body)
+        .timeout(const Duration(seconds: 12));
+    final data = res.data;
+    final map = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+    final err = map['error'];
+    if (err != null) throw GeocodingException('$err');
+    return map;
+  } on FunctionException catch (e) {
+    throw GeocodingException('http_${e.status}');
+  } on TimeoutException {
+    throw const GeocodingException('timeout');
+  }
+}
+
+const _types = {
+  'street_address': 'address',
+  'route': 'address',
+  'premise': 'address',
+  'neighborhood': 'neighborhood',
+  'sublocality': 'neighborhood',
+  'locality': 'locality',
+};
+
+class GeocodingService {
+  GeocodingService({MapsInvoke? invoke, String Function()? newSession})
+      : _invoke = invoke ?? invokeMaps,
+        _newSession = newSession ?? (() => const Uuid().v4());
+  final MapsInvoke _invoke;
+  final String Function() _newSession;
+  String? _session;
+
+  final _reverseCache = <String, String>{};
+
+  /// Dirección corta de un punto ("Cl. 2 #7-30, Riohacha" o "Cerca de
+  /// Parque Padilla"); null si no se pudo. Guarda las últimas por ~50 m.
+  Future<String?> reverse(LatLng p) async {
+    final key = '${p.latitude.toStringAsFixed(4)},${p.longitude.toStringAsFixed(4)}';
+    final cached = _reverseCache[key];
+    if (cached != null) return cached;
+    try {
+      final data = await _invoke({
+        'action': 'reverse',
+        'at': {'lat': p.latitude, 'lng': p.longitude},
+      });
+      final a = (data['address'] as String?)?.trim();
+      if (a == null || a.isEmpty) return null;
+      if (_reverseCache.length > 50) _reverseCache.clear();
+      return _reverseCache[key] = a;
+    } catch (e) {
+      debugPrint('[GeocodingService] reverse error: $e');
+      return null;
     }
-    return GSRegion.bbox;
   }
 
-  /// true si hay token del proveedor configurado.
-  bool get isConfigured => Env.mapboxToken.isNotEmpty;
-
   /// Igual que [searchStrict], pero nunca falla: devuelve [] ante cualquier error.
-  Future<List<GeocodeSuggestion>> search(
-    String query, {
-    LatLng? proximity,
-  }) async {
+  Future<List<GeocodeSuggestion>> search(String query, {LatLng? proximity}) async {
     try {
       return await searchStrict(query, proximity: proximity);
     } catch (e) {
@@ -47,65 +83,58 @@ class GeocodingService {
     }
   }
 
-  /// Lanza [GeocodingException] si el proveedor falla, para poder avisar (D8).
-  Future<List<GeocodeSuggestion>> searchStrict(
-    String query, {
-    LatLng? proximity,
-  }) async {
-    final token = Env.mapboxToken;
-    if (token.isEmpty) throw const GeocodingException('no_key');
-    if (query.trim().length < 2) return [];
-
-    {
-      final encoded = Uri.encodeComponent(query.trim());
-      var url = '$_base/$encoded.json'
-          '?access_token=$token'
-          '&country=co'
-          '&language=es'
-          '&limit=8'
-          '&autocomplete=true'
-          '&types=address,poi,neighborhood,locality,place'
-          '&bbox=${_buildBbox(proximity)}';
-      if (proximity != null) {
-        url += '&proximity=${proximity.longitude},${proximity.latitude}';
-      }
-
-      final res = await http
-          .get(Uri.parse(url))
-          .timeout(const Duration(seconds: 10));
-
-      if (res.statusCode != 200) {
-        throw GeocodingException('http_${res.statusCode}');
-      }
-
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
-      final features = data['features'] as List? ?? [];
-
-      return features.map((f) {
-        final coords = f['geometry']['coordinates'] as List;
-        final placeTypes = f['place_type'] as List? ?? [];
-        final featureType =
-            placeTypes.isNotEmpty ? placeTypes[0] as String : 'place';
-        return GeocodeSuggestion(
-          placeName: f['text'] as String? ?? '',
-          fullAddress: f['place_name'] as String? ?? '',
-          latLng: LatLng(
-            (coords[1] as num).toDouble(),
-            (coords[0] as num).toDouble(),
+  /// Sugerencias SIN coordenadas (se piden al elegir con [resolve]).
+  /// Lanza [GeocodingException] si Google o la función fallan (D8).
+  Future<List<GeocodeSuggestion>> searchStrict(String query,
+      {LatLng? proximity}) async {
+    final q = query.trim();
+    if (q.length < 2) return [];
+    _session ??= _newSession();
+    final data = await _invoke({
+      'action': 'autocomplete',
+      'input': q,
+      'session': _session,
+      if (proximity != null)
+        'near': {'lat': proximity.latitude, 'lng': proximity.longitude},
+    });
+    return [
+      for (final it in data['items'] as List? ?? const [])
+        if (it is Map)
+          GeocodeSuggestion(
+            placeName: '${it['name'] ?? ''}',
+            fullAddress: '${it['address'] ?? ''}',
+            latLng: null,
+            placeId: it['placeId'] as String?,
+            featureType: _featureType(it['types']),
           ),
-          featureType: featureType,
-        );
-      }).toList();
-    }
+    ];
   }
 
-  /// Geocodes a single address string. Returns the first result or null.
-  Future<GeocodeSuggestion?> geocodeFirst(
-    String query, {
-    LatLng? proximity,
-  }) async {
-    final results = await search(query, proximity: proximity);
-    return results.isEmpty ? null : results.first;
+  /// Coordenadas de una sugerencia elegida. Cierra la sesión de Google.
+  Future<GeocodeSuggestion> resolve(GeocodeSuggestion s) async {
+    if (s.latLng != null) return s;
+    final id = s.placeId;
+    if (id == null) throw const GeocodingException('no_place');
+    final session = _session;
+    _session = null; // la próxima búsqueda abre otra sesión
+    final data = await _invoke({
+      'action': 'details',
+      'place_id': id,
+      if (session != null) 'session': session,
+    });
+    final p = data['place'] as Map? ?? const {};
+    return s.withLocation(
+      LatLng((p['lat'] as num).toDouble(), (p['lng'] as num).toDouble()),
+      address: p['address'] as String?,
+    );
+  }
+
+  static String _featureType(Object? types) {
+    for (final t in types is List ? types : const []) {
+      final k = _types['$t'];
+      if (k != null) return k;
+    }
+    return 'poi';
   }
 }
 

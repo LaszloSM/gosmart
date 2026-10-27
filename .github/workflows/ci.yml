@@ -91,8 +91,8 @@ jobs:
           run supabase/migrations/008_wallet_mock.sql
           run supabase/migrations/010_wallet_hardening.sql
           # Cada migración dos veces: deben ser seguras de re-ejecutar.
-          for m in 011_roles_safety 012_places_directory 013_corridor \
-                   014_transport_graph 015_dispatch 016_payments 017_trust_admin 018_push; do
+          for m in 011_roles_safety 012_places_directory 013_corridor 019_signup_fix \
+                   014_transport_graph 015_dispatch 016_payments 017_trust_admin 018_push 020_fares; do
             run "supabase/migrations/$m.sql"
             run "supabase/migrations/$m.sql"
           done
@@ -110,6 +110,10 @@ jobs:
           run supabase/tests/016_payments_test.sql
           run supabase/tests/017_trust_admin_test.sql
           run supabase/tests/018_push_test.sql
+          # Datos de demo y conductor automático (sin pg_cron aquí: se llama el tick a mano)
+          run supabase/demo/demo.sql
+          run supabase/demo/demo.sql
+          run supabase/tests/019_demo_test.sql
 
   edge-functions:
     name: Edge Functions (Deno)
@@ -139,6 +143,12 @@ jobs:
           deno test fcm_test.ts
           deno check index.ts
 
+      - name: Test and type-check maps
+        working-directory: backend/functions/maps
+        run: |
+          deno test google_test.ts
+          deno check index.ts
+
   build-android:
     name: Build APK (Android)
     runs-on: ubuntu-latest
@@ -159,22 +169,25 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
       # Con los secrets del repo el APK sale conectado a tu Supabase, con mapa y push.
-      # Sin ellos sale con valores de ejemplo (compila igual).
+      # SUPABASE_URL / SUPABASE_ANON_KEY: si no están como secrets, se sacan del
+      # proyecto con SUPABASE_ACCESS_TOKEN (el anon key es público: va en el APK).
       - name: Create .env and google-services.json from secrets
         env:
+          PROJECT_REF: ndmsiznzvdvpewzkulep
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          GOOGLE_MAPS_SERVER_KEY: ${{ secrets.GOOGLE_MAPS_SERVER_KEY }}
           SHARE_BASE_URL: ${{ secrets.SHARE_BASE_URL }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
-        run: |
-          bash tool/write_env.sh > .env
-          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
-            printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
-            echo "Push activado (google-services.json desde secrets)."
-          fi
+        run: bash tool/ci_env.sh
 
       - name: Build APK (release)
         run: flutter build apk --release

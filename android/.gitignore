@@ -12,3 +12,6 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Firma de demo (SHA-1 fijo para Google Maps); no es la de Play Store.
+!keystore/gosmart-demo.jks

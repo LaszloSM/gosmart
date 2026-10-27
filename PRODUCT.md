@@ -43,11 +43,10 @@ ni tarifas informales, ni seguridad del pasajero.
 
 ## Capabilities and Constraints
 
-- Flutter + Supabase (plan gratis). Mapa: Google Maps en la Fase 3; hoy flutter_map.
-- Hoy existen: inicio con Línea del corredor y "¿A dónde vas?", planificador, asistente de IA
-  (Groq vía Edge Function), billetera con recarga simulada, perfil, login.
-- Aún no existen: reportes viales (Fase 4), planificador puerta a puerta con grafo (Fase 5),
-  conductor y viaje encadenado (Fase 6), pago real con Wompi (Fase 7), panel admin (Fase 8).
+- Flutter + Supabase (plan gratis). Mapa, búsqueda y rutas: Google Maps (Places y Routes vía la función `maps`).
+- Existen (MVP, Fases 0 y 2–8): estado del corredor con reportes, planificador puerta a puerta con
+  grafo, asistente de IA, conductor y viaje encadenado, pago por tramo (Wompi en sandbox), panel admin.
+  Falta el trabajo de campo (Fase 1) y el piloto.
 - NFC pospuesto; queda como visión para validadores de transporte público.
 - Las recargas son simuladas hasta Wompi: nunca presentarlas como dinero real.
 - Terminología local: "la Troncal", "el terminal", "mototaxi", "colectivo", "cupo", "TransPadilla".
@@ -55,11 +54,13 @@ ni tarifas informales, ni seguridad del pasajero.
 ## Brand Commitments
 
 - Nombre: GoSmart. Visión de largo plazo: tarjeta universal de transporte del país.
-- El rediseño de 2026-10 empieza visualmente desde cero (decisión del usuario): ningún color,
-  fuente o componente actual es obligatorio.
+- El rediseño de 2026-10-15 reemplaza el mundo "rótulo de colectivo": ningún color, fuente o
+  componente anterior es obligatorio.
 - Voz: tuteo, corto, palabras locales, sin alarmismo.
 - No usar iconografía ni patrones wayuu como decoración.
 - Los reportes de seguridad nunca nombran ni señalan personas o comunidades.
+- **Familiar antes que original** (decisión del usuario, 2026-10-15): la app debe sentirse como las que
+  la gente ya usa (InDrive, Google Maps, Nequi, Uber/DiDi): amigable e intuitiva. Esa es la vara de calidad.
 
 ## Evidence on Hand
 

@@ -1,4 +1,4 @@
--- GoSmart · migraciones 008–018 + semilla de lugares (generado por tool/bundle_migrations.sh)
+-- GoSmart · migraciones 008–020 + semilla de lugares (generado por tool/bundle_migrations.sh)
 -- Requiere 001–007 aplicadas antes. Seguro de correr más de una vez.
 
 -- ===================== supabase/migrations/008_wallet_mock.sql =====================
@@ -2518,6 +2518,69 @@ REVOKE EXECUTE ON FUNCTION push_targets_for_request(UUID) FROM PUBLIC, anon, aut
 REVOKE EXECUTE ON FUNCTION push_targets_for_report(UUID) FROM PUBLIC, anon, authenticated;
 GRANT  EXECUTE ON FUNCTION push_targets_for_request(UUID) TO service_role;
 GRANT  EXECUTE ON FUNCTION push_targets_for_report(UUID) TO service_role;
+
+NOTIFY pgrst, 'reload schema';
+
+
+-- ===================== supabase/migrations/019_signup_fix.sql =====================
+-- 019_signup_fix.sql
+-- Arreglo: al crear un usuario, Supabase Auth corre los triggers de auth.users
+-- con su propio rol (supabase_auth_admin) y search_path "auth". El trigger de
+-- la billetera (008) no era SECURITY DEFINER ni fijaba el search_path, así que
+-- no encontraba public.wallets y el alta fallaba con "Database error creating
+-- new user". Ahora corre como dueño, con nombres calificados.
+-- Seguro de re-ejecutar.
+
+CREATE OR REPLACE FUNCTION public.generate_gosmart_card_number()
+RETURNS TEXT AS $$
+BEGIN
+  RETURN 'GS-' ||
+    lpad(floor(random() * 10000)::text, 4, '0') || '-' ||
+    lpad(floor(random() * 10000)::text, 4, '0') || '-' ||
+    lpad(floor(random() * 10000)::text, 4, '0');
+END;
+$$ LANGUAGE plpgsql SET search_path = public;
+
+CREATE OR REPLACE FUNCTION public.create_wallet_for_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.wallets (user_id, card_number, balance)
+  VALUES (NEW.id, public.generate_gosmart_card_number(), 10000)
+  ON CONFLICT (user_id) DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+REVOKE EXECUTE ON FUNCTION public.create_wallet_for_new_user() FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS on_auth_user_wallet_create ON auth.users;
+CREATE TRIGGER on_auth_user_wallet_create
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.create_wallet_for_new_user();
+
+
+-- ===================== supabase/migrations/020_fares.sql =====================
+-- 020_fares.sql
+-- Precio único por tramo (en vez de un rango).
+-- Taxi: tarifa oficial de Riohacha, Instramd Resolución 0922 de 2025:
+--   $6.300 el primer km y $1.300 por km adicional o fracción; recargo nocturno.
+-- Mototaxi: informal, sin tarifa oficial: tarifa SUGERIDA (el pasajero puede
+--   ofrecer otra al pedir). Colectivo e intermunicipal: el pasaje de la ruta.
+-- Seguro de re-ejecutar.
+
+ALTER TABLE fare_rules ADD COLUMN IF NOT EXISTS included_km NUMERIC(4,1) NOT NULL DEFAULT 0;
+ALTER TABLE fare_rules ADD COLUMN IF NOT EXISTS round_to INTEGER NOT NULL DEFAULT 500;
+
+INSERT INTO fare_rules (mode, base, per_km, included_km, minimum, night_factor, round_to, verified)
+VALUES ('taxi', 6300, 1300, 1, 6300, 1.15, 100, true),
+       ('mototaxi', 3000, 500, 2, 3000, 1.20, 500, false)
+ON CONFLICT (mode) DO UPDATE SET
+  base = EXCLUDED.base, per_km = EXCLUDED.per_km, included_km = EXCLUDED.included_km,
+  minimum = EXCLUDED.minimum, night_factor = EXCLUDED.night_factor,
+  round_to = EXCLUDED.round_to, verified = EXCLUDED.verified, updated_at = now();
+
+-- Pasajes de ruta: un solo valor (el que se cobra hoy, aproximado).
+UPDATE graph_edges SET fare_min = fare_max WHERE fare_min <> fare_max;
 
 NOTIFY pgrst, 'reload schema';
 

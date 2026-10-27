@@ -25,7 +25,7 @@
 ✅ **Planificador de Rutas Multimodal**
 - 3 alternativas por consulta: más rápida, más económica, más eco-amigable
 - Soporte: bus, metro, bicicleta, a pie, taxi
-- Integración con Mapbox Directions API
+- Rutas por calle con Google Routes API (vía Edge Function `maps`)
 - Cálculo de emisiones CO₂
 
 ✅ **Billetera Digital**
@@ -64,7 +64,7 @@
 | Storage | Archivos de usuario | Supabase Storage |
 | Pagos | Billetera interna (recarga simulada; Wompi en Fase 7) | Supabase RPC |
 | IA | LLM vía Edge Function | Groq (llama-3.1-8b-instant, respaldo 70b) |
-| Mapas | Tiles + Geocoding | Mapbox + OpenStreetMap |
+| Mapas | Mapa, búsqueda y rutas | Google Maps SDK + Places API (New) + Routes API (OSM como respaldo sin clave) |
 | Localización | GPS | Geolocator |
 | NFC | Lectura de tarjetas | flutter_nfc_kit |
 
@@ -85,8 +85,8 @@
 - **Android Studio** (para Android) o **Xcode** (para iOS)
 - **Proyecto Supabase** — [supabase.com](https://supabase.com)
 - **Claves API**:
-  - Google Maps (opcional, fallback a OSM)
-  - Mapbox (geocoding + directions)
+  - Google Maps: una clave con Maps SDK for Android (app) y otra con Places API (New) + Routes API
+    (secret `GOOGLE_MAPS_SERVER_KEY` de la función `maps`)
   - Groq (IA, free tier)
 
 ### 1. Clonar y Configurar
@@ -129,7 +129,6 @@ Edita `.env` con tus valores reales:
 SUPABASE_URL=https://xyzabcdef.supabase.co
 SUPABASE_ANON_KEY=eyJhbGci...
 GOOGLE_MAPS_API_KEY=AIza...
-MAPBOX_PUBLIC_TOKEN=pk.eyJ...
 SENTRY_DSN=            # opcional
 
 **⚠️ Nunca commits `.env` — está en `.gitignore`**
@@ -262,7 +261,7 @@ Ya queda instalada como cualquier otra app en el cajón de aplicaciones.
 | El teléfono aparece como `unauthorized` en `adb devices` | Desconecta/reconecta el cable y acepta el diálogo de depuración USB en el teléfono |
 | `flutter devices` no muestra el teléfono | Verifica que la Depuración USB esté activa y que el cable sea de datos (no solo de carga) |
 | La app crashea al abrir | Falta alguna de las 3 claves obligatorias en `.env` |
-| El mapa no carga | Revisa `GOOGLE_MAPS_API_KEY` (o configura `MAPBOX_PUBLIC_TOKEN` para usar Mapbox/OSM) |
+| El mapa no carga | Revisa `GOOGLE_MAPS_API_KEY` y que tenga habilitado Maps SDK for Android (sin clave, la app usa OpenStreetMap) |
 | El asistente AI dice "no configurado" | Falta el secret `GROQ_API_KEY` en Supabase → Edge Functions, o `ai-chat` no está desplegada |
 | Error de NFC al instalar | Normal si el teléfono no tiene hardware NFC — el simulador local funciona igual sin NFC |
 
@@ -707,10 +706,10 @@ Ver `pubspec.yaml` para lista completa.
 **Causa**: `GROQ_API_KEY` vacío
 **Solución**: Añadir key en Supabase Edge Function Secrets
 
-### Mapbox no carga
-**Síntoma**: Mapa gris sin tiles
-**Causa**: `MAPBOX_PUBLIC_TOKEN` inválido
-**Solución**: Verificar token en `.env` o caerá a OpenStreetMap (fallback)
+### La búsqueda dice "búsqueda limitada"
+**Síntoma**: Solo aparecen lugares del directorio propio
+**Causa**: La función `maps` no tiene `GOOGLE_MAPS_SERVER_KEY`, o la clave no tiene Places API (New) / Routes API habilitadas
+**Solución**: Habilitar las APIs en Google Cloud y volver a correr Actions → Supabase deploy
 
 ---
 
@@ -721,7 +720,7 @@ Ver `pubspec.yaml` para lista completa.
 - [Riverpod Guide](https://riverpod.dev)
 - [GoRouter Docs](https://pub.dev/packages/go_router)
 - [Groq API](https://console.groq.com)
-- [Mapbox API](https://docs.mapbox.com)
+- [Google Maps Platform](https://developers.google.com/maps)
 
 ---
 

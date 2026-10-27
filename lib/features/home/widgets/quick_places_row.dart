@@ -12,7 +12,7 @@ import '../../../router/app_router.dart';
 import '../../../services/place_search.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_button.dart';
-import '../../../widgets/gs_route_plate.dart';
+import '../../../widgets/gs_pressable.dart';
 
 class QuickPlacesRow extends ConsumerWidget {
   final Function(FavoritePlace) onPlaceSelected;
@@ -135,15 +135,66 @@ class _QuickChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Placa pequeña; sin lugar guardado es una placa en blanco con "+".
-    return IntrinsicWidth(
-      child: GSRoutePlate(
-        text: label,
-        size: GSPlateSize.sm,
-        leading: isSet ? icon : Icons.add_rounded,
-        isPlaceholder: !isSet,
-        onTap: onTap,
-        semanticLabel: isSet ? label : 'Agregar ${label.toLowerCase()}',
+    // Píldora con el ícono en un círculo y el nombre (accesos de Uber/Google
+    // Maps). Sin lugar guardado, el círculo es gris con "+" y dice "Agregar".
+    return GSPressable(
+      onTap: onTap,
+      semanticLabel: isSet ? label : 'Agregar ${label.toLowerCase()}',
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 52),
+        padding: const EdgeInsets.fromLTRB(6, 6, GSSpacing.s4, 6),
+        decoration: BoxDecoration(
+          color: GSColors.surface,
+          borderRadius: BorderRadius.circular(GSRadius.full),
+          border: Border.all(color: GSColors.line),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: isSet ? GSColors.brandTint : GSColors.surfaceSunken,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(isSet ? icon : Icons.add_rounded,
+                  size: GSSize.iconMd,
+                  color: isSet ? GSColors.brand : GSColors.text),
+            ),
+            const SizedBox(width: GSSpacing.s2),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 140),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: GSFonts.sans,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                      color: GSColors.text,
+                    ),
+                  ),
+                  if (!isSet)
+                    Text(
+                      'Agregar',
+                      style: TextStyle(
+                        fontFamily: GSFonts.sans,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                        color: GSColors.textMuted,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -228,7 +279,7 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 17,
+                    fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: GSColors.textPrimary,
                   ),
@@ -307,7 +358,7 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
                     return ListTile(
                       dense: true,
                       leading: Icon(
-                        Icons.location_on_outlined,
+                        Icons.location_on_rounded,
                         color: color,
                         size: 18,
                       ),
@@ -426,12 +477,25 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
     if (_selected == null) return;
     setState(() => _saving = true);
 
+    final place = await placeSearch.resolve(_selected!);
+    if (place?.latLng == null) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text('No pudimos ubicar ese lugar. Revisa tu conexión '
+            'o elige otro.'),
+        backgroundColor: GSColors.error,
+      ));
+      return;
+    }
+    final at = place!.latLng!;
+
     final success = await ref.read(favoritesNotifierProvider.notifier)
         .addOrUpdatePlace(
           name: widget.type == FavoritePlaceType.home ? 'Casa' : 'Trabajo',
-          address: _selected!.fullAddress,
-          latitude: _selected!.latLng.latitude,
-          longitude: _selected!.latLng.longitude,
+          address: place.fullAddress,
+          latitude: at.latitude,
+          longitude: at.longitude,
           type: widget.type,
         );
 

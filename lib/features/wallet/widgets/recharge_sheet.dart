@@ -44,7 +44,7 @@ class _RechargeSheetContentState extends State<RechargeSheetContent> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.info_outline_rounded,
+            Icon(Icons.info_rounded,
                 size: GSSize.iconMd, color: GSColors.textMuted),
             const SizedBox(width: GSSpacing.s2),
             Expanded(
@@ -104,8 +104,9 @@ class _AmountOption extends StatelessWidget {
                 child: Text(
                   label,
                   style: TextStyle(
-                    fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
-                    fontSize: 17,
+                    fontFamily: GSFonts.mono,
+                    fontFeatures: GSFonts.tabular,
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: selected ? GSColors.onBrand : GSColors.text,
                   ),

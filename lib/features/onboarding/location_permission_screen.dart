@@ -40,17 +40,17 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen> {
             Text('Para planear desde donde estás', style: text.titleLarge),
             const SizedBox(height: GSSpacing.s3),
             _Point(
-              icon: Icons.near_me_outlined,
+              icon: Icons.near_me_rounded,
               text: 'La ruta empieza en tu punto, sin escribir la dirección.',
               style: text.bodyLarge,
             ),
             _Point(
-              icon: Icons.map_outlined,
+              icon: Icons.map_rounded,
               text: 'El mapa abre en tu barrio de Riohacha o Maicao.',
               style: text.bodyLarge,
             ),
             _Point(
-              icon: Icons.visibility_off_outlined,
+              icon: Icons.visibility_off_rounded,
               text: 'Solo se usa mientras tienes la app abierta. Si prefieres, '
                   'escribe la dirección cada vez.',
               style: text.bodyLarge,

@@ -53,6 +53,8 @@ google-services.json
 GoogleService-Info.plist
 *.keystore
 *.jks
+# Firma de demo (SHA-1 fijo para Google Maps); no es la de Play Store.
+!android/keystore/gosmart-demo.jks
 *.p12
 *.pem
 *.key

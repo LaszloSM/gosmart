@@ -5,16 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Future<void> loadFonts() async {
-  final b = FontLoader('Barlow');
-  for (final f in ['Regular', 'Medium', 'SemiBold', 'Bold']) {
-    b.addFont(rootBundle.load('assets/fonts/Barlow-$f.ttf'));
+  final b = FontLoader('Figtree');
+  for (final f in ['Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold']) {
+    b.addFont(rootBundle.load('assets/fonts/Figtree-$f.ttf'));
   }
   await b.load();
-  final c = FontLoader('BarlowCondensed');
-  for (final f in ['SemiBold', 'Bold', 'ExtraBold']) {
-    c.addFont(rootBundle.load('assets/fonts/BarlowCondensed-$f.ttf'));
-  }
-  await c.load();
   final i = FontLoader('MaterialIcons');
   i.addFont(File('/opt/flutter-sdk/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf')
       .readAsBytes().then((x) => ByteData.view(x.buffer)));

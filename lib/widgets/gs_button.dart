@@ -5,8 +5,7 @@ enum GSButtonVariant { primary, secondary, outline, ghost, eco, danger }
 /// `driver`: 72 dp, para el modo conductor (DS6, una mano).
 enum GSButtonSize { sm, md, lg, driver }
 
-/// Botón GoSmart (mundo "rótulo de colectivo"): plano, radio md, etiqueta en
-/// letra condensada de rótulo. Al presionar baja a 0.97 en 120 ms ease-out
+/// Botón GoSmart: píldora plana, etiqueta en Figtree 700. Al presionar baja a 0.97 en 120 ms ease-out
 /// (Emil Kowalski); con "quitar animaciones" del sistema no escala.
 /// Toda talla mide al menos 48 dp de alto (área táctil de Android).
 class GSButton extends StatefulWidget {
@@ -50,15 +49,13 @@ class _GSButtonState extends State<GSButton> {
     final d = _sizeDims;
     final isDisabled = widget.isLoading || widget.onPressed == null;
     final reduceMotion = MediaQuery.of(context).disableAnimations;
-    final radius = BorderRadius.circular(GSRadius.md);
-
+    // Píldora, como los botones de las apps de referencia.
     final button = Material(
       color: c.bg,
-      shape: RoundedRectangleBorder(
-        borderRadius: radius,
+      shape: StadiumBorder(
         side: c.border == null
             ? BorderSide.none
-            : BorderSide(color: c.border!, width: 2),
+            : BorderSide(color: c.border!, width: 1.5),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -130,11 +127,10 @@ class _GSButtonState extends State<GSButton> {
             textAlign: TextAlign.center,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontFamily: GSFonts.display,
+              fontFamily: GSFonts.sans,
               fontSize: d.fontSize,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.3,
-              height: 1.1,
+              height: 1.15,
               color: fg,
             ),
           ),
@@ -155,27 +151,26 @@ class _GSButtonState extends State<GSButton> {
       case GSButtonVariant.secondary:
         return _VariantColors(GSColors.brandTint, GSColors.brand);
       case GSButtonVariant.outline:
-        return _VariantColors(
-            GSColors.surface, GSColors.brand, GSColors.brand);
+        return _VariantColors(GSColors.surface, GSColors.text, GSColors.line);
       case GSButtonVariant.ghost:
         return _VariantColors(Colors.transparent, GSColors.brand);
       case GSButtonVariant.danger:
         return _VariantColors(
-            GSColors.surface, GSColors.roadClosed, GSColors.roadClosed);
+            GSColors.roadClosedTint, GSColors.roadClosed);
     }
   }
 
   _SizeDims get _sizeDims {
     switch (widget.size) {
       case GSButtonSize.sm:
-        return const _SizeDims(height: 48, hPad: 16, fontSize: 17, iconSize: 18);
+        return const _SizeDims(height: 48, hPad: 18, fontSize: 15, iconSize: 18);
       case GSButtonSize.md:
-        return const _SizeDims(height: 52, hPad: 20, fontSize: 20, iconSize: 22);
+        return const _SizeDims(height: 52, hPad: 22, fontSize: 16, iconSize: 20);
       case GSButtonSize.lg:
-        return const _SizeDims(height: 60, hPad: 24, fontSize: 22, iconSize: 24);
+        return const _SizeDims(height: 56, hPad: 24, fontSize: 17, iconSize: 22);
       case GSButtonSize.driver:
         return const _SizeDims(
-            height: GSSize.touchTargetDriver, hPad: 24, fontSize: 24, iconSize: 26);
+            height: GSSize.touchTargetDriver, hPad: 24, fontSize: 20, iconSize: 26);
     }
   }
 }
@@ -238,7 +233,7 @@ class GSIconButton extends StatelessWidget {
             decoration: BoxDecoration(
               color: backgroundColor ?? GSColors.surface,
               shape: BoxShape.circle,
-              boxShadow: hasShadow ? GSShadow.card : [],
+              boxShadow: hasShadow ? GSShadow.float : [],
             ),
             child: Icon(icon,
                 color: iconColor ?? GSColors.text, size: size * 0.45),

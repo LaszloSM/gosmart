@@ -86,4 +86,50 @@ void main() {
     expect(s.fullAddress, 'Maicao · ubicación aprox.');
     expect(s.fromDirectory, isTrue);
   });
+
+  group('sugerencias de Google (sin coordenadas hasta elegirlas)', () {
+    const g = GeocodeSuggestion(
+        placeName: 'Muelle Turístico de Riohacha',
+        fullAddress: 'Riohacha, La Guajira',
+        latLng: null,
+        placeId: 'abc');
+
+    test('el mismo nombre que el directorio no se repite', () async {
+      final r = await LayeredPlaceSearch(
+        directory: _Fake([muelleDir]),
+        provider: _Fake([g, const GeocodeSuggestion(
+            placeName: 'Calle 15', fullAddress: '', latLng: null, placeId: 'x')]),
+      ).search('muelle');
+      expect(r.items.map((s) => s.placeName),
+          ['Muelle Turístico de Riohacha', 'Calle 15']);
+    });
+
+    test('resolver: el directorio no llama a Google; Google trae el punto',
+        () async {
+      var calls = 0;
+      final search = LayeredPlaceSearch(
+        directory: _Fake([]),
+        provider: _Fake([]),
+        resolver: (s) async {
+          calls++;
+          return s.withLocation(const LatLng(11.5449, -72.9075));
+        },
+      );
+      expect(await search.resolve(muelleDir), muelleDir);
+      expect(calls, 0);
+      final r = await search.resolve(g);
+      expect(r!.latLng, const LatLng(11.5449, -72.9075));
+      expect(r.placeName, g.placeName);
+      expect(calls, 1);
+    });
+
+    test('resolver: si Google falla, null (la pantalla avisa)', () async {
+      final search = LayeredPlaceSearch(
+        directory: _Fake([]),
+        provider: _Fake([]),
+        resolver: (_) async => throw const GeocodingException('http_403'),
+      );
+      expect(await search.resolve(g), isNull);
+    });
+  });
 }

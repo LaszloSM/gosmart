@@ -35,7 +35,7 @@ class IntroScreen extends StatelessWidget {
         backgroundColor: GSColors.background,
         body: Column(
           children: [
-            // Carrocería: el nombre y la Línea de ejemplo.
+            // Encabezado: el nombre y la Línea de ejemplo.
             ColoredBox(
               color: GSColors.shell,
               child: SafeArea(
@@ -50,7 +50,7 @@ class IntroScreen extends StatelessWidget {
                         'GoSmart',
                         style: TextStyle(
                           fontFamily: GSFonts.display,
-                          fontSize: 40,
+                          fontSize: 30,
                           fontWeight: FontWeight.w800,
                           height: 1,
                           color: GSColors.onShell,
@@ -61,7 +61,7 @@ class IntroScreen extends StatelessWidget {
                         'Antes de salir, ya sabes cómo está la vía.',
                         style: TextStyle(
                           fontFamily: GSFonts.sans,
-                          fontSize: 19,
+                          fontSize: 16,
                           fontWeight: FontWeight.w500,
                           color: GSColors.onShell,
                         ),
@@ -105,7 +105,7 @@ class IntroScreen extends StatelessWidget {
                     style: text.bodyLarge,
                   ),
                   _Point(
-                    icon: Icons.person_outline_rounded,
+                    icon: Icons.person_rounded,
                     text: 'Sin cuenta puedes mirar y planear. La cuenta se '
                         'pide para reportar, pedir o pagar.',
                     style: text.bodyLarge,

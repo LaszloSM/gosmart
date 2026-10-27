@@ -97,7 +97,7 @@ class GSBottomSheet extends StatelessWidget {
                           title!,
                           style: TextStyle(
                             fontFamily: GSFonts.display,
-                            fontSize: 26,
+                            fontSize: 22,
                             fontWeight: FontWeight.w800,
                             height: 1.1,
                             color: GSColors.text,

@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'design_tokens.dart';
 
-/// Tema de GoSmart, mundo "rótulo de colectivo": shell en ultramar, placas
-/// blancas, títulos en letra condensada de rótulo y cuerpo en Barlow.
+/// Tema de GoSmart: familiar e intuitivo, al nivel de InDrive, Google Maps,
+/// Nequi y Uber/DiDi. Barras blancas, un azul de marca, Figtree, botones en
+/// píldora, tarjetas de 16 y hojas de 24.
 class AppTheme {
   AppTheme._();
 
@@ -15,41 +16,46 @@ class AppTheme {
   static ThemeData _build(GSPalette p, Brightness brightness) {
     final ink = p.text;
     final muted = p.textMuted;
-    const disp = GSFonts.display;
+    const f = GSFonts.sans;
+    final isDark = brightness == Brightness.dark;
 
-    // Títulos en Barlow Condensed (rótulo); cuerpo y etiquetas en Barlow.
+    // Una escala: 32 / 26 / 22 / 20 / 17 / 15 / 13. Títulos en caja normal,
+    // peso 700–800; cuerpo 400; etiquetas 600.
     final textTheme = TextTheme(
-      displayLarge: TextStyle(fontFamily: disp, fontSize: 40, fontWeight: FontWeight.w800, height: 1.05, color: ink),
-      displayMedium: TextStyle(fontFamily: disp, fontSize: 34, fontWeight: FontWeight.w800, height: 1.05, color: ink),
-      displaySmall: TextStyle(fontFamily: disp, fontSize: 28, fontWeight: FontWeight.w800, height: 1.1, color: ink),
-      headlineLarge: TextStyle(fontFamily: disp, fontSize: 28, fontWeight: FontWeight.w700, height: 1.1, color: ink),
-      headlineMedium: TextStyle(fontFamily: disp, fontSize: 24, fontWeight: FontWeight.w700, height: 1.15, color: ink),
-      headlineSmall: TextStyle(fontFamily: disp, fontSize: 22, fontWeight: FontWeight.w700, height: 1.15, color: ink),
-      titleLarge: TextStyle(fontFamily: disp, fontSize: 24, fontWeight: FontWeight.w700, height: 1.15, color: ink),
-      titleMedium: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, height: 1.3, color: ink),
-      titleSmall: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: muted),
-      bodyLarge: TextStyle(fontSize: 17, fontWeight: FontWeight.w400, height: 1.45, color: ink),
-      bodyMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, height: 1.45, color: muted),
-      bodySmall: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, height: 1.4, color: muted),
-      labelLarge: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: ink),
-      labelMedium: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: 0.15, color: muted),
-      labelSmall: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.2, color: muted),
+      displayLarge: TextStyle(fontFamily: f, fontSize: 34, fontWeight: FontWeight.w800, height: 1.1, letterSpacing: -0.8, color: ink),
+      displayMedium: TextStyle(fontFamily: f, fontSize: 30, fontWeight: FontWeight.w800, height: 1.1, letterSpacing: -0.6, color: ink),
+      displaySmall: TextStyle(fontFamily: f, fontSize: 26, fontWeight: FontWeight.w800, height: 1.15, letterSpacing: -0.5, color: ink),
+      headlineLarge: TextStyle(fontFamily: f, fontSize: 24, fontWeight: FontWeight.w800, height: 1.15, letterSpacing: -0.4, color: ink),
+      headlineMedium: TextStyle(fontFamily: f, fontSize: 22, fontWeight: FontWeight.w800, height: 1.2, letterSpacing: -0.3, color: ink),
+      headlineSmall: TextStyle(fontFamily: f, fontSize: 20, fontWeight: FontWeight.w700, height: 1.2, letterSpacing: -0.2, color: ink),
+      titleLarge: TextStyle(fontFamily: f, fontSize: 18, fontWeight: FontWeight.w700, height: 1.25, letterSpacing: -0.1, color: ink),
+      titleMedium: TextStyle(fontFamily: f, fontSize: 16, fontWeight: FontWeight.w600, height: 1.3, color: ink),
+      titleSmall: TextStyle(fontFamily: f, fontSize: 14, fontWeight: FontWeight.w600, height: 1.3, color: muted),
+      bodyLarge: TextStyle(fontFamily: f, fontSize: 16, fontWeight: FontWeight.w400, height: 1.45, color: ink),
+      bodyMedium: TextStyle(fontFamily: f, fontSize: 14, fontWeight: FontWeight.w400, height: 1.45, color: muted),
+      bodySmall: TextStyle(fontFamily: f, fontSize: 13, fontWeight: FontWeight.w400, height: 1.4, color: muted),
+      labelLarge: TextStyle(fontFamily: f, fontSize: 15, fontWeight: FontWeight.w600, color: ink),
+      labelMedium: TextStyle(fontFamily: f, fontSize: 13, fontWeight: FontWeight.w600, color: muted),
+      labelSmall: TextStyle(fontFamily: f, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.1, color: muted),
     );
 
-    final buttonShape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(GSRadius.md),
-    );
+    const pill = StadiumBorder();
     const buttonText = TextStyle(
-      fontFamily: GSFonts.sans,
-      fontSize: 17,
-      fontWeight: FontWeight.w600,
+      fontFamily: f,
+      fontSize: 16,
+      fontWeight: FontWeight.w700,
     );
     final inputRadius = BorderRadius.circular(GSRadius.md);
+    OutlineInputBorder field(Color c, double w) => OutlineInputBorder(
+          borderRadius: inputRadius,
+          borderSide: w == 0 ? BorderSide.none : BorderSide(color: c, width: w),
+        );
 
     final base = ThemeData(
       useMaterial3: true,
       brightness: brightness,
-      fontFamily: GSFonts.sans,
+      fontFamily: f,
+      splashFactory: InkSparkle.splashFactory,
       colorScheme: ColorScheme(
         brightness: brightness,
         primary: p.brand,
@@ -60,12 +66,12 @@ class AppTheme {
         onSecondary: p.onBrand,
         secondaryContainer: p.brandTint,
         onSecondaryContainer: p.brand,
-        tertiary: p.brand,
-        onTertiary: p.onBrand,
+        tertiary: p.cardGold,
+        onTertiary: p.text,
         tertiaryContainer: p.brandTint,
         onTertiaryContainer: p.brand,
         error: p.roadClosed,
-        onError: p.onBrand,
+        onError: isDark ? p.background : p.onBrand,
         errorContainer: p.roadClosedTint,
         onErrorContainer: p.roadClosed,
         surface: p.surface,
@@ -78,8 +84,8 @@ class AppTheme {
         onSurfaceVariant: p.textMuted,
         outline: p.textMuted,
         outlineVariant: p.line,
-        shadow: p.text,
-        scrim: p.text,
+        shadow: p.shadowInk,
+        scrim: Colors.black,
         inverseSurface: p.text,
         onInverseSurface: p.surface,
         inversePrimary: p.brandTint,
@@ -87,81 +93,71 @@ class AppTheme {
       scaffoldBackgroundColor: p.background,
       textTheme: textTheme,
 
-      // Shell en ultramar: la barra superior es la carrocería.
+      // Barra superior blanca, título grande a la izquierda (Material 3).
       appBarTheme: AppBarTheme(
         backgroundColor: p.shell,
         foregroundColor: p.onShell,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
-        scrolledUnderElevation: 0,
+        scrolledUnderElevation: 1,
+        shadowColor: p.shadowInk.withValues(alpha: 0.2),
         centerTitle: false,
-        toolbarHeight: GSSize.topBar,
-        systemOverlayStyle: const SystemUiOverlayStyle(
+        toolbarHeight: GSSize.topBar + 8,
+        systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
-          statusBarBrightness: Brightness.dark,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
         titleTextStyle: TextStyle(
-          fontFamily: GSFonts.display,
-          fontSize: 26,
+          fontFamily: f,
+          fontSize: 20,
           fontWeight: FontWeight.w800,
-          letterSpacing: 0.2,
+          letterSpacing: -0.2,
           color: p.onShell,
         ),
         iconTheme: IconThemeData(color: p.onShell, size: 24),
         actionsIconTheme: IconThemeData(color: p.onShell, size: 24),
       ),
 
-      // DESIGN.md: sin tarjetas por defecto; cuando existen, planas con línea.
       cardTheme: CardThemeData(
         color: p.surface,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(GSRadius.lg),
-          side: BorderSide(color: p.line),
         ),
         margin: EdgeInsets.zero,
       ),
 
+      // Campos rellenos en gris, sin borde en reposo; borde azul al enfocar.
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: p.surface,
-        border: OutlineInputBorder(
-          borderRadius: inputRadius,
-          borderSide: BorderSide(color: p.textMuted, width: 1.5),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: inputRadius,
-          borderSide: BorderSide(color: p.textMuted, width: 1.5),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: inputRadius,
-          borderSide: BorderSide(color: p.brand, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: inputRadius,
-          borderSide: BorderSide(color: p.roadClosed, width: 2),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: inputRadius,
-          borderSide: BorderSide(color: p.roadClosed, width: 2),
-        ),
+        fillColor: p.surfaceSunken,
+        border: field(p.line, 0),
+        enabledBorder: field(p.line, 0),
+        focusedBorder: field(p.brand, 2),
+        errorBorder: field(p.roadClosed, 2),
+        focusedErrorBorder: field(p.roadClosed, 2),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: GSSpacing.s4,
-          vertical: GSSpacing.s3,
+          vertical: GSSpacing.s4,
         ),
-        hintStyle: TextStyle(color: p.textDisabled, fontSize: 17),
-        labelStyle: TextStyle(color: p.textMuted, fontSize: 17),
-        errorStyle: TextStyle(color: p.roadClosed, fontSize: 14),
+        hintStyle: TextStyle(color: p.textMuted, fontSize: 16),
+        labelStyle: TextStyle(color: p.textMuted, fontSize: 16),
+        floatingLabelStyle: TextStyle(color: p.brand, fontWeight: FontWeight.w600),
+        errorStyle: TextStyle(color: p.roadClosed, fontSize: 13),
+        prefixIconColor: p.textMuted,
+        suffixIconColor: p.textMuted,
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: p.brand,
           foregroundColor: p.onBrand,
-          disabledBackgroundColor: p.brand.withValues(alpha: 0.38),
-          disabledForegroundColor: p.onBrand,
-          minimumSize: const Size(double.infinity, GSSize.touchTarget),
-          shape: buttonShape,
+          disabledBackgroundColor: p.surfaceSunken,
+          disabledForegroundColor: p.textDisabled,
+          minimumSize: const Size(double.infinity, GSSize.button),
+          shape: pill,
           elevation: 0,
           textStyle: buttonText,
         ),
@@ -171,8 +167,10 @@ class AppTheme {
         style: FilledButton.styleFrom(
           backgroundColor: p.brand,
           foregroundColor: p.onBrand,
-          minimumSize: const Size(double.infinity, GSSize.touchTarget),
-          shape: buttonShape,
+          disabledBackgroundColor: p.surfaceSunken,
+          disabledForegroundColor: p.textDisabled,
+          minimumSize: const Size(double.infinity, GSSize.button),
+          shape: pill,
           textStyle: buttonText,
         ),
       ),
@@ -180,9 +178,9 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: p.text,
-          minimumSize: const Size(double.infinity, GSSize.touchTarget),
-          side: BorderSide(color: p.textMuted, width: 2),
-          shape: buttonShape,
+          minimumSize: const Size(double.infinity, GSSize.button),
+          side: BorderSide(color: p.line, width: 1.5),
+          shape: pill,
           textStyle: buttonText,
         ),
       ),
@@ -191,59 +189,72 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: p.brand,
           minimumSize: const Size(GSSize.touchTarget, GSSize.touchTarget),
-          textStyle: buttonText,
+          shape: pill,
+          textStyle: buttonText.copyWith(fontSize: 15),
         ),
       ),
 
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          minimumSize: const Size(GSSize.touchTarget, GSSize.touchTarget),
+        ),
+      ),
+
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: p.surface,
-        selectedItemColor: p.brand,
-        unselectedItemColor: p.textMuted,
-        type: BottomNavigationBarType.fixed,
+        foregroundColor: p.text,
+        elevation: 3,
+        shape: const CircleBorder(),
+      ),
+
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: p.shell,
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: p.brandTint,
         elevation: 0,
-        selectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        height: GSSize.bottomNav,
+        labelTextStyle: WidgetStateProperty.resolveWith((s) => TextStyle(
+              fontFamily: f,
+              fontSize: 12.5,
+              fontWeight: s.contains(WidgetState.selected) ? FontWeight.w700 : FontWeight.w500,
+              color: s.contains(WidgetState.selected) ? p.text : p.textMuted,
+            )),
+        iconTheme: WidgetStateProperty.resolveWith((s) => IconThemeData(
+              size: 24,
+              color: s.contains(WidgetState.selected) ? p.brand : p.textMuted,
+            )),
       ),
 
       chipTheme: ChipThemeData(
-        backgroundColor: p.surfaceSunken,
+        backgroundColor: p.surface,
         selectedColor: p.brandTint,
         labelStyle: TextStyle(
-          fontFamily: GSFonts.sans,
+          fontFamily: f,
           fontSize: 14,
           fontWeight: FontWeight.w600,
           color: p.text,
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(GSRadius.sm),
-        ),
+        shape: const StadiumBorder(),
         side: BorderSide(color: p.line),
         padding: const EdgeInsets.symmetric(
           horizontal: GSSpacing.s3,
-          vertical: GSSpacing.s1,
+          vertical: GSSpacing.s2,
         ),
       ),
 
-      // Selector segmentado nativo: lo elegido en ultramar, sin animación
-      // de deslizamiento (acción repetida).
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
           minimumSize: const WidgetStatePropertyAll(Size(0, GSSize.touchTarget)),
-          shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(GSRadius.md))),
-          side: WidgetStatePropertyAll(
-              BorderSide(color: p.brand, width: 1.5)),
+          shape: const WidgetStatePropertyAll(StadiumBorder()),
+          side: WidgetStatePropertyAll(BorderSide(color: p.line, width: 1.5)),
+          // La opción elegida va llena de marca: se distingue sin dudar.
           backgroundColor: WidgetStateProperty.resolveWith((s) =>
-              s.contains(WidgetState.selected)
-                  ? p.brand
-                  : p.surface),
+              s.contains(WidgetState.selected) ? p.brand : p.surface),
           foregroundColor: WidgetStateProperty.resolveWith((s) =>
-              s.contains(WidgetState.selected)
-                  ? p.onBrand
-                  : p.brand),
+              s.contains(WidgetState.selected) ? p.onBrand : p.textMuted),
           textStyle: const WidgetStatePropertyAll(TextStyle(
-            fontFamily: GSFonts.display,
-            fontSize: 19,
+            fontFamily: f,
+            fontSize: 15,
             fontWeight: FontWeight.w700,
           )),
         ),
@@ -253,8 +264,12 @@ class AppTheme {
         fillColor: WidgetStateProperty.resolveWith((s) =>
             s.contains(WidgetState.selected) ? p.brand : null),
         side: BorderSide(color: p.textMuted, width: 2),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(GSRadius.sm)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+      ),
+
+      radioTheme: RadioThemeData(
+        fillColor: WidgetStateProperty.resolveWith((s) =>
+            s.contains(WidgetState.selected) ? p.brand : p.textMuted),
       ),
 
       dividerTheme: DividerThemeData(
@@ -284,49 +299,64 @@ class AppTheme {
         textColor: p.text,
         minVerticalPadding: GSSpacing.s3,
         titleTextStyle: TextStyle(
-          fontFamily: GSFonts.sans,
-          fontSize: 17,
+          fontFamily: f,
+          fontSize: 16,
           fontWeight: FontWeight.w600,
           color: p.text,
         ),
         subtitleTextStyle: TextStyle(
-          fontFamily: GSFonts.sans,
-          fontSize: 15,
+          fontFamily: f,
+          fontSize: 14,
           height: 1.35,
           color: p.textMuted,
         ),
       ),
 
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: p.text,
+        backgroundColor: isDark ? p.surfaceSunken : p.text,
         contentTextStyle: TextStyle(
-          fontFamily: GSFonts.sans,
+          fontFamily: f,
           fontSize: 15,
-          color: p.surface,
+          fontWeight: FontWeight.w500,
+          color: isDark ? p.text : p.surface,
         ),
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(GSRadius.md)),
       ),
 
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: p.surface,
         surfaceTintColor: Colors.transparent,
+        showDragHandle: false,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(GSRadius.lg)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(GSRadius.xl)),
         ),
+      ),
+
+      dialogTheme: DialogThemeData(
+        backgroundColor: p.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(GSRadius.xl)),
+        titleTextStyle: textTheme.titleLarge,
+        contentTextStyle: textTheme.bodyLarge?.copyWith(color: muted),
       ),
 
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: p.brand,
-        linearTrackColor: p.line,
+        linearTrackColor: p.brandTint,
+        circularTrackColor: Colors.transparent,
       ),
 
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: p.brand,
+        selectionColor: p.brand.withValues(alpha: 0.25),
+        selectionHandleColor: p.brand,
+      ),
     );
 
-    // ThemeData(fontFamily:) pisa la familia de todo el textTheme; los
-    // títulos condensados se reponen aquí, después de construir el tema.
+    // ThemeData(fontFamily:) pisa la familia del textTheme; se repone la escala.
     return base.copyWith(
       textTheme: base.textTheme.merge(textTheme),
     );
   }
-
 }

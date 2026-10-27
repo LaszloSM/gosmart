@@ -1,7 +1,8 @@
 // lib/services/place_search.dart
 // Buscador de lugares en capas (Fase 3, decisión D8):
 //   1. Directorio propio (`places`): como la gente nombra los sitios.
-//   2. Proveedor externo (hoy Mapbox; Google Places cuando haya clave).
+//   2. Google Places (función `maps`); sus sugerencias traen coordenadas
+//      solo al elegirlas (`resolve`).
 //   3. Si nada sirve, el usuario marca el punto en el mapa.
 // Si el proveedor falla o no está configurado, se sigue con el directorio y
 // la pantalla lo avisa (`PlaceSearchResult.limited`).
@@ -78,9 +79,28 @@ class ProviderPlaceSearch implements PlaceSearch {
 
 /// Une las capas: directorio primero, luego el proveedor sin repetidos.
 class LayeredPlaceSearch {
-  LayeredPlaceSearch({required this.directory, required this.provider});
+  LayeredPlaceSearch({
+    required this.directory,
+    required this.provider,
+    Future<GeocodeSuggestion> Function(GeocodeSuggestion)? resolver,
+  }) : _resolver = resolver ?? geocodingService.resolve;
   final PlaceSearch directory;
   final PlaceSearch provider;
+  final Future<GeocodeSuggestion> Function(GeocodeSuggestion) _resolver;
+
+  /// Coordenadas de la sugerencia elegida (las de Google llegan aquí).
+  /// null si no se pudo: la pantalla avisa y la persona puede elegir otra.
+  Future<GeocodeSuggestion?> resolve(GeocodeSuggestion s) async {
+    if (s.latLng != null) return s;
+    try {
+      return await _resolver(s);
+    } on GeocodingException catch (e) {
+      Telemetry.degraded('geocoding', e.code);
+    } catch (e) {
+      Telemetry.degraded('geocoding', e.runtimeType.toString());
+    }
+    return null;
+  }
 
   static const maxResults = 8;
 
@@ -119,7 +139,8 @@ class LayeredPlaceSearch {
   }
 }
 
-/// Mismo lugar: nombre parecido y a menos de 150 m.
+/// Mismo lugar: nombre parecido y a menos de 150 m. Si una sugerencia aún no
+/// tiene coordenadas (Google sin resolver), basta con el mismo nombre.
 bool isSamePlace(GeocodeSuggestion a, GeocodeSuggestion b) {
   String norm(String s) => s
       .toLowerCase()
@@ -131,8 +152,10 @@ bool isSamePlace(GeocodeSuggestion a, GeocodeSuggestion b) {
       .replaceAll(RegExp(r'[^a-zñ0-9 ]'), '')
       .trim();
   final na = norm(a.placeName), nb = norm(b.placeName);
+  final la = a.latLng, lb = b.latLng;
+  if (la == null || lb == null) return na == nb;
   final similarName = na == nb || na.contains(nb) || nb.contains(na);
-  return similarName && _meters(a.latLng, b.latLng) < 150;
+  return similarName && _meters(la, lb) < 150;
 }
 
 double _meters(LatLng a, LatLng b) {

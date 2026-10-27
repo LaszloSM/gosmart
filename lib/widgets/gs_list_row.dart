@@ -1,6 +1,7 @@
 // lib/widgets/gs_list_row.dart
-// Fila plana con divisor (sin tarjetas por defecto). Ícono, título, detalle
-// y un final opcional (valor, interruptor o chevron). Mín. 64 dp de alto.
+// Fila de lista como en Nequi o los ajustes de Google: ícono en un círculo
+// gris, título, detalle y un final opcional (valor, interruptor o chevron).
+// Mín. 64 dp. Se agrupan en tarjetas blancas con GSGroup.
 import 'package:flutter/material.dart';
 
 import '../theme/design_tokens.dart';
@@ -39,7 +40,7 @@ class GSListRow extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: GSFonts.mono,
                   fontFeatures: GSFonts.tabular,
-                  fontSize: 17,
+                  fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: GSColors.text,
                 ),
@@ -60,8 +61,16 @@ class GSListRow extends StatelessWidget {
                 horizontal: GSSpacing.s4, vertical: GSSpacing.s3),
             child: Row(
               children: [
-                Icon(icon, color: iconColor ?? GSColors.brand),
-                const SizedBox(width: GSSpacing.s4),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: GSColors.surfaceSunken,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, size: GSSize.iconLg, color: iconColor ?? GSColors.text),
+                ),
+                const SizedBox(width: GSSpacing.s3),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,7 +100,34 @@ class GSListRow extends StatelessWidget {
   }
 }
 
-/// Título de sección en letra de rótulo (no una etiqueta pequeña en
+/// Grupo de filas en una tarjeta blanca de radio 16, con divisores que
+/// empiezan después del ícono (Nequi, ajustes de Android).
+class GSGroup extends StatelessWidget {
+  const GSGroup({super.key, required this.children, this.margin});
+  final List<Widget> children;
+  final EdgeInsetsGeometry? margin;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = <Widget>[];
+    for (var i = 0; i < children.length; i++) {
+      if (i > 0) items.add(const Divider(indent: 68));
+      items.add(children[i]);
+    }
+    return Padding(
+      padding: margin ??
+          const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
+      child: Material(
+        color: GSColors.surface,
+        borderRadius: BorderRadius.circular(GSRadius.lg),
+        clipBehavior: Clip.antiAlias,
+        child: Column(mainAxisSize: MainAxisSize.min, children: items),
+      ),
+    );
+  }
+}
+
+/// Título de sección: en caja normal y peso 700 (sin etiquetas pequeñas en
 /// mayúsculas: impeccable las prohíbe).
 class GSSectionTitle extends StatelessWidget {
   const GSSectionTitle(this.label, {super.key});
@@ -101,7 +137,7 @@ class GSSectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          GSSpacing.s4, GSSpacing.s6, GSSpacing.s4, GSSpacing.s1),
+          GSSpacing.s4, GSSpacing.s6, GSSpacing.s4, GSSpacing.s3),
       child: Text(label, style: Theme.of(context).textTheme.titleLarge),
     );
   }

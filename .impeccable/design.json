@@ -1,609 +1,1060 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-12T05:58:49+00:00",
+  "generatedAt": "2026-10-27T00:00:00Z",
   "title": "Design System: GoSmart",
   "extensions": {
     "colorMeta": {
       "brand": {
         "role": "primary",
-        "displayName": "Ultramar de carrocería",
-        "canonical": "oklch(38.0% 0.141 264.7)",
+        "displayName": "Azul GoSmart",
+        "canonical": "#0B4FC4",
         "tonalRamp": [
-          "#00042E",
-          "#0C2054",
-          "#233D7D",
-          "#3C5DA9",
-          "#587ED6",
-          "#7EA3F4",
-          "#A5C8FF",
-          "#CEEEFF"
+          "#000826",
+          "#021E57",
+          "#07388D",
+          "#1053C8",
+          "#3779F1",
+          "#6AA0FF",
+          "#A9C8FF",
+          "#E6EFFE"
         ]
       },
       "brand-pressed": {
         "role": "primary",
-        "displayName": "Ultramar presionado",
-        "canonical": "oklch(31.7% 0.114 264.8)",
+        "displayName": "Azul presionado",
+        "canonical": "#093F9D",
         "tonalRamp": [
-          "#010727",
-          "#11224B",
-          "#293F72",
-          "#445F9C",
-          "#6080C6",
-          "#86A4E5",
-          "#ACC9FF",
-          "#D5EFFF"
+          "#000826",
+          "#021F56",
+          "#003693",
+          "#2357B7",
+          "#457CE0",
+          "#6BA0FE",
+          "#A9C8FE",
+          "#E6EFFE"
         ]
       },
       "on-brand": {
         "role": "primary",
-        "displayName": "Blanco sobre carrocería",
-        "canonical": "oklch(100.0% 0.000 89.9)",
+        "displayName": "Blanco sobre marca",
+        "canonical": "#FFFFFF",
         "tonalRamp": [
           "#0B0B0B",
-          "#252525",
-          "#424242",
-          "#616161",
-          "#828282",
-          "#A5A5A5",
-          "#C9C9C9",
+          "#242424",
+          "#404040",
+          "#5D5D5D",
+          "#808080",
+          "#A1A1A1",
+          "#C7C7C7",
           "#EEEEEE"
         ]
       },
       "on-brand-muted": {
         "role": "primary",
-        "displayName": "Azul neblina",
-        "canonical": "oklch(87.9% 0.039 267.9)",
+        "displayName": "Texto secundario sobre marca",
+        "canonical": "#D6E2FA",
         "tonalRamp": [
-          "#070B15",
-          "#1F2533",
-          "#3B4253",
-          "#586176",
-          "#78829A",
-          "#9BA5BC",
-          "#C0C9DE",
-          "#E7EEFF"
+          "#050A1A",
+          "#1B2435",
+          "#364053",
+          "#545E72",
+          "#768096",
+          "#97A2B8",
+          "#BCC8DF",
+          "#E7EFFF"
         ]
       },
       "brand-tint": {
         "role": "primary",
-        "displayName": "Tinte de ultramar",
-        "canonical": "oklch(93.3% 0.019 266.0)",
+        "displayName": "Azul claro de selección",
+        "canonical": "#E8F0FE",
         "tonalRamp": [
-          "#080B13",
-          "#21252E",
-          "#3D424C",
-          "#5C616C",
-          "#7D828E",
-          "#9FA5B1",
-          "#C3C9D6",
-          "#E9EFFC"
+          "#070B14",
+          "#1E242E",
+          "#3A404B",
+          "#575E6A",
+          "#79818D",
+          "#9AA2AF",
+          "#C0C8D5",
+          "#E7EFFD"
         ]
       },
-      "stripe": {
-        "role": "secondary",
-        "displayName": "Fucsia de franja",
-        "canonical": "oklch(53.1% 0.202 5.6)",
+      "shell": {
+        "role": "neutral",
+        "displayName": "Barra blanca",
+        "canonical": "#FFFFFF",
         "tonalRamp": [
-          "#2B0005",
-          "#54001B",
-          "#800035",
-          "#AE1A52",
-          "#DD3B71",
-          "#FE6D95",
-          "#FF9ABA",
-          "#FFC7E1"
+          "#0B0B0B",
+          "#242424",
+          "#404040",
+          "#5D5D5D",
+          "#808080",
+          "#A1A1A1",
+          "#C7C7C7",
+          "#EEEEEE"
+        ]
+      },
+      "on-shell": {
+        "role": "neutral",
+        "displayName": "Tinta de barra",
+        "canonical": "#14161B",
+        "tonalRamp": [
+          "#090B10",
+          "#222429",
+          "#3D4045",
+          "#5B5D64",
+          "#7D8087",
+          "#9FA1A8",
+          "#C4C7CE",
+          "#EBEEF6"
+        ]
+      },
+      "on-shell-muted": {
+        "role": "neutral",
+        "displayName": "Tinta suave de barra",
+        "canonical": "#4A5162",
+        "tonalRamp": [
+          "#060A18",
+          "#1E2433",
+          "#393F50",
+          "#565D6F",
+          "#788092",
+          "#99A1B5",
+          "#BFC7DB",
+          "#E8EEFF"
         ]
       },
       "background": {
         "role": "neutral",
-        "displayName": "Lámina",
-        "canonical": "oklch(95.7% 0.006 255.5)",
+        "displayName": "Gris frío",
+        "canonical": "#F4F6FA",
         "tonalRamp": [
-          "#090B0E",
-          "#232528",
-          "#404245",
-          "#5F6165",
-          "#808286",
-          "#A2A5A9",
-          "#C6C9CD",
-          "#ECEFF3"
+          "#0A0B0E",
+          "#232427",
+          "#3E4043",
+          "#5C5E61",
+          "#7E8084",
+          "#A0A1A5",
+          "#C5C7CB",
+          "#ECEEF2"
         ]
       },
       "surface": {
         "role": "neutral",
-        "displayName": "Placa",
-        "canonical": "oklch(100.0% 0.000 89.9)",
+        "displayName": "Blanco de superficie",
+        "canonical": "#FFFFFF",
         "tonalRamp": [
           "#0B0B0B",
-          "#252525",
-          "#424242",
-          "#616161",
-          "#828282",
-          "#A5A5A5",
-          "#C9C9C9",
+          "#242424",
+          "#404040",
+          "#5D5D5D",
+          "#808080",
+          "#A1A1A1",
+          "#C7C7C7",
           "#EEEEEE"
         ]
       },
       "surface-sunken": {
         "role": "neutral",
-        "displayName": "Lámina hundida",
-        "canonical": "oklch(92.6% 0.011 256.7)",
+        "displayName": "Gris hundido",
+        "canonical": "#EBEEF3",
         "tonalRamp": [
-          "#080B10",
-          "#22252A",
-          "#3E4248",
-          "#5D6268",
-          "#7E8389",
-          "#A1A5AC",
-          "#C5CAD0",
-          "#EAEFF6"
+          "#090B0E",
+          "#222428",
+          "#3D4044",
+          "#5B5E62",
+          "#7E8085",
+          "#9FA2A6",
+          "#C4C7CC",
+          "#ECEFF4"
         ]
       },
       "text": {
         "role": "neutral",
         "displayName": "Tinta",
-        "canonical": "oklch(21.0% 0.032 264.7)",
+        "canonical": "#14161B",
         "tonalRamp": [
-          "#070B13",
-          "#202530",
-          "#3B4250",
-          "#596172",
-          "#798296",
-          "#9CA5B7",
-          "#C1C9DA",
-          "#E7EFFE"
+          "#090B10",
+          "#222429",
+          "#3D4045",
+          "#5B5D64",
+          "#7D8087",
+          "#9FA1A8",
+          "#C4C7CE",
+          "#EBEEF6"
         ]
       },
       "text-muted": {
         "role": "neutral",
         "displayName": "Tinta suave",
-        "canonical": "oklch(43.1% 0.039 265.7)",
+        "canonical": "#4A5162",
         "tonalRamp": [
-          "#070B15",
-          "#1F2532",
-          "#3A4253",
-          "#586176",
-          "#77829A",
-          "#9BA5BB",
-          "#C0C9DE",
-          "#E6EFFF"
+          "#060A18",
+          "#1E2433",
+          "#393F50",
+          "#565D6F",
+          "#788092",
+          "#99A1B5",
+          "#BFC7DB",
+          "#E8EEFF"
         ]
       },
       "text-disabled": {
         "role": "neutral",
-        "displayName": "Tinta apagada",
-        "canonical": "oklch(66.2% 0.030 265.3)",
+        "displayName": "Gris deshabilitado",
+        "canonical": "#9AA0AC",
         "tonalRamp": [
-          "#080B13",
-          "#202530",
-          "#3C424F",
-          "#5A6171",
-          "#7A8295",
-          "#9DA5B6",
-          "#C2C9D9",
-          "#E8EFFD"
+          "#070B13",
+          "#1F242D",
+          "#3B404A",
+          "#585E69",
+          "#7B808C",
+          "#9CA2AE",
+          "#C1C7D4",
+          "#E8EFFC"
         ]
       },
       "line": {
         "role": "neutral",
         "displayName": "Línea",
-        "canonical": "oklch(85.6% 0.018 261.3)",
+        "canonical": "#DDE1E8",
         "tonalRamp": [
-          "#070B13",
-          "#20252E",
-          "#3D424C",
-          "#5B626C",
-          "#7C838E",
-          "#9FA5B1",
-          "#C3CAD5",
-          "#E8EFFB"
+          "#090B10",
+          "#212429",
+          "#3D4045",
+          "#5A5E64",
+          "#7D8087",
+          "#9EA2A8",
+          "#C4C7CE",
+          "#EBEFF6"
         ]
       },
       "road-open": {
         "role": "tertiary",
         "displayName": "Vía abierta",
-        "canonical": "oklch(43.3% 0.106 150.0)",
+        "canonical": "#0F5F30",
         "tonalRamp": [
-          "#001200",
-          "#002E10",
-          "#194E28",
-          "#347043",
-          "#509460",
-          "#79B686",
-          "#A3D9AD",
-          "#CDFDD5"
+          "#001004",
+          "#042C13",
+          "#014E24",
+          "#246E3E",
+          "#4A9260",
+          "#6CB580",
+          "#92DBA5",
+          "#CAFED6"
         ]
       },
       "road-caution": {
         "role": "tertiary",
-        "displayName": "Vía con precaución",
-        "canonical": "oklch(41.0% 0.090 67.4)",
+        "displayName": "Precaución",
+        "canonical": "#734600",
         "tonalRamp": [
-          "#190500",
-          "#391E00",
-          "#5B3A10",
-          "#80582A",
-          "#A67844",
-          "#C79C6E",
-          "#E9C198",
-          "#FFE7C3"
+          "#140800",
+          "#341E03",
+          "#5B3600",
+          "#805214",
+          "#A5753C",
+          "#C9965E",
+          "#F0BC83",
+          "#FFEBD6"
         ]
       },
       "road-caution-tint": {
         "role": "tertiary",
-        "displayName": "Tinte de precaución",
-        "canonical": "oklch(93.5% 0.053 82.9)",
+        "displayName": "Fondo de precaución",
+        "canonical": "#FFF1D6",
         "tonalRamp": [
-          "#120A00",
-          "#2E230F",
-          "#4D4027",
-          "#6F5F42",
-          "#92805E",
-          "#B4A384",
-          "#D7C7AB",
-          "#FBEDD4"
+          "#110A00",
+          "#2D220C",
+          "#493E28",
+          "#685C45",
+          "#8B7F66",
+          "#ADA087",
+          "#D3C6AC",
+          "#FBEDD2"
         ]
       },
       "road-closed": {
         "role": "tertiary",
         "displayName": "Vía cerrada",
-        "canonical": "oklch(45.6% 0.164 28.7)",
+        "canonical": "#9C1E17",
         "tonalRamp": [
-          "#280000",
-          "#4F0000",
-          "#791913",
-          "#A5362C",
-          "#D25346",
-          "#F37E6F",
-          "#FFA899",
-          "#FFD2C4"
+          "#1E0000",
+          "#490503",
+          "#7C0303",
+          "#A62920",
+          "#CF5144",
+          "#F67464",
+          "#FDB1A6",
+          "#FEE9E5"
         ]
       },
       "road-closed-tint": {
         "role": "tertiary",
-        "displayName": "Tinte de cierre",
-        "canonical": "oklch(91.0% 0.032 27.4)",
+        "displayName": "Fondo de cierre",
+        "canonical": "#FDE7E5",
         "tonalRamp": [
-          "#120807",
-          "#2F211F",
-          "#4F3D3B",
-          "#715B58",
-          "#947C78",
-          "#B69F9B",
-          "#D9C3C0",
-          "#FDE9E7"
+          "#140707",
+          "#2F1F1E",
+          "#4C3B39",
+          "#6B5957",
+          "#8E7B79",
+          "#B09C9A",
+          "#D7C2C0",
+          "#FFE9E7"
         ]
       },
       "road-unknown": {
         "role": "tertiary",
-        "displayName": "Vía sin datos",
-        "canonical": "oklch(45.8% 0.032 269.2)",
+        "displayName": "Sin datos",
+        "canonical": "#4A5162",
         "tonalRamp": [
-          "#080B11",
-          "#21252E",
-          "#3D424D",
-          "#5B616E",
-          "#7B8291",
-          "#9EA5B3",
-          "#C3C9D6",
-          "#E9EFFA"
+          "#060A18",
+          "#1E2433",
+          "#393F50",
+          "#565D6F",
+          "#788092",
+          "#99A1B5",
+          "#BFC7DB",
+          "#E8EEFF"
         ]
       },
       "mode-taxi": {
-        "role": "tertiary",
-        "displayName": "Café de mototaxi",
-        "canonical": "oklch(46.6% 0.076 56.4)",
+        "role": "secondary",
+        "displayName": "Morado mototaxi",
+        "canonical": "#6941C6",
         "tonalRamp": [
-          "#190500",
-          "#381D08",
-          "#5B3920",
-          "#7F573A",
-          "#A57755",
-          "#C69B7C",
-          "#E8C0A4",
-          "#FFE6CD"
+          "#0E002B",
+          "#2A0460",
+          "#480F9B",
+          "#643BC0",
+          "#8562E9",
+          "#A48EF8",
+          "#C7BEFB",
+          "#EEECFE"
         ]
       },
       "mode-bike": {
-        "role": "tertiary",
-        "displayName": "Azul acero de bicicleta",
-        "canonical": "oklch(50.9% 0.073 241.4)",
+        "role": "secondary",
+        "displayName": "Cian bici",
+        "canonical": "#0E7490",
         "tonalRamp": [
-          "#000D1C",
-          "#0A283B",
-          "#23465E",
-          "#3D6683",
-          "#5A88AA",
-          "#81ABCB",
-          "#A9CFEC",
-          "#D2F4FF"
+          "#000D13",
+          "#002935",
+          "#044759",
+          "#0C6881",
+          "#338CA9",
+          "#58AECC",
+          "#7FD5F4",
+          "#D9F4FE"
         ]
       },
       "card-gold": {
-        "role": "tertiary",
+        "role": "secondary",
         "displayName": "Oro de tarjeta",
-        "canonical": "oklch(65.5% 0.104 82.4)",
+        "canonical": "#FFC93C",
         "tonalRamp": [
-          "#170700",
-          "#362000",
-          "#583D00",
-          "#7B5B12",
-          "#A17C2F",
-          "#C2A05E",
-          "#E4C58B",
-          "#FFEBB8"
+          "#110A00",
+          "#2E2203",
+          "#513C01",
+          "#755904",
+          "#9E7B1B",
+          "#C69B25",
+          "#F4BF2D",
+          "#FEEDC6"
         ]
+      },
+      "shadow-ink": {
+        "role": "neutral",
+        "displayName": "Tinta de sombra",
+        "canonical": "#1A2440",
+        "tonalRamp": [
+          "#030822",
+          "#19223E",
+          "#333F5D",
+          "#505D7D",
+          "#7280A1",
+          "#93A1C4",
+          "#B8C7EC",
+          "#E8EEFE"
+        ]
+      },
+      "brand-dark": {
+        "role": "primary",
+        "displayName": "Azul GoSmart (noche)",
+        "canonical": "#A8C7FA",
+        "tonalRamp": [
+          "#000925",
+          "#0B224A",
+          "#263F69",
+          "#435E8B",
+          "#6481B0",
+          "#85A3D4",
+          "#AAC9FC",
+          "#E6EFFE"
+        ]
+      },
+      "brand-pressed-dark": {
+        "role": "primary",
+        "displayName": "Azul presionado (noche)",
+        "canonical": "#C2D7FB",
+        "tonalRamp": [
+          "#010922",
+          "#14233E",
+          "#2F405D",
+          "#4C5E7D",
+          "#6E81A2",
+          "#8EA2C5",
+          "#B4C8EC",
+          "#E6EFFE"
+        ]
+      },
+      "on-brand-dark": {
+        "role": "primary",
+        "displayName": "Blanco sobre marca (noche)",
+        "canonical": "#0B1D3A",
+        "tonalRamp": [
+          "#000924",
+          "#112341",
+          "#2C4060",
+          "#495E80",
+          "#6B81A5",
+          "#8BA3C8",
+          "#B0C9F0",
+          "#E6EFFE"
+        ]
+      },
+      "on-brand-muted-dark": {
+        "role": "primary",
+        "displayName": "Texto secundario sobre marca (noche)",
+        "canonical": "#1E3560",
+        "tonalRamp": [
+          "#000727",
+          "#0C224B",
+          "#273F6A",
+          "#445D8C",
+          "#6580B1",
+          "#86A2D5",
+          "#AAC8FD",
+          "#E6EFFF"
+        ]
+      },
+      "brand-tint-dark": {
+        "role": "primary",
+        "displayName": "Azul claro de selección (noche)",
+        "canonical": "#1F2E4D",
+        "tonalRamp": [
+          "#010824",
+          "#152341",
+          "#2F3F60",
+          "#4C5D80",
+          "#6E80A5",
+          "#8EA2C8",
+          "#B3C8EF",
+          "#E7EFFE"
+        ]
+      },
+      "shell-dark": {
+        "role": "neutral",
+        "displayName": "Barra blanca (noche)",
+        "canonical": "#1B1E25",
+        "tonalRamp": [
+          "#080B11",
+          "#21242B",
+          "#3C4048",
+          "#5A5E66",
+          "#7C8089",
+          "#9DA1AB",
+          "#C3C7D1",
+          "#EAEEF8"
+        ]
+      },
+      "on-shell-dark": {
+        "role": "neutral",
+        "displayName": "Tinta de barra (noche)",
+        "canonical": "#E6E8EE",
+        "tonalRamp": [
+          "#0A0B0F",
+          "#222428",
+          "#3E4044",
+          "#5C5D62",
+          "#7E8085",
+          "#9FA1A7",
+          "#C5C7CD",
+          "#ECEEF4"
+        ]
+      },
+      "on-shell-muted-dark": {
+        "role": "neutral",
+        "displayName": "Tinta suave de barra (noche)",
+        "canonical": "#A9AEBA",
+        "tonalRamp": [
+          "#080B13",
+          "#20242D",
+          "#3B404A",
+          "#595D68",
+          "#7B808B",
+          "#9CA1AD",
+          "#C2C7D4",
+          "#E9EEFB"
+        ]
+      },
+      "background-dark": {
+        "role": "neutral",
+        "displayName": "Gris frío (noche)",
+        "canonical": "#111318",
+        "tonalRamp": [
+          "#090B10",
+          "#222429",
+          "#3D4046",
+          "#5B5D64",
+          "#7D8087",
+          "#9EA1A8",
+          "#C4C7CE",
+          "#EBEEF6"
+        ]
+      },
+      "surface-dark": {
+        "role": "neutral",
+        "displayName": "Blanco de superficie (noche)",
+        "canonical": "#1B1E25",
+        "tonalRamp": [
+          "#080B11",
+          "#21242B",
+          "#3C4048",
+          "#5A5E66",
+          "#7C8089",
+          "#9DA1AB",
+          "#C3C7D1",
+          "#EAEEF8"
+        ]
+      },
+      "surface-sunken-dark": {
+        "role": "neutral",
+        "displayName": "Gris hundido (noche)",
+        "canonical": "#262A33",
+        "tonalRamp": [
+          "#080B13",
+          "#20242D",
+          "#3B4049",
+          "#595E68",
+          "#7B808B",
+          "#9CA1AD",
+          "#C2C7D3",
+          "#E9EEFB"
+        ]
+      },
+      "text-dark": {
+        "role": "neutral",
+        "displayName": "Tinta (noche)",
+        "canonical": "#E6E8EE",
+        "tonalRamp": [
+          "#0A0B0F",
+          "#222428",
+          "#3E4044",
+          "#5C5D62",
+          "#7E8085",
+          "#9FA1A7",
+          "#C5C7CD",
+          "#ECEEF4"
+        ]
+      },
+      "text-muted-dark": {
+        "role": "neutral",
+        "displayName": "Tinta suave (noche)",
+        "canonical": "#A9AEBA",
+        "tonalRamp": [
+          "#080B13",
+          "#20242D",
+          "#3B404A",
+          "#595D68",
+          "#7B808B",
+          "#9CA1AD",
+          "#C2C7D4",
+          "#E9EEFB"
+        ]
+      },
+      "text-disabled-dark": {
+        "role": "neutral",
+        "displayName": "Gris deshabilitado (noche)",
+        "canonical": "#6E7482",
+        "tonalRamp": [
+          "#070B15",
+          "#1F242F",
+          "#3A404C",
+          "#585E6B",
+          "#7A808E",
+          "#9BA1B0",
+          "#C1C7D7",
+          "#E8EEFE"
+        ]
+      },
+      "line-dark": {
+        "role": "neutral",
+        "displayName": "Línea (noche)",
+        "canonical": "#2E333D",
+        "tonalRamp": [
+          "#070B13",
+          "#1F242E",
+          "#3B404A",
+          "#585E69",
+          "#7A808C",
+          "#9BA2AE",
+          "#C1C7D4",
+          "#E8EFFC"
+        ]
+      },
+      "road-open-dark": {
+        "role": "tertiary",
+        "displayName": "Vía abierta (noche)",
+        "canonical": "#73D69C",
+        "tonalRamp": [
+          "#000F05",
+          "#032C18",
+          "#0B4C2D",
+          "#007041",
+          "#2D9660",
+          "#55B980",
+          "#7DE0A5",
+          "#C5FFDA"
+        ]
+      },
+      "road-caution-dark": {
+        "role": "tertiary",
+        "displayName": "Precaución (noche)",
+        "canonical": "#F2B65A",
+        "tonalRamp": [
+          "#130900",
+          "#322002",
+          "#553A09",
+          "#7E5401",
+          "#A87518",
+          "#CF9535",
+          "#F7BB5F",
+          "#FFEBD1"
+        ]
+      },
+      "road-caution-tint-dark": {
+        "role": "tertiary",
+        "displayName": "Fondo de precaución (noche)",
+        "canonical": "#3A2A10",
+        "tonalRamp": [
+          "#120900",
+          "#302106",
+          "#4D3D23",
+          "#6C5B40",
+          "#907D61",
+          "#B29E82",
+          "#D8C4A6",
+          "#FFECCF"
+        ]
+      },
+      "road-closed-dark": {
+        "role": "tertiary",
+        "displayName": "Vía cerrada (noche)",
+        "canonical": "#FF8F85",
+        "tonalRamp": [
+          "#1E0001",
+          "#490507",
+          "#781013",
+          "#9C3632",
+          "#C55B53",
+          "#EB7D74",
+          "#FDB1A9",
+          "#FEE9E6"
+        ]
+      },
+      "road-closed-tint-dark": {
+        "role": "tertiary",
+        "displayName": "Fondo de cierre (noche)",
+        "canonical": "#3F1916",
+        "tonalRamp": [
+          "#1F0001",
+          "#3C1714",
+          "#5C332F",
+          "#7C504B",
+          "#A1736D",
+          "#C5948E",
+          "#ECB9B3",
+          "#FEE9E6"
+        ]
+      },
+      "road-unknown-dark": {
+        "role": "tertiary",
+        "displayName": "Sin datos (noche)",
+        "canonical": "#A3ABBA",
+        "tonalRamp": [
+          "#060B15",
+          "#1E2430",
+          "#39404C",
+          "#575E6B",
+          "#79808F",
+          "#9AA2B1",
+          "#BFC8D7",
+          "#E6EFFF"
+        ]
+      },
+      "mode-taxi-dark": {
+        "role": "secondary",
+        "displayName": "Morado mototaxi (noche)",
+        "canonical": "#C4B1F4",
+        "tonalRamp": [
+          "#100028",
+          "#2A154B",
+          "#46336B",
+          "#64518C",
+          "#8674B2",
+          "#A895D6",
+          "#CEBBFE",
+          "#F0EBFE"
+        ]
+      },
+      "mode-bike-dark": {
+        "role": "secondary",
+        "displayName": "Cian bici (noche)",
+        "canonical": "#7DD3E8",
+        "tonalRamp": [
+          "#000E12",
+          "#012932",
+          "#054855",
+          "#0E697A",
+          "#348DA1",
+          "#59B0C4",
+          "#80D6EB",
+          "#D3F6FF"
+        ]
+      },
+      "card-gold-dark": {
+        "role": "secondary",
+        "displayName": "Oro de tarjeta (noche)",
+        "canonical": "#FFD66B",
+        "tonalRamp": [
+          "#100A00",
+          "#2F2200",
+          "#503D02",
+          "#745A07",
+          "#9E7B00",
+          "#C39C28",
+          "#EBC256",
+          "#FEEDC3"
+        ]
+      },
+      "shadow-ink-dark": {
+        "role": "neutral",
+        "displayName": "Tinta de sombra (noche)",
+        "canonical": "#000000",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#242424",
+          "#404040",
+          "#5D5D5D",
+          "#808080",
+          "#A1A1A1",
+          "#C7C7C7",
+          "#EEEEEE"
+        ]
+      },
+      "brand-deep": {
+        "role": "primary",
+        "displayName": "Azul hondo de cabecera",
+        "canonical": "#0A3A94"
+      },
+      "on-brand-deep": {
+        "role": "neutral",
+        "displayName": "Texto sobre la cabecera",
+        "canonical": "#FFFFFF"
+      },
+      "on-brand-deep-muted": {
+        "role": "neutral",
+        "displayName": "Texto secundario sobre la cabecera",
+        "canonical": "#CBD9F6"
       }
     },
     "typographyMeta": {
       "display": {
         "displayName": "Display",
-        "purpose": "Bienvenidas y cifras de portada; poco uso."
+        "purpose": "Saldo y bienvenida; casi no se usa."
       },
       "headline": {
         "displayName": "Headline",
-        "purpose": "Títulos de pantalla y de hoja."
+        "purpose": "Títulos de pantalla."
+      },
+      "headline-small": {
+        "displayName": "Headline small",
+        "purpose": "Títulos de barra y diálogos."
       },
       "title": {
         "displayName": "Title",
-        "purpose": "Títulos de sección (GSSectionTitle)."
+        "purpose": "Títulos de sección."
       },
-      "app-bar": {
-        "displayName": "App bar",
-        "purpose": "Título blanco de la barra superior ultramar."
-      },
-      "plate": {
-        "displayName": "Plate",
-        "purpose": "Rótulo en mayúsculas de la placa de ruta (talla md) y del campo ¿A DÓNDE VAS?."
-      },
-      "plate-lg": {
-        "displayName": "Plate lg",
-        "purpose": "Rótulo de placa grande (nombre en Perfil, destino principal)."
-      },
-      "button": {
-        "displayName": "Button",
-        "purpose": "Etiquetas de botón."
-      },
-      "row-title": {
-        "displayName": "Row title",
-        "purpose": "Título de filas y listas."
+      "title-medium": {
+        "displayName": "Title medium",
+        "purpose": "Título de fila y tarjeta."
       },
       "body": {
         "displayName": "Body",
         "purpose": "Texto corrido."
       },
+      "body-medium": {
+        "displayName": "Body medium",
+        "purpose": "Texto secundario."
+      },
       "body-small": {
         "displayName": "Body small",
-        "purpose": "Subtítulos y texto secundario en tinta suave."
+        "purpose": "Detalle de fila."
       },
       "label": {
         "displayName": "Label",
-        "purpose": "Etiquetas de campos y extremos de la Línea del corredor."
+        "purpose": "Etiquetas y chips."
       },
       "label-small": {
         "displayName": "Label small",
-        "purpose": "Etiquetas de la barra inferior."
+        "purpose": "Etiquetas pequeñas."
       },
-      "figures": {
-        "displayName": "Figures",
-        "purpose": "Precios, km, horas: cifras tabulares."
+      "button": {
+        "displayName": "Button",
+        "purpose": "Etiqueta de botón."
       },
-      "figures-display": {
-        "displayName": "Figures display",
-        "purpose": "Saldo de la billetera."
+      "amount": {
+        "displayName": "Amount",
+        "purpose": "Saldo de la billetera, cifras tabulares."
       }
     },
     "shadows": [
       {
+        "name": "sm",
+        "value": "0 1px 4px rgba(26,36,64,0.08)",
+        "purpose": "Tarjetas que necesitan separarse."
+      },
+      {
+        "name": "md",
+        "value": "0 2px 10px rgba(26,36,64,0.10)",
+        "purpose": "Elevación media."
+      },
+      {
+        "name": "lg",
+        "value": "0 4px 16px rgba(26,36,64,0.12)",
+        "purpose": "Elevación alta."
+      },
+      {
         "name": "sheet",
-        "value": "0 -2px 12px rgba(14,26,58,0.12)",
-        "purpose": "Hoja inferior sobre el mapa y hojas modales."
+        "value": "0 -4px 24px rgba(26,36,64,0.14)",
+        "purpose": "Hoja inferior sobre el mapa."
       },
       {
-        "name": "map-float",
-        "value": "0 2px 10px rgba(14,26,58,0.10)",
-        "purpose": "Controles circulares sobre el mapa (GSShadow.md)."
-      },
-      {
-        "name": "low",
-        "value": "0 1px 4px rgba(14,26,58,0.08)",
-        "purpose": "Botón de ícono que necesita separarse de un fondo variable (GSShadow.sm)."
+        "name": "float",
+        "value": "0 4px 16px rgba(26,36,64,0.16), 0 1px 2px rgba(26,36,64,0.06)",
+        "purpose": "Controles flotantes sobre el mapa. De noche la tinta de sombra es negra."
       }
     ],
     "motion": [
       {
+        "name": "press",
+        "value": "scale(0.97) 120ms cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Respuesta al toque de botones y tarjetas, desde el toque."
+      },
+      {
         "name": "ease-enter",
         "value": "cubic-bezier(0.23, 1, 0.32, 1)",
-        "purpose": "GSCurve.enter: presión, entrada de rótulo y de hojas."
+        "purpose": "Entradas; la salida es la misma curva invertida."
       },
       {
-        "name": "ease-exit",
-        "value": "flipped cubic-bezier(0.23, 1, 0.32, 1)",
-        "purpose": "GSCurve.exit: solo como curva de salida o reverseCurve."
+        "name": "ease-move",
+        "value": "ease-in-out",
+        "purpose": "Movimientos en pantalla."
       },
       {
-        "name": "press",
-        "value": "scale(0.97) 120ms ease-enter",
-        "purpose": "Respuesta al tocar botones y placas; al bajar el dedo, no al confirmar el gesto. Sin escala con quitar animaciones."
+        "name": "fast",
+        "value": "150ms",
+        "purpose": "Fundido corto; reemplazo con quitar animaciones."
       },
       {
-        "name": "plate-change",
-        "value": "fade + translateY(8dp→0) 200ms ease-enter; el saliente solo se desvanece",
-        "purpose": "Cambio de rótulo de una placa y destino pintado. Con quitar animaciones: fundido de 150 ms sin desplazamiento."
+        "name": "plate",
+        "value": "200ms",
+        "purpose": "Cambio de título de una tarjeta: fundido + 6 dp."
       },
       {
         "name": "sheet-in",
         "value": "250ms",
-        "purpose": "Hoja de Inicio al abrir."
+        "purpose": "Hoja inferior al entrar."
       },
       {
         "name": "sheet-out",
         "value": "200ms",
-        "purpose": "Hoja de Inicio al cerrar. Con quitar animaciones, las hojas no se deslizan."
+        "purpose": "Hoja inferior al salir."
       },
       {
-        "name": "tab-switch",
+        "name": "tab-change",
         "value": "none",
-        "purpose": "Cambiar de pestaña no se anima: acción repetida."
+        "purpose": "Cambiar de pestaña o elegir una opción no se anima."
+      },
+      {
+        "name": "reduce-motion",
+        "value": "MediaQuery.disableAnimations",
+        "purpose": "Sin escala ni deslizamiento cuando el sistema quita animaciones."
       }
     ],
     "breakpoints": [
       {
         "name": "phone",
-        "value": "360dp"
+        "value": "360px"
       }
     ]
   },
   "components": [
     {
-      "name": "Placa de ruta",
-      "kind": "custom",
-      "refersTo": "route-plate",
-      "description": "Gesto distintivo: destino, tramo, viaje o nombre como rótulo de parabrisas; activa con franja fucsia.",
-      "html": "<div class=\"ds-plates\"><button class=\"ds-plate\"><span class=\"ds-plate-text\">Riohacha</span><svg class=\"ds-plate-arrow\" viewBox=\"0 0 24 24\" width=\"22\" height=\"22\"><path fill=\"currentColor\" d=\"M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z\"/></svg><span class=\"ds-plate-text\">Maicao</span><span class=\"ds-plate-detail\">Colectivo · $12.000 · sale 6:40</span></button><button class=\"ds-plate ds-plate-active\"><span class=\"ds-plate-text\">Terminal de Maicao</span><span class=\"ds-plate-detail\">Destino elegido</span></button></div>",
-      "css": ".ds-plates{display:flex;flex-direction:column;gap:12px}.ds-plate{display:flex;flex-wrap:wrap;align-items:center;min-height:56px;padding:8px 16px 12px;background:#FFFFFF;border:1.5px solid #C9D0DC;border-radius:8px;color:#1B3A8C;text-align:left;cursor:pointer;transition:transform 120ms cubic-bezier(0.23,1,0.32,1);font-family: 'Barlow Condensed', 'Barlow', sans-serif;}.ds-plate-text{font-size:22px;font-weight:800;line-height:1.05;letter-spacing:0.4px;text-transform:uppercase}.ds-plate-arrow{margin:0 8px}.ds-plate-detail{flex-basis:100%;margin-top:2px;font-family: 'Barlow', sans-serif;font-size:15px;font-weight:500;color:#465066;font-variant-numeric:tabular-nums}.ds-plate:hover{background:#F4F6FB}.ds-plate:active{transform:scale(0.97)}.ds-plate:focus-visible{outline:2px solid #1B3A8C;outline-offset:2px}.ds-plate-active{border-color:#1B3A8C;padding-bottom:8px;box-shadow:inset 0 -4px 0 #C2185B}"
-    },
-    {
       "name": "Botón primario",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Acción principal: ultramar macizo, etiqueta condensada, presión 0,97.",
-      "html": "<button class=\"ds-btn-primary\">Pagar viaje</button>",
-      "css": ".ds-btn-primary{height:52px;padding:0 20px;width:100%;background:#1B3A8C;color:#FFFFFF;border:none;border-radius:8px;font-family: 'Barlow Condensed', 'Barlow', sans-serif;font-size:20px;font-weight:700;letter-spacing:0.3px;cursor:pointer;transition:transform 120ms cubic-bezier(0.23,1,0.32,1),background 120ms}.ds-btn-primary:hover{background:#142C6B}.ds-btn-primary:active{transform:scale(0.97)}.ds-btn-primary:focus-visible{outline:2px solid #1B3A8C;outline-offset:3px}"
+      "description": "Acción principal: píldora azul, presión 0.97.",
+      "html": "<button class=\"ds-btn-primary\">Ver ruta</button>",
+      "css": ".ds-btn-primary{font-family: Figtree, system-ui, sans-serif;background:#0B4FC4;color:#FFFFFF;font-size:16px;font-weight:700;min-height:52px;padding:4px 22px;border:none;border-radius:9999px;cursor:pointer;transition:transform 120ms cubic-bezier(0.23,1,0.32,1);}.ds-btn-primary:hover{background:#093F9D;}.ds-btn-primary:active{transform:scale(0.97);}.ds-btn-primary:focus-visible{outline:2px solid #0B4FC4;outline-offset:3px;}"
     },
     {
       "name": "Botón secundario",
       "kind": "button",
       "refersTo": "button-secondary",
-      "description": "Acción alterna sobre tinte de ultramar.",
+      "description": "Acción secundaria en azul claro.",
       "html": "<button class=\"ds-btn-secondary\">Recargar</button>",
-      "css": ".ds-btn-secondary{height:52px;padding:0 20px;width:100%;background:#E3E9F6;color:#1B3A8C;border:none;border-radius:8px;font-family: 'Barlow Condensed', 'Barlow', sans-serif;font-size:20px;font-weight:700;letter-spacing:0.3px;cursor:pointer;transition:transform 120ms cubic-bezier(0.23,1,0.32,1)}.ds-btn-secondary:hover{background:#D6DEF1}.ds-btn-secondary:active{transform:scale(0.97)}.ds-btn-secondary:focus-visible{outline:2px solid #1B3A8C;outline-offset:3px}"
+      "css": ".ds-btn-secondary{font-family: Figtree, system-ui, sans-serif;background:#E8F0FE;color:#0B4FC4;font-size:16px;font-weight:700;min-height:52px;padding:4px 22px;border:none;border-radius:9999px;cursor:pointer;transition:transform 120ms cubic-bezier(0.23,1,0.32,1);}.ds-btn-secondary:active{transform:scale(0.97);}.ds-btn-secondary:focus-visible{outline:2px solid #0B4FC4;outline-offset:3px;}"
     },
     {
-      "name": "Botón contorno",
+      "name": "Botón con borde",
       "kind": "button",
       "refersTo": "button-outline",
-      "description": "Placa blanca con borde ultramar de 2 dp.",
-      "html": "<button class=\"ds-btn-outline\">Ver detalle</button>",
-      "css": ".ds-btn-outline{height:52px;padding:0 20px;width:100%;background:#FFFFFF;color:#1B3A8C;border:2px solid #1B3A8C;border-radius:8px;font-family: 'Barlow Condensed', 'Barlow', sans-serif;font-size:20px;font-weight:700;letter-spacing:0.3px;cursor:pointer;transition:transform 120ms cubic-bezier(0.23,1,0.32,1)}.ds-btn-outline:hover{background:#E3E9F6}.ds-btn-outline:active{transform:scale(0.97)}.ds-btn-outline:focus-visible{outline:2px solid #1B3A8C;outline-offset:3px}"
+      "description": "Alternativa neutra: blanco con borde de línea.",
+      "html": "<button class=\"ds-btn-outline\">Cancelar</button>",
+      "css": ".ds-btn-outline{font-family: Figtree, system-ui, sans-serif;background:#FFFFFF;color:#14161B;font-size:16px;font-weight:700;min-height:52px;padding:4px 22px;border:1.5px solid #DDE1E8;border-radius:9999px;cursor:pointer;transition:transform 120ms cubic-bezier(0.23,1,0.32,1);}.ds-btn-outline:active{transform:scale(0.97);}.ds-btn-outline:focus-visible{outline:2px solid #0B4FC4;outline-offset:3px;}"
+    },
+    {
+      "name": "Buscador en píldora",
+      "kind": "input",
+      "refersTo": "search-pill",
+      "description": "\"¿A dónde vas?\" en la hoja del inicio.",
+      "html": "<div class=\"ds-search\"><svg width=\"26\" height=\"26\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#14161B\" stroke-width=\"2.2\" stroke-linecap=\"round\"><circle cx=\"10.5\" cy=\"10.5\" r=\"6.5\"/><path d=\"M15.5 15.5L20 20\"/></svg><span>¿A dónde vas?</span><span class=\"ds-search-now\">Ahora</span></div>",
+      "css": ".ds-search{font-family: Figtree, system-ui, sans-serif;display:flex;align-items:center;gap:12px;background:#EBEEF3;color:#14161B;border-radius:9999px;padding:12px 12px 12px 18px;font-size:17px;font-weight:700;cursor:pointer;}.ds-search span:first-of-type{flex:1;}.ds-search-now{background:#FFFFFF;border-radius:9999px;padding:8px 14px;font-size:14px;font-weight:700;}.ds-search:focus-visible{outline:2px solid #0B4FC4;}"
     },
     {
       "name": "Campo de texto",
       "kind": "input",
-      "refersTo": "input",
-      "description": "Campo sobre placa blanca, foco en ultramar de 2 dp.",
-      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Correo</span><input class=\"ds-input\" placeholder=\"tu@correo.co\"></label>",
-      "css": ".ds-field{display:flex;flex-direction:column;gap:8px}.ds-field-label{font-family: 'Barlow', sans-serif;font-size:15px;font-weight:600;color:#111827}.ds-input{font-family: 'Barlow', sans-serif;font-size:17px;font-weight:500;color:#111827;background:#FFFFFF;border:1.5px solid #465066;border-radius:8px;padding:12px 16px;min-height:48px}.ds-input::placeholder{color:#8A93A6}.ds-input:hover{border-color:#111827}.ds-input:focus-visible{outline:none;border:2px solid #1B3A8C;padding:11.5px 15.5px}"
+      "refersTo": "input-field",
+      "description": "Relleno gris, borde azul al enfocar.",
+      "html": "<input class=\"ds-input\" placeholder=\"Correo\">",
+      "css": ".ds-input{font-family: Figtree, system-ui, sans-serif;background:#EBEEF3;color:#14161B;border:2px solid transparent;border-radius:12px;padding:14px 16px;font-size:16px;}.ds-input::placeholder{color:#4A5162;}.ds-input:focus-visible{outline:none;border-color:#0B4FC4;}"
+    },
+    {
+      "name": "Píldoras de elección",
+      "kind": "chip",
+      "refersTo": "choice-pill",
+      "description": "Elegir una opción entre pocas (GSChoicePlates).",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip ds-chip-on\">Mototaxi</button><button class=\"ds-chip\">Taxi</button><button class=\"ds-chip\">Colectivo</button></div>",
+      "css": ".ds-chips{display:flex;gap:8px;flex-wrap:wrap;}.ds-chip{font-family: Figtree, system-ui, sans-serif;min-height:48px;padding:0 16px;border-radius:9999px;background:#FFFFFF;color:#14161B;border:1px solid #DDE1E8;font-size:15px;font-weight:600;cursor:pointer;}.ds-chip-on{background:#E8F0FE;color:#0B4FC4;border:2px solid #0B4FC4;font-weight:700;}.ds-chip:focus-visible{outline:2px solid #0B4FC4;outline-offset:2px;}"
+    },
+    {
+      "name": "Opción de viaje",
+      "kind": "card",
+      "refersTo": "option-card-selected",
+      "description": "Fila de modo con tiempo y precio; la elegida con borde azul.",
+      "html": "<div class=\"ds-opt ds-opt-on\"><span class=\"ds-opt-ic\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"2\"><circle cx=\"6\" cy=\"16\" r=\"3\"/><circle cx=\"18\" cy=\"16\" r=\"3\"/><path d=\"M9 16h6l-3-6h4\"/></svg></span><div class=\"ds-opt-t\"><b>Mototaxi</b><small>12 min</small></div><b class=\"ds-opt-p\">$3.000 - 5.000</b></div>",
+      "css": ".ds-opt{font-family: Figtree, system-ui, sans-serif;display:flex;align-items:center;gap:12px;background:#FFFFFF;border:1px solid #DDE1E8;border-radius:16px;padding:12px 16px;color:#14161B;}.ds-opt-on{border:2px solid #0B4FC4;background:#F1F6FE;}.ds-opt-ic{width:44px;height:44px;border-radius:50%;background:#0B4FC4;display:grid;place-items:center;}.ds-opt-t{flex:1;display:flex;flex-direction:column;font-size:16px;}.ds-opt-t small{font-size:14px;color:#4A5162;}.ds-opt-p{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;}"
+    },
+    {
+      "name": "Tarjeta de saldo",
+      "kind": "custom",
+      "refersTo": "balance-card",
+      "description": "Billetera tipo Nequi con saldo grande tabular.",
+      "html": "<div class=\"ds-bal\"><small>Saldo disponible</small><div class=\"ds-bal-n\">$37.500 <span>COP</span></div><span class=\"ds-bal-tag\">Saldo de prueba</span></div>",
+      "css": ".ds-bal{font-family: Figtree, system-ui, sans-serif;background:#0B4FC4;color:#FFFFFF;border-radius:24px;padding:16px 20px 20px;}.ds-bal small{color:#D6E2FA;font-size:15px;font-weight:600;}.ds-bal-n{font-size:32px;font-weight:800;font-variant-numeric:tabular-nums;}.ds-bal-n span{font-size:15px;font-weight:700;color:#D6E2FA;}.ds-bal-tag{display:inline-block;margin-top:8px;padding:6px 12px;border-radius:9999px;background:rgba(255,255,255,0.16);font-size:13px;font-weight:600;}"
     },
     {
       "name": "Barra inferior",
       "kind": "nav",
       "refersTo": "bottom-nav",
-      "description": "Carrocería ultramar; la pestaña activa es una pastilla blanca con franja fucsia.",
-      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item ds-nav-active\" href=\"#\"><span class=\"ds-nav-pill\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\"><path fill=\"currentColor\" d=\"M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z\"/></svg></span>Inicio</a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-nav-pill\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\"><path fill=\"currentColor\" d=\"M21 18v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1h-9a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h9zm-9-2h10V8H12v8zm4-2.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z\"/></svg></span>Billetera</a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-nav-pill\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\"><path fill=\"currentColor\" d=\"M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\"/></svg></span>Perfil</a></nav>",
-      "css": ".ds-nav{display:flex;min-height:72px;background:#1B3A8C}.ds-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-family: 'Barlow', sans-serif;font-size:13px;font-weight:500;color:#CCD7F2;text-decoration:none}.ds-nav-pill{display:flex;padding:4px 16px;border-radius:4px}.ds-nav-item:hover{color:#FFFFFF}.ds-nav-item:focus-visible{outline:2px solid #FFFFFF;outline-offset:-4px}.ds-nav-active{color:#FFFFFF;font-weight:700}.ds-nav-active .ds-nav-pill{background:#FFFFFF;color:#1B3A8C;box-shadow:inset 0 -4px 0 #C2185B}"
+      "description": "Material 3 blanca, píldora azul clara tras el ícono activo; sin animación.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-i ds-nav-on\"><i></i>Inicio</a><a class=\"ds-nav-i\"><i></i>Viaje</a><a class=\"ds-nav-i\"><i></i>Reportar</a><a class=\"ds-nav-i\"><i></i>Billetera</a><a class=\"ds-nav-i\"><i></i>Perfil</a></nav>",
+      "css": ".ds-nav{font-family: Figtree, system-ui, sans-serif;display:flex;background:#FFFFFF;border-top:1px solid #DDE1E8;min-height:72px;}.ds-nav-i{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0;font-size:12.5px;font-weight:500;color:#4A5162;cursor:pointer;}.ds-nav-i i{width:56px;height:32px;border-radius:9999px;display:block;background:transparent;}.ds-nav-on{color:#14161B;font-weight:700;}.ds-nav-on i{background:#E8F0FE;}.ds-nav-i:focus-visible{outline:2px solid #0B4FC4;}"
     },
     {
-      "name": "Línea del corredor",
+      "name": "Píldora del corredor",
       "kind": "custom",
-      "refersTo": "corridor-line",
-      "description": "Estado de la Troncal Riohacha–Maicao: tramos en color vial, ícono + palabra y antigüedad tabular.",
-      "html": "<div class=\"ds-corridor\"><div class=\"ds-corridor-track\"><div class=\"ds-corridor-ends\"><span>Riohacha</span><span>Maicao</span></div><div class=\"ds-corridor-line\"><i style=\"flex:5;background:#17602F\"></i><i style=\"flex:1;background:#9E1F18\"></i><i style=\"flex:4;background:#17602F\"></i></div></div><div class=\"ds-corridor-tag\"><span class=\"ds-corridor-word\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\"><path fill=\"currentColor\" d=\"M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM4 12a8 8 0 0 1 12.9-6.3L5.7 16.9A7.9 7.9 0 0 1 4 12zm8 8a7.9 7.9 0 0 1-4.9-1.7L18.3 7.1A8 8 0 0 1 12 20z\"/></svg>Cerrada</span><span class=\"ds-corridor-age\">hace 12 min</span></div></div>",
-      "css": ".ds-corridor{display:flex;align-items:center;gap:12px;height:56px;padding:0 16px;background:#FFFFFF;border-bottom:1px solid #C9D0DC;font-family: 'Barlow', sans-serif;}.ds-corridor:hover{background:#F7F9FC}.ds-corridor:focus-visible{outline:2px solid #1B3A8C}.ds-corridor-track{flex:1}.ds-corridor-ends{display:flex;justify-content:space-between;font-size:14px;font-weight:600;color:#465066}.ds-corridor-line{display:flex;height:6px;margin:5px 4px 0}.ds-corridor-tag{display:flex;flex-direction:column;align-items:flex-end}.ds-corridor-word{display:flex;align-items:center;gap:4px;font-size:14px;font-weight:700;color:#9E1F18}.ds-corridor-age{font-size:12px;font-weight:600;color:#465066;font-variant-numeric:tabular-nums}"
-    },
-    {
-      "name": "Fila plana",
-      "kind": "card",
-      "refersTo": "list-row",
-      "description": "Fila de 64 dp con divisor; reemplaza a las tarjetas por defecto.",
-      "html": "<button class=\"ds-row\"><svg class=\"ds-row-icon\" viewBox=\"0 0 24 24\" width=\"24\" height=\"24\"><path fill=\"currentColor\" d=\"M18 8h-1V6A5 5 0 0 0 7 6v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zm-6 9a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm3.1-9H8.9V6a3.1 3.1 0 0 1 6.2 0v2z\"/></svg><span class=\"ds-row-text\"><span class=\"ds-row-title\">Cambiar contraseña</span><span class=\"ds-row-sub\">Última vez hace 3 meses</span></span><span class=\"ds-row-value\">135</span></button>",
-      "css": ".ds-row{display:flex;align-items:center;gap:16px;width:100%;min-height:64px;padding:12px 16px;background:transparent;border:none;border-bottom:1px solid #C9D0DC;text-align:left;cursor:pointer;font-family: 'Barlow', sans-serif;}.ds-row:hover{background:#E3E9F6}.ds-row:focus-visible{outline:2px solid #1B3A8C;outline-offset:-2px}.ds-row-icon{color:#1B3A8C;flex:none}.ds-row-text{flex:1;display:flex;flex-direction:column}.ds-row-title{font-size:17px;font-weight:600;color:#111827}.ds-row-sub{font-size:15px;color:#465066}.ds-row-value{font-size:17px;font-weight:600;color:#111827;font-variant-numeric:tabular-nums}"
-    },
-    {
-      "name": "Chip",
-      "kind": "chip",
-      "refersTo": "chip",
-      "description": "Filtro o etiqueta; seleccionado en tinte de ultramar.",
-      "html": "<div class=\"ds-chips\"><button class=\"ds-chip ds-chip-on\">Colectivo</button><button class=\"ds-chip\">Mototaxi</button></div>",
-      "css": ".ds-chips{display:flex;gap:8px}.ds-chip{min-height:48px;padding:4px 12px;background:#E2E7EE;color:#111827;border:1px solid #C9D0DC;border-radius:4px;font-family: 'Barlow', sans-serif;font-size:14px;font-weight:600;cursor:pointer}.ds-chip:hover{border-color:#465066}.ds-chip:focus-visible{outline:2px solid #1B3A8C;outline-offset:2px}.ds-chip-on{background:#E3E9F6;color:#1B3A8C;border-color:#1B3A8C}"
+      "refersTo": "corridor-pill",
+      "description": "Estado de la Troncal flotando sobre el mapa; color siempre con ícono + palabra.",
+      "html": "<div class=\"ds-cor\"><div class=\"ds-cor-l\"><span>Riohacha</span><span>Maicao</span><div class=\"ds-cor-bar\"><i style=\"flex:50;background:#0F5F30\"></i><i style=\"flex:12;background:#9C1E17\"></i><i style=\"flex:38;background:#0F5F30\"></i></div></div><div class=\"ds-cor-s\"><b><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#9C1E17\" stroke-width=\"2.4\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M6 18L18 6\"/></svg> Cerrada</b><small>hace 12 min</small></div></div>",
+      "css": ".ds-cor{font-family: Figtree, system-ui, sans-serif;display:flex;gap:12px;align-items:center;background:#FFFFFF;border-radius:16px;padding:12px 16px;box-shadow:0 4px 16px rgba(26,36,64,0.16),0 1px 2px rgba(26,36,64,0.06);}.ds-cor-l{flex:1;display:flex;flex-wrap:wrap;justify-content:space-between;font-size:14px;font-weight:600;color:#4A5162;}.ds-cor-bar{flex-basis:100%;height:7px;border-radius:9999px;margin-top:6px;display:flex;overflow:hidden;}.ds-cor-bar i{display:block;}.ds-cor-s{display:flex;flex-direction:column;align-items:flex-end;}.ds-cor-s b{color:#9C1E17;font-size:14px;}.ds-cor-s small{font-size:12px;font-weight:600;color:#4A5162;}"
     }
   ],
   "narrative": {
-    "northStar": "El rótulo de colectivo",
-    "overview": "**Creative North Star: \"El rótulo de colectivo\"**\n\nGoSmart se lee como los rótulos de ruta pintados en el parabrisas de los colectivos y busetas de la costa. Cada destino, tramo, viaje o nombre importante es una **placa de ruta**: blanca, con borde fino, letras condensadas gruesas en ultramar y, cuando está elegida o en curso, una franja fucsia debajo. La carrocería es el shell: la barra superior, la barra inferior y el botón primario son azul ultramar macizo; entre ellas, la pantalla es lámina blanca fría y las filas son planas, separadas por divisores.\n\nLa densidad es de señalización, no de tablero: pocos elementos por pantalla, letras grandes, cifras tabulares, contraste pensado para pleno sol y una mano. La profundidad casi no existe; el sistema se sostiene con color plano, bordes de 1,5 dp y la franja. El movimiento es breve y funcional: la placa responde al dedo y su rótulo se \"pinta\" al cambiar; nada se anima por adorno.\n\nEl mundo rechaza explícitamente el mapa blanco con hoja negra y un solo acento de las apps de transporte globales, y el arena-con-un-azul del diseño anterior de GoSmart.",
+    "northStar": "Lo que ya sabes usar",
+    "overview": "**Creative North Star: \"Lo que ya sabes usar\"**\n\nGoSmart se ve y se toca como las apps que la gente de la costa ya domina: mapa a pantalla completa como Google Maps, opciones de viaje con tiempo y precio como Uber/DiDi e InDrive, billetera de saldo grande como Nequi. Nada que aprender. Superficies blancas sobre un gris frío, un solo azul de marca, Figtree en caja normal, botones en píldora y tarjetas redondeadas con sombra suave.\n\nSe usa en la calle, al sol, con una mano y a veces con texto grande. Por eso el contraste es alto (7:1 en texto), los toques miden 48 dp (72 en modo conductor) y nada se corta con el texto al 200 %. La noche tiene su propio esquema: superficies que suben de luminosidad y la marca aclarada, sin encandilar.\n\nReemplaza por completo el mundo anterior \"Rótulo de colectivo\" (placas condensadas en mayúsculas, ultramar macizo en barras, franja fucsia). Ninguno de esos recursos sigue vigente.",
     "keyCharacteristics": [
-      "Shell en ultramar de carrocería; contenido en lámina fría y placas blancas.",
-      "Placas de ruta con letras Barlow Condensed 800 en mayúsculas como gesto distintivo.",
-      "Franja fucsia de 4 dp solo bajo lo seleccionado o activo.",
-      "Rojo, ámbar y verde reservados al estado de la vía, siempre con ícono y palabra.",
-      "Radios 4 / 8 / 12; sin degradados, sin vidrio, sin tarjetas por defecto.",
-      "Presión a 0,97 en 120 ms; cambio de placa con fundido y 8 dp en 200 ms."
+      "Mapa primero; encima, controles flotantes blancos con sombra.",
+      "Un azul de marca para acción, selección, ruta y saldo.",
+      "Píldoras para botones, buscador y chips; tarjetas de 16, hojas de 24.",
+      "Verde, ámbar y rojo solo para el estado de la vía.",
+      "Cifras tabulares para todo lo que el usuario compara.",
+      "Movimiento corto y discreto; nada se anima al cambiar de pestaña."
     ],
     "rules": [
       {
-        "name": "The Carrocería Rule",
-        "body": "El ultramar es el shell (barras arriba y abajo, botón primario) y la tinta de las placas. No se usa como fondo de bloques de contenido ni de tarjetas.",
+        "name": "La Regla del Azul Único",
+        "body": "Hay un solo color de marca, #0B4FC4 (de día). Botones, selección, ruta y saldo lo usan; ningún segundo acento compite con él.",
         "section": "colors"
       },
       {
-        "name": "The Franja Rule",
-        "body": "El fucsia aparece solo como franja bajo un elemento seleccionado o en curso, una por grupo. Si nada está activo, no hay fucsia en pantalla.",
+        "name": "La Regla de la Vía",
+        "body": "Verde, ámbar y rojo existen solo para el estado de la vía, y siempre van con ícono y palabra (\"Cerrada\", \"Precaución\"). El color nunca va solo. Entradas y salidas de dinero no usan verde ni rojo: las lleva el signo.",
         "section": "colors"
       },
       {
-        "name": "The Semáforo Rule",
-        "body": "Rojo, ámbar y verde existen solo para el estado de la vía y siempre van con ícono y palabra (\"Cerrada\", \"Precaución\", \"Abierta\", \"Sin datos\"). El éxito usa el ultramar; los eco-puntos no son verdes; el dinero no lleva rojo ni verde, el signo lo dice.",
+        "name": "La Regla del Modo",
+        "body": "Los colores de modo solo pintan tramos y marcadores (barra de tramos, línea de tiempo, polilínea del mapa), y se leen de la paleta activa en el momento de pintar (`liveColor`), nunca guardados.",
         "section": "colors"
       },
       {
-        "name": "The Siete a Uno Rule",
-        "body": "Todo texto principal y secundario cumple al menos 7:1 contra su fondo; solo deshabilitados y pistas quedan exentos.",
+        "name": "La Regla del 7:1",
+        "body": "Todo texto legible mide al menos 7:1 contra su fondo, de día y de noche. Solo el texto deshabilitado queda exento.",
         "section": "colors"
       },
       {
-        "name": "The Rótulo Rule",
-        "body": "Las mayúsculas condensadas son de las placas: destinos, tramos, nombres. El resto del texto va en caja normal; no se inventan etiquetas pequeñas en mayúsculas sobre los títulos.",
+        "name": "La Regla de los Doscientos",
+        "body": "El texto del sistema puede crecer hasta 200 % sin cortes a mitad de palabra: botones con alto mínimo (no fijo) que pasan a dos líneas, etiquetas de modo y de pestaña que se reducen para caber enteras (nunca \"Colectiv/o\" ni \"Bille…\").",
         "section": "typography"
       },
       {
-        "name": "The Cifra Tabular Rule",
-        "body": "Todo número que el usuario compara (pesos, km, minutos, horas) lleva cifras tabulares y se formatea con `formatCop()` cuando es dinero.",
+        "name": "La Regla de la Cifra",
+        "body": "Todo número que el usuario compara (precio, saldo, minutos, km) va en cifras tabulares y se formatea con `formatCop()`.",
         "section": "typography"
       },
       {
-        "name": "The Doscientos Rule",
-        "body": "Ningún texto se corta con el texto del sistema al 200 %: las placas crecen en alto, admiten 2 líneas en nombres largos, y la barra inferior crece desde 72 dp.",
-        "section": "typography"
-      },
-      {
-        "name": "The Fila Plana Rule",
-        "body": "Las listas son filas planas con divisor, no tarjetas. Una tarjeta solo aparece si agrupa algo que se mueve junto, y entonces es plana con borde de línea y radio 12.",
-        "section": "layout"
-      },
-      {
-        "name": "The Sin Vidrio Rule",
-        "body": "Superficies sólidas y opacas, legibles al sol: sin desenfoque de fondo, sin degradados, sin brillos de color.",
+        "name": "La Regla del Flotante",
+        "body": "La sombra marca lo que flota sobre el mapa. Las tarjetas sobre el fondo gris se separan por tono, no por sombra.",
         "section": "elevation"
+      },
+      {
+        "name": "La Regla de la Píldora",
+        "body": "Todo lo que se toca para actuar o filtrar (botón, buscador, chip) es una píldora. Las tarjetas y hojas usan 16/24, nunca esquinas rectas.",
+        "section": "shapes"
       }
     ],
     "dos": [
-      "Do mostrar cada destino, tramo, viaje o nombre principal como placa de ruta: blanca, borde de 1,5 dp, Barlow Condensed 800 en mayúsculas y ultramar.",
-      "Do poner la franja fucsia de 4 dp solo bajo la placa activa o la pestaña seleccionada.",
-      "Do acompañar todo estado vial con ícono y palabra, y mostrar \"Sin datos\" con la hora cuando no hay dato.",
-      "Do usar cifras tabulares para todo número que se compara.",
-      "Do respetar 48 dp de área táctil (72 dp en modo conductor) y probar cada pantalla con texto al 200 %.",
-      "Do usar la presión de 0,97 en 120 ms con GSCurve.enter, el cambio de placa de 200 ms con 8 dp, y hojas de 250 / 200 ms; con \"quitar animaciones\", solo fundidos cortos.",
-      "Do usar los radios 4 / 8 / 12 y nada mayor salvo círculos completos."
+      "Do usar el azul de marca (#0B4FC4) para la acción principal, la selección, la ruta y el saldo.",
+      "Do acompañar todo estado de la vía con ícono y palabra.",
+      "Do leer los colores de la paleta activa (getters de `GSColors`, `liveColor`); nunca guardarlos en un campo.",
+      "Do usar píldoras para botones, buscador y chips; radios 8/12/16/24 para lo demás.",
+      "Do medir los toques en 48 dp (72 en modo conductor).",
+      "Do usar presión 0.97 en 120 ms ease-out; hojas 250 ms al entrar y 200 ms al salir; respetar \"quitar animaciones\".",
+      "Do probar con texto al 130 % y 200 % sin cortes a mitad de palabra.",
+      "Do mostrar precios solo cuando hay una regla de tarifa; si no, sin precio."
     ],
     "donts": [
-      "Don't usar rojo, ámbar o verde para nada que no sea el estado de la vía (ni éxito, ni eco-puntos, ni ingresos y gastos).",
-      "Don't usar el fucsia como relleno, fondo, texto o decoración.",
-      "Don't poner el ultramar como fondo de bloques de contenido; es la carrocería y la tinta de las placas.",
-      "Don't usar degradados, vidrio esmerilado, brillos de color ni sombras en placas, filas y botones.",
-      "Don't envolver listas en tarjetas por defecto.",
-      "Don't animar el cambio de pestaña ni nada que el usuario repite muchas veces.",
-      "Don't usar iconografía ni patrones wayuu como decoración.",
-      "Don't escribir mayúsculas condensadas fuera de las placas, ni etiquetas pequeñas en mayúsculas sobre los títulos."
+      "Don't inventar un precio.",
+      "Don't usar verde, ámbar o rojo fuera del estado de la vía (ni para entradas y salidas de dinero).",
+      "Don't usar colores de modo fuera de tramos y marcadores.",
+      "Don't animar el cambio de pestaña ni la selección de una opción.",
+      "Don't volver al mundo anterior: placas condensadas en mayúsculas, barras ultramar, franja fucsia.",
+      "Don't usar degradados ni vidrio; superficies sólidas y legibles al sol.",
+      "Don't bajar el contraste del texto de 7:1.",
+      "Don't presentar las recargas simuladas como dinero real."
     ]
   }
 }

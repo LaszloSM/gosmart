@@ -120,7 +120,7 @@ class _SosSheetContentState extends ConsumerState<SosSheetContent> {
         const SizedBox(height: GSSpacing.s2),
         if (isGuest) ...[
           GSListRow(
-            icon: Icons.chat_outlined,
+            icon: Icons.chat_rounded,
             title: 'Avisar por WhatsApp',
             subtitle: 'Eliges a quién se lo mandas',
             onTap: () => _open(whatsappUri(_message), 'whatsapp'),
@@ -143,7 +143,7 @@ class _SosSheetContentState extends ConsumerState<SosSheetContent> {
             ),
             // Sin señal no hay lista, pero WhatsApp sigue sirviendo.
             error: (_, __) => GSListRow(
-              icon: Icons.chat_outlined,
+              icon: Icons.chat_rounded,
               title: 'Avisar por WhatsApp',
               subtitle: 'No cargamos tus contactos; eliges a quién',
               onTap: () => _open(whatsappUri(_message), 'whatsapp'),
@@ -182,7 +182,7 @@ class _LocationLine extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 20, color: GSColors.brand),
+        Icon(icon, size: GSSize.iconMd, color: GSColors.brand),
         const SizedBox(width: GSSpacing.s2),
         Expanded(
           child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
@@ -210,7 +210,7 @@ class _ContactActions extends StatelessWidget {
     if (contacts.isEmpty) {
       return Column(children: [
         GSListRow(
-          icon: Icons.chat_outlined,
+          icon: Icons.chat_rounded,
           title: 'Avisar por WhatsApp',
           subtitle: 'Eliges a quién se lo mandas',
           onTap: () => onWhatsApp(null),
@@ -227,7 +227,7 @@ class _ContactActions extends StatelessWidget {
     return Column(children: [
       for (final c in contacts) ...[
         GSListRow(
-          icon: Icons.chat_outlined,
+          icon: Icons.chat_rounded,
           title: 'WhatsApp a ${c.name}',
           subtitle: c.displayPhone,
           onTap: () => onWhatsApp(c),
@@ -235,7 +235,7 @@ class _ContactActions extends StatelessWidget {
         const Divider(indent: GSSpacing.s4),
       ],
       GSListRow(
-        icon: Icons.sms_outlined,
+        icon: Icons.sms_rounded,
         title: contacts.length == 1
             ? 'SMS a ${contacts.first.name}'
             : 'SMS a tus ${contacts.length} contactos',
@@ -244,7 +244,7 @@ class _ContactActions extends StatelessWidget {
       ),
       const Divider(indent: GSSpacing.s4),
       GSListRow(
-        icon: Icons.group_outlined,
+        icon: Icons.group_rounded,
         title: 'Editar contactos',
         onTap: onManage,
       ),

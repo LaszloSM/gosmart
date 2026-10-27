@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:gosmart/features/routes/widgets/mode_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -73,7 +74,7 @@ Future<void> _save(WidgetTester t, String name) async {
 void main() {
   testWidgets('review shots', (t) async {
     phone(t);
-    dotenv.testLoad(fileInput: 'MAPBOX_PUBLIC_TOKEN=\n');
+    dotenv.testLoad(fileInput: 'GOOGLE_MAPS_API_KEY=\n');
     await t.runAsync(loadFonts);
     const a = LatLng(11.54, -72.90), b = LatLng(11.55, -72.91), c = LatLng(11.38, -72.24);
     final route = RouteResult(legs: [
@@ -103,25 +104,28 @@ void main() {
         _tx(WalletTxType.bonus, 10000, const Duration(days: 12), 'Bono de bienvenida'),
       ]),
     ];
+    // Sombras reales en las capturas (flutter_test las apaga por defecto).
+    debugDisableShadows = false;
     var dark = false;
     Future<void> shot(Widget w, String n, {bool settle = true}) async {
       GSColors.apply(dark ? Brightness.dark : Brightness.light);
       await t.pumpWidget(ProviderScope(key: UniqueKey(), overrides: ov, child: MaterialApp(debugShowCheckedModeBanner: false, theme: dark ? AppTheme.dark : AppTheme.light,
           home: RepaintBoundary(key: const ValueKey('shot'), child: w))));
       if (settle) { await t.pumpAndSettle(); } else { await t.pump(const Duration(milliseconds: 400)); }
+      // Las ilustraciones (assets) se decodifican fuera del reloj falso.
+      await t.runAsync(() => Future.wait(find.byType(Image).evaluate()
+          .map((e) => precacheImage((e.widget as Image).image, e))));
+      await t.pump();
       await _save(t, n);
     }
     // Inicio: el mapa real carga teselas de red, que no hay en tests; se usa
     // un fondo liso en su lugar (dicho en el paquete de revisión).
-    await shot(Scaffold(extendBody: true, body: Column(children: [
-      ColoredBox(color: GSColors.brand, child: SafeArea(bottom: false, child: Padding(padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-        child: ClipRRect(borderRadius: BorderRadius.circular(GSRadius.md), child: GSCorridorLine(status: status, onTap: () {}))))),
-      Expanded(child: Stack(children: [
-        const Positioned.fill(child: ColoredBox(color: Color(0xFFDDE3EA))),
-        Positioned(left: 0, right: 0, bottom: 0, height: 430, child: DecoratedBox(
-          decoration: BoxDecoration(color: GSColors.surface, borderRadius: GSRadius.sheetRadius, boxShadow: GSShadow.sheet),
-          child: const HomeSheetContent())),
-      ])),
+    await shot(Scaffold(extendBody: true, body: Stack(children: [
+      const Positioned.fill(child: ColoredBox(color: Color(0xFFE7EBF0))),
+      Positioned(left: 12, right: 12, top: 32, child: GSCorridorLine(status: status, onTap: () {}, floating: true)),
+      Positioned(left: 0, right: 0, bottom: 0, height: 470, child: DecoratedBox(
+        decoration: BoxDecoration(color: GSColors.surface, borderRadius: GSRadius.sheetRadius, boxShadow: GSShadow.sheet),
+        child: const HomeSheetContent())),
     ]), bottomNavigationBar: const GSBottomNav(current: GSNavTab.home)), 'phone-home');
     await shot(const HomeScreen(), 'phone-home-real', settle: false);
     await t.pump(const Duration(milliseconds: 300));
@@ -144,6 +148,15 @@ void main() {
 
     // Noche: esquema propio.
     dark = true;
+    // Los colores del árbol se leen al construirlo: aplicar la noche antes.
+    GSColors.apply(Brightness.dark);
+    await shot(Scaffold(extendBody: true, backgroundColor: GSColors.background, body: Stack(children: [
+      const Positioned.fill(child: ColoredBox(color: Color(0xFF1D222B))),
+      Positioned(left: 12, right: 12, top: 32, child: GSCorridorLine(status: status, onTap: () {}, floating: true)),
+      Positioned(left: 0, right: 0, bottom: 0, height: 470, child: DecoratedBox(
+        decoration: BoxDecoration(color: GSColors.surface, borderRadius: GSRadius.sheetRadius, boxShadow: GSShadow.sheet),
+        child: const HomeSheetContent())),
+    ]), bottomNavigationBar: const GSBottomNav(current: GSNavTab.home)), 'phone-dark-home-sheet');
     await shot(const HomeScreen(), 'phone-dark-home', settle: false);
     await t.pump(const Duration(milliseconds: 300));
     await _save(t, 'phone-dark-home');
@@ -163,5 +176,20 @@ void main() {
       await shot(const ProfileScreen(), 'phone-profile-text$tag');
       await shot(const LoginScreen(), 'phone-login-text$tag', settle: false);
     }
+
+    // Opciones de viaje con destino ya elegido (en tests no hay GPS, así que
+    // se muestran sueltas con un origen y destino de Riohacha).
+    for (final scale in [1.0, 1.3, 2.0]) {
+      phone(t, scale: scale);
+      final tag = scale == 1.0 ? '' : '-text${(scale * 100).round()}';
+      await shot(Scaffold(body: SafeArea(child: ListView(children: const [
+        SizedBox(height: 12),
+        ModeOptions(from: LatLng(11.5444, -72.9072), to: LatLng(11.5320, -72.8990), selected: 'Mototaxi', onChanged: _noop),
+      ]))), 'phone-mode-options$tag');
+    }
+    phone(t);
+    debugDisableShadows = true;
   });
 }
+
+void _noop(String _) {}

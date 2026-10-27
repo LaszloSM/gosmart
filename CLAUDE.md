@@ -47,8 +47,7 @@ Optional:
 
 ```
 SENTRY_DSN=                    # empty = no error reporting (lib/core/telemetry.dart)
-MAP_PROVIDER=google            # 'google' (default) or 'osm'. Google only if GOOGLE_MAPS_API_KEY starts with AIza
-MAPBOX_PUBLIC_TOKEN=pk.eyJ... # Mapbox public token; if empty, map falls back to OSM
+MAP_PROVIDER=google            # 'google' (default) or 'osm'. Google only if GOOGLE_MAPS_API_KEY starts with AIza; else OSM tiles
 SHARE_BASE_URL=                # public_web on GitHub Pages; empty = share sends a Maps point
 ```
 
@@ -56,9 +55,10 @@ SHARE_BASE_URL=                # public_web on GitHub Pages; empty = share sends
 > Stripe was removed; recharges are simulated until Wompi (Fase 7).
 
 Edge Function secrets (Supabase Dashboard → Edge Functions → Secrets, never in `.env`):
-`GROQ_API_KEY` (ai-chat); `WOMPI_PUBLIC_KEY`, `WOMPI_INTEGRITY_SECRET`, `WOMPI_EVENTS_SECRET`
+`GROQ_API_KEY` (ai-chat); `GOOGLE_MAPS_SERVER_KEY` (maps: Places API New + Routes API; the deploy
+workflow falls back to `GOOGLE_MAPS_API_KEY`); `WOMPI_PUBLIC_KEY`, `WOMPI_INTEGRITY_SECRET`, `WOMPI_EVENTS_SECRET`
 (wompi, sandbox; deploy with `--no-verify-jwt` because Wompi's webhook has no JWT). Real top-ups
-only when `app_flags.wompi_enabled` is true; otherwise the simulated recharge stays. **Everything runs from GitHub (the user has no local setup):** Actions → `Supabase deploy` (`supabase-deploy.yml`) applies migrations (`supabase/piloto_bundle.sql`, regenerate with `tool/bundle_migrations.sh`; CI checks it is current), sets the admin by email, copies Edge Function secrets from GitHub secrets, deploys the functions and creates the push webhooks (`supabase/push_webhooks.sql`, pg_net). CI's APK gets `.env` from secrets via `tool/write_env.sh` and `GOOGLE_SERVICES_JSON`. GitHub Actions secrets for `supabase-maintenance.yml`:
+only when `app_flags.wompi_enabled` is true; otherwise the simulated recharge stays. **Everything runs from GitHub (the user has no local setup):** Actions → `Supabase deploy` (`supabase-deploy.yml`) applies migrations (`supabase/piloto_bundle.sql`, regenerate with `tool/bundle_migrations.sh`; CI checks it is current), sets the admin by email, copies Edge Function secrets from GitHub secrets, deploys the functions and creates the push webhooks (`supabase/push_webhooks.sql`, pg_net). CI's APK gets `.env` from secrets via `tool/write_env.sh` and `GOOGLE_SERVICES_JSON`; without `SUPABASE_URL`/`SUPABASE_ANON_KEY` secrets it derives them from the project ref and `SUPABASE_ACCESS_TOKEN`, then `tool/check_keys.sh` reports (never fails) whether the Google keys and the `maps` function answer. GitHub Actions secrets for `supabase-maintenance.yml`:
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_DB_URL` (all optional; steps skip if absent).
 
 ## Database Migrations
@@ -147,7 +147,7 @@ lib/
 │   ├── transaction_model.dart    # TransactionModel
 │   ├── wallet_model.dart         # Wallet (table `wallets`; SEPARATE from CardModel)
 │   ├── wallet_transaction_model.dart # WalletTransactionModel, WalletTxType enum
-│   └── geocode_suggestion.dart   # Address suggestion from Mapbox Geocoding: placeName, fullAddress, latLng
+│   └── geocode_suggestion.dart   # Place suggestion: placeName, fullAddress, latLng (null until resolved for Google), placeId
 ├── planner/                      # Planificador en el celular (D6), Dart puro
 │   ├── graph.dart                # TransitMode, GraphNode/Edge, TransportGraph, haversineKm
 │   ├── fares.dart                # estimateFare → FareRange (referencia, ±25 %, recargo nocturno)
@@ -170,9 +170,9 @@ lib/
 │   ├── card_service.dart
 │   ├── profile_service.dart
 │   ├── location_service.dart     # GPS via geolocator — returns LatLng? (null if unavailable)
-│   ├── directions_service.dart   # Mapbox Directions API v5 — walking/driving/cycling polylines
-│   ├── geocoding_service.dart    # Mapbox Geocoding API v5 — search() never throws; searchStrict() throws GeocodingException
-│   ├── place_search.dart         # placeSearch: directory (places) first, then provider; result.limited = degraded (D8)
+│   ├── directions_service.dart   # Google Routes via Edge Function `maps` — walk/drive polylines
+│   ├── geocoding_service.dart    # Google Places (Autocomplete New + Details, session token) via `maps`; searchStrict() throws GeocodingException
+│   ├── place_search.dart         # placeSearch: directory (places) first, then Google; resolve(s) gets coords on pick; limited = degraded (D8)
 │   └── safety_service.dart       # emergency contacts, sos_events, trip_share_* RPCs
 ├── theme/
 │   ├── app_theme.dart            # MaterialApp ThemeData
@@ -234,11 +234,17 @@ Future<void> updateProfile({...}) async {
 - **RLS**: All user tables (`profiles`, `cards`, `transactions`, `trips`) filter by `auth.uid()` — never add manual user ID filters in queries.
 - **Edge Functions** (Deno/TypeScript in `backend/functions/`):
   - `authorize` — NFC payment authorization (NOT currently deployed; simulator uses local mock)
-  - `ai-chat` — Groq proxy used by `AiService` (model `llama-3.1-8b-instant`, falls back to 70b on 429/5xx)
+  - `ai-chat` — Groq proxy used by `AiService`. Models come from the secrets `GROQ_MODEL` / `GROQ_FALLBACK_MODEL`,
+    which the deploy workflow picks from Groq's live model list (Groq retires models; the llama-3.x ones are gone).
+    Any error retries the fallback; a 400 retries once more without tools.
   - `delete-account` — account deletion
   - `push` — FCM HTTP v1 (JWT RS256 en `fcm.ts`, probado). Disparada por Database Webhooks en INSERT de
     `ride_requests` y `road_reports` con header `x-webhook-secret`. Secrets `FCM_SERVICE_ACCOUNT`,
     `PUSH_WEBHOOK_SECRET`. Sin ellos responde `skipped`.
+  - `maps` — Google Places (Autocomplete New + Place Details) and Routes API proxy; the key never ships
+    in the APK. Logic in `google.ts` (tested in `google_test.ts`, no remote imports). Deployed WITH JWT
+    verification (the app's anon key is enough). Only points inside Colombia; errors return 200 +
+    `{error}` so the app degrades with a notice. NOT verified against the real Google APIs from here.
   - `wompi` — checkout URL with integrity signature + webhook (checksum verified) → `wallet_topup_settle`.
     Signing in `signing.ts` (tested in `signing_test.ts`, no remote imports). NOT verified against the
     real sandbox from this environment.
@@ -248,7 +254,7 @@ Future<void> updateProfile({...}) async {
 
 ```
 Flutter AiService                       Edge Function ai-chat (Deno)
-  query + history + client_context  ──▶  KG context → Groq 8b (70b fallback) with TOOLS (tools.ts)
+  query + history + client_context  ──▶  KG context → Groq GROQ_MODEL (fallback) with TOOLS (tools.ts)
                                           server tools: get_corridor_status, search_place, estimate_fare
   ◀── { source: 'tool_call', tool_call: {id,name:'plan_trip',args}, tool_messages }
   TripTool runs the planner ON THE PHONE (D6), then calls again with
@@ -331,51 +337,58 @@ AppRoutes.privacy / .terms // '/legal/privacy', '/legal/terms' (public)
 
 ### Design System
 
-**`DESIGN.md` (repo root) is the source of truth** — mundo "Rótulo de colectivo" (rediseño total
-2026-10-12), escrito por el documentador de impeccable desde lo construido; sidecar de tokens en
-`.impeccable/design.json`. Léelo antes de cualquier trabajo de UI y pregunta al usuario antes de
-apartarte de él. También mandan `PRODUCT.md` (verdad del producto) y el contrato de dirección
-`.impeccable/surfaces/lib-main-dart.md`. `lib/theme/design_tokens.dart` lo refleja.
+**`DESIGN.md` (repo root) is the source of truth**: redesign of 2026-10-15, "familiar e intuitivo",
+built to the craft level of InDrive, Google Maps, Nequi and Uber/DiDi (the user's choice, recorded
+in PRODUCT.md). It replaces the old "rótulo de colectivo" world (Barlow Condensed, ultramar shell,
+uppercase plates, fuchsia stripe): don't bring any of that back. Token sidecar: `.impeccable/design.json`.
+Direction contract: `.impeccable/surfaces/lib-main-dart.md`. `lib/theme/design_tokens.dart` mirrors it.
 
-**Skills de diseño instaladas en `.claude/skills/`** (úsalas en todo trabajo de UI):
-`impeccable` (proceso, `critique`/`audit`/`polish`/`harden`, reglas Android, `reference/craft-floor.md`),
-`taste-skill` + `redesign-skill` (AI tells prohibidos, estados completos), `emil-design-eng` +
-`animate` + `review-animations` (movimiento). Plan de la fase: `docs/PLAN_MVP_GUAJIRA.md` → Fase 2. Capturas para revisar UI:
-`flutter test tool/screenshots/review_shots_test.dart` → `.impeccable/review/`.
+**Design skills in `.claude/skills/`** (use them for every UI task): `impeccable` (process,
+critique/audit/polish/harden, Android rules, `reference/craft-floor.md`), `taste-skill` + `redesign-skill`
+(anti-slop, complete states), `emil-design-eng` + `animate` + `review-animations` (motion). Review
+screenshots: `flutter test tool/screenshots/review_shots_test.dart` writes `.impeccable/review/`
+(git-ignored; map tiles never load in tests).
 
-Reglas del mundo: shell en ultramar (`GSColors.brand` #1B3A8C: AppBar, barra inferior, botón
-primario); fondo lámina fría; placas blancas con letras Barlow Condensed en ultramar
-(`GSRoutePlate`, el gesto distintivo); franja fucsia `GSColors.stripe` SOLO en lo seleccionado;
-rojo/ámbar/verde (`road*`) solo para el estado de la vía, siempre con ícono + palabra; radios
-4/8/12; sin degradados, vidrio ni tarjetas por defecto; 48 dp (72 en conductor); contraste 7:1.
-Movimiento: presión 0.97 en 120 ms `GSCurve.enter`; nada animado al cambiar de pestaña; respetar
-`MediaQuery.disableAnimations`.
+World rules:
+- White surfaces on a cool light grey (`#F4F6FA`) and white top and bottom bars.
+- One brand blue, `GSColors.brand` `#0B4FC4`: primary buttons, selection, route, wallet balance card.
+- Figtree 400–800, bundled as static instances, in sentence case with tabular figures for numbers.
+- Pills for buttons, search, chips and avatars; radii 8/12/16/24 (cards 16, sheets 24).
+- Soft tinted shadows only on things floating over the map.
+- Red/amber/green (`road*`) only for road state, always with icon and word.
+- Mode colours only for legs and markers: use `RouteLeg.liveColor`, never `leg.color` (that one is fixed at creation and goes dark at night).
+- Contrast 7:1; 48 dp touch targets (72 in driver mode).
+- Motion: press scale 0.97 in 120 ms `GSCurve.enter` (`GSPressable`, `GSButton`); sheets 250/200 ms; no tab-change animation; respect `MediaQuery.disableAnimations`.
+- Large text up to 200 % with no mid-word breaks: use a single line with `FittedBox(scaleDown)` for short labels.
+- Never show a made-up price: modes without a fare rule say "Precio en la ruta".
 
-`GSColors.primary` es un alias del fondo (lámina), nunca detrás de texto blanco. Código nuevo usa
-los nombres nuevos.
-
-**Día y noche:** `GSColors.*` son getters que leen la paleta activa (`GSPalette.light` /
-`GSPalette.dark`); `main.dart` la aplica según el brillo del tema (`ThemeMode.system`) y reconstruye
-el árbol al cambiar. Por eso los colores NO son `const`: nunca guardes un color en un campo
-`static final` (se quedaría con el de la primera vez); usa getters. Barras y cabeceras usan
-`shell/onShell/onShellMuted` (ultramar profundo de noche); letras, íconos y botones usan `brand`.
+**Day and night:** `GSColors.*` are getters over the active palette (`GSPalette.light` / `.dark`);
+`main.dart` applies it from the theme brightness and rebuilds the tree on change. Colors are NOT
+`const`: never keep a color in a `static final` (it would freeze the first scheme). In tests,
+call `GSColors.apply(...)` BEFORE building a widget tree whose colors you read.
 
 ```dart
-GSColors.shell / .onShell / .onShellMuted     // carrocería: AppBar, barra inferior, cabeceras
-GSColors.brand / .brandPressed / .onBrand / .onBrandMuted / .brandTint / .stripe
+GSColors.shell / .onShell / .onShellMuted     // bars: white by day, surface at night
+GSColors.brand / .brandPressed / .onBrand / .onBrandMuted / .brandTint
 GSColors.background / .surface / .surfaceSunken / .text / .textMuted / .line
 GSColors.roadOpen / .roadCaution(+Tint) / .roadClosed(+Tint) / .roadUnknown  // road status ONLY
-GSFonts.sans ('Barlow') / .display ('BarlowCondensed') / .mono + .tabular (cifras tabulares)
+GSColors.bus / .taxi / .walk / .bike / .car                                    // legs and markers only
+GSFonts.sans = .display = .mono = 'Figtree'; GSFonts.tabular for numbers
 GSCurve.enter / .exit / .move    GSDuration.press / .fast / .sheetIn / .sheetOut
-GSSpacing.s1=4 s2=8 s3=12 s4=16 s5=20 s6=24 s8=32    GSRadius.sm=4 .md=8 .lg=12
-GSSize.touchTarget=48 .touchTargetDriver=72 .corridorLine=56 .bottomNav=72 .topBar=56
+GSSpacing.s1=4 s2=8 s3=12 s4=16 s5=20 s6=24 s8=32    GSRadius.sm=8 .md=12 .lg=16 .xl=24 .full
+GSShadow.float (over the map) / .sheet    GSSize.touchTarget=48 .touchTargetDriver=72 .button=52
 ```
 
 **Reusable widgets** (all in `lib/widgets/`, prefixed `GS*`):
-- `GSRoutePlate(text:, from:, detail:, leading:, isActive:, isPlaceholder:, size:)` — placa de ruta
-- `GSButton` (etiqueta condensada, presión 0.97, mín. 48 dp), `GSIconButton`
+- `GSRoutePlate(text:, from:, detail:, leading:, isActive:, isPlaceholder:, size:)`: place/option card (old name kept)
+- `GSPressable(onTap:, semanticLabel:, child:)`: anything tappable that isn't a button (0.97 press)
+- `GSGroup(children:)`: rows in a white 16-radius card with inset dividers (Nequi/settings style)
+- `GSBrandHero(title:, trailing:, child:)` + `GSHeroBody(child:)` + `GSHeroAction`: deep-blue header band (`GSColors.brandDeep`) with the body riding over it in a 24-radius sheet (wallet, profile; login builds its own)
+- `GSAuthScaffold(title:, subtitle:, onBack:, child:)`: login and register frame (deep-blue band with logo + form sheet)
+- `GSMetaChip(icon:, label:, emphasis:)`: grey pill with icon + tabular text for trip facts (min, km, arrival, fare kind)
+- `GSButton` (pill, Figtree 700, press 0.97, min 48 dp), `GSIconButton`
 - `GSCard`, `GSInfoCard`, `GSOptionCard`, `GSModeChip`
-- `GSCorridorLine` — DESIGN.md corridor line (56 px); state always icon + word, time in mono
+- `GSCorridorLine(floating:)`: corridor line; `floating: true` over the map on Home; state always icon + word
 - `GSTextField`, `GSSearchBar`
 - `GSBottomNav(current: GSNavTab.home|trip|report|wallet|profile)` — navigates by itself; 5 tabs (DS1)
 - `GSBottomSheet`
@@ -400,11 +413,14 @@ GSToast.showWithMessenger(messenger, message: 'Done');
 ```
 
 **Bottom nav scroll padding** — screens use `Scaffold(extendBody: true, bottomNavigationBar: GSBottomNav…)`,
-so the body's `MediaQuery.padding.bottom` ALREADY includes the nav height (it grows with large text).
-Don't add `GSSize.bottomNav` again:
-```dart
-SizedBox(height: MediaQuery.of(context).padding.bottom + GSSpacing.s4)
-```
+so the padding *inside the body* includes the nav height (it grows with large text). The screen's own
+`context` is outside the Scaffold and does NOT include it: end lists with `const GSNavSpacer()`
+(lib/widgets/gs_nav_spacer.dart), which reads the padding with its own context.
+
+**Icons** — one style: Material `*_rounded` everywhere; only the bottom nav pairs `*_outlined` (inactive)
+with `*_rounded` (active). Sizes are `GSSize.iconSm/Md/Lg/Xl` (16/20/24/32). One meaning per glyph:
+SOS = `health_and_safety_rounded`, driver mode = `badge_rounded` (mototaxi mode keeps `two_wheeler`),
+Viaje = `route`, Reportar = `add_location_alt`. Times use `formatClock` / `arrivalClock` (lib/core/clock.dart).
 
 **Layout overflow prevention** — in Row children with dynamic text, wrap the text Column in `Expanded` and add `maxLines + overflow`:
 ```dart
@@ -470,9 +486,8 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 | `flutter_nfc_kit` | ^3.4.0 | NFC hardware access |
 | `qr_flutter` | ^4.1.0 | QR code rendering |
 | `google_maps_flutter` | ^2.18 | Map when a Google key is set (native gestures, night style) |
-| `flutter_map` | ^7.0.2 | Fallback map — Mapbox streets (with `MAPBOX_PUBLIC_TOKEN`) or OSM |
+| `flutter_map` | ^7.0.2 | Fallback map (OSM) when there is no Google key: tests, admin web |
 | `geolocator` | ^13.0.0 | Device GPS location (Android + Web) |
-| `http` | ^1.2.0 | Direct REST calls (Groq AI) |
 | `intl` | ^0.20.2 | Date formatting, localization |
 | `flutter_localizations` | sdk | Spanish date picker support |
 | `uuid` | ^4.3.3 | Idempotency keys for NFC |
@@ -495,8 +510,10 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 - **`GSButton` API**: Use `isLoading:` (not `loading:`), `isFullWidth:` (not `fullWidth:`). Variant: `GSButtonVariant.outline / .ghost / .primary`.
 - **Place search**: screens use `placeSearch.search(q, near:)` (returns `PlaceSearchResult` with
   `items` and `limited`), not `geocodingService` directly. Directory rows with `verified=false` show "aprox.".
-- **`GSChoicePlates<T>`** (`lib/widgets/gs_choice_plates.dart`): pick one of a few options as small
-  plates (used by `ModeSelector` and driver signup). Prefer it over chips/radios.
+  Google suggestions come WITHOUT coordinates: call `placeSearch.resolve(s)` when the user picks one
+  (null = show a notice). That closes the Google session, so typing is billed once per pick.
+- **`GSChoicePlates<T>`** (`lib/widgets/gs_choice_plates.dart`): pick one of a few options as pills
+  (driver signup). The planner uses `ModeSelector` (tiles) and, once both points exist, `ModeOptions` (rows with ~ETA and fare).
 - **Driver status is server-only**: the client never writes `drivers.status`; a trigger rejects it and
   editing reviewed fields sends an approved driver back to `pending`.
 - **Offline writes** go through `syncQueue.enqueue(SyncOp(kind, key, payload))` with the op's
@@ -518,7 +535,7 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 - **Map**: screens never import a map package; they use `MapView` + `MapViewController` (moveTo, fit).
   Google Maps when `useGoogleMaps` (key `AIza…` in `.env`, also read by Gradle into the manifest), with
   rotate/tilt/compass, `assets/map_styles/night.json` at night and camera bounds on La Guajira;
-  otherwise flutter_map (Mapbox or OSM). Neither was tried on a phone from this environment.
+  otherwise flutter_map with OSM tiles (no Mapbox anymore). Neither was tried on a phone from here.
 - **Money formatting**: always `formatCop()` and `GSFonts.mono` for amounts the user compares.
   No red/green for income/expense — the sign carries it (red/green are road-only).
 - **`DateFormat(..., 'es')` throws** unless `initializeDateFormatting` ran (it doesn't in this app).
@@ -527,8 +544,8 @@ Currency: `'cop'` | `'usd'` | `'eur'`
   kept for trips (Fase 6). Money movements come from `walletTransactionsProvider`.
 - **Wallet vs cards**: `wallets` / `wallet_transactions` (`walletProvider`) is the money model. `cards` / `activeCardProvider` is only the card UI (lock/NFC, future public-transport validators). Never write balances from the client; use RPCs.
 - **`AnimatedDefaultTextStyle` / `DefaultTextStyle` replace the inherited style**: always set `fontFamily: GSFonts.sans`, or the text falls back to Roboto.
-- **Fonts are bundled** (`pubspec.yaml` → `fonts:` Barlow + BarlowCondensed); no `google_fonts`, no runtime download.
-- **`ThemeData(fontFamily:)` overrides every textTheme family**: condensed titles are re-applied with
+- **Fonts are bundled** (`pubspec.yaml` → `fonts:` Figtree, static 400–800 made from the variable file with fontTools); no `google_fonts`, no runtime download.
+- **`ThemeData(fontFamily:)` overrides every textTheme family**: the type scale is re-applied with
   `base.copyWith(textTheme: base.textTheme.merge(textTheme))` in `app_theme.dart`. Keep that.
-- **Barlow has no → glyph**: draw arrows with `Icons.arrow_forward_rounded`, never the character.
+- **Draw arrows with `Icons.arrow_forward_rounded`**, never a text glyph.
 - **`GSCard` wraps its child in a transparent `Material`** so `ListTile`s inside it render ripples (newer Flutter asserts otherwise).

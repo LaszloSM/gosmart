@@ -69,7 +69,7 @@ class _ChargeScreenState extends State<ChargeScreen> {
     final big = TextStyle(
       fontFamily: GSFonts.display,
       fontFeatures: GSFonts.tabular,
-      fontSize: 40,
+      fontSize: 34,
       fontWeight: FontWeight.w800,
       color: GSColors.text,
     );
@@ -115,7 +115,7 @@ class _ChargeScreenState extends State<ChargeScreen> {
             Text(formatCop(c.amount), textAlign: TextAlign.center, style: big),
             const SizedBox(height: GSSpacing.s3),
             if (_status != 'open' && _status != 'paid')
-              Icon(Icons.timer_off_outlined, size: 96, color: GSColors.textMuted)
+              Icon(Icons.timer_off_rounded, size: 96, color: GSColors.textMuted)
             else if (_status == 'paid')
               Column(children: [
                 Icon(Icons.check_circle_rounded, size: 96, color: GSColors.brand),

@@ -214,7 +214,7 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
                     message.content,
                     style: TextStyle(
                       fontFamily: GSFonts.sans,
-                      fontSize: 17,
+                      fontSize: 16,
                       height: 1.45,
                       color: isUser ? GSColors.onBrand : GSColors.text,
                     ),
@@ -226,8 +226,8 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.info_outline_rounded,
-                        size: 16, color: GSColors.textMuted),
+                    Icon(Icons.info_rounded,
+                        size: GSSize.iconSm, color: GSColors.textMuted),
                     const SizedBox(width: GSSpacing.s1),
                     Text(
                       message.source == 'cache'
@@ -261,7 +261,7 @@ class _MessageBubbleState extends ConsumerState<_MessageBubble> {
                 const SizedBox(height: GSSpacing.s2),
                 GSButton(
                   label: 'Ver en el mapa',
-                  leadingIcon: Icons.map_outlined,
+                  leadingIcon: Icons.map_rounded,
                   isFullWidth: false,
                   onPressed: message.routeResults![_selectedRouteIdx] != null
                       ? () {
@@ -410,7 +410,7 @@ class _ChatInput extends StatelessWidget {
               minLines: 1,
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
-              style: const TextStyle(fontFamily: GSFonts.sans, fontSize: 17),
+              style: const TextStyle(fontFamily: GSFonts.sans, fontSize: 16),
               decoration: const InputDecoration(
                 hintText: 'Escribe tu pregunta',
               ),

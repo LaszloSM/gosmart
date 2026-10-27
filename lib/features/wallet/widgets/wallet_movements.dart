@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/wallet_transaction_model.dart';
 import '../../../providers/wallet_provider.dart';
 import '../../../theme/design_tokens.dart';
+import '../../../widgets/gs_list_row.dart';
 import '../../../widgets/gs_skeleton_loader.dart';
 import '../../../widgets/gs_inline_error.dart';
 
@@ -29,7 +30,8 @@ class WalletMovements extends ConsumerWidget {
     final txAsync = ref.watch(walletTransactionsProvider(limit));
     // Mientras llega la página siguiente se sigue viendo la anterior.
     final previous = limit > walletPageSize
-        ? ref.watch(walletTransactionsProvider(limit - walletPageSize))
+        ? ref
+            .watch(walletTransactionsProvider(limit - walletPageSize))
             .valueOrNull
         : null;
 
@@ -38,17 +40,17 @@ class WalletMovements extends ConsumerWidget {
       loading: () => previous != null
           ? _list(previous, showMore: false)
           : Padding(
-        padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
-        child: Column(
-          children: List.generate(
-            3,
-            (_) => const Padding(
-              padding: EdgeInsets.only(bottom: GSSpacing.s2),
-              child: GSTransactionSkeleton(),
+              padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
+              child: Column(
+                children: List.generate(
+                  3,
+                  (_) => const Padding(
+                    padding: EdgeInsets.only(bottom: GSSpacing.s2),
+                    child: GSTransactionSkeleton(),
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
       error: (_, __) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
         child: GSInlineError(
@@ -75,19 +77,14 @@ class WalletMovements extends ConsumerWidget {
   }
 
   Widget _list(List<WalletTransactionModel> list, {required bool showMore}) {
-    return Column(
-      children: [
-        for (var i = 0; i < list.length; i++) ...[
-          if (i > 0) const Divider(indent: GSSpacing.s4),
-          MovementRow(tx: list[i]),
-        ],
-        if (showMore)
-          TextButton(
-            onPressed: onLoadMore,
-            child: const Text('Ver más movimientos'),
-          ),
-      ],
-    );
+    return GSGroup(children: [
+      for (final tx in list) MovementRow(tx: tx),
+      if (showMore)
+        TextButton(
+          onPressed: onLoadMore,
+          child: const Text('Ver más movimientos'),
+        ),
+    ]);
   }
 }
 
@@ -99,11 +96,21 @@ class MovementRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final detail = [
-      if (tx.description != null && tx.description!.isNotEmpty)
-        tx.description!,
+      if (tx.description != null && tx.description!.isNotEmpty) tx.description!,
       tx.formattedDate,
     ].join(' · ');
 
+    final big = MediaQuery.textScalerOf(context).scale(1) > 1.3;
+    final amount = Text(
+      tx.formattedAmount,
+      style: TextStyle(
+        fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+        // Entradas en azul, salidas en tinta; el signo lo dice.
+        color: tx.amount > 0 ? GSColors.brand : GSColors.text,
+      ),
+    );
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 64),
       child: Padding(
@@ -111,33 +118,44 @@ class MovementRow extends StatelessWidget {
             horizontal: GSSpacing.s4, vertical: GSSpacing.s3),
         child: Row(
           children: [
-            Icon(tx.icon, color: GSColors.textMuted),
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color:
+                    tx.amount > 0 ? GSColors.brandTint : GSColors.surfaceSunken,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(tx.icon,
+                  size: GSSize.iconLg,
+                  color: tx.amount > 0 ? GSColors.brand : GSColors.text),
+            ),
             const SizedBox(width: GSSpacing.s3),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(tx.typeLabel, style: text.titleMedium),
+                  Text(tx.typeLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.titleMedium),
                   Text(
                     detail,
                     style: text.bodySmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  // Con texto grande el monto baja bajo el nombre: nunca
+                  // "Reca/rga" por falta de ancho.
+                  if (big) amount,
                 ],
               ),
             ),
-            const SizedBox(width: GSSpacing.s3),
-            Text(
-              tx.formattedAmount,
-              style: TextStyle(
-                fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                color: GSColors.text,
-              ),
-            ),
+            if (!big) ...[
+              const SizedBox(width: GSSpacing.s3),
+              amount,
+            ],
           ],
         ),
       ),

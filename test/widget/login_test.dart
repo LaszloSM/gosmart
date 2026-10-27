@@ -18,29 +18,31 @@ Widget buildTestApp(Widget child) {
 
 void main() {
   group('LoginScreen', () {
-    testWidgets('renders phone input by default', (tester) async {
-      await tester.pumpWidget(buildTestApp(const LoginScreen()));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Entra a GoSmart'), findsOneWidget);
-      expect(find.text('Número de celular'), findsOneWidget);
-      expect(find.text('Contraseña'), findsNothing);
-    });
-
-    testWidgets('shows email and password fields when email tab selected',
+    testWidgets('renders email and password by default (no SMS provider yet)',
         (tester) async {
       await tester.pumpWidget(buildTestApp(const LoginScreen()));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Correo').first);
-      await tester.pumpAndSettle();
-
+      expect(find.text('Entra a GoSmart'), findsOneWidget);
       expect(find.text('Contraseña'), findsOneWidget);
       expect(find.text('Número de celular'), findsNothing);
     });
 
+    testWidgets('shows phone input when phone tab selected', (tester) async {
+      await tester.pumpWidget(buildTestApp(const LoginScreen()));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Celular').first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Número de celular'), findsOneWidget);
+      expect(find.text('Contraseña'), findsNothing);
+    });
+
     testWidgets('shows validation error when phone is empty', (tester) async {
       await tester.pumpWidget(buildTestApp(const LoginScreen()));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Celular').first);
       await tester.pumpAndSettle();
 
       await tester.ensureVisible(find.text('Enviar código'));
@@ -54,9 +56,6 @@ void main() {
     testWidgets('shows validation errors for empty email login',
         (tester) async {
       await tester.pumpWidget(buildTestApp(const LoginScreen()));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Correo').first);
       await tester.pumpAndSettle();
       // Los campos llevan la etiqueta encima: el botón puede quedar abajo.
       await tester.ensureVisible(find.text('Iniciar sesión'));

@@ -99,12 +99,17 @@ void main() {
     expect(trips, isEmpty);
   });
 
-  test('tarifa justa: rango redondeado a \$500 y recargo nocturno', () {
+  test('precio único: taxi con la tarifa oficial de Riohacha, mototaxi sugerida', () {
+    // Taxi: 6.300 el primer km + 1.300 por km adicional o fracción.
+    expect(estimateFare(TransitMode.taxi, 0.8, at: _day).price, 6300);
+    expect(estimateFare(TransitMode.taxi, 3.4, at: _day).price, 6300 + 3 * 1300);
+    final t = estimateFare(TransitMode.taxi, 3.4, at: _day);
+    expect(t.min, t.max);
+    // Mototaxi: $3.000 hasta 2 km, luego $500 por km; redondeado a $500.
     final d = estimateFare(TransitMode.mototaxi, 3, at: _day);
-    final n = estimateFare(TransitMode.mototaxi, 3, at: _night);
-    expect(d.min % 500, 0);
-    expect(d.max, greaterThan(d.min));
-    expect(n.mid, greaterThan(d.mid));
+    expect(d.price, 3500);
+    expect(d.price % 500, 0);
+    expect(estimateFare(TransitMode.mototaxi, 3, at: _night).price, greaterThan(d.price));
     expect(estimateFare(TransitMode.colectivo, 3, at: _day), FareRange.zero);
   });
 }

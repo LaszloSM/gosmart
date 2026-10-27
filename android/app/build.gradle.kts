@@ -45,11 +45,24 @@ android {
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey(rootProject.projectDir)
     }
 
+    // Firma de DEMO, la misma en todo lado (CI y local): así el SHA-1 no cambia,
+    // la llave de Google Maps se puede restringir a la app y un APK nuevo se
+    // instala encima del anterior sin desinstalar. NO es la firma de Play Store.
+    signingConfigs {
+        create("demo") {
+            storeFile = file("../keystore/gosmart-demo.jks")
+            storePassword = "gosmart-demo"
+            keyAlias = "gosmart-demo"
+            keyPassword = "gosmart-demo"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("demo")
+        }
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("demo")
         }
     }
 }

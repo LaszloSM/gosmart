@@ -24,8 +24,10 @@ class GraphBundle {
       rules[mode] = FareRule(
         base: (m['base'] as num).toInt(),
         perKm: (m['per_km'] as num).toInt(),
+        includedKm: (m['included_km'] as num?)?.toDouble() ?? 0,
         minimum: (m['minimum'] as num?)?.toInt() ?? 0,
         nightFactor: (m['night_factor'] as num?)?.toDouble() ?? 1.2,
+        roundTo: (m['round_to'] as num?)?.toInt() ?? 500,
       );
     }
     return GraphBundle(TransportGraph.fromJson(j), rules, isCached: cached);

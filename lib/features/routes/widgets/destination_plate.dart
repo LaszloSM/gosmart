@@ -1,7 +1,7 @@
 // lib/features/routes/widgets/destination_plate.dart
-// El destino ES la placa: mientras escribes es una placa en blanco con letras
-// de rótulo; al elegir una sugerencia queda "pintada" (placa activa con la
-// franja fucsia). Tocarla de nuevo la borra para escribir otro destino.
+// Campo de destino como el de Uber/Google Maps: mientras escribes es una caja
+// gris; al elegir una sugerencia queda fijado como tarjeta elegida. Tocarla
+// de nuevo la borra para escribir otro destino.
 import 'package:flutter/material.dart';
 
 import '../../../theme/design_tokens.dart';
@@ -27,12 +27,11 @@ class DestinationPlate extends StatelessWidget {
 
   // Getter, no campo: lee la paleta activa (día/noche) cada vez.
   static TextStyle get _letters => TextStyle(
-    fontFamily: GSFonts.display,
-    fontSize: 22,
-    fontWeight: FontWeight.w800,
-    letterSpacing: 0.4,
-    color: GSColors.brand,
-  );
+        fontFamily: GSFonts.sans,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: GSColors.text,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -48,31 +47,24 @@ class DestinationPlate extends StatelessWidget {
             maxLines: 2,
             onTap: onClear,
             semanticLabel: 'Destino: $chosenLabel. Toca para cambiarlo',
-            trailing: Icon(Icons.edit_outlined, color: GSColors.textMuted),
+            trailing: Icon(Icons.edit_rounded, color: GSColors.textMuted),
           )
         : TextField(
             key: const ValueKey('blank'),
             controller: controller,
             focusNode: focusNode,
             autofocus: autofocus,
-            textCapitalization: TextCapitalization.characters,
+            textCapitalization: TextCapitalization.sentences,
             textInputAction: TextInputAction.search,
             style: _letters,
             decoration: InputDecoration(
-              hintText: '¿A DÓNDE VAS?',
+              hintText: '¿A dónde vas?',
+              hintMaxLines: 2,
               hintStyle: _letters.copyWith(color: GSColors.textMuted),
-              prefixIcon: Icon(Icons.search_rounded,
-                  size: 26, color: GSColors.brand),
+              prefixIcon:
+                  Icon(Icons.search_rounded, size: GSSize.iconLg, color: GSColors.text),
               contentPadding: const EdgeInsets.symmetric(
                   horizontal: GSSpacing.s4, vertical: GSSpacing.s4),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(GSRadius.md),
-                borderSide: BorderSide(color: GSColors.line, width: 1.5),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(GSRadius.md),
-                borderSide: BorderSide(color: GSColors.brand, width: 2),
-              ),
               suffixIcon: controller.text.isEmpty
                   ? null
                   : IconButton(
@@ -88,6 +80,14 @@ class DestinationPlate extends StatelessWidget {
       duration: reduceMotion ? GSDuration.fast : GSDuration.plate,
       switchInCurve: GSCurve.enter,
       switchOutCurve: GSCurve.exit,
+      // A todo el ancho: el layout por defecto centra y encoge el campo.
+      layoutBuilder: (current, previous) => Stack(
+        alignment: Alignment.topLeft,
+        children: [
+          ...previous,
+          if (current != null) SizedBox(width: double.infinity, child: current),
+        ],
+      ),
       child: child,
     );
   }

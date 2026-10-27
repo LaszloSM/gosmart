@@ -43,7 +43,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(_app(_d('pending')));
     await tester.pumpAndSettle();
-    expect(find.text('FALTAN DOCUMENTOS'), findsOneWidget);
+    expect(find.text('Faltan documentos'), findsOneWidget);
     expect(find.text('Ponerme disponible'), findsNothing);
     expect(find.text('Licencia de conducción'), findsOneWidget);
   });
@@ -51,14 +51,14 @@ void main() {
   testWidgets('pendiente completo: en revisión', (tester) async {
     await tester.pumpWidget(_app(_d('pending', docs: true)));
     await tester.pumpAndSettle();
-    expect(find.text('EN REVISIÓN'), findsOneWidget);
+    expect(find.text('En revisión'), findsOneWidget);
   });
 
   testWidgets('aprobado: una sola acción grande en la zona del pulgar',
       (tester) async {
     await tester.pumpWidget(_app(_d('approved', docs: true)));
     await tester.pumpAndSettle();
-    expect(find.text('NO DISPONIBLE'), findsOneWidget);
+    expect(find.text('No disponible'), findsOneWidget);
     final btn = find.widgetWithText(GSButton, 'Ponerme disponible');
     expect(btn, findsOneWidget);
     expect(tester.getSize(btn).height, greaterThanOrEqualTo(72));

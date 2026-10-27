@@ -16,7 +16,7 @@ const travelModes = [
 
 final selectedModeProvider = StateProvider<String>((ref) => 'Mototaxi');
 
-/// Modo → perfil de Mapbox Directions. Única fuente de este mapeo.
+/// Modo → perfil de ruta por calles (Google Routes). Única fuente de este mapeo.
 String routeProfileFor(String mode) => switch (mode) {
       'A pie' => RouteProfile.walking,
       _ => RouteProfile.driving, // mototaxi, taxi y carro van por la vía
@@ -34,4 +34,15 @@ IconData modeIconFor(String mode) => switch (mode) {
       'Intermunicipal' => Icons.directions_bus_filled_rounded,
       'A pie' => Icons.directions_walk_rounded,
       _ => Icons.directions_car_rounded,
+    };
+
+/// Ilustración del vehículo (assets/vehicles, dibujadas en tool/vehicles);
+/// null para los modos sin vehículo propio (a pie, carro): se usa el ícono.
+String? modeImageFor(String mode) => switch (mode) {
+      'Mototaxi' => 'assets/vehicles/mototaxi.png',
+      'Taxi' => 'assets/vehicles/taxi.png',
+      'Colectivo' => 'assets/vehicles/colectivo.png',
+      'TransPadilla' => 'assets/vehicles/transpadilla.png',
+      'Intermunicipal' => 'assets/vehicles/intermunicipal.png',
+      _ => null,
     };

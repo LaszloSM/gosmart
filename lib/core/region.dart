@@ -8,8 +8,4 @@ abstract class GSRegion {
 
   /// Centro de Maicao.
   static const maicao = LatLng(11.3779, -72.2391);
-
-  /// Caja que cubre Riohacha, Maicao, el corredor y el desvío por Albania–Cuestecitas.
-  /// Formato Mapbox: minLng,minLat,maxLng,maxLat.
-  static const bbox = '-73.30,10.90,-72.00,11.80';
 }

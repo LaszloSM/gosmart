@@ -42,8 +42,6 @@ dependencies:
   # Geolocation
   geolocator: ^13.0.0
 
-  # HTTP client (Groq AI + Mapbox Directions REST calls)
-  http: ^1.2.0
 
   # Utilities
   intl: ^0.20.2
@@ -66,6 +64,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
   flutter_lints: ^3.0.0
   build_runner: ^2.4.9
   riverpod_generator: ^2.4.0
@@ -81,25 +81,20 @@ flutter:
     - assets/animations/
     - .env
     - assets/map_styles/
+    - assets/vehicles/
 
   fonts:
-    # Mundo "rótulo de colectivo": Barlow (cuerpo, cifras tabulares) y
-    # Barlow Condensed (placas y títulos). OFL, empaquetadas para funcionar sin señal.
-    - family: Barlow
+    # Figtree (OFL), instancias estáticas del archivo variable de google/fonts,
+    # empaquetadas para funcionar sin señal. Tiene cifras tabulares (tnum).
+    - family: Figtree
       fonts:
-        - asset: assets/fonts/Barlow-Regular.ttf
+        - asset: assets/fonts/Figtree-Regular.ttf
           weight: 400
-        - asset: assets/fonts/Barlow-Medium.ttf
+        - asset: assets/fonts/Figtree-Medium.ttf
           weight: 500
-        - asset: assets/fonts/Barlow-SemiBold.ttf
+        - asset: assets/fonts/Figtree-SemiBold.ttf
           weight: 600
-        - asset: assets/fonts/Barlow-Bold.ttf
+        - asset: assets/fonts/Figtree-Bold.ttf
           weight: 700
-    - family: BarlowCondensed
-      fonts:
-        - asset: assets/fonts/BarlowCondensed-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/BarlowCondensed-Bold.ttf
-          weight: 700
-        - asset: assets/fonts/BarlowCondensed-ExtraBold.ttf
+        - asset: assets/fonts/Figtree-ExtraBold.ttf
           weight: 800

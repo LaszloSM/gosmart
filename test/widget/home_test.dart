@@ -37,7 +37,7 @@ void main() {
       expect(find.text('Abierta'), findsNothing);
     });
 
-    testWidgets('con un bloqueo muestra "Cerrada" y la hora', (tester) async {
+    testWidgets('con un bloqueo muestra "Cerrada", el km y la hora', (tester) async {
       final status = CorridorStatus(
         segments: const [
           CorridorSegment(kmFrom: 0, kmTo: 40, state: RoadState.open),
@@ -52,7 +52,7 @@ void main() {
         updatedAt: DateTime.now().subtract(const Duration(minutes: 5)),
       );
       await tester.pumpWidget(_app(GSCorridorLine(status: status)));
-      expect(find.text('Cerrada'), findsOneWidget);
+      expect(find.text('Cerrada km 40'), findsOneWidget);
       expect(find.text('hace 5 min'), findsOneWidget);
       expect(find.byIcon(Icons.block_rounded), findsOneWidget);
     });
@@ -71,15 +71,15 @@ void main() {
         (tester) async {
       await tester.pumpWidget(_app(const HomeSheetContent()));
       await tester.pump();
-      expect(find.text('¿A DÓNDE VAS?'), findsOneWidget);
+      expect(find.text('¿A dónde vas?'), findsOneWidget);
       expect(find.bySemanticsLabel('Agregar casa'), findsOneWidget);
-      expect(find.text('Entrar o crear cuenta'), findsOneWidget);
+      expect(find.text('Entra o crea tu cuenta'), findsOneWidget);
     });
 
     testWidgets('con cuenta no muestra la invitación', (tester) async {
       await tester.pumpWidget(_app(const HomeSheetContent(), guest: false));
       await tester.pump();
-      expect(find.text('Entrar o crear cuenta'), findsNothing);
+      expect(find.text('Entra o crea tu cuenta'), findsNothing);
     });
   });
 }

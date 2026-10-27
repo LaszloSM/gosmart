@@ -14,12 +14,14 @@ import '../../providers/wallet_provider.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
 import '../../widgets/gs_bottom_sheet.dart';
-import '../../widgets/gs_button.dart';
+import '../../widgets/gs_brand_hero.dart';
+import '../../widgets/gs_list_row.dart';
 import '../../widgets/gs_toast.dart';
 import 'widgets/balance_header.dart';
 import 'widgets/card_controls.dart';
 import 'widgets/recharge_sheet.dart';
 import 'widgets/wallet_movements.dart';
+import '../../widgets/gs_nav_spacer.dart';
 
 class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
@@ -44,7 +46,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           if (await paymentService.wompiEnabled()) {
             try {
               final url = await paymentService.wompiCheckout(amount);
-              await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+              await launchUrl(Uri.parse(url),
+                  mode: LaunchMode.externalApplication);
               GSToast.showWithMessenger(messenger,
                   message: 'Cuando Wompi confirme, el saldo aparece aquí.');
             } on PaymentException catch (e) {
@@ -53,9 +56,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             }
             return;
           }
-          final ok = await ref
-              .read(walletNotifierProvider.notifier)
-              .recharge(amount);
+          final ok =
+              await ref.read(walletNotifierProvider.notifier).recharge(amount);
           GSToast.showWithMessenger(
             messenger,
             message: ok
@@ -75,74 +77,49 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
     final recharging = ref.watch(walletNotifierProvider).isLoading;
 
     return Scaffold(
       extendBody: true,
       backgroundColor: GSColors.background,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('Billetera'),
-      ),
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const BalanceHeader(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
-              child: GSButton(
-                label: 'Recargar saldo',
-                leadingIcon: Icons.add_rounded,
-                isLoading: recharging,
-                onPressed: recharging ? null : _showRechargeSheet,
+            BalanceHeader(actions: [
+              GSHeroAction(
+                icon: Icons.add_rounded,
+                label: 'Recargar',
+                primary: true,
+                busy: recharging,
+                onTap: recharging ? null : _showRechargeSheet,
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                  GSSpacing.s4, GSSpacing.s2, GSSpacing.s4, 0),
-              child: GSButton(
+              GSHeroAction(
+                icon: Icons.qr_code_scanner_rounded,
                 label: 'Pagar con QR',
-                leadingIcon: Icons.qr_code_scanner_rounded,
-                variant: GSButtonVariant.outline,
-                onPressed: () => context.push(AppRoutes.scanPay),
+                onTap: () => context.push(AppRoutes.scanPay),
               ),
-            ),
-            const SizedBox(height: GSSpacing.s6),
-            _SectionTitle('Movimientos', style: text.titleLarge),
-            WalletMovements(
-              limit: _limit,
-              onLoadMore: () =>
-                  setState(() => _limit += walletPageSize),
-            ),
-            const SizedBox(height: GSSpacing.s6),
-            _SectionTitle('Tarjeta GoSmart', style: text.titleLarge),
-            const CardControls(),
-            SizedBox(
-              height: MediaQuery.of(context).padding.bottom +
-                  GSSpacing.s4,
+            ]),
+            GSHeroBody(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const GSSectionTitle('Movimientos'),
+                  WalletMovements(
+                    limit: _limit,
+                    onLoadMore: () => setState(() => _limit += walletPageSize),
+                  ),
+                  const GSSectionTitle('Tarjeta GoSmart'),
+                  const CardControls(),
+                  const GSNavSpacer(extra: GSSpacing.s4 + GSRadius.xl),
+                ],
+              ),
             ),
           ],
         ),
       ),
       bottomNavigationBar: const GSBottomNav(current: GSNavTab.wallet),
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.label, {this.style});
-  final String label;
-  final TextStyle? style;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          GSSpacing.s4, 0, GSSpacing.s4, GSSpacing.s2),
-      child: Text(label, style: style),
     );
   }
 }

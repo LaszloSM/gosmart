@@ -97,7 +97,9 @@ class TripTool {
       String q, LatLng? near) async {
     final r = await placeSearch.search(q, near: near);
     if (r.items.isEmpty) return null;
-    return (name: r.items.first.placeName, at: r.items.first.latLng);
+    final s = await placeSearch.resolve(r.items.first);
+    if (s == null || s.latLng == null) return null;
+    return (name: s.placeName, at: s.latLng!);
   }
 
   static Future<CorridorStatus> _defaultCorridor() async {

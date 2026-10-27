@@ -91,7 +91,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                 const Divider(indent: GSSpacing.s4),
               ],
               GSListRow(
-                icon: Icons.payments_outlined,
+                icon: Icons.payments_rounded,
                 title: 'Total pagado',
                 value: formatCop(r.totalPaid),
               ),

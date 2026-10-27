@@ -1,0 +1,103 @@
+name: Android emulator (demo)
+
+# Corre la app en un Android virtual (Google APIs, con Play services) contra el
+# Supabase real y con la llave de Google Maps de los secrets, recorre la demo
+# (integration_test/demo_flow_test.dart) y publica una captura por paso en la
+# rama ci-shots. Es la prueba de que el mapa de Google se dibuja.
+
+on:
+  push:
+    branches: [main, 'claude/**']
+    paths:
+      - 'lib/**'
+      - 'android/**'
+      - 'integration_test/**'
+      - 'pubspec.yaml'
+      - 'tool/ci_env.sh'
+      - 'tool/emulator_demo.sh'
+      - '.github/workflows/android-emulator.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: android-emulator-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write   # publicar las capturas en la rama ci-shots
+
+jobs:
+  emulator:
+    name: Demo en emulador
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      PROJECT_REF: ndmsiznzvdvpewzkulep
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: .env desde los secrets
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          GOOGLE_MAPS_SERVER_KEY: ${{ secrets.GOOGLE_MAPS_SERVER_KEY }}
+        run: bash tool/ci_env.sh
+
+      - name: Habilitar KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Demo en el emulador
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          DEMO_PASSWORD: ${{ secrets.DEMO_PASSWORD }}
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
+          script: bash tool/emulator_demo.sh
+
+      - name: Publicar capturas (rama ci-shots)
+        if: always()
+        run: |
+          [ -d shots-named ] || exit 0
+          cd shots-named
+          git init -q
+          git checkout -q -b ci-shots
+          git add -A
+          git -c user.name='GoSmart CI' -c user.email='ci@users.noreply.github.com' commit -qm "Capturas de ${GITHUB_SHA::7}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-shots
+          echo "Capturas: https://github.com/${{ github.repository }}/tree/ci-shots"
+
+      # La prueba entra como la pasajera demo y deja un viaje: se limpia para
+      # que la cuenta quede lista para presentar.
+      - name: Dejar la demo limpia
+        if: always()
+        env:
+          DB: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          [ -n "$DB" ] || exit 0
+          psql "$DB" -v ON_ERROR_STOP=1 -q -tAc "select demo_seed('normal')" || echo "::warning::No se pudo limpiar la demo"

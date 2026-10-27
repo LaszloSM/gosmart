@@ -26,6 +26,7 @@ import '../../widgets/gs_choice_plates.dart';
 import '../../widgets/gs_list_row.dart';
 import '../../widgets/gs_route_plate.dart';
 import '../../widgets/gs_toast.dart';
+import '../../core/clock.dart';
 
 class DriverWorkPanel extends ConsumerStatefulWidget {
   const DriverWorkPanel({
@@ -144,12 +145,12 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
       else ...[
         if (_offlineSince != null)
           _note(text, 'Sin señal · reintentando. Último dato a las '
-              '${_hhmm(_offlineSince!)}'),
+              '${formatClock(_offlineSince!)}'),
         if (_cash.isNotEmpty) ...[
           const GSSectionTitle('Efectivo por confirmar'),
           for (final c in _cash)
             GSListRow(
-              icon: Icons.payments_outlined,
+              icon: Icons.payments_rounded,
               title: '¿Recibiste ${formatCop(c.amount)}?',
               subtitle: 'Confírmalo abajo para que el pasajero tenga su recibo',
             ),
@@ -234,7 +235,7 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
         _big('Sí, recibí ${formatCop(c.amount)}',
             () => _run('cash-${c.id}', () => paymentService.confirmCash(c.id),
                 ok: 'Efectivo confirmado'),
-            busyKey: 'cash-${c.id}', icon: Icons.payments_outlined),
+            busyKey: 'cash-${c.id}', icon: Icons.payments_rounded),
       ];
     }
     if (_isScheduled) {
@@ -348,7 +349,7 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
               'reserven cupo.'),
         for (final d in _departures)
           GSListRow(
-            icon: Icons.event_seat_outlined,
+            icon: Icons.event_seat_rounded,
             title: '${d.seatsTaken} de ${d.seatsTotal} cupos reservados',
             subtitle: 'De ${_nodeName(d.fromNode)} a ${_nodeName(d.toNode)} · '
                 '${d.status == 'full' ? 'llena' : 'abierta'}',
@@ -540,10 +541,6 @@ class _PublishDepartureSheetState extends ConsumerState<PublishDepartureSheet> {
   }
 }
 
-String _hhmm(DateTime t) {
-  final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
-  return '$h:${t.minute.toString().padLeft(2, '0')} ${t.hour < 12 ? 'a. m.' : 'p. m.'}';
-}
 
 /// Pasos −/+ del modo conductor: 72 dp (DS6).
 const _driverTap = BoxConstraints.tightFor(

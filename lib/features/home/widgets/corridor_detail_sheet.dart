@@ -87,7 +87,7 @@ class CorridorDetailSheet extends StatelessWidget {
             const SizedBox(height: GSSpacing.s2),
             GSButton(
               label: 'Reportar algo en la vía',
-              leadingIcon: Icons.campaign_outlined,
+              leadingIcon: Icons.campaign_rounded,
               variant: GSButtonVariant.outline,
               onPressed: () {
                 Navigator.of(context).pop();
@@ -110,7 +110,7 @@ class _NoDataNote extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(Icons.help_outline_rounded, color: GSColors.roadUnknown),
+        Icon(Icons.help_rounded, color: GSColors.roadUnknown),
         const SizedBox(width: GSSpacing.s3),
         Expanded(
           child: Column(
