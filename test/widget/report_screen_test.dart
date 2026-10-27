@@ -54,6 +54,9 @@ void main() {
     await tester.tap(find.text('Bloqueo'));
     await tester.pump();
     expect(_sendButton(tester).onPressed, isNull);
+    // El botón fijo de abajo tapa el final de la lista en la vista de 600 px.
+    await tester.drag(find.byType(ListView), const Offset(0, -600));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Troncal km 30–40'));
     await tester.pump();
     expect(_sendButton(tester).onPressed, isNotNull);

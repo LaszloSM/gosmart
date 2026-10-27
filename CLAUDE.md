@@ -384,6 +384,7 @@ GSShadow.float (over the map) / .sheet    GSSize.touchTarget=48 .touchTargetDriv
 - `GSPressable(onTap:, semanticLabel:, child:)`: anything tappable that isn't a button (0.97 press)
 - `GSGroup(children:)`: rows in a white 16-radius card with inset dividers (Nequi/settings style)
 - `GSBrandHero(title:, trailing:, child:)` + `GSHeroBody(child:)` + `GSHeroAction`: deep-blue header band (`GSColors.brandDeep`) with the body riding over it in a 24-radius sheet (wallet, profile; login builds its own)
+- `GSAuthScaffold(title:, subtitle:, onBack:, child:)`: login and register frame (deep-blue band with logo + form sheet)
 - `GSMetaChip(icon:, label:, emphasis:)`: grey pill with icon + tabular text for trip facts (min, km, arrival, fare kind)
 - `GSButton` (pill, Figtree 700, press 0.97, min 48 dp), `GSIconButton`
 - `GSCard`, `GSInfoCard`, `GSOptionCard`, `GSModeChip`
@@ -412,11 +413,14 @@ GSToast.showWithMessenger(messenger, message: 'Done');
 ```
 
 **Bottom nav scroll padding** — screens use `Scaffold(extendBody: true, bottomNavigationBar: GSBottomNav…)`,
-so the body's `MediaQuery.padding.bottom` ALREADY includes the nav height (it grows with large text).
-Don't add `GSSize.bottomNav` again:
-```dart
-SizedBox(height: MediaQuery.of(context).padding.bottom + GSSpacing.s4)
-```
+so the padding *inside the body* includes the nav height (it grows with large text). The screen's own
+`context` is outside the Scaffold and does NOT include it: end lists with `const GSNavSpacer()`
+(lib/widgets/gs_nav_spacer.dart), which reads the padding with its own context.
+
+**Icons** — one style: Material `*_rounded` everywhere; only the bottom nav pairs `*_outlined` (inactive)
+with `*_rounded` (active). Sizes are `GSSize.iconSm/Md/Lg/Xl` (16/20/24/32). One meaning per glyph:
+SOS = `health_and_safety_rounded`, driver mode = `badge_rounded` (mototaxi mode keeps `two_wheeler`),
+Viaje = `route`, Reportar = `add_location_alt`. Times use `formatClock` / `arrivalClock` (lib/core/clock.dart).
 
 **Layout overflow prevention** — in Row children with dynamic text, wrap the text Column in `Expanded` and add `maxLines + overflow`:
 ```dart

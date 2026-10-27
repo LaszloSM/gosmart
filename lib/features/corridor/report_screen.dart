@@ -18,16 +18,19 @@ import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_choice_plates.dart';
+import '../../widgets/gs_corridor_line.dart';
+import '../../widgets/gs_pressable.dart';
 import '../../widgets/gs_inline_error.dart';
 import '../../widgets/gs_list_row.dart';
 import '../../widgets/gs_toast.dart';
+import '../../widgets/gs_nav_spacer.dart';
 
 IconData reportKindIcon(String kind) => switch (kind) {
       'bloqueo' => Icons.block_rounded,
       'reten' => Icons.local_police_rounded,
       'accidente' => Icons.car_crash_rounded,
       'inundacion' => Icons.water_rounded,
-      'hueco' => Icons.report_gmailerrorred_rounded,
+      'hueco' => Icons.edit_road_rounded,
       _ => Icons.check_circle_rounded,
     };
 
@@ -129,12 +132,22 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
       body: ListView(
         padding: EdgeInsets.zero,
         children: [
+          // Cómo está la vía ahora: lo que vas a corregir o confirmar.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                GSSpacing.s4, GSSpacing.s3, GSSpacing.s4, 0),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(GSRadius.lg),
+              child: GSCorridorLine(
+                status: ref.watch(corridorStatusProvider).valueOrNull,
+                isLoading: ref.watch(corridorStatusProvider).isLoading,
+              ),
+            ),
+          ),
           const GSSectionTitle('¿Qué pasa?'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
-            child: GSChoicePlates<String>(
-              options: roadReportKinds,
-              icons: reportKindIcon,
+            child: _KindGrid(
               selected: _kind,
               onChanged: (k) => setState(() => _kind = k),
             ),
@@ -189,21 +202,114 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
               style: text.bodySmall,
             ),
           ),
-          Padding(
+          const GSNavSpacer(),
+        ],
+      ),
+      // Enviar queda siempre a la vista, sobre la barra (como "Pedir" en las
+      // apps de viaje): se elige arriba y se confirma abajo con el pulgar.
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            color: GSColors.background,
             padding: const EdgeInsets.fromLTRB(
-                GSSpacing.s4, GSSpacing.s4, GSSpacing.s4, 0),
+                GSSpacing.s4, GSSpacing.s2, GSSpacing.s4, GSSpacing.s3),
             child: GSButton(
               label: 'Enviar reporte',
-              leadingIcon: Icons.campaign_rounded,
+              leadingIcon: Icons.send_rounded,
               isLoading: _sending,
               onPressed: ready ? _send : null,
             ),
           ),
-          SizedBox(
-              height: MediaQuery.of(context).padding.bottom + GSSpacing.s4),
+          const GSBottomNav(current: GSNavTab.report),
         ],
       ),
-      bottomNavigationBar: const GSBottomNav(current: GSNavTab.report),
+    );
+  }
+}
+
+/// Qué pasa en la vía, en baldosas de dos columnas (Waze): ícono grande y
+/// palabra. La elegida va en azul claro con borde azul; el cambio funde en
+/// 150 ms, sin mover nada.
+class _KindGrid extends StatelessWidget {
+  const _KindGrid({required this.selected, required this.onChanged});
+  final String? selected;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final kinds = roadReportKinds.entries.toList();
+    final reduce = MediaQuery.of(context).disableAnimations;
+    return Column(
+      children: [
+        for (var i = 0; i < kinds.length; i += 2)
+          Padding(
+            padding: EdgeInsets.only(top: i == 0 ? 0 : GSSpacing.s2),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final e in kinds.skip(i).take(2)) ...[
+                    if (e.key != kinds[i].key)
+                      const SizedBox(width: GSSpacing.s2),
+                    Expanded(
+                      child: GSPressable(
+                        onTap: () => onChanged(e.key),
+                        selected: selected == e.key,
+                        semanticLabel: e.value,
+                        child: AnimatedContainer(
+                          duration: reduce ? Duration.zero : GSDuration.fast,
+                          curve: GSCurve.enter,
+                          constraints: const BoxConstraints(minHeight: 64),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: GSSpacing.s3,
+                              vertical: GSSpacing.s3),
+                          decoration: BoxDecoration(
+                            color: selected == e.key
+                                ? GSColors.brandTint
+                                : GSColors.surface,
+                            borderRadius: BorderRadius.circular(GSRadius.lg),
+                            border: Border.all(
+                              color: selected == e.key
+                                  ? GSColors.brand
+                                  : GSColors.line,
+                              width: selected == e.key ? 2 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(reportKindIcon(e.key),
+                                  size: GSSize.iconLg,
+                                  color: selected == e.key
+                                      ? GSColors.brand
+                                      : GSColors.text),
+                              const SizedBox(width: GSSpacing.s2),
+                              Expanded(
+                                child: Text(
+                                  e.value,
+                                  style: TextStyle(
+                                    fontFamily: GSFonts.sans,
+                                    fontSize: 15,
+                                    fontWeight: selected == e.key
+                                        ? FontWeight.w800
+                                        : FontWeight.w600,
+                                    color: selected == e.key
+                                        ? GSColors.brand
+                                        : GSColors.text,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

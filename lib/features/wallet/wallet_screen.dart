@@ -21,6 +21,7 @@ import 'widgets/balance_header.dart';
 import 'widgets/card_controls.dart';
 import 'widgets/recharge_sheet.dart';
 import 'widgets/wallet_movements.dart';
+import '../../widgets/gs_nav_spacer.dart';
 
 class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
@@ -111,11 +112,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                   ),
                   const GSSectionTitle('Tarjeta GoSmart'),
                   const CardControls(),
-                  SizedBox(
-                    height: MediaQuery.of(context).padding.bottom +
-                        GSSpacing.s4 +
-                        GSRadius.xl,
-                  ),
+                  const GSNavSpacer(extra: GSSpacing.s4 + GSRadius.xl),
                 ],
               ),
             ),

@@ -23,6 +23,7 @@ import '../../widgets/gs_toast.dart';
 import 'widgets/change_password_form.dart';
 import 'widgets/edit_personal_info_form.dart';
 import 'widgets/profile_header.dart';
+import '../../widgets/gs_nav_spacer.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -309,11 +310,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   child: Text('GoSmart 1.0.0',
                       style: Theme.of(context).textTheme.bodySmall),
                 ),
-                SizedBox(
-                  height: MediaQuery.of(context).padding.bottom +
-                      GSSpacing.s4 +
-                      GSRadius.xl,
-                ),
+                const GSNavSpacer(extra: GSSpacing.s4 + GSRadius.xl),
               ],
             ),
           ),

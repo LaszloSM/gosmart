@@ -103,7 +103,7 @@ class HomeSheetContent extends ConsumerWidget {
                     child: _ServiceTile(
                       mode: 'Intermunicipal',
                       title: 'Intermunicipal',
-                      detail: 'Riohacha – Maicao',
+                      detail: 'Entre ciudades',
                       onTap: () => openPlanner('Intermunicipal'),
                     ),
                   ),

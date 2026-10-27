@@ -21,6 +21,8 @@ import '../../widgets/gs_route_plate.dart';
 import '../../widgets/gs_toast.dart';
 import '../safety/sos_sheet.dart';
 import 'widgets/leg_panels.dart';
+import '../../widgets/gs_button.dart';
+import '../../widgets/gs_nav_spacer.dart';
 
 String legModeLabel(String mode) => switch (mode) {
       'walk' => 'A pie',
@@ -149,15 +151,14 @@ class TripScreen extends ConsumerWidget {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(
                           GSSpacing.s4, GSSpacing.s6, GSSpacing.s4, 0),
-                      child: TextButton.icon(
+                      child: GSButton(
+                        label: 'Cancelar viaje',
+                        variant: GSButtonVariant.danger,
+                        leadingIcon: Icons.close_rounded,
                         onPressed: () => _cancel(context, ref, t),
-                        icon: const Icon(Icons.close_rounded),
-                        label: const Text('Cancelar viaje'),
                       ),
                     ),
-                    SizedBox(
-                        height: MediaQuery.of(context).padding.bottom +
-                            GSSpacing.s4),
+                    const GSNavSpacer(),
                   ],
                 ),
               ),

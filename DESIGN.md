@@ -425,10 +425,19 @@ Tarjeta flotante de 24 sobre el mapa y tarjeta de resumen en el detalle: el veh�
 Banda `brand-deep` con dos trazos muy tenues de carretera (la Troncal, 7–10 % de opacidad) como firma. Título 22 px 800 en blanco, el dato principal en grande (saldo 40 px 800 tabular) y acciones redondas de 56 px con etiqueta debajo: la primaria en blanco lleno con el ícono en la marca, las demás translúcidas. Barra de estado clara. De noche la banda es azul noche (#17284A) con texto claro.
 
 ### Billetera
-Cabecera honda con el saldo, el ojo para ocultarlo, las etiquetas "Saldo de prueba" y número de tarjeta, y tres acciones redondas: Recargar (primaria), Pagar con QR y Mis viajes. Movimientos y tarjeta en grupos blancos sobre la hoja que monta encima.
+Cabecera honda sin título: "Saldo disponible" con el ojo (abierto = se ve), el saldo, las etiquetas "Saldo de prueba" y número de tarjeta, y dos acciones redondas: Recargar (primaria) y Pagar con QR. Movimientos y tarjeta en grupos blancos sobre la hoja que monta encima.
+
+### Íconos
+Una sola familia: Material redondeado (`*_rounded`), sin mezclar contorno y relleno al mismo nivel. La barra inferior es la excepción de Material 3: contorno inactivo, relleno activo. Tamaños solo de la escala 16/20/24/32 (`GSSize.icon*`). Un significado por ícono: SOS siempre con el escudo de salud, el conductor con la credencial (la moto es el modo mototaxi), Viaje con la ruta, Reportar con el pin de reporte, km con la ruta, tarifa con la etiqueta de precio. Nada de glifos de texto ("⇄", "SOS") como ícono. Los vehículos van dibujados (assets/vehicles) donde caben 40 px o más; el ícono solo en chips de 16–20.
+
+### Redundancia
+Cada dato y cada acción aparece una vez por pantalla. La barra inferior ya dice dónde estás: las cabeceras hondas no repiten "Billetera" ni "Perfil"; el saldo y el nombre son el título. El buscador hace la pregunta, el saludo solo saluda. Un precio por pantalla (insignia en el detalle de ruta; la fila de tarifa solo explica).
 
 ### Perfil y entrada
-Perfil: cabecera honda con la foto en anillo blanco, nombre, correo y píldoras "Editar perfil" (blanca) y rol; debajo, una tarjeta blanca flotante con tres accesos (Contactos SOS, Conducir, Billetera) y los grupos de siempre. Entrada: cabecera honda con el logo en un cuadro blanco, "Entra a GoSmart" en 30 px 800 y el formulario en la hoja.
+Perfil: cabecera honda sin título con la foto en anillo blanco, nombre, correo, cédula · ciudad y las píldoras "Editar perfil" (blanca) y eco-puntos; debajo, los grupos (Conducir, Seguridad, ley). Entrada y registro comparten `GSAuthScaffold`: cabecera honda con el logo en un cuadro blanco, el título en 30 px 800, una línea y el formulario en la hoja. En el selector Celular/Correo la opción elegida va llena de azul.
+
+### Reportar
+La línea del corredor arriba (lo que vas a corregir o confirmar), "¿Qué pasa?" en baldosas de dos columnas con ícono de 24 y palabra (la elegida en azul claro con borde azul) y "Enviar reporte" fijo sobre la barra inferior.
 
 ### Línea del corredor
 Tarjeta flotante sobre el mapa (radio 16, sombra float): "Troncal del Caribe" en 15 px 800 con el estado en píldora (ícono + palabra; tinte de su color para Precaución y Cerrada, borde para Abierta y Sin datos), la línea gruesa con un color por tramo y debajo Riohacha · hora del dato · Maicao.
