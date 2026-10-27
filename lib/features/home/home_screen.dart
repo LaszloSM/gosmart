@@ -8,6 +8,7 @@ import '../../models/corridor_status.dart';
 import '../../models/route_result.dart';
 import '../../providers/active_route_provider.dart';
 import '../../providers/corridor_provider.dart';
+import '../../providers/profile_provider.dart';
 import '../../providers/selected_mode_provider.dart';
 import '../../core/money.dart';
 import '../../router/app_router.dart';
@@ -91,6 +92,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final corridor = ref.watch(corridorStatusProvider);
     final route = ref.watch(activeRouteProvider);
     final topInset = MediaQuery.of(context).padding.top;
+    // El saludo aparece cuando carga el perfil y cambia el alto de la parte
+    // visible de la hoja: se vuelve a medir para no dejar el mototaxi cortado.
+    ref.listen(profileProvider, (_, __) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _measure());
+    });
 
     return Scaffold(
       extendBody: true,
