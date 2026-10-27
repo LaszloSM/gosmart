@@ -25,6 +25,7 @@ import '../../widgets/gs_list_row.dart';
 import '../../widgets/gs_meta_chip.dart';
 import '../../widgets/gs_mode_visual.dart';
 import '../safety/trip_share_section.dart';
+import '../../core/clock.dart';
 
 class RouteDetailScreen extends ConsumerStatefulWidget {
   const RouteDetailScreen({super.key});
@@ -117,7 +118,7 @@ class _RouteDetailScreenState extends ConsumerState<RouteDetailScreen> {
                       const SizedBox(height: GSSpacing.s2),
                       GSButton(
                         label: 'Ver en el mapa',
-                        leadingIcon: Icons.map_outlined,
+                        leadingIcon: Icons.map_rounded,
                         variant: GSButtonVariant.outline,
                         onPressed: () => context.go(AppRoutes.home),
                       ),
@@ -218,16 +219,16 @@ class _RouteBody extends StatelessWidget {
                   children: [
                     GSMetaChip(
                       icon: Icons.flag_rounded,
-                      label: 'Llegas ${_clock(route.durationMin)}',
+                      label: 'Llegas ${arrivalClock(route.durationMin)}',
                     ),
                     GSMetaChip(
-                      icon: Icons.straighten_rounded,
+                      icon: Icons.route_rounded,
                       label:
                           '${route.distanceKm.toStringAsFixed(1).replaceAll('.', ',')} km',
                     ),
                     if (route.legs.length > 1)
                       GSMetaChip(
-                        icon: Icons.alt_route_rounded,
+                        icon: Icons.timeline_rounded,
                         label: '${route.legs.length} tramos',
                       ),
                   ],
@@ -275,8 +276,8 @@ class _RouteBody extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info_outline_rounded,
-                      size: 20, color: GSColors.brand),
+                  Icon(Icons.info_rounded,
+                      size: GSSize.iconMd, color: GSColors.brand),
                   const SizedBox(width: GSSpacing.s2),
                   Expanded(
                       child: Text(note,
@@ -291,14 +292,13 @@ class _RouteBody extends StatelessWidget {
           GSGroup(children: [
             if (fare != null)
               GSListRow(
-                icon: Icons.payments_outlined,
+                icon: Icons.payments_rounded,
                 title: fareTitle,
                 subtitle: fareNote,
-                value: fare,
               ),
             if (co2 > 0)
               GSListRow(
-                icon: Icons.eco_outlined,
+                icon: Icons.eco_rounded,
                 title: 'Ahorras ${EcoService.formatCo2Saved(co2)} de CO₂',
                 subtitle: 'Frente a hacer el mismo trayecto en carro',
               ),
@@ -320,13 +320,6 @@ class _RouteBody extends StatelessWidget {
       ],
     );
   }
-}
-
-/// Hora de llegada si sales ahora ("7:42 p. m.").
-String _clock(int minutes) {
-  final t = DateTime.now().add(Duration(minutes: minutes));
-  final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
-  return '$h:${t.minute.toString().padLeft(2, '0')} ${t.hour < 12 ? 'a. m.' : 'p. m.'}';
 }
 
 /// Precio de referencia en una píldora, como el precio de una opción en Uber.
@@ -508,7 +501,7 @@ class _LegStep extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     '${leg.instruction ?? 'Sigue la ruta'} · '
-                    '${leg.distanceKm.toStringAsFixed(1)} km',
+                    '${leg.distanceKm.toStringAsFixed(1).replaceAll('.', ',')} km',
                     style: text.bodyMedium,
                   ),
                 ],

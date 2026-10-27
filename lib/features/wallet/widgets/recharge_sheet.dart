@@ -44,7 +44,7 @@ class _RechargeSheetContentState extends State<RechargeSheetContent> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.info_outline_rounded,
+            Icon(Icons.info_rounded,
                 size: GSSize.iconMd, color: GSColors.textMuted),
             const SizedBox(width: GSSpacing.s2),
             Expanded(

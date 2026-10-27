@@ -100,6 +100,17 @@ class MovementRow extends StatelessWidget {
       tx.formattedDate,
     ].join(' · ');
 
+    final big = MediaQuery.textScalerOf(context).scale(1) > 1.3;
+    final amount = Text(
+      tx.formattedAmount,
+      style: TextStyle(
+        fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+        // Entradas en azul, salidas en tinta; el signo lo dice.
+        color: tx.amount > 0 ? GSColors.brand : GSColors.text,
+      ),
+    );
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 64),
       child: Padding(
@@ -116,7 +127,7 @@ class MovementRow extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(tx.icon,
-                  size: 22,
+                  size: GSSize.iconLg,
                   color: tx.amount > 0 ? GSColors.brand : GSColors.text),
             ),
             const SizedBox(width: GSSpacing.s3),
@@ -125,27 +136,26 @@ class MovementRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(tx.typeLabel, style: text.titleMedium),
+                  Text(tx.typeLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.titleMedium),
                   Text(
                     detail,
                     style: text.bodySmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  // Con texto grande el monto baja bajo el nombre: nunca
+                  // "Reca/rga" por falta de ancho.
+                  if (big) amount,
                 ],
               ),
             ),
-            const SizedBox(width: GSSpacing.s3),
-            Text(
-              tx.formattedAmount,
-              style: TextStyle(
-                fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                // Entradas en azul, salidas en tinta; el signo lo dice.
-                color: tx.amount > 0 ? GSColors.brand : GSColors.text,
-              ),
-            ),
+            if (!big) ...[
+              const SizedBox(width: GSSpacing.s3),
+              amount,
+            ],
           ],
         ),
       ),

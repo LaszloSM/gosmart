@@ -180,7 +180,7 @@ class _NfcAuthSimulatorScreenState
                             padding: const EdgeInsets.only(top: 4),
                             child: Row(
                               children: [
-                                Icon(Icons.lock, size: 14, color: GSColors.error),
+                                Icon(Icons.lock, size: GSSize.iconSm, color: GSColors.error),
                                 const SizedBox(width: 4),
                                 Text(
                                   'Tarjeta bloqueada',

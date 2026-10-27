@@ -105,7 +105,7 @@ class IntroScreen extends StatelessWidget {
                     style: text.bodyLarge,
                   ),
                   _Point(
-                    icon: Icons.person_outline_rounded,
+                    icon: Icons.person_rounded,
                     text: 'Sin cuenta puedes mirar y planear. La cuenta se '
                         'pide para reportar, pedir o pagar.',
                     style: text.bodyLarge,

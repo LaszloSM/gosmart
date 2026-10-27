@@ -159,7 +159,7 @@ class _QuickChip extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(isSet ? icon : Icons.add_rounded,
-                  size: 20,
+                  size: GSSize.iconMd,
                   color: isSet ? GSColors.brand : GSColors.text),
             ),
             const SizedBox(width: GSSpacing.s2),
@@ -358,7 +358,7 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
                     return ListTile(
                       dense: true,
                       leading: Icon(
-                        Icons.location_on_outlined,
+                        Icons.location_on_rounded,
                         color: color,
                         size: 18,
                       ),

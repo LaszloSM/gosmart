@@ -225,7 +225,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               hint: 'tucorreo@ejemplo.com',
                               controller: _emailCtrl,
                               keyboardType: TextInputType.emailAddress,
-                              prefixIcon: Icons.mail_outline_rounded,
+                              prefixIcon: Icons.mail_rounded,
                               validator: (v) => (v == null || !v.contains('@'))
                                   ? 'Ingresa un correo válido'
                                   : null,
@@ -236,14 +236,14 @@ class _LoginScreenState extends State<LoginScreen> {
                               hint: 'Tu contraseña',
                               controller: _passwordCtrl,
                               obscureText: !_showPassword,
-                              prefixIcon: Icons.lock_outline_rounded,
+                              prefixIcon: Icons.lock_rounded,
                               suffixIcon: IconButton(
                                 tooltip: _showPassword
                                     ? 'Ocultar contraseña'
                                     : 'Mostrar contraseña',
                                 icon: Icon(_showPassword
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined),
+                                    ? Icons.visibility_off_rounded
+                                    : Icons.visibility_rounded),
                                 onPressed: () => setState(
                                     () => _showPassword = !_showPassword),
                               ),

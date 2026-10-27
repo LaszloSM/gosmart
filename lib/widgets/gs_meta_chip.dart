@@ -26,7 +26,7 @@ class GSMetaChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: fg),
+          Icon(icon, size: GSSize.iconSm, color: fg),
           const SizedBox(width: 4),
           Flexible(
             child: Text(

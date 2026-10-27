@@ -14,7 +14,7 @@ class GSInlineError extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(Icons.error_outline_rounded, color: GSColors.roadClosed),
+        Icon(Icons.error_rounded, color: GSColors.roadClosed),
         const SizedBox(width: GSSpacing.s2),
         Expanded(
           child: Text(

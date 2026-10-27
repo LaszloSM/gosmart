@@ -92,7 +92,7 @@ class EmergencyContactsScreen extends ConsumerWidget {
         data: (list) => list.isEmpty
             ? ListView(children: [
                 GSEmptyState(
-                  icon: Icons.group_outlined,
+                  icon: Icons.group_rounded,
                   title: 'Nadie todavía',
                   subtitle: 'Agrega a quien deba saber si algo pasa en el '
                       'camino. Recibe tu ubicación por WhatsApp o SMS.',
@@ -113,7 +113,7 @@ class EmergencyContactsScreen extends ConsumerWidget {
                   ),
                   for (final c in list) ...[
                     GSListRow(
-                      icon: Icons.person_outline_rounded,
+                      icon: Icons.person_rounded,
                       title: c.name,
                       subtitle: [
                         c.displayPhone,
@@ -121,7 +121,7 @@ class EmergencyContactsScreen extends ConsumerWidget {
                       ].join(' · '),
                       trailing: IconButton(
                         tooltip: 'Quitar a ${c.name}',
-                        icon: Icon(Icons.delete_outline_rounded,
+                        icon: Icon(Icons.delete_rounded,
                             color: GSColors.textMuted),
                         onPressed: () => _delete(context, ref, c),
                       ),
@@ -222,7 +222,7 @@ class _ContactFormState extends ConsumerState<_ContactForm> {
             hint: '300 123 4567',
             controller: _phone,
             keyboardType: TextInputType.phone,
-            prefixIcon: Icons.phone_outlined,
+            prefixIcon: Icons.phone_rounded,
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ]')),
             ],

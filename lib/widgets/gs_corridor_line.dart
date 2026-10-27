@@ -18,7 +18,7 @@ IconData roadIcon(RoadState state) => switch (state) {
       RoadState.open => Icons.check_circle_rounded,
       RoadState.caution => Icons.warning_rounded,
       RoadState.closed => Icons.block_rounded,
-      RoadState.unknown => Icons.help_outline_rounded,
+      RoadState.unknown => Icons.help_rounded,
     };
 
 /// "hace 5 min", "hace 2 h" o la hora, para la etiqueta en mono.
@@ -56,7 +56,14 @@ class GSCorridorLine extends StatelessWidget {
     final grey = data.isStale;
     final worst = data.worstSegment;
 
-    final word = isLoading && status == null ? 'Cargando' : summary.label;
+    // Dónde está el problema, no solo cuál: "Cerrada km 38" se entiende
+    // aunque el resto de la línea esté en verde.
+    final where = worst != null &&
+            (summary == RoadState.closed || summary == RoadState.caution)
+        ? ' km ${worst.kmFrom.round()}'
+        : '';
+    final word =
+        isLoading && status == null ? 'Cargando' : '${summary.label}$where';
     final detail = isLoading
         ? 'actualizando'
         : data.updatedAt != null

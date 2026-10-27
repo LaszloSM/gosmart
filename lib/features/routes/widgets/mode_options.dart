@@ -13,6 +13,7 @@ import '../../../providers/selected_mode_provider.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_mode_visual.dart';
 import '../../../widgets/gs_pressable.dart';
+import '../../../core/clock.dart';
 
 /// Estimado de un modo: minutos y rango de tarifa (null = sin tarifa).
 class ModeEstimate {
@@ -132,12 +133,6 @@ const _capacity = {
   'Intermunicipal': 'Entre ciudades',
 };
 
-String _clock(int minutes) {
-  final t = DateTime.now().add(Duration(minutes: minutes));
-  final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
-  return '$h:${t.minute.toString().padLeft(2, '0')}';
-}
-
 class _OptionRow extends StatelessWidget {
   const _OptionRow({
     required this.mode,
@@ -165,6 +160,24 @@ class _OptionRow extends StatelessWidget {
             _ => 'Precio en la ruta',
           }
         : formatCop(fare.price);
+    final big = MediaQuery.textScalerOf(context).scale(1) > 1.3;
+    final priceText = Text(
+      price,
+      maxLines: 1,
+      softWrap: false,
+      style: fare == null
+          ? text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)
+          : text.titleMedium?.copyWith(
+              fontFeatures: GSFonts.tabular,
+              fontWeight: FontWeight.w800,
+            ),
+    );
+    final arrivalText = Text(
+      'llegas ${arrivalClock(estimate.minutes)}',
+      maxLines: 1,
+      softWrap: false,
+      style: text.bodySmall?.copyWith(fontFeatures: GSFonts.tabular),
+    );
     return GSPressable(
       onTap: onTap,
       selected: selected,
@@ -190,6 +203,7 @@ class _OptionRow extends StatelessWidget {
           ),
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // El vehículo dibujado, como las opciones de Uber/DiDi.
             SizedBox(
@@ -205,27 +219,26 @@ class _OptionRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Una línea que se reduce si no cabe: nunca "Intermunicipa/l".
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(mode,
-                        maxLines: 1, softWrap: false, style: text.titleMedium),
-                  ),
+                  Text(mode,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.titleMedium),
                   const SizedBox(height: 2),
                   Text(
                     [
                       '${estimate.minutes} min',
                       if (_capacity[mode] != null) _capacity[mode]!,
                     ].join(' · '),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
                     style:
                         text.bodySmall?.copyWith(fontFeatures: GSFonts.tabular),
                   ),
                   if (badge != null) ...[
                     const SizedBox(height: 6),
-                    Container(
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: GSSpacing.s2, vertical: 2),
                       decoration: BoxDecoration(
@@ -234,6 +247,8 @@ class _OptionRow extends StatelessWidget {
                       ),
                       child: Text(
                         badge!,
+                        maxLines: 1,
+                        softWrap: false,
                         style: TextStyle(
                           fontFamily: GSFonts.sans,
                           fontSize: 12,
@@ -242,41 +257,25 @@ class _OptionRow extends StatelessWidget {
                         ),
                       ),
                     ),
+                    ),
+                  ],
+                  // Con texto grande, precio y llegada bajan a su propia línea
+                  // en vez de apretar el nombre.
+                  if (big) ...[
+                    const SizedBox(height: GSSpacing.s2),
+                    priceText,
+                    arrivalText,
                   ],
                 ],
               ),
             ),
-            const SizedBox(width: GSSpacing.s2),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 124),
-              child: Column(
+            if (!big) ...[
+              const SizedBox(width: GSSpacing.s2),
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      price,
-                      maxLines: 1,
-                      softWrap: false,
-                      style: fare == null
-                          ? text.bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.w600)
-                          : text.titleMedium?.copyWith(
-                              fontFeatures: GSFonts.tabular,
-                              fontWeight: FontWeight.w800,
-                            ),
-                    ),
-                  ),
-                  Text(
-                    'llegas ${_clock(estimate.minutes)}',
-                    maxLines: 1,
-                    style:
-                        text.bodySmall?.copyWith(fontFeatures: GSFonts.tabular),
-                  ),
-                ],
+                children: [priceText, arrivalText],
               ),
-            ),
+            ],
           ],
         ),
       ),

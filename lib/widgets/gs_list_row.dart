@@ -68,7 +68,7 @@ class GSListRow extends StatelessWidget {
                     color: GSColors.surfaceSunken,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(icon, size: 22, color: iconColor ?? GSColors.text),
+                  child: Icon(icon, size: GSSize.iconLg, color: iconColor ?? GSColors.text),
                 ),
                 const SizedBox(width: GSSpacing.s3),
                 Expanded(

@@ -48,13 +48,13 @@ class DriverHomeScreen extends ConsumerWidget {
           if (d != null)
             IconButton(
               tooltip: 'Editar mis datos',
-              icon: const Icon(Icons.edit_outlined),
+              icon: const Icon(Icons.edit_rounded),
               onPressed: () => context.push(AppRoutes.driverSignup),
             ),
           if (approved && d!.available)
             IconButton(
               tooltip: 'Pausar: dejar de recibir solicitudes',
-              icon: const Icon(Icons.pause_circle_outline_rounded),
+              icon: const Icon(Icons.pause_circle_rounded),
               onPressed: () async {
                 final messenger = ScaffoldMessenger.of(context);
                 try {
@@ -209,7 +209,7 @@ class _DriverBodyState extends ConsumerState<_DriverBody> {
               ),
               const GSSectionTitle('Tu servicio'),
               GSListRow(
-                icon: Icons.badge_outlined,
+                icon: Icons.badge_rounded,
                 title: d.fullName,
                 subtitle:
                     '${driverServices[d.service]} · ${driverZones[d.zone]}',
@@ -219,7 +219,7 @@ class _DriverBodyState extends ConsumerState<_DriverBody> {
                 GSListRow(
                   icon: d.vehicle!.kind == 'moto'
                       ? Icons.two_wheeler_rounded
-                      : Icons.directions_car_outlined,
+                      : Icons.directions_car_rounded,
                   title: 'Placa ${d.vehicle!.plate}',
                   subtitle: [
                     if ((d.vehicle!.brand ?? '').isNotEmpty) d.vehicle!.brand!,
@@ -242,8 +242,8 @@ class _DriverBodyState extends ConsumerState<_DriverBody> {
                 for (final e in driverDocuments.entries) ...[
                   GSListRow(
                     icon: d.documents.contains(e.key)
-                        ? Icons.check_circle_outline_rounded
-                        : Icons.photo_camera_outlined,
+                        ? Icons.check_circle_rounded
+                        : Icons.photo_camera_rounded,
                     title: e.value,
                     subtitle: d.documents.contains(e.key)
                         ? 'Subido · toca para cambiarlo'

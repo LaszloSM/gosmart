@@ -30,7 +30,7 @@ class ProfileHeader extends ConsumerWidget {
     final onMuted = GSColors.onBrandDeepMuted;
 
     return GSBrandHero(
-      title: 'Perfil',
+      // Sin título: el nombre es el título y la pestaña ya dice "Perfil".
       child: profileAsync.when(
         skipLoadingOnRefresh: true,
         skipLoadingOnReload: true,
@@ -49,11 +49,10 @@ class ProfileHeader extends ConsumerWidget {
         ),
         data: (p) {
           final name = p.name.trim().isEmpty ? 'Tu nombre' : p.name.trim();
-          final role = p.isAdmin
-              ? 'Admin'
-              : p.isDriver
-                  ? 'Conductor'
-                  : 'Pasajero';
+          final details = [
+            if ((p.cedula ?? '').isNotEmpty) 'Cédula ${p.cedula}',
+            if ((p.city ?? '').isNotEmpty) p.city!,
+          ].join(' · ');
           return Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -95,6 +94,16 @@ class ProfileHeader extends ConsumerWidget {
                               color: onMuted,
                             )),
                       ],
+                      if (details.isNotEmpty)
+                        Text(details,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: GSFonts.sans,
+                              fontFeatures: GSFonts.tabular,
+                              fontSize: 14,
+                              color: onMuted,
+                            )),
                       const SizedBox(height: GSSpacing.s3),
                       Wrap(
                         spacing: GSSpacing.s2,
@@ -105,7 +114,8 @@ class ProfileHeader extends ConsumerWidget {
                               label: 'Editar perfil',
                               filled: true),
                           _HeroPill(
-                              icon: Icons.verified_user_outlined, label: role),
+                              icon: Icons.eco_rounded,
+                              label: '${p.formattedEcoPoints} eco-puntos'),
                         ],
                       ),
                     ],
@@ -140,15 +150,19 @@ class _HeroPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: fg),
+          Icon(icon, size: GSSize.iconSm, color: fg),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: GSFonts.sans,
-              fontSize: 13.5,
-              fontWeight: FontWeight.w700,
-              color: fg,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: GSFonts.sans,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+                color: fg,
+              ),
             ),
           ),
         ],
@@ -219,7 +233,7 @@ class _Avatar extends StatelessWidget {
                     border: Border.all(color: GSColors.onBrandDeep, width: 2),
                   ),
                   child: Icon(Icons.photo_camera_rounded,
-                      size: 16, color: GSColors.onBrand),
+                      size: GSSize.iconSm, color: GSColors.onBrand),
                 ),
               ),
             ],

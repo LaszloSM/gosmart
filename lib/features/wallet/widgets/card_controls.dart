@@ -53,7 +53,7 @@ class CardControls extends ConsumerWidget {
             ),
             child: Icon(
               card.isLocked ? Icons.lock_rounded : Icons.lock_open_rounded,
-              size: 22,
+              size: GSSize.iconLg,
               color: card.isLocked ? GSColors.brand : GSColors.text,
             ),
           ),

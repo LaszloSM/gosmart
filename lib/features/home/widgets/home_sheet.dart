@@ -64,18 +64,18 @@ class HomeSheetContent extends ConsumerWidget {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                  GSSpacing.s5, 0, GSSpacing.s5, GSSpacing.s3),
-              child: Text(
-                firstName == null || firstName.isEmpty
-                    ? 'Hola, ¿para dónde vamos?'
-                    : 'Hola, $firstName',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: text.headlineSmall,
+            // Solo el nombre: la pregunta ya la hace el buscador.
+            if (firstName != null && firstName.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    GSSpacing.s5, 0, GSSpacing.s5, GSSpacing.s3),
+                child: Text(
+                  'Hola, $firstName',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.headlineSmall,
+                ),
               ),
-            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
               child: _SearchPill(onTap: openPlanner),
@@ -103,7 +103,7 @@ class HomeSheetContent extends ConsumerWidget {
                     child: _ServiceTile(
                       mode: 'Intermunicipal',
                       title: 'Intermunicipal',
-                      detail: 'Riohacha ⇄ Maicao',
+                      detail: 'Riohacha – Maicao',
                       onTap: () => openPlanner('Intermunicipal'),
                     ),
                   ),
@@ -123,18 +123,12 @@ class HomeSheetContent extends ConsumerWidget {
               if (isGuest) ...[
                 const SizedBox(height: GSSpacing.s3),
                 _SheetAction(
-                  icon: Icons.person_add_alt_1_outlined,
+                  icon: Icons.person_add_alt_1_rounded,
                   title: 'Entra o crea tu cuenta',
                   subtitle: 'Para reportar la vía, pedir mototaxi o pagar',
                   onTap: () => context.push(AppRoutes.login),
                 ),
               ],
-              const SizedBox(height: GSSpacing.s4),
-              Text(
-                'También puedes mantener presionado el mapa para elegir un punto.',
-                style: text.bodySmall,
-                textAlign: TextAlign.center,
-              ),
             ],
           ),
         ),
@@ -204,7 +198,7 @@ class _SearchPill extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.schedule_rounded,
-                      size: 18, color: GSColors.text),
+                      size: GSSize.iconMd, color: GSColors.text),
                   const SizedBox(width: 4),
                   Text(
                     'Ahora',
@@ -337,7 +331,7 @@ class _HeroServiceTile extends StatelessWidget {
                         ),
                         const SizedBox(width: 2),
                         Icon(Icons.arrow_forward_rounded,
-                            size: 16, color: GSColors.brand),
+                            size: GSSize.iconSm, color: GSColors.brand),
                       ],
                     ),
                   ],

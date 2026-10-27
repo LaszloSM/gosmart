@@ -33,15 +33,9 @@ class _BalanceHeaderState extends ConsumerState<BalanceHeader> {
     final onMuted = GSColors.onBrandDeepMuted;
 
     return GSBrandHero(
-      title: 'Billetera',
-      trailing: IconButton(
-        tooltip: _hidden ? 'Mostrar saldo' : 'Ocultar saldo',
-        onPressed: () => setState(() => _hidden = !_hidden),
-        icon: Icon(
-          _hidden ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-          color: on,
-        ),
-      ),
+      // Sin título: la pestaña ya dice "Billetera"; la línea de arriba es el
+      // saldo con su ojo (el ojo abierto = se está viendo).
+      trailing: null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -70,14 +64,30 @@ class _BalanceHeaderState extends ConsumerState<BalanceHeader> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Saldo disponible',
-                    style: TextStyle(
-                      fontFamily: GSFonts.sans,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: onMuted,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Saldo disponible',
+                          style: TextStyle(
+                            fontFamily: GSFonts.sans,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: onMuted,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: _hidden ? 'Mostrar saldo' : 'Ocultar saldo',
+                        onPressed: () => setState(() => _hidden = !_hidden),
+                        icon: Icon(
+                          _hidden
+                              ? Icons.visibility_off_rounded
+                              : Icons.visibility_rounded,
+                          color: on,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: GSSpacing.s1),
                   FittedBox(
@@ -97,14 +107,6 @@ class _BalanceHeaderState extends ConsumerState<BalanceHeader> {
                             color: on,
                           ),
                         ),
-                        TextSpan(
-                          text: '  COP',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: onMuted,
-                          ),
-                        ),
                       ]),
                       style: const TextStyle(
                           fontFamily: GSFonts.mono,
@@ -122,7 +124,7 @@ class _BalanceHeaderState extends ConsumerState<BalanceHeader> {
                       // PRODUCT.md: las recargas simuladas nunca se
                       // presentan como dinero real.
                       _CardTag(
-                        icon: Icons.science_outlined,
+                        icon: Icons.info_rounded,
                         label: 'Saldo de prueba',
                         color: on,
                       ),
@@ -195,17 +197,20 @@ class _CardTag extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: color),
+          Icon(icon, size: GSSize.iconSm, color: color),
           const SizedBox(width: 6),
-          Text(
-            label,
-            softWrap: false,
-            style: TextStyle(
-              fontFamily: GSFonts.sans,
-              fontFeatures: tabular ? GSFonts.tabular : null,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: color,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: GSFonts.sans,
+                fontFeatures: tabular ? GSFonts.tabular : null,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
             ),
           ),
         ],

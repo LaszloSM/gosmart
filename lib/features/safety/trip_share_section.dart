@@ -119,7 +119,7 @@ class _TripShareSectionState extends ConsumerState<TripShareSection> {
               onTap: _busy ? null : _share,
             ),
           GSListRow(
-            icon: Icons.health_and_safety_outlined,
+            icon: Icons.health_and_safety_rounded,
             title: 'Ayuda',
             subtitle: 'Llamar al 123 o avisar a tus contactos',
             onTap: () => showSosSheet(context),

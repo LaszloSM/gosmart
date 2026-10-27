@@ -11,12 +11,14 @@ import '../theme/design_tokens.dart';
 class GSBrandHero extends StatelessWidget {
   const GSBrandHero({
     super.key,
-    required this.title,
+    this.title,
     required this.child,
     this.trailing,
   });
 
-  final String title;
+  /// Título de la pantalla. Sin título cuando la barra inferior ya dice dónde
+  /// estás y el dato principal habla solo (saldo, tu nombre).
+  final String? title;
   final Widget child;
 
   /// Acción a la derecha del título (p. ej. ocultar saldo).
@@ -40,15 +42,15 @@ class GSBrandHero extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
+                if (title != null || trailing != null) SizedBox(
                   height: 48,
                   child: Row(
                     children: [
                       Expanded(
-                        child: Semantics(
+                        child: title == null ? const SizedBox.shrink() : Semantics(
                           header: true,
                           child: Text(
-                            title,
+                            title!,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -65,7 +67,7 @@ class GSBrandHero extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: GSSpacing.s2),
+                SizedBox(height: title == null && trailing == null ? GSSpacing.s6 : GSSpacing.s2),
                 Padding(
                   padding: const EdgeInsets.only(right: GSSpacing.s2),
                   child: child,
@@ -151,13 +153,17 @@ class GSHeroAction extends StatelessWidget {
                             color: primary ? GSColors.brandDeep : on),
                       )
                     : Icon(icon,
-                        size: 26, color: primary ? GSColors.brandDeep : on),
+                        size: GSSize.iconLg, color: primary ? GSColors.brandDeep : on),
               ),
               const SizedBox(height: GSSpacing.s2),
-              Text(
+              // Una línea que se reduce si no cabe: nunca "Recarga/r".
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
                 label,
                 textAlign: TextAlign.center,
-                maxLines: 2,
+                maxLines: 1,
+                softWrap: false,
                 style: TextStyle(
                   fontFamily: GSFonts.sans,
                   fontSize: 13.5,
@@ -165,6 +171,7 @@ class GSHeroAction extends StatelessWidget {
                   height: 1.2,
                   color: on,
                 ),
+              ),
               ),
             ],
           ),

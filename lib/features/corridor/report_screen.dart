@@ -24,11 +24,11 @@ import '../../widgets/gs_toast.dart';
 
 IconData reportKindIcon(String kind) => switch (kind) {
       'bloqueo' => Icons.block_rounded,
-      'reten' => Icons.local_police_outlined,
-      'accidente' => Icons.car_crash_outlined,
+      'reten' => Icons.local_police_rounded,
+      'accidente' => Icons.car_crash_rounded,
       'inundacion' => Icons.water_rounded,
       'hueco' => Icons.report_gmailerrorred_rounded,
-      _ => Icons.check_circle_outline_rounded,
+      _ => Icons.check_circle_rounded,
     };
 
 class ReportScreen extends ConsumerStatefulWidget {
@@ -194,7 +194,7 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                 GSSpacing.s4, GSSpacing.s4, GSSpacing.s4, 0),
             child: GSButton(
               label: 'Enviar reporte',
-              leadingIcon: Icons.campaign_outlined,
+              leadingIcon: Icons.campaign_rounded,
               isLoading: _sending,
               onPressed: ready ? _send : null,
             ),

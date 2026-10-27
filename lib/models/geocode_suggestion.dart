@@ -51,14 +51,14 @@ class GeocodeSuggestion {
   IconData get icon {
     switch (featureType) {
       case 'poi':
-        return Icons.storefront_outlined;
+        return Icons.storefront_rounded;
       case 'address':
-        return Icons.signpost_outlined;
+        return Icons.signpost_rounded;
       case 'neighborhood':
       case 'locality':
-        return Icons.location_city_outlined;
+        return Icons.location_city_rounded;
       default:
-        return Icons.location_on_outlined;
+        return Icons.location_on_rounded;
     }
   }
 }

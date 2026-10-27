@@ -92,7 +92,7 @@ class _RateSheetState extends State<RateSheet> {
                     tooltip: '$i ${i == 1 ? 'estrella' : 'estrellas'}',
                     onPressed: () => setState(() => _stars = i),
                     icon: Icon(
-                      i <= _stars ? Icons.star_rounded : Icons.star_outline_rounded,
+                      i <= _stars ? Icons.star_rounded : Icons.star_rounded,
                       color: GSColors.brand,
                     ),
                   ),

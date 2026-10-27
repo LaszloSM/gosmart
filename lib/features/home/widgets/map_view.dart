@@ -265,7 +265,7 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
               height: 44,
               alignment: Alignment.topCenter,
               // Destino: alfiler en tinta (el rojo es solo para la vía).
-              child: Icon(Icons.location_on, color: GSColors.text, size: 44),
+              child: Icon(Icons.location_on_rounded, color: GSColors.text, size: 44),
             ),
           ],
           // Posición del usuario (sin animación: nada en bucle).
@@ -289,7 +289,7 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
               width: 44,
               height: 44,
               alignment: Alignment.topCenter,
-              child: Icon(Icons.location_on, color: GSColors.text, size: 44),
+              child: Icon(Icons.location_on_rounded, color: GSColors.text, size: 44),
             ),
         ]),
       ],

@@ -99,11 +99,6 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 label: 'Pagar con QR',
                 onTap: () => context.push(AppRoutes.scanPay),
               ),
-              GSHeroAction(
-                icon: Icons.receipt_long_rounded,
-                label: 'Mis viajes',
-                onTap: () => context.push(AppRoutes.trip),
-              ),
             ]),
             GSHeroBody(
               child: Column(

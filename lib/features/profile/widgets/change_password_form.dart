@@ -31,7 +31,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
     final eye = IconButton(
       tooltip: _visible ? 'Ocultar contraseña' : 'Mostrar contraseña',
       icon: Icon(
-        _visible ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+        _visible ? Icons.visibility_off_rounded : Icons.visibility_rounded,
         color: GSColors.textMuted,
       ),
       onPressed: () => setState(() => _visible = !_visible),
@@ -46,7 +46,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
             label: 'Contraseña nueva',
             hint: 'Mínimo 8 caracteres',
             controller: widget.newPassCtrl,
-            prefixIcon: Icons.lock_outline_rounded,
+            prefixIcon: Icons.lock_rounded,
             suffixIcon: eye,
             obscureText: !_visible,
             validator: (v) => (v == null || v.length < 8)
@@ -58,7 +58,7 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
             label: 'Repite la contraseña',
             hint: 'Igual a la de arriba',
             controller: widget.confirmPassCtrl,
-            prefixIcon: Icons.lock_outline_rounded,
+            prefixIcon: Icons.lock_rounded,
             obscureText: !_visible,
             validator: (v) => v != widget.newPassCtrl.text
                 ? 'No coincide con la contraseña nueva'

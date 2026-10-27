@@ -83,7 +83,7 @@ class TripScreen extends ConsumerWidget {
         actions: [
           IconButton(
             tooltip: 'Ayuda',
-            icon: const Icon(Icons.health_and_safety_outlined),
+            icon: const Icon(Icons.health_and_safety_rounded),
             onPressed: () => showSosSheet(context),
           ),
         ],
@@ -176,8 +176,8 @@ class _LegRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final (icon, word) = switch (leg.status) {
       LegStatus.completed => (Icons.check_circle_rounded, 'Hecho'),
-      LegStatus.cancelled => (Icons.cancel_outlined, 'Cancelado'),
-      LegStatus.failed => (Icons.error_outline_rounded, 'No se pudo'),
+      LegStatus.cancelled => (Icons.cancel_rounded, 'Cancelado'),
+      LegStatus.failed => (Icons.error_rounded, 'No se pudo'),
       LegStatus.inProgress => (Icons.radio_button_checked_rounded, 'En camino'),
       LegStatus.awaitingDispatch => (Icons.hourglass_top_rounded, 'Esperando'),
       LegStatus.planned => (Icons.radio_button_unchecked_rounded, 'Pendiente'),
@@ -215,7 +215,7 @@ class _RecentTrips extends ConsumerWidget {
           GSListRow(
             icon: t.status == 'completed'
                 ? Icons.receipt_long_rounded
-                : Icons.cancel_outlined,
+                : Icons.cancel_rounded,
             title: t.dest ?? 'Viaje',
             subtitle: '${t.at.day}/${t.at.month} · '
                 '${t.status == 'completed' ? 'Ver recibo' : 'Cancelado'}',

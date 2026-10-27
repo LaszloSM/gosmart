@@ -19,14 +19,14 @@ class GSBottomNav extends StatelessWidget {
   static const _items = [
     _NavItem(GSNavTab.home, Icons.home_outlined, Icons.home_rounded, 'Inicio',
         AppRoutes.home),
-    _NavItem(GSNavTab.trip, Icons.directions_car_outlined,
-        Icons.directions_car_rounded, 'Viaje', AppRoutes.trip),
-    _NavItem(GSNavTab.report, Icons.campaign_outlined, Icons.campaign_rounded,
-        'Reportar', AppRoutes.report),
+    _NavItem(GSNavTab.trip, Icons.route_outlined, Icons.route_rounded, 'Viaje',
+        AppRoutes.trip),
+    _NavItem(GSNavTab.report, Icons.add_location_alt_outlined,
+        Icons.add_location_alt_rounded, 'Reportar', AppRoutes.report),
     _NavItem(GSNavTab.wallet, Icons.account_balance_wallet_outlined,
         Icons.account_balance_wallet_rounded, 'Billetera', AppRoutes.wallet),
-    _NavItem(GSNavTab.profile, Icons.person_outline_rounded,
-        Icons.person_rounded, 'Perfil', AppRoutes.profile),
+    _NavItem(GSNavTab.profile, Icons.person_outline, Icons.person_rounded,
+        'Perfil', AppRoutes.profile),
   ];
 
   @override

@@ -20,6 +20,7 @@ import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_button.dart';
 import '../../../widgets/gs_list_row.dart';
 import '../../../widgets/gs_toast.dart';
+import '../../../core/clock.dart';
 
 /// Tarifa con la que se pide: el precio del tramo (taxi: oficial; mototaxi:
 /// sugerida), en múltiplos de $100.
@@ -189,8 +190,8 @@ class _ScheduledLegPanelState extends ConsumerState<ScheduledLegPanel> {
               return Column(children: [
                 for (final d in deps)
                   GSListRow(
-                    icon: Icons.event_seat_outlined,
-                    title: 'Sale cerca de las ${_hhmm(d.departAt)}',
+                    icon: Icons.event_seat_rounded,
+                    title: 'Sale cerca de las ${formatClock(d.departAt)}',
                     subtitle: '${d.seatsLeft} '
                         '${d.seatsLeft == 1 ? 'cupo libre' : 'cupos libres'} · '
                         'hora estimada',
@@ -235,10 +236,6 @@ class _ScheduledLegPanelState extends ConsumerState<ScheduledLegPanel> {
   }
 }
 
-String _hhmm(DateTime t) {
-  final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
-  return '$h:${t.minute.toString().padLeft(2, '0')} ${t.hour < 12 ? 'a. m.' : 'p. m.'}';
-}
 
 // ── Mototaxi / taxi (estilo InDrive) ────────────────────────────────────────
 class RideLegPanel extends ConsumerStatefulWidget {
@@ -550,7 +547,7 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
           ]),
           for (final o in _offers)
             GSListRow(
-              icon: Icons.local_offer_outlined,
+              icon: Icons.local_offer_rounded,
               title: 'Un conductor ofrece ${formatCop(o.fare)}',
               onTap: _busy ? null : () => _acceptOffer(o),
               trailing: const Text('Aceptar'),
@@ -594,14 +591,14 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
           GSButton(
             label:
                 'Pagar ${formatCop(r.agreedFare ?? r.offeredFare)} con saldo de prueba',
-            leadingIcon: Icons.account_balance_wallet_outlined,
+            leadingIcon: Icons.account_balance_wallet_rounded,
             isLoading: _busy,
             onPressed: _busy ? null : () => _pay('wallet'),
           ),
           const SizedBox(height: GSSpacing.s2),
           GSButton(
             label: 'Pago en efectivo',
-            leadingIcon: Icons.payments_outlined,
+            leadingIcon: Icons.payments_rounded,
             variant: GSButtonVariant.outline,
             onPressed: _busy ? null : () => _pay('cash'),
           ),
@@ -697,7 +694,7 @@ class _DriverCard extends StatelessWidget {
                     Row(
                       children: [
                         Icon(Icons.star_rounded,
-                            size: 16, color: GSColors.text),
+                            size: GSSize.iconSm, color: GSColors.text),
                         const SizedBox(width: 2),
                         Flexible(
                           child: Text(

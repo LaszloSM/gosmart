@@ -21,6 +21,7 @@ import '../../widgets/gs_pressable.dart';
 import 'widgets/corridor_detail_sheet.dart';
 import 'widgets/home_map.dart';
 import 'widgets/home_sheet.dart';
+import '../../core/clock.dart';
 
 /// Inicio, como Uber/DiDi con Google Maps: mapa a pantalla completa, la
 /// tarjeta del estado de la Troncal flotando arriba y una hoja blanca abajo
@@ -212,13 +213,6 @@ class _RouteCard extends ConsumerWidget {
   const _RouteCard({required this.route});
   final RouteResult route;
 
-  static String _arrival(int minutes) {
-    final t = DateTime.now().add(Duration(minutes: minutes));
-    final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
-    final m = t.minute.toString().padLeft(2, '0');
-    return '$h:$m ${t.hour < 12 ? 'a. m.' : 'p. m.'}';
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(selectedModeProvider);
@@ -280,7 +274,7 @@ class _RouteCard extends ConsumerWidget {
                         const SizedBox(height: 2),
                         Text(
                           route.destinationLabel == null
-                              ? 'Llegas ${_arrival(route.durationMin)}'
+                              ? 'Llegas ${arrivalClock(route.durationMin)}'
                               : 'A ${route.destinationLabel}',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -300,8 +294,8 @@ class _RouteCard extends ConsumerWidget {
                       ),
                     ),
                   SizedBox(
-                    width: 40,
-                    height: 40,
+                    width: GSSize.touchTarget,
+                    height: GSSize.touchTarget,
                     child: IconButton(
                       tooltip: 'Quitar ruta',
                       padding: EdgeInsets.zero,
@@ -323,14 +317,14 @@ class _RouteCard extends ConsumerWidget {
                     GSMetaChip(
                         icon: Icons.schedule_rounded,
                         label: '${route.durationMin} min'),
-                    GSMetaChip(icon: Icons.straighten_rounded, label: '$km km'),
+                    GSMetaChip(icon: Icons.route_rounded, label: '$km km'),
                     if (route.destinationLabel != null)
                       GSMetaChip(
                           icon: Icons.flag_rounded,
-                          label: 'Llegas ${_arrival(route.durationMin)}'),
+                          label: 'Llegas ${arrivalClock(route.durationMin)}'),
                     if (fareLabel != null)
                       GSMetaChip(
-                          icon: Icons.verified_outlined,
+                          icon: Icons.sell_rounded,
                           label: fareLabel,
                           emphasis: true),
                   ],

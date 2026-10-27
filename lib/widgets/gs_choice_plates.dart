@@ -81,7 +81,7 @@ class GSChoicePlate extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (icon != null) ...[
-                  Icon(icon, size: 20, color: fg),
+                  Icon(icon, size: GSSize.iconMd, color: fg),
                   const SizedBox(width: GSSpacing.s2),
                 ],
                 Flexible(

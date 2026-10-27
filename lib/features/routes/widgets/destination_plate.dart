@@ -47,7 +47,7 @@ class DestinationPlate extends StatelessWidget {
             maxLines: 2,
             onTap: onClear,
             semanticLabel: 'Destino: $chosenLabel. Toca para cambiarlo',
-            trailing: Icon(Icons.edit_outlined, color: GSColors.textMuted),
+            trailing: Icon(Icons.edit_rounded, color: GSColors.textMuted),
           )
         : TextField(
             key: const ValueKey('blank'),
@@ -62,7 +62,7 @@ class DestinationPlate extends StatelessWidget {
               hintMaxLines: 2,
               hintStyle: _letters.copyWith(color: GSColors.textMuted),
               prefixIcon:
-                  Icon(Icons.search_rounded, size: 24, color: GSColors.text),
+                  Icon(Icons.search_rounded, size: GSSize.iconLg, color: GSColors.text),
               contentPadding: const EdgeInsets.symmetric(
                   horizontal: GSSpacing.s4, vertical: GSSpacing.s4),
               suffixIcon: controller.text.isEmpty

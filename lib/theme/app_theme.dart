@@ -247,10 +247,11 @@ class AppTheme {
           minimumSize: const WidgetStatePropertyAll(Size(0, GSSize.touchTarget)),
           shape: const WidgetStatePropertyAll(StadiumBorder()),
           side: WidgetStatePropertyAll(BorderSide(color: p.line, width: 1.5)),
+          // La opción elegida va llena de marca: se distingue sin dudar.
           backgroundColor: WidgetStateProperty.resolveWith((s) =>
-              s.contains(WidgetState.selected) ? p.brandTint : p.surface),
+              s.contains(WidgetState.selected) ? p.brand : p.surface),
           foregroundColor: WidgetStateProperty.resolveWith((s) =>
-              s.contains(WidgetState.selected) ? p.brand : p.text),
+              s.contains(WidgetState.selected) ? p.onBrand : p.textMuted),
           textStyle: const WidgetStatePropertyAll(TextStyle(
             fontFamily: f,
             fontSize: 15,

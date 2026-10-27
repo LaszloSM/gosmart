@@ -281,13 +281,6 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       backgroundColor: GSColors.background,
       appBar: AppBar(
         title: const Text('Planea tu viaje'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.chat_bubble_outline_rounded),
-            tooltip: 'Preguntarle al asistente',
-            onPressed: () => context.push(AppRoutes.aiChat),
-          ),
-        ],
       ),
       body: ListView(
         padding: const EdgeInsets.only(bottom: GSSpacing.s6),
@@ -415,9 +408,9 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
             const SizedBox(height: GSSpacing.s3),
             GSGroup(children: [
               GSListRow(
-                icon: Icons.push_pin_outlined,
+                icon: Icons.pin_drop_rounded,
                 title: 'Elegir en el mapa',
-                subtitle: 'Mantén presionado el mapa del inicio en el punto',
+                subtitle: 'Te llevamos al mapa: mantén presionado tu destino',
                 onTap: () {
                   GSToast.show(context,
                       message: 'Mantén presionado el mapa en tu destino.');
@@ -425,7 +418,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                 },
               ),
               GSListRow(
-                icon: Icons.auto_awesome_outlined,
+                icon: Icons.auto_awesome_rounded,
                 title: 'Pregúntale al asistente',
                 subtitle: '"¿Cómo llego al terminal de Maicao?"',
                 onTap: () => context.push(AppRoutes.aiChat),
@@ -457,7 +450,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
               GSSpacing.s3 + MediaQuery.of(context).viewInsets.bottom),
           child: GSButton(
             label: 'Ver ruta',
-            leadingIcon: Icons.directions_rounded,
+            leadingIcon: Icons.near_me_rounded,
             isLoading: _loading,
             onPressed: _loading ? null : _search,
           ),
@@ -494,8 +487,8 @@ class _SearchNotice extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(limited ? Icons.cloud_off_outlined : Icons.search_off_rounded,
-              size: 20, color: GSColors.textMuted),
+          Icon(limited ? Icons.cloud_off_rounded : Icons.search_off_rounded,
+              size: GSSize.iconMd, color: GSColors.textMuted),
           const SizedBox(width: GSSpacing.s2),
           Expanded(
             child: Column(

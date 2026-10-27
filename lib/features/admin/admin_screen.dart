@@ -42,7 +42,7 @@ class AdminScreen extends ConsumerWidget {
         appBar: AppBar(title: const Text('Administración')),
         body: ListView(children: const [
           GSEmptyState(
-            icon: Icons.lock_outline_rounded,
+            icon: Icons.lock_rounded,
             title: 'Solo administradores',
             subtitle: 'Tu cuenta no tiene permiso para este panel.',
           ),
@@ -134,7 +134,7 @@ class _DriversTab extends StatelessWidget {
       load: trustService.driverQueue,
       builder: (context, rows, reload) => rows.isEmpty
           ? ListView(children: const [
-              GSEmptyState(icon: Icons.badge_outlined, title: 'Sin registros'),
+              GSEmptyState(icon: Icons.badge_rounded, title: 'Sin registros'),
             ])
           : ListView(
               children: [
@@ -143,7 +143,7 @@ class _DriversTab extends StatelessWidget {
                     icon: d.status == 'pending'
                         ? Icons.hourglass_top_rounded
                         : d.status == 'approved'
-                            ? Icons.verified_outlined
+                            ? Icons.verified_rounded
                             : Icons.block_rounded,
                     title: d.fullName,
                     subtitle: '${driverServices[d.service] ?? d.service} · '
@@ -238,8 +238,8 @@ class _DriverReviewState extends State<_DriverReview> {
             for (final e in driverDocuments.entries)
               GSListRow(
                 icon: d.documents.contains(e.key)
-                    ? Icons.image_outlined
-                    : Icons.remove_circle_outline_rounded,
+                    ? Icons.image_rounded
+                    : Icons.remove_circle_rounded,
                 title: e.value,
                 subtitle: d.documents.contains(e.key) ? 'Ver foto' : 'No subido',
                 onTap: d.documents.contains(e.key) ? () => _open(e.key) : null,
@@ -298,12 +298,12 @@ class _ReportsTab extends ConsumerWidget {
       load: trustService.recentReports,
       builder: (context, rows, reload) => rows.isEmpty
           ? ListView(children: const [
-              GSEmptyState(icon: Icons.campaign_outlined, title: 'Sin reportes en 72 h'),
+              GSEmptyState(icon: Icons.campaign_rounded, title: 'Sin reportes en 72 h'),
             ])
           : ListView(children: [
               for (final r in rows) ...[
                 GSListRow(
-                  icon: r.removed ? Icons.delete_outline_rounded : Icons.campaign_outlined,
+                  icon: r.removed ? Icons.delete_rounded : Icons.campaign_rounded,
                   title: '${roadReportKinds[r.kind] ?? r.kind} · '
                       '${names[r.segmentId] ?? r.segmentId}',
                   subtitle: '${r.happenedAt.day}/${r.happenedAt.month} '

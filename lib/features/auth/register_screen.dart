@@ -95,7 +95,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   hint: 'Como quieres que te llamen',
                   controller: _nameCtrl,
                   keyboardType: TextInputType.name,
-                  prefixIcon: Icons.person_outline_rounded,
+                  prefixIcon: Icons.person_rounded,
                   textCapitalization: TextCapitalization.words,
                   validator: (v) => (v == null || v.trim().isEmpty)
                       ? 'Escribe tu nombre'
@@ -107,7 +107,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   hint: 'tucorreo@ejemplo.com',
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
-                  prefixIcon: Icons.mail_outline_rounded,
+                  prefixIcon: Icons.mail_rounded,
                   validator: (v) => (v == null || !v.contains('@'))
                       ? 'Ingresa un correo válido'
                       : null,
@@ -118,14 +118,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   hint: 'Mínimo 8 caracteres',
                   controller: _passCtrl,
                   obscureText: !_showPassword,
-                  prefixIcon: Icons.lock_outline_rounded,
+                  prefixIcon: Icons.lock_rounded,
                   suffixIcon: IconButton(
                     tooltip: _showPassword
                         ? 'Ocultar contraseña'
                         : 'Mostrar contraseña',
                     icon: Icon(_showPassword
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined),
+                        ? Icons.visibility_off_rounded
+                        : Icons.visibility_rounded),
                     onPressed: () =>
                         setState(() => _showPassword = !_showPassword),
                   ),

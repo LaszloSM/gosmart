@@ -69,7 +69,7 @@ class GSTextField extends StatelessWidget {
         hintText: hint,
         counterText: '',
         prefixIcon: prefixIcon != null
-            ? Icon(prefixIcon, size: 22, color: GSColors.textMuted)
+            ? Icon(prefixIcon, size: GSSize.iconLg, color: GSColors.textMuted)
             : null,
         suffixIcon: suffixIcon,
       ),
