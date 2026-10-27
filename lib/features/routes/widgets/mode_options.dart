@@ -78,6 +78,23 @@ class ModeOptions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
+    final estimates = {
+      for (final m in travelModes) m: estimateMode(m, from, to, now),
+    };
+    // Insignias como en Uber/DiDi: el más rápido y el más barato entre los
+    // que llevan a alguien (a pie y tu carro no compiten).
+    final hired = estimates.entries
+        .where((e) => e.key != 'A pie' && e.key != 'Carro')
+        .toList();
+    final fastest = hired.isEmpty
+        ? null
+        : (hired..sort((a, b) => a.value.minutes.compareTo(b.value.minutes)))
+            .first
+            .key;
+    final priced = hired.where((e) => e.value.fare != null).toList()
+      ..sort((a, b) => a.value.fare!.price.compareTo(b.value.fare!.price));
+    final cheapest = priced.isEmpty ? null : priced.first.key;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
       child: Column(
@@ -85,8 +102,13 @@ class ModeOptions extends StatelessWidget {
           for (final m in travelModes) ...[
             _OptionRow(
               mode: m,
-              estimate: estimateMode(m, from, to, now),
+              estimate: estimates[m]!,
               selected: m == selected,
+              badge: m == fastest
+                  ? 'Más rápido'
+                  : m == cheapest
+                      ? 'Más económico'
+                      : null,
               onTap: () => onChanged(m),
             ),
             const SizedBox(height: GSSpacing.s2),
@@ -101,17 +123,34 @@ class ModeOptions extends StatelessWidget {
   }
 }
 
+/// Quién cabe en cada modo, para la línea de detalle.
+const _capacity = {
+  'Mototaxi': '1 pasajero',
+  'Taxi': 'Hasta 4',
+  'Colectivo': 'Por cupo',
+  'TransPadilla': 'Bus urbano',
+  'Intermunicipal': 'Entre ciudades',
+};
+
+String _clock(int minutes) {
+  final t = DateTime.now().add(Duration(minutes: minutes));
+  final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
+  return '$h:${t.minute.toString().padLeft(2, '0')}';
+}
+
 class _OptionRow extends StatelessWidget {
   const _OptionRow({
     required this.mode,
     required this.estimate,
     required this.selected,
     required this.onTap,
+    this.badge,
   });
   final String mode;
   final ModeEstimate estimate;
   final bool selected;
   final VoidCallback onTap;
+  final String? badge;
 
   @override
   Widget build(BuildContext context) {
@@ -129,9 +168,14 @@ class _OptionRow extends StatelessWidget {
     return GSPressable(
       onTap: onTap,
       selected: selected,
-      semanticLabel:
-          '$mode, unos ${estimate.minutes} minutos, $price aproximado',
-      child: Container(
+      semanticLabel: '$mode, unos ${estimate.minutes} minutos, $price aproximado'
+          '${badge == null ? '' : ', $badge'}',
+      // La selección cambia de borde y fondo en 150 ms (ease-out), sin saltos.
+      child: AnimatedContainer(
+        duration: MediaQuery.of(context).disableAnimations
+            ? Duration.zero
+            : GSDuration.fast,
+        curve: GSCurve.enter,
         padding: const EdgeInsets.symmetric(
             horizontal: GSSpacing.s3, vertical: GSSpacing.s3),
         decoration: BoxDecoration(
@@ -153,7 +197,7 @@ class _OptionRow extends StatelessWidget {
               height: 48,
               child: Center(
                 child: GSModeVisual(
-                    mode: mode, height: 40, iconColor: GSColors.text),
+                    mode: mode, height: 42, iconColor: GSColors.text),
               ),
             ),
             const SizedBox(width: GSSpacing.s3),
@@ -168,31 +212,69 @@ class _OptionRow extends StatelessWidget {
                     child: Text(mode,
                         maxLines: 1, softWrap: false, style: text.titleMedium),
                   ),
+                  const SizedBox(height: 2),
                   Text(
-                    '~${estimate.minutes} min',
+                    [
+                      '${estimate.minutes} min',
+                      if (_capacity[mode] != null) _capacity[mode]!,
+                    ].join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style:
                         text.bodySmall?.copyWith(fontFeatures: GSFonts.tabular),
                   ),
+                  if (badge != null) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: GSSpacing.s2, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: selected ? GSColors.brand : GSColors.brandTint,
+                        borderRadius: BorderRadius.circular(GSRadius.full),
+                      ),
+                      child: Text(
+                        badge!,
+                        style: TextStyle(
+                          fontFamily: GSFonts.sans,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: selected ? GSColors.onBrand : GSColors.brand,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
             const SizedBox(width: GSSpacing.s2),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 124),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerRight,
-                child: Text(
-                  price,
-                  maxLines: 1,
-                  softWrap: false,
-                  style: fare == null
-                      ? text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)
-                      : text.titleMedium?.copyWith(
-                          fontFeatures: GSFonts.tabular,
-                          fontWeight: FontWeight.w800,
-                        ),
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      price,
+                      maxLines: 1,
+                      softWrap: false,
+                      style: fare == null
+                          ? text.bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w600)
+                          : text.titleMedium?.copyWith(
+                              fontFeatures: GSFonts.tabular,
+                              fontWeight: FontWeight.w800,
+                            ),
+                    ),
+                  ),
+                  Text(
+                    'llegas ${_clock(estimate.minutes)}',
+                    maxLines: 1,
+                    style:
+                        text.bodySmall?.copyWith(fontFeatures: GSFonts.tabular),
+                  ),
+                ],
               ),
             ),
           ],

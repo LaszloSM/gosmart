@@ -245,7 +245,9 @@ class _ReadOnlyField extends StatelessWidget {
             prefixIcon: Icon(icon, size: 22, color: GSColors.textMuted),
             helperText: helper,
             helperStyle: TextStyle(
-                fontFamily: GSFonts.sans, fontSize: 14, color: GSColors.textMuted),
+                fontFamily: GSFonts.sans,
+                fontSize: 14,
+                color: GSColors.textMuted),
           ),
           child: Text(
             value,

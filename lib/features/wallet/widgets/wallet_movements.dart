@@ -30,7 +30,8 @@ class WalletMovements extends ConsumerWidget {
     final txAsync = ref.watch(walletTransactionsProvider(limit));
     // Mientras llega la página siguiente se sigue viendo la anterior.
     final previous = limit > walletPageSize
-        ? ref.watch(walletTransactionsProvider(limit - walletPageSize))
+        ? ref
+            .watch(walletTransactionsProvider(limit - walletPageSize))
             .valueOrNull
         : null;
 
@@ -39,17 +40,17 @@ class WalletMovements extends ConsumerWidget {
       loading: () => previous != null
           ? _list(previous, showMore: false)
           : Padding(
-        padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
-        child: Column(
-          children: List.generate(
-            3,
-            (_) => const Padding(
-              padding: EdgeInsets.only(bottom: GSSpacing.s2),
-              child: GSTransactionSkeleton(),
+              padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
+              child: Column(
+                children: List.generate(
+                  3,
+                  (_) => const Padding(
+                    padding: EdgeInsets.only(bottom: GSSpacing.s2),
+                    child: GSTransactionSkeleton(),
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
       error: (_, __) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
         child: GSInlineError(
@@ -95,8 +96,7 @@ class MovementRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final detail = [
-      if (tx.description != null && tx.description!.isNotEmpty)
-        tx.description!,
+      if (tx.description != null && tx.description!.isNotEmpty) tx.description!,
       tx.formattedDate,
     ].join(' · ');
 
@@ -111,7 +111,8 @@ class MovementRow extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: tx.amount > 0 ? GSColors.brandTint : GSColors.surfaceSunken,
+                color:
+                    tx.amount > 0 ? GSColors.brandTint : GSColors.surfaceSunken,
                 shape: BoxShape.circle,
               ),
               child: Icon(tx.icon,

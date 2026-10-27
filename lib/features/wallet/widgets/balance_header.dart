@@ -1,6 +1,7 @@
 // lib/features/wallet/widgets/balance_header.dart
-// Saldo de la billetera como en Nequi: tarjeta azul con el saldo grande, un
-// ojo para ocultarlo en la calle y el aviso de que el saldo es de prueba.
+// Saldo de la billetera como en Nequi: banda azul honda con el saldo grande,
+// un ojo para ocultarlo en la calle, el aviso de que el saldo es de prueba y
+// las acciones redondas debajo.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,10 +9,14 @@ import '../../../core/money.dart';
 import '../../../providers/wallet_provider.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_skeleton_loader.dart';
+import '../../../widgets/gs_brand_hero.dart';
 import '../../../widgets/gs_inline_error.dart';
 
 class BalanceHeader extends ConsumerStatefulWidget {
-  const BalanceHeader({super.key});
+  const BalanceHeader({super.key, required this.actions});
+
+  /// Acciones redondas bajo el saldo (Recargar, Pagar con QR…).
+  final List<Widget> actions;
 
   @override
   ConsumerState<BalanceHeader> createState() => _BalanceHeaderState();
@@ -24,100 +29,93 @@ class _BalanceHeaderState extends ConsumerState<BalanceHeader> {
   @override
   Widget build(BuildContext context) {
     final walletAsync = ref.watch(walletProvider);
-    final on = GSColors.isDark ? GSColors.text : GSColors.onBrand;
-    final onMuted = GSColors.isDark ? GSColors.textMuted : GSColors.onBrandMuted;
+    final on = GSColors.onBrandDeep;
+    final onMuted = GSColors.onBrandDeepMuted;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          GSSpacing.s4, GSSpacing.s2, GSSpacing.s4, GSSpacing.s4),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(
-            GSSpacing.s5, GSSpacing.s4, GSSpacing.s2, GSSpacing.s5),
-        decoration: BoxDecoration(
-          // De noche, superficie con borde: un bloque azul claro encandila.
-          color: GSColors.isDark ? GSColors.brandTint : GSColors.brand,
-          borderRadius: BorderRadius.circular(GSRadius.xl),
+    return GSBrandHero(
+      title: 'Billetera',
+      trailing: IconButton(
+        tooltip: _hidden ? 'Mostrar saldo' : 'Ocultar saldo',
+        onPressed: () => setState(() => _hidden = !_hidden),
+        icon: Icon(
+          _hidden ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+          color: on,
         ),
-        child: walletAsync.when(
-          skipLoadingOnRefresh: true,
-          loading: () => const Padding(
-            padding: EdgeInsets.symmetric(vertical: GSSpacing.s3),
-            child: GSSkeletonLoader(width: 200, height: 44, radius: GSRadius.sm),
-          ),
-          error: (_, __) => GSInlineError(
-            message: 'No pudimos cargar tu saldo',
-            onRetry: () => ref.invalidate(walletProvider),
-          ),
-          data: (wallet) {
-            if (wallet == null) {
-              return GSInlineError(
-                message: 'Tu billetera aún no está lista',
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          walletAsync.when(
+            skipLoadingOnRefresh: true,
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: GSSpacing.s3),
+              child:
+                  GSSkeletonLoader(width: 200, height: 44, radius: GSRadius.sm),
+            ),
+            error: (_, __) => _OnHero(
+              child: GSInlineError(
+                message: 'No pudimos cargar tu saldo',
                 onRetry: () => ref.invalidate(walletProvider),
-              );
-            }
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Saldo disponible',
-                        style: TextStyle(
-                          fontFamily: GSFonts.sans,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: onMuted,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: _hidden ? 'Mostrar saldo' : 'Ocultar saldo',
-                      onPressed: () => setState(() => _hidden = !_hidden),
-                      icon: Icon(
-                        _hidden
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                        color: on,
-                      ),
-                    ),
-                  ],
-                ),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text.rich(
-                    TextSpan(children: [
-                      TextSpan(
-                        text: _hidden ? r'$ • • • • •' : formatCop(wallet.balance),
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.8,
-                          color: on,
-                        ),
-                      ),
-                      TextSpan(
-                        text: '  COP',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: onMuted,
-                        ),
-                      ),
-                    ]),
-                    style: const TextStyle(
-                        fontFamily: GSFonts.mono,
-                        fontFeatures: GSFonts.tabular),
-                    semanticsLabel: _hidden
-                        ? 'Saldo oculto'
-                        : 'Saldo ${formatCop(wallet.balance)} pesos',
+              ),
+            ),
+            data: (wallet) {
+              if (wallet == null) {
+                return _OnHero(
+                  child: GSInlineError(
+                    message: 'Tu billetera aún no está lista',
+                    onRetry: () => ref.invalidate(walletProvider),
                   ),
-                ),
-                const SizedBox(height: GSSpacing.s3),
-                Padding(
-                  padding: const EdgeInsets.only(right: GSSpacing.s3),
-                  child: Wrap(
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Saldo disponible',
+                    style: TextStyle(
+                      fontFamily: GSFonts.sans,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: onMuted,
+                    ),
+                  ),
+                  const SizedBox(height: GSSpacing.s1),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text.rich(
+                      TextSpan(children: [
+                        TextSpan(
+                          text: _hidden
+                              ? r'$ • • • • •'
+                              : formatCop(wallet.balance),
+                          style: TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -1.2,
+                            height: 1.05,
+                            color: on,
+                          ),
+                        ),
+                        TextSpan(
+                          text: '  COP',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: onMuted,
+                          ),
+                        ),
+                      ]),
+                      style: const TextStyle(
+                          fontFamily: GSFonts.mono,
+                          fontFeatures: GSFonts.tabular),
+                      semanticsLabel: _hidden
+                          ? 'Saldo oculto'
+                          : 'Saldo ${formatCop(wallet.balance)} pesos',
+                    ),
+                  ),
+                  const SizedBox(height: GSSpacing.s3),
+                  Wrap(
                     spacing: GSSpacing.s2,
                     runSpacing: GSSpacing.s2,
                     children: [
@@ -139,12 +137,37 @@ class _BalanceHeaderState extends ConsumerState<BalanceHeader> {
                       ),
                     ],
                   ),
-                ),
-              ],
-            );
-          },
-        ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: GSSpacing.s6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final a in widget.actions) Expanded(child: a),
+            ],
+          ),
+        ],
       ),
+    );
+  }
+}
+
+/// Error sobre la banda: se pinta en una tarjeta clara para que se lea.
+class _OnHero extends StatelessWidget {
+  const _OnHero({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(GSSpacing.s3),
+      decoration: BoxDecoration(
+        color: GSColors.surface,
+        borderRadius: BorderRadius.circular(GSRadius.md),
+      ),
+      child: child,
     );
   }
 }

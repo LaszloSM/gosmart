@@ -43,8 +43,7 @@ class CardControls extends ConsumerWidget {
     return GSGroup(
       children: [
         SwitchListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
+          contentPadding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
           secondary: Container(
             width: 40,
             height: 40,

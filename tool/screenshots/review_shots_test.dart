@@ -112,6 +112,10 @@ void main() {
       await t.pumpWidget(ProviderScope(key: UniqueKey(), overrides: ov, child: MaterialApp(debugShowCheckedModeBanner: false, theme: dark ? AppTheme.dark : AppTheme.light,
           home: RepaintBoundary(key: const ValueKey('shot'), child: w))));
       if (settle) { await t.pumpAndSettle(); } else { await t.pump(const Duration(milliseconds: 400)); }
+      // Las ilustraciones (assets) se decodifican fuera del reloj falso.
+      await t.runAsync(() => Future.wait(find.byType(Image).evaluate()
+          .map((e) => precacheImage((e.widget as Image).image, e))));
+      await t.pump();
       await _save(t, n);
     }
     // Inicio: el mapa real carga teselas de red, que no hay en tests; se usa

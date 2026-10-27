@@ -104,7 +104,8 @@ class _AmountOption extends StatelessWidget {
                 child: Text(
                   label,
                   style: TextStyle(
-                    fontFamily: GSFonts.mono, fontFeatures: GSFonts.tabular,
+                    fontFamily: GSFonts.mono,
+                    fontFeatures: GSFonts.tabular,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: selected ? GSColors.onBrand : GSColors.text,

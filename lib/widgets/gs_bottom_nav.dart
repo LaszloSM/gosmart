@@ -8,8 +8,8 @@ import '../theme/design_tokens.dart';
 enum GSNavTab { home, trip, report, wallet, profile }
 
 /// Barra inferior al estilo Material 3 (como Google Maps o Nequi): blanca con
-/// una línea fina arriba, ícono activo relleno sobre una píldora azul clara y
-/// etiqueta siempre debajo. Navega sola con `context.go`; cambiar de pestaña
+/// una sombra suave arriba, ícono activo relleno sobre una píldora azul clara
+/// y etiqueta siempre debajo, en azul la activa. Navega sola con `context.go`; cambiar de pestaña
 /// no se anima (acción repetida).
 class GSBottomNav extends StatelessWidget {
   const GSBottomNav({super.key, required this.current});
@@ -36,7 +36,16 @@ class GSBottomNav extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: GSColors.shell,
-        border: Border(top: BorderSide(color: GSColors.line)),
+        // Sombra suave hacia arriba en vez de una línea: la barra flota
+        // sobre el contenido como en Nequi o DiDi.
+        boxShadow: [
+          BoxShadow(
+            color: GSColors.palette.shadowInk
+                .withValues(alpha: GSColors.isDark ? 0.4 : 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
       child: SafeArea(
         top: false,
@@ -125,7 +134,7 @@ class _NavTile extends StatelessWidget {
                         fontWeight:
                             isActive ? FontWeight.w700 : FontWeight.w500,
                         color:
-                            isActive ? GSColors.onShell : GSColors.onShellMuted,
+                            isActive ? GSColors.brand : GSColors.onShellMuted,
                       ),
                     ),
                   ),

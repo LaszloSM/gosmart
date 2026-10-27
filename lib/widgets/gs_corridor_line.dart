@@ -89,50 +89,120 @@ class GSCorridorLine extends StatelessWidget {
             child: Container(
               constraints: BoxConstraints(
                   minHeight: floating ? 64 : GSSize.corridorLine),
-              padding: EdgeInsets.symmetric(
-                  horizontal: GSSpacing.s4,
-                  vertical: floating ? GSSpacing.s3 : 0),
+              padding: EdgeInsets.fromLTRB(GSSpacing.s4,
+                  floating ? GSSpacing.s3 : GSSpacing.s2, GSSpacing.s3,
+                  floating ? GSSpacing.s3 : GSSpacing.s2),
               decoration: floating
                   ? null
                   : BoxDecoration(
                       border: Border(bottom: BorderSide(color: GSColors.line)),
                     ),
-              child: Row(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Row(
-                          children: [
-                            _EndLabel('Riohacha'),
-                            Spacer(),
-                            _EndLabel('Maicao'),
-                          ],
-                        ),
-                        const SizedBox(height: GSSpacing.s1),
-                        SizedBox(
-                          height: 14,
-                          width: double.infinity,
-                          child: CustomPaint(
-                            painter: _CorridorPainter(status: data, grey: grey),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Troncal del Caribe',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: GSFonts.sans,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.1,
+                            color: GSColors.text,
                           ),
                         ),
-                      ],
+                      ),
+                      const SizedBox(width: GSSpacing.s2),
+                      _StatusChip(state: summary, word: word, grey: grey),
+                    ],
+                  ),
+                  const SizedBox(height: GSSpacing.s2),
+                  SizedBox(
+                    height: 14,
+                    width: double.infinity,
+                    child: CustomPaint(
+                      painter: _CorridorPainter(status: data, grey: grey),
                     ),
                   ),
-                  const SizedBox(width: GSSpacing.s3),
-                  _SummaryTag(
-                    state: summary,
-                    word: word,
-                    detail: detail,
-                    grey: grey,
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const _EndLabel('Riohacha'),
+                      Expanded(
+                        child: detail == null
+                            ? const SizedBox.shrink()
+                            : Text(
+                                detail,
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontFamily: GSFonts.mono,
+                                  fontFeatures: GSFonts.tabular,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: GSColors.textMuted,
+                                ),
+                              ),
+                      ),
+                      const _EndLabel('Maicao'),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Estado en píldora: ícono + palabra. Cerrada y Precaución van sobre su
+/// tinte; Abierta y Sin datos, con borde del color (el texto queda ≥ 7:1).
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.state, required this.word, required this.grey});
+  final RoadState state;
+  final String word;
+  final bool grey;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = grey ? GSColors.roadUnknown : roadColor(state);
+    final fill = grey
+        ? null
+        : switch (state) {
+            RoadState.caution => GSColors.roadCautionTint,
+            RoadState.closed => GSColors.roadClosedTint,
+            _ => null,
+          };
+    return Container(
+      padding: const EdgeInsets.fromLTRB(8, 4, 10, 4),
+      decoration: BoxDecoration(
+        color: fill ?? GSColors.surface,
+        borderRadius: BorderRadius.circular(GSRadius.full),
+        border: fill == null ? Border.all(color: color, width: 1.5) : null,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(roadIcon(state), size: 16, color: color),
+          const SizedBox(width: 4),
+          Text(
+            word,
+            style: TextStyle(
+              fontFamily: GSFonts.sans,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -149,63 +219,11 @@ class _EndLabel extends StatelessWidget {
       maxLines: 1,
       style: TextStyle(
         fontFamily: GSFonts.sans,
-        fontSize: 14,
+        fontSize: 12.5,
         fontWeight: FontWeight.w600,
         color: GSColors.textMuted,
-        height: 1.15,
+        height: 1.2,
       ),
-    );
-  }
-}
-
-class _SummaryTag extends StatelessWidget {
-  const _SummaryTag({
-    required this.state,
-    required this.word,
-    required this.detail,
-    required this.grey,
-  });
-
-  final RoadState state;
-  final String word;
-  final String? detail;
-  final bool grey;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = grey ? GSColors.roadUnknown : roadColor(state);
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(roadIcon(state), size: GSSize.iconSm, color: color),
-            const SizedBox(width: GSSpacing.s1),
-            Text(
-              word,
-              style: TextStyle(
-                fontFamily: GSFonts.sans,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-        if (detail != null)
-          Text(
-            detail!,
-            style: TextStyle(
-              fontFamily: GSFonts.mono,
-              fontFeatures: GSFonts.tabular,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: GSColors.textMuted,
-            ),
-          ),
-      ],
     );
   }
 }

@@ -39,6 +39,9 @@ class GSPalette {
     required this.bike,
     required this.cardGold,
     required this.shadowInk,
+    required this.brandDeep,
+    required this.onBrandDeep,
+    required this.onBrandDeepMuted,
   });
 
   final Color brand, brandPressed, onBrand, onBrandMuted, brandTint;
@@ -48,6 +51,10 @@ class GSPalette {
   final Color roadOpen, roadCaution, roadCautionTint;
   final Color roadClosed, roadClosedTint, roadUnknown;
   final Color taxi, bike, cardGold, shadowInk;
+
+  /// Cabecera honda (billetera, perfil, entrada): el azul de la marca en su
+  /// tono más profundo, para que las tarjetas blancas monten encima.
+  final Color brandDeep, onBrandDeep, onBrandDeepMuted;
 
   /// Día: claro primero, legible al sol.
   static const light = GSPalette(
@@ -77,6 +84,9 @@ class GSPalette {
     bike: Color(0xFF0E7490),
     cardGold: Color(0xFFFFC93C),
     shadowInk: Color(0xFF1A2440),
+    brandDeep: Color(0xFF0A3A94), // blanco encima 10.3:1
+    onBrandDeep: Color(0xFFFFFFFF),
+    onBrandDeepMuted: Color(0xFFCBD9F6), // 7.2:1 sobre brandDeep
   );
 
   /// Noche: viajes nocturnos sin encandilar. Superficies que suben de
@@ -108,6 +118,9 @@ class GSPalette {
     bike: Color(0xFF7DD3E8),
     cardGold: Color(0xFFFFD66B),
     shadowInk: Color(0xFF000000),
+    brandDeep: Color(0xFF17284A), // sube sobre el fondo nocturno
+    onBrandDeep: Color(0xFFE6E8EE), // 11.9:1
+    onBrandDeepMuted: Color(0xFFB4C3E0), // 8.2:1
   );
 }
 
@@ -128,6 +141,11 @@ abstract class GSColors {
   /// Texto e íconos sobre [brand].
   static Color get onBrand => _p.onBrand;
   static Color get onBrandMuted => _p.onBrandMuted;
+
+  /// Cabecera honda de marca y su texto (ver [GSPalette.brandDeep]).
+  static Color get brandDeep => _p.brandDeep;
+  static Color get onBrandDeep => _p.onBrandDeep;
+  static Color get onBrandDeepMuted => _p.onBrandDeepMuted;
 
   /// Fondos seleccionados con [brand] encima.
   static Color get brandTint => _p.brandTint;

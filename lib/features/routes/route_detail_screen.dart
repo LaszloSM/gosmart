@@ -22,6 +22,8 @@ import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_empty_state.dart';
 import '../../widgets/gs_list_row.dart';
+import '../../widgets/gs_meta_chip.dart';
+import '../../widgets/gs_mode_visual.dart';
 import '../safety/trip_share_section.dart';
 
 class RouteDetailScreen extends ConsumerStatefulWidget {
@@ -159,6 +161,7 @@ class _RouteBody extends StatelessWidget {
             decoration: BoxDecoration(
               color: GSColors.surface,
               borderRadius: BorderRadius.circular(GSRadius.lg),
+              boxShadow: GSShadow.sm,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,6 +169,17 @@ class _RouteBody extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Container(
+                      width: 68,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: GSColors.brandTint,
+                        borderRadius: BorderRadius.circular(GSRadius.md),
+                      ),
+                      child: Center(
+                          child: GSModeVisual(mode: mode, height: 40)),
+                    ),
+                    const SizedBox(width: GSSpacing.s3),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -175,26 +189,47 @@ class _RouteBody extends StatelessWidget {
                             style: text.displaySmall
                                 ?.copyWith(fontFeatures: GSFonts.tabular),
                           ),
-                          const SizedBox(height: 2),
                           Text(
-                            '${route.distanceKm.toStringAsFixed(1)} km · en $mode',
-                            style: text.bodyMedium
-                                ?.copyWith(fontFeatures: GSFonts.tabular),
+                            'en $mode',
+                            style: text.bodyMedium,
                           ),
-                          if (route.destinationLabel != null)
-                            Text(
-                              'Hasta ${route.destinationLabel}',
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: text.bodyMedium,
-                            ),
                         ],
                       ),
                     ),
                     if (fare != null) ...[
-                      const SizedBox(width: GSSpacing.s3),
+                      const SizedBox(width: GSSpacing.s2),
                       _FareBadge(fare: fare),
                     ],
+                  ],
+                ),
+                if (route.destinationLabel != null) ...[
+                  const SizedBox(height: GSSpacing.s3),
+                  Text(
+                    'Hasta ${route.destinationLabel}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: text.titleMedium,
+                  ),
+                ],
+                const SizedBox(height: GSSpacing.s3),
+                Wrap(
+                  spacing: GSSpacing.s2,
+                  runSpacing: GSSpacing.s2,
+                  children: [
+                    GSMetaChip(
+                      icon: Icons.flag_rounded,
+                      label: 'Llegas ${_clock(route.durationMin)}',
+                    ),
+                    GSMetaChip(
+                      icon: Icons.straighten_rounded,
+                      label:
+                          '${route.distanceKm.toStringAsFixed(1).replaceAll('.', ',')} km',
+                    ),
+                    if (route.legs.length > 1)
+                      GSMetaChip(
+                        icon: Icons.alt_route_rounded,
+                        label: '${route.legs.length} tramos',
+                      ),
                   ],
                 ),
                 const SizedBox(height: GSSpacing.s4),
@@ -287,6 +322,13 @@ class _RouteBody extends StatelessWidget {
   }
 }
 
+/// Hora de llegada si sales ahora ("7:42 p. m.").
+String _clock(int minutes) {
+  final t = DateTime.now().add(Duration(minutes: minutes));
+  final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
+  return '$h:${t.minute.toString().padLeft(2, '0')} ${t.hour < 12 ? 'a. m.' : 'p. m.'}';
+}
+
 /// Precio de referencia en una píldora, como el precio de una opción en Uber.
 class _FareBadge extends StatelessWidget {
   const _FareBadge({required this.fare});
@@ -297,7 +339,7 @@ class _FareBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: GSColors.brandTint,
+        color: GSColors.brand,
         borderRadius: BorderRadius.circular(GSRadius.full),
       ),
       child: Text(
@@ -305,9 +347,9 @@ class _FareBadge extends StatelessWidget {
         style: TextStyle(
           fontFamily: GSFonts.mono,
           fontFeatures: GSFonts.tabular,
-          fontSize: 15,
+          fontSize: 16,
           fontWeight: FontWeight.w800,
-          color: GSColors.brand,
+          color: GSColors.onBrand,
         ),
       ),
     );

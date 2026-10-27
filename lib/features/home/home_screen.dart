@@ -15,7 +15,9 @@ import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_corridor_line.dart';
+import '../../widgets/gs_meta_chip.dart';
 import '../../widgets/gs_mode_visual.dart';
+import '../../widgets/gs_pressable.dart';
 import 'widgets/corridor_detail_sheet.dart';
 import 'widgets/home_map.dart';
 import 'widgets/home_sheet.dart';
@@ -203,11 +205,19 @@ class _CorridorHeader extends StatelessWidget {
   }
 }
 
-/// Ruta activa, como el resumen de Uber/DiDi antes de pedir: modo, tiempo,
-/// distancia, precio y un botón para seguir. La X la quita.
+/// Ruta activa, como el resumen de InDrive/DiDi antes de pedir: el vehículo
+/// grande, a qué hora llegas, el precio y los datos en píldoras. Entra
+/// subiendo 16 dp con un fundido (250 ms, ease-out); la X la quita.
 class _RouteCard extends ConsumerWidget {
   const _RouteCard({required this.route});
   final RouteResult route;
+
+  static String _arrival(int minutes) {
+    final t = DateTime.now().add(Duration(minutes: minutes));
+    final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
+    final m = t.minute.toString().padLeft(2, '0');
+    return '$h:$m ${t.hour < 12 ? 'a. m.' : 'p. m.'}';
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -216,7 +226,18 @@ class _RouteCard extends ConsumerWidget {
     final price = route.estimatedCostCop > 0
         ? formatCop(route.fareMax ?? route.estimatedCostCop)
         : null;
-    return DecoratedBox(
+    final km = route.distanceKm
+        .toStringAsFixed(route.distanceKm < 10 ? 1 : 0)
+        .replaceAll('.', ',');
+    final fareLabel = switch (route.fareKind) {
+      'oficial' => 'Tarifa oficial',
+      'sugerida' => 'Tarifa sugerida',
+      'ruta' => 'Pasaje de la ruta',
+      _ => null,
+    };
+    final reduce = MediaQuery.of(context).disableAnimations;
+
+    final card = DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(GSRadius.xl),
         boxShadow: GSShadow.float,
@@ -227,16 +248,21 @@ class _RouteCard extends ConsumerWidget {
         clipBehavior: Clip.antiAlias,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
-              GSSpacing.s4, GSSpacing.s3, GSSpacing.s2, GSSpacing.s4),
+              GSSpacing.s4, GSSpacing.s4, GSSpacing.s2, GSSpacing.s4),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(
-                    width: 64,
-                    height: 48,
+                  Container(
+                    width: 68,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: GSColors.brandTint,
+                      borderRadius: BorderRadius.circular(GSRadius.md),
+                    ),
                     child: Center(child: GSModeVisual(mode: mode, height: 40)),
                   ),
                   const SizedBox(width: GSSpacing.s3),
@@ -246,40 +272,71 @@ class _RouteCard extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          route.destinationLabel == null
-                              ? mode
-                              : 'A ${route.destinationLabel}',
+                          mode,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: text.titleMedium,
+                          style: text.titleLarge,
                         ),
+                        const SizedBox(height: 2),
                         Text(
-                          '${route.durationMin} min · '
-                          '${route.distanceKm.toStringAsFixed(route.distanceKm < 10 ? 1 : 0)} km',
-                          maxLines: 1,
+                          route.destinationLabel == null
+                              ? 'Llegas ${_arrival(route.durationMin)}'
+                              : 'A ${route.destinationLabel}',
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: text.bodyMedium
-                              ?.copyWith(fontFeatures: GSFonts.tabular),
+                          style: text.bodyMedium,
                         ),
                       ],
                     ),
                   ),
                   if (price != null)
                     Padding(
-                      padding: const EdgeInsets.only(left: GSSpacing.s2),
-                      child: Text(price,
-                          style: text.titleLarge
-                              ?.copyWith(fontFeatures: GSFonts.tabular)),
+                      padding: const EdgeInsets.only(
+                          left: GSSpacing.s2, top: 2),
+                      child: Text(
+                        price,
+                        style: text.headlineSmall
+                            ?.copyWith(fontFeatures: GSFonts.tabular),
+                      ),
                     ),
-                  IconButton(
-                    tooltip: 'Quitar ruta',
-                    icon: Icon(Icons.close_rounded, color: GSColors.textMuted),
-                    onPressed: () =>
-                        ref.read(activeRouteProvider.notifier).state = null,
+                  SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: IconButton(
+                      tooltip: 'Quitar ruta',
+                      padding: EdgeInsets.zero,
+                      icon: Icon(Icons.close_rounded,
+                          color: GSColors.textMuted, size: 22),
+                      onPressed: () =>
+                          ref.read(activeRouteProvider.notifier).state = null,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: GSSpacing.s3),
+              Padding(
+                padding: const EdgeInsets.only(right: GSSpacing.s2),
+                child: Wrap(
+                  spacing: GSSpacing.s2,
+                  runSpacing: GSSpacing.s2,
+                  children: [
+                    GSMetaChip(
+                        icon: Icons.schedule_rounded,
+                        label: '${route.durationMin} min'),
+                    GSMetaChip(icon: Icons.straighten_rounded, label: '$km km'),
+                    if (route.destinationLabel != null)
+                      GSMetaChip(
+                          icon: Icons.flag_rounded,
+                          label: 'Llegas ${_arrival(route.durationMin)}'),
+                    if (fareLabel != null)
+                      GSMetaChip(
+                          icon: Icons.verified_outlined,
+                          label: fareLabel,
+                          emphasis: true),
+                  ],
+                ),
+              ),
+              const SizedBox(height: GSSpacing.s4),
               Padding(
                 padding: const EdgeInsets.only(right: GSSpacing.s2),
                 child: Row(
@@ -287,16 +344,25 @@ class _RouteCard extends ConsumerWidget {
                     Expanded(
                       child: GSButton(
                         label: 'Ver viaje',
+                        trailingIcon: Icons.arrow_forward_rounded,
                         isFullWidth: true,
                         onPressed: () => context.push(AppRoutes.routeDetail),
                       ),
                     ),
                     const SizedBox(width: GSSpacing.s2),
-                    GSIconButton(
-                      icon: Icons.health_and_safety_outlined,
-                      tooltip: 'Ayuda',
-                      iconColor: GSColors.roadClosed,
-                      onPressed: () => showSosSheet(context),
+                    GSPressable(
+                      onTap: () => showSosSheet(context),
+                      semanticLabel: 'Ayuda: SOS',
+                      child: Container(
+                        width: GSSize.button,
+                        height: GSSize.button,
+                        decoration: BoxDecoration(
+                          color: GSColors.roadClosedTint,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.health_and_safety_rounded,
+                            color: GSColors.roadClosed),
+                      ),
                     ),
                   ],
                 ),
@@ -305,6 +371,19 @@ class _RouteCard extends ConsumerWidget {
           ),
         ),
       ),
+    );
+
+    if (reduce) return card;
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(route),
+      tween: Tween(begin: 0, end: 1),
+      duration: GSDuration.normal,
+      curve: GSCurve.enter,
+      builder: (context, t, child) => Opacity(
+        opacity: t,
+        child: Transform.translate(offset: Offset(0, 16 * (1 - t)), child: child),
+      ),
+      child: card,
     );
   }
 }
