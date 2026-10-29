@@ -175,7 +175,7 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.122.0  # fija: "latest" consulta la API de GitHub y a veces da límite de peticiones
 
       # Con los secrets del repo el APK sale conectado a tu Supabase, con mapa y push.
       # SUPABASE_URL / SUPABASE_ANON_KEY: si no están como secrets, se sacan del
