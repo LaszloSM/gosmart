@@ -5,7 +5,7 @@ import '../router/app_router.dart';
 import '../theme/design_tokens.dart';
 
 /// Destinos de la barra inferior (DS1). El historial vive en la Billetera.
-enum GSNavTab { home, trip, report, wallet, profile }
+enum GSNavTab { home, trip, wallet, profile }
 
 /// Barra inferior al estilo Material 3 (como Google Maps o Nequi): blanca con
 /// una sombra suave arriba, ícono activo relleno sobre una píldora azul clara
@@ -21,8 +21,6 @@ class GSBottomNav extends StatelessWidget {
         AppRoutes.home),
     _NavItem(GSNavTab.trip, Icons.route_outlined, Icons.route_rounded, 'Viaje',
         AppRoutes.trip),
-    _NavItem(GSNavTab.report, Icons.add_location_alt_outlined,
-        Icons.add_location_alt_rounded, 'Reportar', AppRoutes.report),
     _NavItem(GSNavTab.wallet, Icons.account_balance_wallet_outlined,
         Icons.account_balance_wallet_rounded, 'Billetera', AppRoutes.wallet),
     _NavItem(GSNavTab.profile, Icons.person_outline, Icons.person_rounded,

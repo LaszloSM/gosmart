@@ -1,13 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../safety/sos_sheet.dart';
-import '../../models/corridor_status.dart';
 import '../../models/route_result.dart';
 import '../../providers/active_route_provider.dart';
-import '../../providers/corridor_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../providers/selected_mode_provider.dart';
 import '../../core/money.dart';
@@ -15,18 +15,16 @@ import '../../router/app_router.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
 import '../../widgets/gs_button.dart';
-import '../../widgets/gs_corridor_line.dart';
 import '../../widgets/gs_meta_chip.dart';
 import '../../widgets/gs_mode_visual.dart';
 import '../../widgets/gs_pressable.dart';
-import 'widgets/corridor_detail_sheet.dart';
 import 'widgets/home_map.dart';
 import 'widgets/home_sheet.dart';
 import '../../core/clock.dart';
 
-/// Inicio, como Uber/DiDi con Google Maps: mapa a pantalla completa, la
-/// tarjeta del estado de la Troncal flotando arriba y una hoja blanca abajo
-/// con "¿A dónde vas?". Funciona sin cuenta (DS3).
+/// Inicio, como Waze y Uber/DiDi: mapa a pantalla completa con las alertas
+/// de la gente como pines, botones flotantes (ubicarme, reportar) que siguen
+/// a la hoja, y la hoja blanca con "¿A dónde vas?". Funciona sin cuenta (DS3).
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -38,7 +36,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _sheetCtrl = DraggableScrollableController();
   final _peekKey = GlobalKey();
   final _routeCardKey = GlobalKey();
-  final _corridorKey = GlobalKey();
 
   /// Altura de reposo de la hoja: se mide para que termine justo después de
   /// la pista (sin filas cortadas a la mitad bajo la barra), con cualquier
@@ -46,13 +43,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   double _sheetInitial = 0.36;
   double _stackHeight = 0;
 
-  /// Cuánto de la pantalla cubre la hoja ahora (cambia al arrastrarla): el
-  /// mapa centra y encuadra en lo que queda libre, como en Uber.
-  double _sheetExtent = 0.36;
+  /// Cuánto de la pantalla cubre la hoja AHORA (cada cuadro al arrastrarla):
+  /// solo lo escuchan los botones flotantes, que la siguen sin reconstruir
+  /// el resto de la pantalla.
+  final _liveExtent = ValueNotifier<double>(0.36);
 
-  /// Alto del resumen de la ruta y de la tarjeta de la vía (medidos).
+  /// La misma medida, pero solo cuando la hoja se queda quieta: es la que
+  /// mueve el relleno del mapa (cambiarlo en cada cuadro trabaría el mapa).
+  double _sheetExtent = 0.36;
+  Timer? _settle;
+
+  /// Alto del resumen de la ruta (medido).
   double _routeCardHeight = 0;
-  double _corridorBottom = 0;
 
   /// Relleno inferior visto DENTRO del Scaffold (incluye la barra, porque
   /// extendBody suma su alto); el context del State no lo ve.
@@ -60,11 +62,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _measure() {
     if (!mounted) return;
-    final cb = _corridorKey.currentContext?.findRenderObject() as RenderBox?;
-    if (cb != null && cb.hasSize) {
-      final bottom = cb.localToGlobal(Offset.zero).dy + cb.size.height;
-      if ((bottom - _corridorBottom).abs() > 1) setState(() => _corridorBottom = bottom);
-    }
     final rb = _routeCardKey.currentContext?.findRenderObject() as RenderBox?;
     if (rb != null && rb.hasSize && (rb.size.height - _routeCardHeight).abs() > 1) {
       setState(() => _routeCardHeight = rb.size.height);
@@ -78,18 +75,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _sheetInitial = fraction;
       _sheetExtent = fraction;
     });
+    _liveExtent.value = fraction;
     if (_sheetCtrl.isAttached) _sheetCtrl.jumpTo(fraction);
+  }
+
+  void _onSheetExtent(double extent) {
+    _liveExtent.value = extent;
+    _settle?.cancel();
+    _settle = Timer(const Duration(milliseconds: 140), () {
+      if (mounted && (extent - _sheetExtent).abs() > 0.004) {
+        setState(() => _sheetExtent = extent);
+      }
+    });
   }
 
   @override
   void dispose() {
+    _settle?.cancel();
+    _liveExtent.dispose();
     _sheetCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final corridor = ref.watch(corridorStatusProvider);
     final route = ref.watch(activeRouteProvider);
     final topInset = MediaQuery.of(context).padding.top;
     // El saludo aparece cuando carga el perfil y cambia el alto de la parte
@@ -113,35 +122,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           }
           WidgetsBinding.instance.addPostFrameCallback((_) => _measure());
 
-          // Lo que tapa el mapa: arriba la tarjeta de la vía; abajo la hoja
-          // (sigue al dedo al arrastrarla) o, con ruta, su resumen.
+          // Lo que tapa el mapa abajo: la hoja (ya quieta) o el resumen de la
+          // ruta. Arriba solo la barra de estado.
           final covered = route != null
               ? _routeCardHeight + inset + GSSpacing.s3
               : _sheetExtent * _stackHeight;
           final mapPadding = EdgeInsets.only(
-            top: (_corridorBottom > 0 ? _corridorBottom : topInset + 96) + GSSpacing.s2,
+            top: topInset + GSSpacing.s2,
             bottom: covered.clamp(0, _stackHeight * 0.8).toDouble(),
           );
+          final stackHeight = _stackHeight;
 
           return Stack(
             children: [
               // El mapa ocupa toda la pantalla, también detrás de la barra
-              // de estado; sus controles empiezan bajo la tarjeta de la vía.
+              // de estado. Los botones flotantes siguen a la hoja.
               Positioned.fill(
                 child: HomeMap(
-                  controlsTop: mapPadding.top,
+                  controlsTop: topInset + GSSpacing.s3,
                   padding: mapPadding,
-                ),
-              ),
-
-              // ── Estado de la Troncal: flota sobre el mapa ─────────────────
-              Positioned(
-                left: GSSpacing.s3,
-                right: GSSpacing.s3,
-                top: topInset + GSSpacing.s2,
-                child: KeyedSubtree(
-                  key: _corridorKey,
-                  child: _CorridorHeader(corridor: corridor),
+                  sheetExtent: _liveExtent,
+                  stackHeight: stackHeight,
+                  fixedBottom: route != null ? covered : null,
                 ),
               ),
 
@@ -150,9 +152,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               if (route == null)
                 NotificationListener<DraggableScrollableNotification>(
                   onNotification: (n) {
-                    if ((n.extent - _sheetExtent).abs() > 0.004) {
-                      setState(() => _sheetExtent = n.extent);
-                    }
+                    _onSheetExtent(n.extent);
                     return false;
                   },
                   child: DraggableScrollableSheet(
@@ -189,25 +189,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         }),
       ),
       bottomNavigationBar: const GSBottomNav(current: GSNavTab.home),
-    );
-  }
-}
-
-class _CorridorHeader extends StatelessWidget {
-  const _CorridorHeader({required this.corridor});
-  final AsyncValue<CorridorStatus> corridor;
-
-  @override
-  Widget build(BuildContext context) {
-    final status = corridor.valueOrNull;
-    return GSCorridorLine(
-      status: status,
-      isLoading: corridor.isLoading,
-      floating: true,
-      onTap: () => showCorridorDetailSheet(
-        context,
-        status ?? const CorridorStatus.noData(),
-      ),
     );
   }
 }

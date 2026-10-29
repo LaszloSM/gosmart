@@ -4,6 +4,8 @@
 // cámara limitada a La Guajira, estilo claro y nocturno propios). Sin clave (pruebas, web del admin) queda
 // flutter_map con OpenStreetMap como respaldo.
 // Lo demás de la app no sabe cuál se usa.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_map/flutter_map.dart' as fm;
@@ -12,8 +14,10 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../core/env.dart';
 import '../../../core/region.dart';
+import '../../../models/map_alert.dart';
 import '../../../models/route_result.dart';
 import '../../../theme/design_tokens.dart';
+import '../../../widgets/gs_alert_badge.dart';
 
 /// Lo que el inicio le pide a la cámara, sea cual sea el mapa.
 abstract class MapViewController {
@@ -44,7 +48,13 @@ class MapView extends StatelessWidget {
     this.user,
     this.pin,
     this.padding = EdgeInsets.zero,
+    this.alerts = const [],
+    this.onAlertTap,
   });
+
+  /// Alertas tipo Waze: globos que se vuelven puntos al alejar el mapa.
+  final List<MapAlert> alerts;
+  final ValueChanged<MapAlert>? onAlertTap;
 
   /// Lo que tapan la tarjeta de la vía (arriba) y la hoja o el resumen de la
   /// ruta (abajo): la cámara centra y encuadra en lo que queda visible.
@@ -75,6 +85,37 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
   gm.GoogleMapController? _c;
   String? _nightStyle;
   String? _lightStyle;
+
+  /// Tamaño actual de los pines (cambia solo al cruzar un umbral de zoom).
+  AlertPinSize _pinSize = alertPinSizeFor(15.5);
+
+  /// Imágenes de los pines ya dibujadas: tipo|tamaño|noche → ícono.
+  final _pinCache = <String, gm.BitmapDescriptor>{};
+  bool _drawingPins = false;
+
+  String _pinKey(AlertKind k, AlertPinSize s, bool dark) => '${k.id}|${s.name}|$dark';
+
+  /// Dibuja (una sola vez) las imágenes que faltan para los tipos visibles.
+  Future<void> _ensurePins(bool dark) async {
+    if (_drawingPins) return;
+    final missing = {
+      for (final a in widget.view.alerts)
+        if (!_pinCache.containsKey(_pinKey(a.kind, _pinSize, dark))) a.kind,
+    };
+    if (missing.isEmpty) return;
+    _drawingPins = true;
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final size = _pinSize;
+    for (final k in missing) {
+      final bytes = await renderAlertPin(k, size, pixelRatio: dpr, dark: dark);
+      _pinCache[_pinKey(k, size, dark)] = gm.BitmapDescriptor.bytes(
+        bytes,
+        imagePixelRatio: dpr,
+      );
+    }
+    _drawingPins = false;
+    if (mounted) setState(() {});
+  }
 
   static gm.LatLng _g(LatLng p) => gm.LatLng(p.latitude, p.longitude);
 
@@ -114,6 +155,7 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
     final v = widget.view;
     final night = Theme.of(context).brightness == Brightness.dark;
     final legs = v.route?.legs ?? const [];
+    if (v.alerts.isNotEmpty) unawaited(_ensurePins(night));
     return gm.GoogleMap(
       initialCameraPosition: gm.CameraPosition(target: _g(v.initialCenter), zoom: 15.5),
       padding: v.padding,
@@ -136,6 +178,12 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
       cameraTargetBounds: gm.CameraTargetBounds(gm.LatLngBounds(
           southwest: _g(guajiraSouthWest), northeast: _g(guajiraNorthEast))),
       onLongPress: (p) => v.onLongPress(LatLng(p.latitude, p.longitude)),
+      // Al alejar o acercar, los pines cambian de tamaño solo al cruzar un
+      // umbral (no en cada cuadro): globo grande, globo chico, punto.
+      onCameraMove: (pos) {
+        final next = alertPinSizeFor(pos.zoom);
+        if (next != _pinSize) setState(() => _pinSize = next);
+      },
       polylines: {
         if (v.route != null)
           for (var i = 0; i < v.route!.legs.length; i++)
@@ -168,6 +216,20 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
           ),
         if (v.pin != null)
           gm.Marker(markerId: const gm.MarkerId('pin'), position: _g(v.pin!)),
+        for (final a in v.alerts)
+          if (_pinCache[_pinKey(a.kind, _pinSize, night)] case final icon?)
+            gm.Marker(
+              markerId: gm.MarkerId('alert-${a.id}'),
+              position: _g(a.at),
+              icon: icon,
+              anchor: _pinSize == AlertPinSize.dot
+                  ? const Offset(0.5, 0.5)
+                  : const Offset(0.5, 1),
+              // Lo grave queda encima de lo demás.
+              zIndexInt: a.kind.severity == AlertSeverity.severe ? 3 : 2,
+              consumeTapEvents: true,
+              onTap: v.onAlertTap == null ? null : () => v.onAlertTap!(a),
+            ),
       },
     );
   }
@@ -184,6 +246,7 @@ class _FlutterMapView extends StatefulWidget {
 
 class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewController {
   final _c = fm.MapController();
+  AlertPinSize _pinSize = alertPinSizeFor(14);
 
   @override
   void initState() {
@@ -218,6 +281,10 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
         ),
         interactionOptions: const fm.InteractionOptions(flags: fm.InteractiveFlag.all),
         onLongPress: (_, point) => v.onLongPress(point),
+        onPositionChanged: (camera, _) {
+          final next = alertPinSizeFor(camera.zoom);
+          if (next != _pinSize) setState(() => _pinSize = next);
+        },
       ),
       children: [
         // Estilo claro: DESIGN.md pide legibilidad al sol.
@@ -291,6 +358,17 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
               alignment: Alignment.topCenter,
               child: Icon(Icons.location_on_rounded, color: GSColors.text, size: 44),
             ),
+          for (final a in v.alerts)
+            fm.Marker(
+              point: a.at,
+              width: 48,
+              height: 48,
+              child: _AlertPinWidget(
+                alert: a,
+                size: _pinSize,
+                onTap: v.onAlertTap == null ? null : () => v.onAlertTap!(a),
+              ),
+            ),
         ]),
       ],
     );
@@ -299,3 +377,53 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
 
 /// Centro inicial cuando aún no hay GPS.
 const defaultMapCenter = GSRegion.riohacha;
+
+
+/// Pin de alerta en el mapa de respaldo: crece y se encoge con el zoom en
+/// 200 ms (ease-out), como Waze; con "quitar animaciones" cambia sin más.
+class _AlertPinWidget extends StatelessWidget {
+  const _AlertPinWidget({required this.alert, required this.size, this.onTap});
+  final MapAlert alert;
+  final AlertPinSize size;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final d = switch (size) {
+      AlertPinSize.dot => 14.0,
+      AlertPinSize.small => 28.0,
+      AlertPinSize.full => 40.0,
+    };
+    final reduce = MediaQuery.of(context).disableAnimations;
+    return Semantics(
+      button: onTap != null,
+      label: '${alert.kind.label}, ${alertAge(alert.happenedAt)}',
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Center(
+          child: AnimatedSwitcher(
+            duration: reduce ? Duration.zero : GSDuration.fast,
+            switchInCurve: GSCurve.enter,
+            transitionBuilder: (child, anim) => ScaleTransition(
+              scale: Tween(begin: 0.6, end: 1.0).animate(anim),
+              child: FadeTransition(opacity: anim, child: child),
+            ),
+            child: size == AlertPinSize.dot
+                ? Container(
+                    key: const ValueKey('dot'),
+                    width: d,
+                    height: d,
+                    decoration: BoxDecoration(
+                      color: alertColors(alert.kind).$1,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                  )
+                : GSAlertBadge(key: ValueKey(size), kind: alert.kind, size: d),
+          ),
+        ),
+      ),
+    );
+  }
+}

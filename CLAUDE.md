@@ -84,6 +84,7 @@ All migrations live in `supabase/migrations/`. Run them in order in the Supabase
 | `016_payments.sql` | Pago por tramo (D5): `charges` (QR del conductor), `leg_payments` (idempotente; un viaje se paga una vez), `wallet_topups` (Wompi). RPCs: `pay_ride` (saldo o efectivo), `confirm_cash`, `create_charge`, `charge_preview`, `pay_charge`, `trip_receipt`; solo servidor: `wallet_topup_create/settle`. Transferencias con `_wallet_transfer` (bloqueo en orden). Tipo de movimiento nuevo: `earning`. |
 | `017_trust_admin.sql` | `ride_ratings` (1–5 + etiquetas cerradas, sin texto libre), bloqueo por 2 impagos confirmados (trigger en `ride_requests`), `user_rating`, `ride_driver_view` con calificación; admin: `admin_driver_queue`, `admin_recent_reports`, `admin_remove_report`, `admin_metrics` (sin datos personales). |
 | `018_push.sql` | `push_tokens` + `register_push_token`; `push_targets_for_request` (conductores disponibles ≤ 3 km, vistos hace < 10 min) y `push_targets_for_report` (viajeros en la Troncal), solo service_role. |
+| `021_map_alerts.sql` | Alertas estilo Waze: `road_reports.segment_id` opcional (reporte por punto en la ciudad, bbox La Guajira), tipos nuevos `trancon`/`peligro`/`obra`, duplicado = mismo tipo a ≤150 m en 30 min. RPC pública `map_alerts(bbox)` (pines con votos, `mine`, `my_vote`). `road_status()` y push solo cuentan reportes con tramo. |
 | `010_wallet_hardening.sql` | **Security fix for 008.** Drops user UPDATE on `wallets` and INSERT on `wallet_transactions`; revokes `recharge_wallet` from clients; adds `idempotency_key`; new RPC `wallet_recharge_simulated(p_amount, p_idempotency_key)` that uses `auth.uid()`. Backfills wallets for older users. |
 
 **SQL tests:** `supabase/tests/` runs on a plain Postgres 16 (CI job `sql-tests`). `_supabase_stub.sql`
@@ -212,6 +213,10 @@ All providers in `lib/providers/`. Pattern: `StateNotifierProvider<Notifier, Asy
 | `transportGraphProvider` | `FutureProvider<GraphBundle>` | `graph_snapshot()` or the cached copy (planner works offline) |
 | `activeTripProvider` | `FutureProvider<ChainedTrip?>` | Planned/in-progress chained trip with legs; null for guests |
 | `dispatchEnabledProvider` | `FutureProvider<bool>` | `app_flags.dispatch_enabled` |
+| `mapAlertsProvider` | `AsyncNotifierProvider<…, List<MapAlert>>` | `map_alerts()` (+ caché); `refresh()`, `vote()` optimista |
+| `alertPrefsProvider` | `StateNotifierProvider<…, Map<String, AlertPref>>` | Por tipo: ver en el mapa / avisar al acercarse (SharedPreferences `alert_prefs_v1`) |
+| `visibleAlertsProvider` | `Provider<List<MapAlert>>` | Alertas de los tipos que el usuario quiere ver |
+| `themeModeProvider` | `StateNotifierProvider<…, ThemeMode>` | Sistema / claro / oscuro (`theme_mode_v1`); cambiar con `ThemeSwitchHost.run` (fundido) |
 | `topFavoritePlacesProvider` | `Provider<List<FavoritePlace>>` | Top 3 by use_count |
 
 **Critical state pattern** — `updateProfile()` preserves previous state on error:
@@ -316,7 +321,9 @@ AppRoutes.paymentValidation // '/payment-validation'
 AppRoutes.nfcSimulator     // '/debug/nfc-simulator'
 AppRoutes.emergencyContacts // '/safety/contacts'  (needs account)
 AppRoutes.trip             // '/trip'    (pestaña Viaje; needs account)
-AppRoutes.report           // '/report'  (pestaña Reportar; needs account)
+AppRoutes.report           // '/report'  → redirige a /home (se reporta con el botón ámbar del mapa)
+AppRoutes.settings         // '/settings'        Configuración: tema, alertas, cuenta, legal, salir (public)
+AppRoutes.alertSettings    // '/settings/alerts' qué alertas ver y de cuáles avisar (public)
 AppRoutes.receipt          // '/trip/receipt?id=<trip>'  recibo único (D5)
 AppRoutes.scanPay          // '/pay/scan?leg=<leg>'      pagar el QR del conductor
 AppRoutes.driverCharge     // '/driver/charge'           cobrar con QR
@@ -390,7 +397,9 @@ GSShadow.float (over the map) / .sheet    GSSize.touchTarget=48 .touchTargetDriv
 - `GSCard`, `GSInfoCard`, `GSOptionCard`, `GSModeChip`
 - `GSCorridorLine(floating:)`: corridor line; `floating: true` over the map on Home; state always icon + word
 - `GSTextField`, `GSSearchBar`
-- `GSBottomNav(current: GSNavTab.home|trip|report|wallet|profile)` — navigates by itself; 5 tabs (DS1)
+- `GSBottomNav(current: GSNavTab.home|trip|wallet|profile)` — navigates by itself; 4 tabs (Reportar salió de la barra)
+- `GSAlertBadge(kind:, size:, ring:)` + `renderAlertPin()` (lib/widgets/gs_alert_badge.dart): globo de alerta Waze; en el mapa, PNG por tipo × tamaño de zoom (`alertPinSizeFor`: punto / pequeño / completo)
+- Motion helpers (lib/core/motion.dart, flutter_animate): `.gsEnter(context, delay:)` y `.gsPop(context)`; respetan `disableAnimations`
 - `GSBottomSheet`
 - `GSToast`, `GSSkeletonLoader`, `GSEmptyState`
 
@@ -496,6 +505,8 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 | `url_launcher` | ^6.3 | WhatsApp/SMS/123, Wompi checkout |
 | `mobile_scanner` | ^6.0 | Scan the driver's payment QR |
 | `collection` | ^1.19 | PriorityQueue for the planner |
+| `flutter_animate` | ^4.5.2 | Entradas escalonadas y pops (vía `lib/core/motion.dart`) |
+| `animations` | ^2.0.11 | Transiciones Material (SharedAxis / FadeThrough) |
 
 ## Common Gotchas
 
@@ -548,4 +559,8 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 - **`ThemeData(fontFamily:)` overrides every textTheme family**: the type scale is re-applied with
   `base.copyWith(textTheme: base.textTheme.merge(textTheme))` in `app_theme.dart`. Keep that.
 - **Draw arrows with `Icons.arrow_forward_rounded`**, never a text glyph.
+- **Alerts (Waze)**: report with `showReportSheet(context)` (amber FAB on the map); tap a pin → `showAlertDetail`
+  ("Sigue ahí" / "Ya no está"). `AlertProximityBanner` warns at ~400 m once per alert. Alert colors
+  `GSColors.alertSevere/Caution/Clear` are road state (allowed red/amber/green).
+- **`AnimatedSize` with `Duration.zero` asserts** (RenderAnimatedSize re-dirties itself): with reduced motion use `Duration(milliseconds: 1)`.
 - **`GSCard` wraps its child in a transparent `Material`** so `ListTile`s inside it render ripples (newer Flutter asserts otherwise).

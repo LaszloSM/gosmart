@@ -238,6 +238,15 @@ BEGIN
      md5('demo-reten')::uuid),
     (v_pas, 'desvio-albania-cuestecitas', 'hueco', now() - interval '15 minutes', now() + interval '7 days',
      md5('demo-hueco')::uuid);
+  -- Alertas en las calles de Riohacha (como Waze): puntos reales del centro y
+  -- del sur. Coordenadas aproximadas; sin tramo no tocan el estado de la Troncal.
+  INSERT INTO road_reports (user_id, segment_id, kind, lat, lng, happened_at, expires_at, idempotency_key) VALUES
+    (v_pas, NULL, 'hueco',   11.5360, -72.9115, now() - interval '2 days',    now() + interval '7 days', md5('demo-city-hueco-1')::uuid),
+    (v_drv, NULL, 'hueco',   11.5298, -72.9046, now() - interval '5 hours',   now() + interval '7 days', md5('demo-city-hueco-2')::uuid),
+    (v_col, NULL, 'trancon', 11.5432, -72.9078, now() - interval '9 minutes', now() + interval '7 days', md5('demo-city-trancon')::uuid),
+    (v_drv, NULL, 'reten',   11.5245, -72.8990, now() - interval '25 minutes',now() + interval '7 days', md5('demo-city-reten')::uuid),
+    (v_pas, NULL, 'peligro', 11.5401, -72.9002, now() - interval '40 minutes',now() + interval '7 days', md5('demo-city-peligro')::uuid),
+    (v_col, NULL, 'obra',    11.5333, -72.9170, now() - interval '3 days',    now() + interval '7 days', md5('demo-city-obra')::uuid);
   IF p_scenario = 'bloqueo' THEN
     INSERT INTO road_reports (user_id, segment_id, kind, happened_at, expires_at, idempotency_key)
     VALUES (v_col, 'troncal-40-50', 'bloqueo', now() - interval '10 minutes', now() + interval '7 days',

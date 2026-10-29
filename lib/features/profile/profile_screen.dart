@@ -1,7 +1,6 @@
 // lib/features/profile/profile_screen.dart
 // Perfil: la placa con tu nombre, tus datos y la seguridad de la cuenta.
 // Solo muestra lo que funciona: nada de interruptores o enlaces de adorno.
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,16 +10,13 @@ import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../router/app_router.dart';
-import '../../services/auth_service.dart';
 import '../../services/profile_service.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
 import '../../widgets/gs_bottom_sheet.dart';
 import '../../widgets/gs_brand_hero.dart';
-import '../../widgets/gs_button.dart';
 import '../../widgets/gs_list_row.dart';
 import '../../widgets/gs_toast.dart';
-import 'widgets/change_password_form.dart';
 import 'widgets/edit_personal_info_form.dart';
 import 'widgets/profile_header.dart';
 import '../../widgets/gs_nav_spacer.dart';
@@ -37,8 +33,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _phoneCtrl = TextEditingController();
   final _cedulaCtrl = TextEditingController();
   final _cityCtrl = TextEditingController();
-  final _newPassCtrl = TextEditingController();
-  final _confirmPassCtrl = TextEditingController();
 
   DateTime? _birthDate;
   bool _uploadingPhoto = false;
@@ -50,8 +44,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _phoneCtrl,
       _cedulaCtrl,
       _cityCtrl,
-      _newPassCtrl,
-      _confirmPassCtrl,
     ]) {
       c.dispose();
     }
@@ -135,78 +127,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  void _showChangePassword() {
-    _newPassCtrl.clear();
-    _confirmPassCtrl.clear();
-    GSBottomSheet.show(
-      context: context,
-      title: 'Cambiar contraseña',
-      initialChildSize: 0.65,
-      child: ChangePasswordForm(
-        newPassCtrl: _newPassCtrl,
-        confirmPassCtrl: _confirmPassCtrl,
-        onSave: () async {
-          final messenger = ScaffoldMessenger.of(context);
-          final navigator = Navigator.of(context);
-          try {
-            await ref
-                .read(profileProvider.notifier)
-                .updatePassword(_newPassCtrl.text);
-            navigator.pop();
-            GSToast.showWithMessenger(messenger,
-                message: 'Contraseña cambiada', type: GSToastType.success);
-          } catch (_) {
-            GSToast.showWithMessenger(messenger,
-                message: 'No pudimos cambiar la contraseña. Intenta de nuevo.',
-                type: GSToastType.error);
-          }
-        },
-      ),
-    );
-  }
 
-  Future<void> _confirmDeleteAccount() async {
-    final messenger = ScaffoldMessenger.of(context);
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('¿Eliminar tu cuenta?'),
-        content: const Text(
-            'Se borran tu perfil, tu billetera de prueba, tus contactos de '
-            'emergencia y tus viajes. No se puede deshacer.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancelar')),
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Eliminar')),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    try {
-      await authService.deleteAccount();
-      await authService.signOut();
-    } catch (_) {
-      GSToast.showWithMessenger(messenger,
-          message: 'No pudimos eliminar tu cuenta. Revisa tu conexión '
-              'e intenta de nuevo.',
-          type: GSToastType.error);
-    }
-  }
 
-  Future<void> _signOut() async {
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      // El router lleva al login solo, con el evento de auth.
-      await authService.signOut();
-    } catch (_) {
-      GSToast.showWithMessenger(messenger,
-          message: 'No pudimos cerrar sesión. Intenta de nuevo.',
-          type: GSToastType.error);
-    }
-  }
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -248,11 +173,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     subtitle: 'Reciben tu ubicación cuando pides ayuda',
                     onTap: () => context.push(AppRoutes.emergencyContacts),
                   ),
-                  GSListRow(
-                    icon: Icons.lock_rounded,
-                    title: 'Cambiar contraseña',
-                    onTap: _showChangePassword,
-                  ),
                 ]),
                 if (profile?.isAdmin ?? false) ...[
                   const GSSectionTitle('Administración'),
@@ -265,51 +185,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                   ]),
                 ],
-                const GSSectionTitle('Tus datos y la ley'),
+                const GSSectionTitle('La app'),
                 GSGroup(children: [
                   GSListRow(
-                    icon: Icons.privacy_tip_rounded,
-                    title: 'Cómo usamos tus datos',
-                    onTap: () => context.push(AppRoutes.privacy),
-                  ),
-                  GSListRow(
-                    icon: Icons.description_rounded,
-                    title: 'Términos de uso',
-                    onTap: () => context.push(AppRoutes.terms),
-                  ),
-                  GSListRow(
-                    icon: Icons.delete_forever_rounded,
-                    iconColor: GSColors.roadClosed,
-                    title: 'Eliminar mi cuenta',
-                    subtitle: 'Borra tu perfil, billetera, contactos y viajes',
-                    onTap: _confirmDeleteAccount,
+                    icon: Icons.settings_rounded,
+                    title: 'Configuración',
+                    subtitle: 'Tema, alertas del mapa, contraseña, privacidad y salir',
+                    onTap: () => context.push(AppRoutes.settings),
                   ),
                 ]),
-                if (kDebugMode) ...[
-                  const GSSectionTitle('Desarrollo'),
-                  GSGroup(children: [
-                    GSListRow(
-                      icon: Icons.nfc_rounded,
-                      title: 'Simulador NFC',
-                      subtitle: 'Solo en builds de depuración',
-                      onTap: () => context.push(AppRoutes.nfcSimulator),
-                    ),
-                  ]),
-                ],
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                      GSSpacing.s4, GSSpacing.s8, GSSpacing.s4, GSSpacing.s3),
-                  child: GSButton(
-                    label: 'Cerrar sesión',
-                    variant: GSButtonVariant.outline,
-                    leadingIcon: Icons.logout_rounded,
-                    onPressed: _signOut,
-                  ),
-                ),
-                Center(
-                  child: Text('GoSmart 1.0.0',
-                      style: Theme.of(context).textTheme.bodySmall),
-                ),
                 const GSNavSpacer(extra: GSSpacing.s4 + GSRadius.xl),
               ],
             ),

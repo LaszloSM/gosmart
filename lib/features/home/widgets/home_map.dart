@@ -1,18 +1,26 @@
 // lib/features/home/widgets/home_map.dart
 // Mapa de fondo del inicio: GPS, ruta activa y "¿Ir aquí?" con pulsación larga.
 // El mapa en sí (Google o flutter_map) vive en map_view.dart.
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/region.dart';
+import '../../alerts/alert_banner.dart';
+import '../../alerts/alert_detail_sheet.dart';
+import '../../alerts/report_sheet.dart';
+import '../../../providers/map_alerts_provider.dart';
 import '../../../models/route_result.dart';
 import '../../../providers/active_route_provider.dart';
 import '../../../router/app_router.dart';
 import '../../../services/geocoding_service.dart';
 import '../../../services/location_service.dart';
 import '../../../theme/design_tokens.dart';
+import '../../../widgets/gs_pressable.dart';
 import 'map_view.dart';
 
 class HomeMap extends ConsumerStatefulWidget {
@@ -20,10 +28,21 @@ class HomeMap extends ConsumerStatefulWidget {
     super.key,
     this.controlsTop = GSSpacing.s3,
     this.padding = EdgeInsets.zero,
+    this.sheetExtent,
+    this.stackHeight = 0,
+    this.fixedBottom,
   });
 
-  /// Dónde empiezan los controles flotantes (bajo la tarjeta de la vía).
+  /// Dónde empiezan los avisos de arriba (bajo la barra de estado).
   final double controlsTop;
+
+  /// Fracción de pantalla que tapa la hoja, en vivo: los botones flotantes
+  /// (ubicarme, reportar) la siguen sin reconstruir el mapa.
+  final ValueListenable<double>? sheetExtent;
+  final double stackHeight;
+
+  /// Con ruta activa: alto fijo del resumen (los botones van encima).
+  final double? fixedBottom;
 
   /// Parte del mapa tapada arriba y abajo (ver MapView.padding).
   final EdgeInsets padding;
@@ -39,11 +58,24 @@ class _HomeMapState extends ConsumerState<HomeMap> {
   bool _hasFix = false;
   LatLng? _longPressPoint;
 
+  Timer? _alertsTimer;
+
   @override
   void initState() {
     super.initState();
     // Resolver el GPS después del primer frame (no async en initState).
     WidgetsBinding.instance.addPostFrameCallback((_) => _recenter());
+    // Las alertas cambian rápido (un retén dura 2 h): se refrescan cada 90 s
+    // mientras el mapa está abierto.
+    _alertsTimer = Timer.periodic(const Duration(seconds: 90), (_) {
+      if (mounted) ref.read(mapAlertsProvider.notifier).refresh();
+    });
+  }
+
+  @override
+  void dispose() {
+    _alertsTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _recenter() async {
@@ -60,6 +92,7 @@ class _HomeMapState extends ConsumerState<HomeMap> {
   @override
   Widget build(BuildContext context) {
     final activeRoute = ref.watch(activeRouteProvider);
+    final alerts = ref.watch(visibleAlertsProvider);
 
     // Encuadrar la ruta cuando se activa una nueva.
     ref.listen<RouteResult?>(activeRouteProvider, (prev, next) {
@@ -82,50 +115,150 @@ class _HomeMapState extends ConsumerState<HomeMap> {
           user: _hasFix ? _userPosition : null,
           pin: _longPressPoint,
           padding: widget.padding,
+          alerts: alerts,
+          onAlertTap: (a) => showAlertDetail(context, a),
         ),
 
-        // Arriba del mapa: la hoja inferior tapa la parte de abajo.
-        if (_longPressPoint != null)
-          Positioned(
-            left: GSSpacing.s3,
-            right: GSSpacing.s3,
-            top: widget.controlsTop,
-            child: _GoHereCard(
-              point: _longPressPoint!,
-              onConfirm: () {
-                ref.read(pendingDestinationProvider.notifier).state =
-                    _longPressPoint;
-                setState(() => _longPressPoint = null);
-                context.push(AppRoutes.routePlanner);
-              },
-              onCancel: () => setState(() => _longPressPoint = null),
-            ),
-          )
-        else
-          Positioned(
-            right: GSSpacing.s3,
-            top: widget.controlsTop,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: GSShadow.float,
-              ),
-              child: Material(
-              color: GSColors.surface,
-              shape: const CircleBorder(),
-              child: IconButton(
-                tooltip: 'Mi ubicación',
-                onPressed: _recenter,
-                constraints: const BoxConstraints.tightFor(
-                  width: GSSize.touchTarget,
-                  height: GSSize.touchTarget,
-                ),
-                icon: Icon(Icons.my_location_rounded, color: GSColors.brand),
-              ),
-            ),
+        // Arriba: "¿Ir aquí?" tras la pulsación larga, o el aviso de alerta
+        // cercana (Waze) mientras te mueves.
+        Positioned(
+          left: GSSpacing.s3,
+          right: GSSpacing.s3,
+          top: widget.controlsTop,
+          child: _longPressPoint != null
+              ? _GoHereCard(
+                  point: _longPressPoint!,
+                  onConfirm: () {
+                    ref.read(pendingDestinationProvider.notifier).state =
+                        _longPressPoint;
+                    setState(() => _longPressPoint = null);
+                    context.push(AppRoutes.routePlanner);
+                  },
+                  onCancel: () => setState(() => _longPressPoint = null),
+                )
+              : const AlertProximityBanner(),
+        ),
+
+        // Abajo: ubicarme (izquierda) y reportar (derecha), justo encima de
+        // la hoja; la siguen al arrastrarla y se ocultan si la hoja sube mucho.
+        _FloatingControls(
+          sheetExtent: widget.sheetExtent,
+          stackHeight: widget.stackHeight,
+          fixedBottom: widget.fixedBottom,
+          onRecenter: _recenter,
+          onReport: () => showReportSheet(context),
+          showReport: activeRoute == null,
+        ),
+      ],
+    );
+  }
+}
+
+/// Sin hoja (hay ruta): nada que escuchar.
+final _noSheet = ValueNotifier<double>(0);
+
+/// Los dos botones flotantes del mapa. Escuchan la fracción viva de la hoja.
+class _FloatingControls extends StatelessWidget {
+  const _FloatingControls({
+    required this.sheetExtent,
+    required this.stackHeight,
+    required this.fixedBottom,
+    required this.onRecenter,
+    required this.onReport,
+    required this.showReport,
+  });
+  final ValueListenable<double>? sheetExtent;
+  final double stackHeight;
+  final double? fixedBottom;
+  final VoidCallback onRecenter;
+  final VoidCallback onReport;
+  final bool showReport;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<double>(
+      valueListenable: sheetExtent ?? _noSheet,
+      builder: (context, extent, child) {
+        final bottom = (fixedBottom ?? extent * stackHeight) + GSSpacing.s3;
+        // Con la hoja casi arriba no hay mapa que ubicar: se van.
+        final hidden = fixedBottom == null && extent > 0.62;
+        return Positioned(
+          left: GSSpacing.s3,
+          right: GSSpacing.s3,
+          bottom: bottom,
+          child: IgnorePointer(
+            ignoring: hidden,
+            child: AnimatedOpacity(
+              opacity: hidden ? 0 : 1,
+              duration: MediaQuery.of(context).disableAnimations
+                  ? Duration.zero
+                  : GSDuration.fast,
+              child: child,
             ),
           ),
-      ],
+        );
+      },
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          _RoundFab(
+            tooltip: 'Mi ubicación',
+            icon: Icons.my_location_rounded,
+            background: GSColors.surface,
+            foreground: GSColors.brand,
+            onTap: onRecenter,
+          ),
+          const Spacer(),
+          if (showReport)
+            _RoundFab(
+              tooltip: 'Reportar en la vía',
+              icon: Icons.add_location_alt_rounded,
+              background: GSColors.alertCaution,
+              foreground: GSColors.onAlertCaution,
+              size: 60,
+              onTap: onReport,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Botón redondo flotante con sombra y la presión de 0.97 (GSPressable).
+class _RoundFab extends StatelessWidget {
+  const _RoundFab({
+    required this.tooltip,
+    required this.icon,
+    required this.background,
+    required this.foreground,
+    required this.onTap,
+    this.size = GSSize.touchTarget + 4,
+  });
+  final String tooltip;
+  final IconData icon;
+  final Color background;
+  final Color foreground;
+  final VoidCallback onTap;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: GSPressable(
+        onTap: onTap,
+        semanticLabel: tooltip,
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: background,
+            shape: BoxShape.circle,
+            boxShadow: GSShadow.float,
+          ),
+          child: Icon(icon, color: foreground, size: size * 0.46),
+        ),
+      ),
     );
   }
 }

@@ -3,6 +3,9 @@
 // anillo blanco, el nombre, el correo, "Editar perfil" y el rol.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../router/app_router.dart';
 
 import '../../../providers/profile_provider.dart';
 import '../../../theme/design_tokens.dart';
@@ -31,6 +34,12 @@ class ProfileHeader extends ConsumerWidget {
 
     return GSBrandHero(
       // Sin título: el nombre es el título y la pestaña ya dice "Perfil".
+      // El engranaje arriba a la derecha lleva a Configuración (Waze/Uber).
+      trailing: IconButton(
+        tooltip: 'Configuración',
+        icon: Icon(Icons.settings_rounded, color: GSColors.onBrandDeep),
+        onPressed: () => context.push(AppRoutes.settings),
+      ),
       child: profileAsync.when(
         skipLoadingOnRefresh: true,
         skipLoadingOnReload: true,

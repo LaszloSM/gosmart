@@ -14,6 +14,8 @@ import '../features/auth/login_screen.dart';
 import '../features/auth/register_screen.dart';
 import '../features/auth/sms_verify_screen.dart';
 import '../features/home/home_screen.dart';
+import '../features/settings/alert_settings_screen.dart';
+import '../features/settings/settings_screen.dart';
 import '../features/wallet/wallet_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/routes/route_planner_screen.dart';
@@ -23,7 +25,6 @@ import '../features/nfc_simulator/nfc_auth_simulator_screen.dart';
 import '../features/safety/emergency_contacts_screen.dart';
 import '../features/legal/legal_screen.dart';
 import '../features/driver/driver_home_screen.dart';
-import '../features/corridor/report_screen.dart';
 import '../features/trip/trip_screen.dart';
 import '../features/admin/admin_screen.dart';
 import '../features/trip/receipt_screen.dart';
@@ -112,6 +113,8 @@ abstract class AppRoutes {
   static const driverCharge     = '/driver/charge';
   static const driverSignup     = '/driver/signup';
   static const terms            = '/legal/terms';
+  static const settings         = '/settings';
+  static const alertSettings    = '/settings/alerts';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -136,8 +139,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == AppRoutes.aiChat ||
           // Mirar sí, actuar con cuenta: la pantalla pide entrar al enviar.
           state.matchedLocation == AppRoutes.trip ||
-          state.matchedLocation == AppRoutes.report ||
           state.matchedLocation == AppRoutes.privacy ||
+          // Tema y alertas son del teléfono: también para invitados.
+          state.matchedLocation == AppRoutes.settings ||
+          state.matchedLocation == AppRoutes.alertSettings ||
           state.matchedLocation == AppRoutes.terms ||
           state.matchedLocation == AppRoutes.splash ||
           state.matchedLocation == AppRoutes.intro ||
@@ -241,9 +246,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.admin,
         pageBuilder: (context, state) => _page(state, const AdminScreen()),
       ),
+      // Reportar ya no es pestaña: se hace con el botón del mapa (Waze).
+      // Los enlaces viejos llevan al inicio.
       GoRoute(
         path: AppRoutes.report,
-        pageBuilder: (context, state) => _tab(state, const ReportScreen()),
+        redirect: (context, state) => AppRoutes.home,
       ),
       GoRoute(
         path: AppRoutes.driver,
@@ -253,6 +260,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.driverSignup,
         pageBuilder: (context, state) =>
             _page(state, const DriverSignupScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.settings,
+        pageBuilder: (context, state) => _page(state, const SettingsScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.alertSettings,
+        pageBuilder: (context, state) => _page(state, const AlertSettingsScreen()),
       ),
       GoRoute(
         path: AppRoutes.privacy,

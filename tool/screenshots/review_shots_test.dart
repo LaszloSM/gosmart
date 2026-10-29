@@ -37,7 +37,12 @@ import 'package:gosmart/providers/wallet_provider.dart';
 import 'package:gosmart/theme/app_theme.dart';
 import 'package:gosmart/theme/design_tokens.dart';
 import 'package:gosmart/widgets/gs_bottom_nav.dart';
-import 'package:gosmart/widgets/gs_corridor_line.dart';
+import 'package:gosmart/features/alerts/alert_detail_sheet.dart';
+import 'package:gosmart/features/alerts/report_sheet.dart';
+import 'package:gosmart/features/settings/alert_settings_screen.dart';
+import 'package:gosmart/features/settings/settings_screen.dart';
+import 'package:gosmart/models/map_alert.dart';
+import 'package:gosmart/providers/map_alerts_provider.dart';
 import 'shot_util.dart';
 
 // Capturas para la revisión final de impeccable. Correr con:
@@ -60,6 +65,18 @@ class _Ai extends AiConversationNotifier {
       routes: const [RouteOption(id: 'a', type: 'fastest', totalDurationMin: 9, totalCostCop: 4500, totalCo2Kg: 0.2, legs: [])]),
   ]); }
 }
+final _alerts = [
+  MapAlert(id: 'a1', kind: AlertKind.hueco, at: const LatLng(11.5436, -72.9080), happenedAt: DateTime.now().subtract(const Duration(hours: 5)), confirmations: 3),
+  MapAlert(id: 'a2', kind: AlertKind.reten, at: const LatLng(11.5462, -72.9046), happenedAt: DateTime.now().subtract(const Duration(minutes: 25)), confirmations: 1, denials: 1),
+  MapAlert(id: 'a3', kind: AlertKind.trancon, at: const LatLng(11.5418, -72.9105), happenedAt: DateTime.now().subtract(const Duration(minutes: 9))),
+  MapAlert(id: 'a4', kind: AlertKind.accidente, at: const LatLng(11.5470, -72.9112), happenedAt: DateTime.now().subtract(const Duration(minutes: 14))),
+  MapAlert(id: 'a5', kind: AlertKind.obra, at: const LatLng(11.5405, -72.9040), happenedAt: DateTime.now().subtract(const Duration(days: 3))),
+];
+class _Alerts extends MapAlertsNotifier {
+  @override Future<List<MapAlert>> build() async => _alerts;
+  @override Future<void> refresh() async {}
+}
+
 WalletTransactionModel _tx(WalletTxType t, int a, Duration ago, [String? d]) => WalletTransactionModel(id: '$a$ago', walletId: 'w', type: t, amount: a, description: d, createdAt: DateTime.now().subtract(ago));
 
 Future<void> _save(WidgetTester t, String name) async {
@@ -87,9 +104,10 @@ void main() {
       CorridorSegment(kmFrom: 46, kmTo: 75, state: RoadState.open),
     ], updatedAt: DateTime.now().subtract(const Duration(minutes: 12)));
     var routeOn = false;
+    var guest = true;
     final ov = <Override>[
       corridorStatusProvider.overrideWith((ref) async => status),
-      isGuestProvider.overrideWithValue(true),
+      isGuestProvider.overrideWith((ref) => guest),
       currentUserProvider.overrideWithValue(null),
       favoritePlacesProvider.overrideWith((ref) async => []),
       activeCardProvider.overrideWith((ref) => _Card()),
@@ -97,6 +115,7 @@ void main() {
       aiConversationProvider.overrideWith((ref) => _Ai()),
       activeRouteProvider.overrideWith((ref) => routeOn ? route : null),
       selectedModeProvider.overrideWith((ref) => 'Colectivo'),
+      mapAlertsProvider.overrideWith(_Alerts.new),
       walletProvider.overrideWith((ref) async => Wallet(id: 'w', userId: 'u', balance: 37500, cardNumber: 'GS-1234-5678-9012', cardStatus: 'active', createdAt: DateTime(2026))),
       walletTransactionsProvider.overrideWith((ref, l) async => [
         _tx(WalletTxType.trip, -6000, const Duration(hours: 1), 'Mototaxi, centro a terminal'),
@@ -107,9 +126,9 @@ void main() {
     // Sombras reales en las capturas (flutter_test las apaga por defecto).
     debugDisableShadows = false;
     var dark = false;
-    Future<void> shot(Widget w, String n, {bool settle = true}) async {
+    Future<void> shot(Widget w, String n, {bool settle = true, List<Override> extra = const []}) async {
       GSColors.apply(dark ? Brightness.dark : Brightness.light);
-      await t.pumpWidget(ProviderScope(key: UniqueKey(), overrides: ov, child: MaterialApp(debugShowCheckedModeBanner: false, theme: dark ? AppTheme.dark : AppTheme.light,
+      await t.pumpWidget(ProviderScope(key: UniqueKey(), overrides: [...ov, ...extra], child: MaterialApp(debugShowCheckedModeBanner: false, theme: dark ? AppTheme.dark : AppTheme.light,
           home: RepaintBoundary(key: const ValueKey('shot'), child: w))));
       if (settle) { await t.pumpAndSettle(); } else { await t.pump(const Duration(milliseconds: 400)); }
       // Las ilustraciones (assets) se decodifican fuera del reloj falso.
@@ -122,11 +141,18 @@ void main() {
     // un fondo liso en su lugar (dicho en el paquete de revisión).
     await shot(Scaffold(extendBody: true, body: Stack(children: [
       const Positioned.fill(child: ColoredBox(color: Color(0xFFE7EBF0))),
-      Positioned(left: 12, right: 12, top: 32, child: GSCorridorLine(status: status, onTap: () {}, floating: true)),
       Positioned(left: 0, right: 0, bottom: 0, height: 470, child: DecoratedBox(
         decoration: BoxDecoration(color: GSColors.surface, borderRadius: GSRadius.sheetRadius, boxShadow: GSShadow.sheet),
         child: const HomeSheetContent())),
     ]), bottomNavigationBar: const GSBottomNav(current: GSNavTab.home)), 'phone-home');
+    await shot(const SettingsScreen(), 'phone-settings');
+    await shot(const AlertSettingsScreen(), 'phone-alert-settings');
+    guest = false;
+    await shot(Scaffold(backgroundColor: const Color(0xFF9AA3B0), body: Align(alignment: Alignment.bottomCenter,
+        child: ReportSheet(locate: () async => const LatLng(11.5441, -72.9071)))), 'phone-report-sheet');
+    guest = true;
+    await shot(Scaffold(backgroundColor: const Color(0xFF9AA3B0), body: Align(alignment: Alignment.bottomCenter,
+        child: AlertDetailSheet(alertId: 'a2', initial: _alerts[1]))), 'phone-alert-detail');
     await shot(const HomeScreen(), 'phone-home-real', settle: false);
     await t.pump(const Duration(milliseconds: 300));
     await _save(t, 'phone-home-real');
@@ -152,11 +178,11 @@ void main() {
     GSColors.apply(Brightness.dark);
     await shot(Scaffold(extendBody: true, backgroundColor: GSColors.background, body: Stack(children: [
       const Positioned.fill(child: ColoredBox(color: Color(0xFF1D222B))),
-      Positioned(left: 12, right: 12, top: 32, child: GSCorridorLine(status: status, onTap: () {}, floating: true)),
       Positioned(left: 0, right: 0, bottom: 0, height: 470, child: DecoratedBox(
         decoration: BoxDecoration(color: GSColors.surface, borderRadius: GSRadius.sheetRadius, boxShadow: GSShadow.sheet),
         child: const HomeSheetContent())),
     ]), bottomNavigationBar: const GSBottomNav(current: GSNavTab.home)), 'phone-dark-home-sheet');
+    await shot(const SettingsScreen(), 'phone-dark-settings');
     await shot(const HomeScreen(), 'phone-dark-home', settle: false);
     await t.pump(const Duration(milliseconds: 300));
     await _save(t, 'phone-dark-home');
