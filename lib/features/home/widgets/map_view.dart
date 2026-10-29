@@ -77,10 +77,12 @@ class MapView extends StatelessWidget {
   final LatLng? user;
   final LatLng? pin;
 
+  // El mapa se repinta por su cuenta (arrastre, teselas): aislado del resto,
+  // la hoja y los botones de encima no lo arrastran a repintar, ni al revés.
   @override
-  Widget build(BuildContext context) => useGoogleMaps
-      ? _GoogleMapView(view: this)
-      : _FlutterMapView(view: this);
+  Widget build(BuildContext context) => RepaintBoundary(
+        child: useGoogleMaps ? _GoogleMapView(view: this) : _FlutterMapView(view: this),
+      );
 }
 
 // ── Google Maps ──────────────────────────────────────────────────────────────

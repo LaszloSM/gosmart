@@ -1,6 +1,7 @@
 // lib/router/app_router.dart
 import 'dart:async';
 import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -35,25 +36,45 @@ import '../features/legal/legal_texts.dart';
 
 /// Transición de pantalla: fundido + 4 % de desplazamiento con ease-out
 /// fuerte (Emil). Con "quitar animaciones" queda solo el fundido.
+/// Entre pantallas: eje compartido horizontal de Material (la que entra
+/// llega desde la derecha y la que sale se va hacia la izquierda, las dos con
+/// fundido), así se lee hacia dónde vas. Sin animaciones: solo fundido.
 Widget _slideAndFade(
   BuildContext context,
   Animation<double> animation,
   Animation<double> secondaryAnimation,
   Widget child,
 ) {
-  final curved = CurvedAnimation(
-    parent: animation,
-    curve: GSCurve.enter,
-    reverseCurve: GSCurve.exit,
-  );
-  final faded = FadeTransition(opacity: curved, child: child);
-  if (MediaQuery.of(context).disableAnimations) return faded;
-  return SlideTransition(
-    position: Tween<Offset>(begin: const Offset(0.04, 0), end: Offset.zero)
-        .animate(curved),
-    child: faded,
+  if (MediaQuery.of(context).disableAnimations) {
+    return FadeTransition(opacity: animation, child: child);
+  }
+  return SharedAxisTransition(
+    animation: animation,
+    secondaryAnimation: secondaryAnimation,
+    transitionType: SharedAxisTransitionType.horizontal,
+    fillColor: GSColors.background,
+    child: child,
   );
 }
+
+/// Cambiar de modo (pasajero ↔ conductor): la app entera cambia, así que
+/// la pantalla se va y la otra llega con un fundido a través (fade through).
+CustomTransitionPage<void> _modePage(GoRouterState state, Widget child) =>
+    CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: child,
+      transitionDuration: const Duration(milliseconds: 300),
+      reverseTransitionDuration: GSDuration.sheetOut,
+      transitionsBuilder: (context, animation, secondary, child) =>
+          MediaQuery.of(context).disableAnimations
+              ? child
+              : FadeThroughTransition(
+                  animation: animation,
+                  secondaryAnimation: secondary,
+                  fillColor: GSColors.background,
+                  child: child,
+                ),
+    );
 
 /// Pantalla con transición; volver es más rápido que entrar.
 CustomTransitionPage<void> _page(GoRouterState state, Widget child) =>
@@ -254,7 +275,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.driver,
-        pageBuilder: (context, state) => _page(state, const DriverHomeScreen()),
+        pageBuilder: (context, state) => _modePage(state, const DriverHomeScreen()),
       ),
       GoRoute(
         path: AppRoutes.driverSignup,

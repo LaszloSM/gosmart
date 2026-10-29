@@ -237,6 +237,10 @@ void main() {
         child: const HomeSheetContent())),
     ]), bottomNavigationBar: const GSBottomNav(current: GSNavTab.home)), 'phone-dark-home-sheet');
     await shot(const SettingsScreen(), 'phone-dark-settings');
+    guest = false;
+    await shot(phase(req, o: offers), 'phone-dark-trip-offers', settle: false);
+    await shot(DriverConsole(driver: me), 'phone-dark-driver-offline', settle: false, extra: earn);
+    guest = true;
     await shot(const HomeScreen(), 'phone-dark-home', settle: false);
     await t.pump(const Duration(milliseconds: 300));
     await _save(t, 'phone-dark-home');

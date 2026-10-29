@@ -90,30 +90,37 @@ class _BalanceHeaderState extends ConsumerState<BalanceHeader> {
                     ],
                   ),
                   const SizedBox(height: GSSpacing.s1),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text.rich(
-                      TextSpan(children: [
-                        TextSpan(
-                          text: _hidden
-                              ? r'$ • • • • •'
-                              : formatCop(wallet.balance),
-                          style: TextStyle(
-                            fontSize: 40,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -1.2,
-                            height: 1.05,
-                            color: on,
+                  // Cuando el saldo cambia (una recarga, un pago) cuenta hasta
+                  // la cifra nueva en 600 ms; al abrir la pantalla no se anima.
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(end: wallet.balance.toDouble()),
+                    duration: MediaQuery.of(context).disableAnimations
+                        ? Duration.zero
+                        : const Duration(milliseconds: 600),
+                    curve: GSCurve.enter,
+                    builder: (context, v, _) => FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text.rich(
+                        TextSpan(children: [
+                          TextSpan(
+                            text: _hidden ? r'$ • • • • •' : formatCop(v.round()),
+                            style: TextStyle(
+                              fontSize: 40,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -1.2,
+                              height: 1.05,
+                              color: on,
+                            ),
                           ),
-                        ),
-                      ]),
-                      style: const TextStyle(
-                          fontFamily: GSFonts.mono,
-                          fontFeatures: GSFonts.tabular),
-                      semanticsLabel: _hidden
-                          ? 'Saldo oculto'
-                          : 'Saldo ${formatCop(wallet.balance)} pesos',
+                        ]),
+                        style: const TextStyle(
+                            fontFamily: GSFonts.mono,
+                            fontFeatures: GSFonts.tabular),
+                        semanticsLabel: _hidden
+                            ? 'Saldo oculto'
+                            : 'Saldo ${formatCop(wallet.balance)} pesos',
+                      ),
                     ),
                   ),
                   const SizedBox(height: GSSpacing.s3),

@@ -132,8 +132,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: 'Alertas en el mapa',
               subtitle: shown == 0
                   ? 'No ves ninguna alerta'
-                  : '$shown de ${AlertKind.all.length} tipos visibles · '
-                      '${warned == 0 ? 'sin avisos' : 'te avisamos de $warned'}',
+                  : '${shown == AlertKind.all.length ? 'Todas visibles' : '$shown de ${AlertKind.all.length} tipos visibles'}'
+                      ' · ${warned == 0 ? 'sin avisos' : warned == shown ? 'con aviso al acercarte' : 'aviso en $warned tipos'}',
               onTap: () => context.push(AppRoutes.alertSettings),
             ),
           ]),
