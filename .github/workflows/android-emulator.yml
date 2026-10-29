@@ -47,7 +47,7 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.122.0  # fija: "latest" consulta la API de GitHub y a veces da límite de peticiones
 
       - name: Install dependencies
         run: flutter pub get

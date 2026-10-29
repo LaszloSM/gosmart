@@ -1,6 +1,8 @@
 // lib/features/home/widgets/corridor_detail_sheet.dart
 // Detalle de la Línea del corredor: tramo por tramo, con hora y reportes.
 import 'package:flutter/material.dart';
+
+import '../../alerts/report_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -90,8 +92,9 @@ class CorridorDetailSheet extends StatelessWidget {
               leadingIcon: Icons.campaign_rounded,
               variant: GSButtonVariant.outline,
               onPressed: () {
+                final root = Navigator.of(context, rootNavigator: true).context;
                 Navigator.of(context).pop();
-                context.go(AppRoutes.report);
+                showReportSheet(root);
               },
             ),
           ],

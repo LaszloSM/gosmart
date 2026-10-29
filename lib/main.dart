@@ -13,6 +13,8 @@ import 'router/app_router.dart';
 import 'services/corridor_service.dart';
 import 'services/safety_service.dart';
 import 'theme/app_theme.dart';
+import 'core/theme_switch.dart';
+import 'providers/settings_provider.dart';
 import 'theme/design_tokens.dart';
 
 Future<void> main() async {
@@ -69,15 +71,22 @@ class GoSmartApp extends ConsumerWidget {
       theme: AppTheme.light,
       // Noche: esquema propio que sigue al sistema (viajes nocturnos).
       darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
+      // Lo elige cada quien en Configuración (por defecto, el del sistema).
+      themeMode: ref.watch(themeModeProvider),
+      // El cambio es instantáneo debajo; ThemeSwitchHost lo cubre con un
+      // fundido de la pantalla anterior.
+      themeAnimationDuration: Duration.zero,
       // GSColors lee la paleta activa. Al cambiar día/noche se aplica y se
       // reconstruye el árbol (muchos widgets son const y no se repintarían).
       builder: (context, child) {
         final brightness = Theme.of(context).brightness;
         GSColors.apply(brightness);
-        return KeyedSubtree(
-          key: ValueKey(brightness),
-          child: child ?? const SizedBox.shrink(),
+        return ThemeSwitchHost(
+          key: ThemeSwitchHost.hostKey,
+          child: KeyedSubtree(
+            key: ValueKey(brightness),
+            child: child ?? const SizedBox.shrink(),
+          ),
         );
       },
       routerConfig: router,

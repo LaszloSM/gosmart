@@ -10,7 +10,11 @@ import 'package:gosmart/theme/app_theme.dart';
 import 'package:gosmart/widgets/gs_button.dart';
 
 Widget _app(DriverProfile? d) => ProviderScope(
-      overrides: [myDriverProvider.overrideWith((ref) async => d)],
+      overrides: [
+        myDriverProvider.overrideWith((ref) async => d),
+        driverEarningsProvider.overrideWith((ref) async =>
+            const DriverEarnings(todayTotal: 23000, todayTrips: 4, todayCash: 8000)),
+      ],
       child: MaterialApp(theme: AppTheme.light, home: const DriverHomeScreen()),
     );
 
@@ -54,16 +58,33 @@ void main() {
     expect(find.text('En revisión'), findsOneWidget);
   });
 
-  testWidgets('aprobado: una sola acción grande en la zona del pulgar',
+  testWidgets('aprobado: consola con Conectarme de 72 dp y lo de hoy arriba',
       (tester) async {
     await tester.pumpWidget(_app(_d('approved', docs: true)));
-    await tester.pumpAndSettle();
-    expect(find.text('No disponible'), findsOneWidget);
-    final btn = find.widgetWithText(GSButton, 'Ponerme disponible');
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
+    expect(find.text('Estás desconectado'), findsOneWidget);
+    final btn = find.widgetWithText(GSButton, 'Conectarme');
     expect(btn, findsOneWidget);
     expect(tester.getSize(btn).height, greaterThanOrEqualTo(72));
-    // Cobrar y editar van arriba, no compiten en la zona del pulgar.
+    // Cobrar y el menú van arriba, no compiten en la zona del pulgar.
     expect(find.byTooltip('Cobrar con QR'), findsOneWidget);
-    expect(find.text('Placa ABC12D'), findsOneWidget);
+    expect(find.byTooltip('Menú del conductor'), findsOneWidget);
+    expect(find.text('\$23.000'), findsOneWidget);
+    expect(find.textContaining('Placa ABC12D'), findsOneWidget);
+  });
+
+  testWidgets('el menú lleva a ganancias y al modo pasajero', (tester) async {
+    await tester.pumpWidget(_app(_d('approved', docs: true)));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
+    await tester.tap(find.byTooltip('Menú del conductor'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ganancias'), findsOneWidget);
+    expect(find.text('Cambiar a modo pasajero'), findsOneWidget);
+    await tester.tap(find.text('Hoy y los últimos 7 días'));
+    await tester.pumpAndSettle();
+    expect(find.text('Últimos 7 días'), findsOneWidget);
+    expect(find.textContaining('\$15.000 por la app'), findsOneWidget);
   });
 }

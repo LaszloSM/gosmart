@@ -11,15 +11,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/supabase_client.dart';
 import '../core/sync_queue.dart';
 import '../models/corridor_status.dart';
+import '../models/map_alert.dart';
 
 /// Tipos de reporte cerrados (regla ética: no hay texto libre).
-const roadReportKinds = {
-  'bloqueo': 'Bloqueo',
-  'reten': 'Retén',
-  'accidente': 'Accidente',
-  'inundacion': 'Inundación',
-  'hueco': 'Huecos',
-  'despejado': 'Vía despejada',
+final roadReportKinds = {
+  for (final k in [...AlertKind.all, AlertKind.despejado]) k.id: k.label,
 };
 
 /// Tramo con sus extremos, para saber en cuál está el usuario.
@@ -79,6 +75,7 @@ RoadSegmentGeo? nearestSegment(LatLng p, List<RoadSegmentGeo> segments,
 
 class CorridorService {
   static const _cacheKey = 'corridor_status_v1';
+  static const _alertsKey = 'map_alerts_v1';
 
   Future<CorridorStatus> fetchStatus() async {
     final rows = await GoSmartSupabase.client.rpc('road_status');
@@ -136,7 +133,7 @@ class CorridorService {
 
   /// Envía el reporte; sin señal lo encola. true = ya llegó al servidor.
   Future<bool> report({
-    required String segmentId,
+    String? segmentId,
     required String kind,
     required String idempotencyKey,
     LatLng? at,
@@ -171,10 +168,33 @@ class CorridorService {
     } catch (e) {
       final msg = e.toString();
       // Rechazos del servidor: reintentar no sirve.
-      for (final code in ['rate_limited', 'duplicate_report', 'unknown_segment', 'invalid_kind']) {
+      for (final code in ['rate_limited', 'duplicate_report', 'unknown_segment',
+          'invalid_kind', 'location_required', 'out_of_region', 'not_authenticated']) {
         if (msg.contains(code)) throw RoadReportRejected(code);
       }
       rethrow;
+    }
+  }
+
+  /// Alertas vigentes del mapa (públicas). Sin señal: las últimas guardadas.
+  Future<List<MapAlert>> fetchAlerts() async {
+    try {
+      final rows = await GoSmartSupabase.client.rpc('map_alerts');
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_alertsKey, jsonEncode(rows));
+      } catch (_) {}
+      return [
+        for (final r in rows as List) MapAlert.fromMap(Map<String, dynamic>.from(r as Map))
+      ];
+    } catch (_) {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_alertsKey);
+      if (raw == null) rethrow;
+      return [
+        for (final r in jsonDecode(raw) as List)
+          MapAlert.fromMap(Map<String, dynamic>.from(r as Map))
+      ]..removeWhere((a) => DateTime.now().difference(a.happenedAt).inDays > 30);
     }
   }
 

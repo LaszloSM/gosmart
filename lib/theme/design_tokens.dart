@@ -42,6 +42,12 @@ class GSPalette {
     required this.brandDeep,
     required this.onBrandDeep,
     required this.onBrandDeepMuted,
+    required this.alertSevere,
+    required this.onAlertSevere,
+    required this.alertCaution,
+    required this.onAlertCaution,
+    required this.alertClear,
+    required this.onAlertClear,
   });
 
   final Color brand, brandPressed, onBrand, onBrandMuted, brandTint;
@@ -55,6 +61,12 @@ class GSPalette {
   /// Cabecera honda (billetera, perfil, entrada): el azul de la marca en su
   /// tono más profundo, para que las tarjetas blancas monten encima.
   final Color brandDeep, onBrandDeep, onBrandDeepMuted;
+
+  /// Pines de alerta del mapa (Waze): saturados para leerse sobre el mapa.
+  /// Son colores de la vía: rojo = cierre o choque, ámbar = precaución,
+  /// verde = despejado. El tipo lo dice el ícono, nunca solo el color.
+  final Color alertSevere, onAlertSevere, alertCaution, onAlertCaution;
+  final Color alertClear, onAlertClear;
 
   /// Día: claro primero, legible al sol.
   static const light = GSPalette(
@@ -87,6 +99,12 @@ class GSPalette {
     brandDeep: Color(0xFF0A3A94), // blanco encima 10.3:1
     onBrandDeep: Color(0xFFFFFFFF),
     onBrandDeepMuted: Color(0xFFCBD9F6), // 7.2:1 sobre brandDeep
+    alertSevere: Color(0xFFD93025),
+    onAlertSevere: Color(0xFFFFFFFF), // 4.8:1 (ícono, no texto)
+    alertCaution: Color(0xFFFBBC04),
+    onAlertCaution: Color(0xFF3C2A00), // 8.1:1
+    alertClear: Color(0xFF188038),
+    onAlertClear: Color(0xFFFFFFFF), // 5.0:1
   );
 
   /// Noche: viajes nocturnos sin encandilar. Superficies que suben de
@@ -121,6 +139,12 @@ class GSPalette {
     brandDeep: Color(0xFF17284A), // sube sobre el fondo nocturno
     onBrandDeep: Color(0xFFE6E8EE), // 11.9:1
     onBrandDeepMuted: Color(0xFFB4C3E0), // 8.2:1
+    alertSevere: Color(0xFFEE675C),
+    onAlertSevere: Color(0xFF2B0603),
+    alertCaution: Color(0xFFFCC934),
+    onAlertCaution: Color(0xFF3C2A00),
+    alertClear: Color(0xFF5BB974),
+    onAlertClear: Color(0xFF07230F),
   );
 }
 
@@ -146,6 +170,14 @@ abstract class GSColors {
   static Color get brandDeep => _p.brandDeep;
   static Color get onBrandDeep => _p.onBrandDeep;
   static Color get onBrandDeepMuted => _p.onBrandDeepMuted;
+
+  /// Pines de alerta (ver [GSPalette.alertSevere]).
+  static Color get alertSevere => _p.alertSevere;
+  static Color get onAlertSevere => _p.onAlertSevere;
+  static Color get alertCaution => _p.alertCaution;
+  static Color get onAlertCaution => _p.onAlertCaution;
+  static Color get alertClear => _p.alertClear;
+  static Color get onAlertClear => _p.onAlertClear;
 
   /// Fondos seleccionados con [brand] encima.
   static Color get brandTint => _p.brandTint;

@@ -3,6 +3,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 class LocationService {
+  /// Última posición conocida (para reportar al instante, sin esperar el GPS).
+  LatLng? last;
+
   /// Returns the device's current GPS position.
   /// Returns null if permission is denied, timed out, or any error occurs.
   /// Callers are responsible for their own fallback (e.g. default to GSRegion.riohacha).
@@ -23,9 +26,31 @@ class LocationService {
           timeLimit: Duration(seconds: 10),
         ),
       );
-      return LatLng(position.latitude, position.longitude);
+      return last = LatLng(position.latitude, position.longitude);
     } catch (_) {
       return null;
+    }
+  }
+
+  /// Posición mientras te mueves (cada [distanceFilter] metros). Sin permiso
+  /// o sin GPS no emite nada; nunca lanza.
+  Stream<LatLng> watch({int distanceFilter = 40}) async* {
+    try {
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return;
+      }
+      await for (final p in Geolocator.getPositionStream(
+        locationSettings: LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: distanceFilter,
+        ),
+      )) {
+        yield last = LatLng(p.latitude, p.longitude);
+      }
+    } catch (_) {
+      return;
     }
   }
 }

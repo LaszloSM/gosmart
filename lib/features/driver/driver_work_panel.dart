@@ -35,7 +35,15 @@ class DriverWorkPanel extends ConsumerStatefulWidget {
     this.header = const [],
     this.locate,
     this.pollEvery = const Duration(seconds: 5),
+    this.onActive,
+    this.onPosition,
   });
+
+  /// El viaje asignado (o null) cada vez que cambia: el mapa marca el punto.
+  final ValueChanged<RideRequest?>? onActive;
+
+  /// La posición con la que se consultó (el mapa la sigue).
+  final ValueChanged<LatLng>? onPosition;
 
   final DriverProfile driver;
 
@@ -92,6 +100,10 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
       if (_isScheduled) deps = await dispatchService.myDepartures(widget.driver.userId);
       final cash = await paymentService.pendingCash(widget.driver.userId);
       if (!mounted) return;
+      if (at != null) widget.onPosition?.call(at);
+      if (active?.id != _active?.id || active?.status != _active?.status) {
+        widget.onActive?.call(active);
+      }
       setState(() {
         _gps = at != null;
         _active = active;

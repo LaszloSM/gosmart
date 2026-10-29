@@ -6,13 +6,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../models/corridor_status.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/corridor_provider.dart';
 import '../../../providers/profile_provider.dart';
 import '../../../providers/selected_mode_provider.dart';
 import '../../../router/app_router.dart';
 import '../../../theme/design_tokens.dart';
+import '../../../widgets/gs_corridor_line.dart';
 import '../../../widgets/gs_mode_visual.dart';
 import '../../../widgets/gs_pressable.dart';
+import 'corridor_detail_sheet.dart';
 import 'quick_places_row.dart';
 
 class HomeSheetContent extends ConsumerWidget {
@@ -120,6 +124,10 @@ class HomeSheetContent extends ConsumerWidget {
               ),
               const SizedBox(height: GSSpacing.s6),
               _AssistantCard(onTap: () => context.push(AppRoutes.aiChat)),
+              const SizedBox(height: GSSpacing.s3),
+              // La Troncal, bajo el pliegue: ya no tapa el mapa, pero sigue a
+              // un gesto para quien va a Maicao.
+              const _CorridorRow(),
               if (isGuest) ...[
                 const SizedBox(height: GSSpacing.s3),
                 _SheetAction(
@@ -537,6 +545,33 @@ class _SheetAction extends StatelessWidget {
             ),
             Icon(Icons.chevron_right_rounded, color: GSColors.textMuted),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+
+class _CorridorRow extends ConsumerWidget {
+  const _CorridorRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final corridor = ref.watch(corridorStatusProvider);
+    final status = corridor.valueOrNull;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(GSRadius.lg),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border.all(color: GSColors.line),
+          borderRadius: BorderRadius.circular(GSRadius.lg),
+        ),
+        child: GSCorridorLine(
+          status: status,
+          isLoading: corridor.isLoading,
+          floating: true,
+          onTap: () => showCorridorDetailSheet(
+              context, status ?? const CorridorStatus.noData()),
         ),
       ),
     );

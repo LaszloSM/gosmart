@@ -434,13 +434,22 @@ Una sola familia: Material redondeado (`*_rounded`), sin mezclar contorno y rell
 Cada dato y cada acción aparece una vez por pantalla. La barra inferior ya dice dónde estás: las cabeceras hondas no repiten "Billetera" ni "Perfil"; el saldo y el nombre son el título. El buscador hace la pregunta, el saludo solo saluda. Un precio por pantalla (insignia en el detalle de ruta; la fila de tarifa solo explica).
 
 ### Perfil y entrada
-Perfil: cabecera honda sin título con la foto en anillo blanco, nombre, correo, cédula · ciudad y las píldoras "Editar perfil" (blanca) y eco-puntos; debajo, los grupos (Conducir, Seguridad, ley). Entrada y registro comparten `GSAuthScaffold`: cabecera honda con el logo en un cuadro blanco, el título en 30 px 800, una línea y el formulario en la hoja. En el selector Celular/Correo la opción elegida va llena de azul.
+Perfil: cabecera honda sin título (engranaje a Configuración arriba a la derecha) con la foto en anillo blanco, nombre, correo, cédula enmascarada (•••• 8745) · ciudad y las píldoras "Editar perfil" (blanca) y eco-puntos; debajo, los grupos (Conducir, Seguridad, ley). Entrada y registro comparten `GSAuthScaffold`: cabecera honda con el logo en un cuadro blanco, el título en 30 px 800, una línea y el formulario en la hoja. En el selector Celular/Correo la opción elegida va llena de azul.
 
-### Reportar
-La línea del corredor arriba (lo que vas a corregir o confirmar), "¿Qué pasa?" en baldosas de dos columnas con ícono de 24 y palabra (la elegida en azul claro con borde azul) y "Enviar reporte" fijo sobre la barra inferior.
+### Reportar (alertas como Waze, 2026-10-29)
+Botón ámbar redondo sobre el mapa (60 dp; 72 en modo conductor) abre "¿Qué ves en la vía?": globos de alerta de 58 dp, cuatro por fila con la palabra debajo. Un toque elige (anillo azul), "Reportar {tipo}" publica: nada se publica por un roce en movimiento. En el mapa los pines son globos con puntita que se vuelven puntos de color al alejar (umbrales 12,5 y 14,5 de zoom). Rojo = grave (bloqueo, accidente), ámbar = precaución; son estado de vía, por eso pueden usar esos colores. Preferencias por tipo en Configuración › Alertas en el mapa: Ocultar / Ver / Avisar (segmentado, uno por tipo).
 
 ### Línea del corredor
-Tarjeta flotante sobre el mapa (radio 16, sombra float): "Troncal del Caribe" en 15 px 800 con el estado en píldora (ícono + palabra; tinte de su color para Precaución y Cerrada, borde para Abierta y Sin datos), la línea gruesa con un color por tramo y debajo Riohacha · hora del dato · Maicao.
+Ya no flota sobre el mapa (se leía como algo distinto y distraía): vive en la hoja del inicio, bajo el asistente, y abre el detalle de la Troncal. Tarjeta radio 16: "Troncal del Caribe" en 15 px 800 con el estado en píldora (ícono + palabra), la línea gruesa con un color por tramo y debajo Riohacha · hora del dato · Maicao.
+
+### Viaje (InDrive/Uber)
+Con viaje: mapa de fondo con la ruta y el conductor (círculo de marca con la moto o el taxi, se desliza entre consultas), píldora "Hacia …" y ayuda arriba, hoja arrastrable (radio 24) con la línea de tramos (paradas tipo metro) y el tramo actual en una tarjeta blanca. Pedir: trayecto, "Tu oferta" en 40 px 800 tabular con −/+ redondos y atajos +$500/+$1.000/+$2.000, saldo o efectivo en segmentado. Buscando: radar de tres ondas (única animación en bucle, se encoge al llegar ofertas) y barra de tiempo; cada oferta con inicial, nombre, ★, "a 3 min · 600 m · vehículo", precio y diferencia, "Aceptar". Viene: título "{nombre} viene por ti", minutos en píldora azul, placa amarilla colombiana.
+
+### Modo conductor
+Interruptor "Modo conductor" en Perfil (como InDrive); la app recuerda el modo. Consola sobre el mapa: menú, "Hoy $X · N viajes" y QR flotando arriba; reportar (72 dp) a la derecha; abajo "Conectarme" (72 dp) o, conectado, el panel de solicitudes con punto azul que late. "Cambiar a modo pasajero" en el menú. Cambiar de modo usa fade-through.
+
+### Configuración
+Apariencia con tres tarjetas que dibujan la app en miniatura (Sistema partido en diagonal, Claro, Oscuro); cambiar de tema funde la captura anterior en 320 ms. Luego Mapa y alertas, Tu cuenta, Tus datos y la ley, salir.
 
 ### Detalle de ruta
 Barra de tramos proporcional al tiempo (segmentos de 30 px, radio 8, color de modo; a pie en gris), línea de tiempo con el ícono del modo en un círculo de su color y la tarifa en una insignia píldora azul clara.

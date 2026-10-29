@@ -97,7 +97,18 @@ class DispatchService {
     return row == null ? null : RideRequest.fromJson(row);
   }
 
+  /// Ofertas con quién ofrece y a cuánto está (022). Si el servidor aún no
+  /// tiene ride_offer_cards, solo el precio.
   Future<List<RideOffer>> offersFor(String requestId) async {
+    try {
+      final cards = await _rpc<List<dynamic>>(
+          'ride_offer_cards', {'p_request_id': requestId});
+      return [
+        for (final r in cards) RideOffer.fromJson(Map<String, dynamic>.from(r as Map))
+      ];
+    } catch (_) {
+      // Sin 022 o sin señal: la consulta de abajo decide.
+    }
     final rows = await _db
         .from('ride_offers')
         .select('id, fare, status')

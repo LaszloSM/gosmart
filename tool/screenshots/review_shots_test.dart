@@ -2,6 +2,13 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:gosmart/features/driver/driver_console.dart';
+import 'package:gosmart/models/driver_model.dart';
+import 'package:gosmart/providers/driver_provider.dart';
+import 'package:gosmart/features/trip/trip_screen.dart';
+import 'package:gosmart/features/trip/widgets/leg_panels.dart';
+import 'package:gosmart/models/dispatch_models.dart';
+import 'package:gosmart/providers/dispatch_provider.dart';
 import 'package:gosmart/features/routes/widgets/mode_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,7 +44,12 @@ import 'package:gosmart/providers/wallet_provider.dart';
 import 'package:gosmart/theme/app_theme.dart';
 import 'package:gosmart/theme/design_tokens.dart';
 import 'package:gosmart/widgets/gs_bottom_nav.dart';
-import 'package:gosmart/widgets/gs_corridor_line.dart';
+import 'package:gosmart/features/alerts/alert_detail_sheet.dart';
+import 'package:gosmart/features/alerts/report_sheet.dart';
+import 'package:gosmart/features/settings/alert_settings_screen.dart';
+import 'package:gosmart/features/settings/settings_screen.dart';
+import 'package:gosmart/models/map_alert.dart';
+import 'package:gosmart/providers/map_alerts_provider.dart';
 import 'shot_util.dart';
 
 // Capturas para la revisión final de impeccable. Correr con:
@@ -60,6 +72,18 @@ class _Ai extends AiConversationNotifier {
       routes: const [RouteOption(id: 'a', type: 'fastest', totalDurationMin: 9, totalCostCop: 4500, totalCo2Kg: 0.2, legs: [])]),
   ]); }
 }
+final _alerts = [
+  MapAlert(id: 'a1', kind: AlertKind.hueco, at: const LatLng(11.5436, -72.9080), happenedAt: DateTime.now().subtract(const Duration(hours: 5)), confirmations: 3),
+  MapAlert(id: 'a2', kind: AlertKind.reten, at: const LatLng(11.5462, -72.9046), happenedAt: DateTime.now().subtract(const Duration(minutes: 25)), confirmations: 1, denials: 1),
+  MapAlert(id: 'a3', kind: AlertKind.trancon, at: const LatLng(11.5418, -72.9105), happenedAt: DateTime.now().subtract(const Duration(minutes: 9))),
+  MapAlert(id: 'a4', kind: AlertKind.accidente, at: const LatLng(11.5470, -72.9112), happenedAt: DateTime.now().subtract(const Duration(minutes: 14))),
+  MapAlert(id: 'a5', kind: AlertKind.obra, at: const LatLng(11.5405, -72.9040), happenedAt: DateTime.now().subtract(const Duration(days: 3))),
+];
+class _Alerts extends MapAlertsNotifier {
+  @override Future<List<MapAlert>> build() async => _alerts;
+  @override Future<void> refresh() async {}
+}
+
 WalletTransactionModel _tx(WalletTxType t, int a, Duration ago, [String? d]) => WalletTransactionModel(id: '$a$ago', walletId: 'w', type: t, amount: a, description: d, createdAt: DateTime.now().subtract(ago));
 
 Future<void> _save(WidgetTester t, String name) async {
@@ -87,9 +111,10 @@ void main() {
       CorridorSegment(kmFrom: 46, kmTo: 75, state: RoadState.open),
     ], updatedAt: DateTime.now().subtract(const Duration(minutes: 12)));
     var routeOn = false;
+    var guest = true;
     final ov = <Override>[
       corridorStatusProvider.overrideWith((ref) async => status),
-      isGuestProvider.overrideWithValue(true),
+      isGuestProvider.overrideWith((ref) => guest),
       currentUserProvider.overrideWithValue(null),
       favoritePlacesProvider.overrideWith((ref) async => []),
       activeCardProvider.overrideWith((ref) => _Card()),
@@ -97,6 +122,7 @@ void main() {
       aiConversationProvider.overrideWith((ref) => _Ai()),
       activeRouteProvider.overrideWith((ref) => routeOn ? route : null),
       selectedModeProvider.overrideWith((ref) => 'Colectivo'),
+      mapAlertsProvider.overrideWith(_Alerts.new),
       walletProvider.overrideWith((ref) async => Wallet(id: 'w', userId: 'u', balance: 37500, cardNumber: 'GS-1234-5678-9012', cardStatus: 'active', createdAt: DateTime(2026))),
       walletTransactionsProvider.overrideWith((ref, l) async => [
         _tx(WalletTxType.trip, -6000, const Duration(hours: 1), 'Mototaxi, centro a terminal'),
@@ -107,11 +133,11 @@ void main() {
     // Sombras reales en las capturas (flutter_test las apaga por defecto).
     debugDisableShadows = false;
     var dark = false;
-    Future<void> shot(Widget w, String n, {bool settle = true}) async {
+    Future<void> shot(Widget w, String n, {bool settle = true, List<Override> extra = const []}) async {
       GSColors.apply(dark ? Brightness.dark : Brightness.light);
-      await t.pumpWidget(ProviderScope(key: UniqueKey(), overrides: ov, child: MaterialApp(debugShowCheckedModeBanner: false, theme: dark ? AppTheme.dark : AppTheme.light,
+      await t.pumpWidget(ProviderScope(key: UniqueKey(), overrides: [...ov, ...extra], child: MaterialApp(debugShowCheckedModeBanner: false, theme: dark ? AppTheme.dark : AppTheme.light,
           home: RepaintBoundary(key: const ValueKey('shot'), child: w))));
-      if (settle) { await t.pumpAndSettle(); } else { await t.pump(const Duration(milliseconds: 400)); }
+      if (settle) { await t.pumpAndSettle(); } else { for (var i = 0; i < 6; i++) { await t.pump(const Duration(milliseconds: 80)); } }
       // Las ilustraciones (assets) se decodifican fuera del reloj falso.
       await t.runAsync(() => Future.wait(find.byType(Image).evaluate()
           .map((e) => precacheImage((e.widget as Image).image, e))));
@@ -122,11 +148,65 @@ void main() {
     // un fondo liso en su lugar (dicho en el paquete de revisión).
     await shot(Scaffold(extendBody: true, body: Stack(children: [
       const Positioned.fill(child: ColoredBox(color: Color(0xFFE7EBF0))),
-      Positioned(left: 12, right: 12, top: 32, child: GSCorridorLine(status: status, onTap: () {}, floating: true)),
       Positioned(left: 0, right: 0, bottom: 0, height: 470, child: DecoratedBox(
         decoration: BoxDecoration(color: GSColors.surface, borderRadius: GSRadius.sheetRadius, boxShadow: GSShadow.sheet),
         child: const HomeSheetContent())),
     ]), bottomNavigationBar: const GSBottomNav(current: GSNavTab.home)), 'phone-home');
+    await shot(const SettingsScreen(), 'phone-settings');
+    await shot(const AlertSettingsScreen(), 'phone-alert-settings');
+    guest = false;
+    await shot(Scaffold(backgroundColor: const Color(0xFF9AA3B0), body: Align(alignment: Alignment.bottomCenter,
+        child: ReportSheet(locate: () async => const LatLng(11.5441, -72.9071)))), 'phone-report-sheet');
+    guest = true;
+    await shot(Scaffold(backgroundColor: const Color(0xFF9AA3B0), body: Align(alignment: Alignment.bottomCenter,
+        child: AlertDetailSheet(alertId: 'a2', initial: _alerts[1]))), 'phone-alert-detail');
+    // Viaje (InDrive/Uber): cada fase del tramo en mototaxi, sin red.
+    const leg = TripLegRow(id: 'l', seq: 0, mode: 'mototaxi', status: LegStatus.awaitingDispatch,
+        fromLabel: 'Parque Padilla', toLabel: 'Universidad de La Guajira',
+        from: LatLng(11.5441, -72.9071), to: LatLng(11.5262, -72.8740), fareMin: 5000, fareMax: 5000);
+    final req = RideRequest(id: 'r', service: 'mototaxi', status: RideStatus.open, offeredFare: 5000,
+        expiresAt: DateTime.now().add(const Duration(minutes: 2, seconds: 14)));
+    const offers = [
+      RideOffer(id: 'o1', fare: 5500, firstName: 'Wilmer', vehicle: 'Bajaj negra', rating: 4.8, ratings: 51, pickupKm: 0.6, etaMin: 3),
+      RideOffer(id: 'o2', fare: 6000, firstName: 'Yair', vehicle: 'AKT roja', pickupKm: 1.3, etaMin: 5),
+    ];
+    const drv = AssignedDriver(firstName: 'Wilmer', service: 'mototaxi', plate: 'ABC12D',
+        vehicle: 'Bajaj negra', at: LatLng(11.5470, -72.9040), rating: 4.8, ratings: 51);
+    Widget phase(RideRequest? r, {List<RideOffer> o = const [], AssignedDriver? d, bool paid = false}) =>
+        Scaffold(backgroundColor: GSColors.background, body: SafeArea(child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Container(padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: GSColors.surface, borderRadius: BorderRadius.circular(16)),
+            child: RideLegPanel(leg: leg, preview: (request: r, offers: o, driver: d, paid: paid))))));
+    guest = false;
+    await shot(phase(null), 'phone-trip-ask');
+    await shot(phase(req, o: offers), 'phone-trip-offers', settle: false);
+    await shot(phase(RideRequest(id: 'r', service: 'mototaxi', status: RideStatus.accepted, offeredFare: 5000,
+        agreedFare: 5500, expiresAt: DateTime.now()), d: drv), 'phone-trip-coming');
+    await shot(phase(RideRequest(id: 'r', service: 'mototaxi', status: RideStatus.inProgress, offeredFare: 5000,
+        agreedFare: 5500, expiresAt: DateTime.now()), d: drv), 'phone-trip-riding');
+    final trip = ChainedTrip.fromJson({
+      'id': 't', 'status': 'in_progress', 'origin_label': 'Parque Padilla', 'dest_label': 'Universidad de La Guajira',
+      'trip_legs': [
+        {'id': 'a', 'seq': 0, 'mode': 'walk', 'status': 'completed', 'to_label': 'Calle 2 con carrera 7', 'minutes': 3},
+        {'id': 'b', 'seq': 1, 'mode': 'walk', 'status': 'planned', 'to_label': 'Universidad de La Guajira', 'minutes': 4},
+      ],
+    });
+    await shot(const TripScreen(), 'phone-trip-screen', settle: false, extra: [
+      activeTripProvider.overrideWith((ref) async => trip),
+      recentTripsProvider.overrideWith((ref) async => const []),
+    ]);
+    final me = DriverProfile.fromJson({
+      'user_id': 'u', 'full_name': 'Wilmer Pushaina', 'cedula': '1118555444', 'phone': '+573001234567',
+      'service': 'mototaxi', 'zone': 'riohacha', 'status': 'approved', 'available': false,
+      'vehicles': [{'plate': 'ABC12D', 'kind': 'moto', 'seats': 1, 'brand': 'Bajaj', 'color': 'negra'}],
+      'driver_documents': [],
+    });
+    final earn = [driverEarningsProvider.overrideWith((ref) async => const DriverEarnings(
+        todayTotal: 23000, todayTrips: 4, todayCash: 8000, weekTotal: 118000, weekTrips: 21,
+        weekCash: 40000, rating: 4.8, ratings: 51))];
+    await shot(DriverConsole(driver: me), 'phone-driver-offline', settle: false, extra: earn);
+    guest = true;
     await shot(const HomeScreen(), 'phone-home-real', settle: false);
     await t.pump(const Duration(milliseconds: 300));
     await _save(t, 'phone-home-real');
@@ -152,11 +232,15 @@ void main() {
     GSColors.apply(Brightness.dark);
     await shot(Scaffold(extendBody: true, backgroundColor: GSColors.background, body: Stack(children: [
       const Positioned.fill(child: ColoredBox(color: Color(0xFF1D222B))),
-      Positioned(left: 12, right: 12, top: 32, child: GSCorridorLine(status: status, onTap: () {}, floating: true)),
       Positioned(left: 0, right: 0, bottom: 0, height: 470, child: DecoratedBox(
         decoration: BoxDecoration(color: GSColors.surface, borderRadius: GSRadius.sheetRadius, boxShadow: GSShadow.sheet),
         child: const HomeSheetContent())),
     ]), bottomNavigationBar: const GSBottomNav(current: GSNavTab.home)), 'phone-dark-home-sheet');
+    await shot(const SettingsScreen(), 'phone-dark-settings');
+    guest = false;
+    await shot(phase(req, o: offers), 'phone-dark-trip-offers', settle: false);
+    await shot(DriverConsole(driver: me), 'phone-dark-driver-offline', settle: false, extra: earn);
+    guest = true;
     await shot(const HomeScreen(), 'phone-dark-home', settle: false);
     await t.pump(const Duration(milliseconds: 300));
     await _save(t, 'phone-dark-home');

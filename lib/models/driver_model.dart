@@ -149,3 +149,45 @@ class DriverProfile {
     );
   }
 }
+
+/// Resumen de ganancias del conductor (driver_earnings, 023): hoy y 7 días.
+class DriverEarnings {
+  const DriverEarnings({
+    this.todayTotal = 0,
+    this.todayTrips = 0,
+    this.todayCash = 0,
+    this.weekTotal = 0,
+    this.weekTrips = 0,
+    this.weekCash = 0,
+    this.rating,
+    this.ratings = 0,
+  });
+
+  final int todayTotal;
+  final int todayTrips;
+  final int todayCash;
+  final int weekTotal;
+  final int weekTrips;
+  final int weekCash;
+
+  /// Promedio de estrellas; null con menos de 3 calificaciones.
+  final double? rating;
+  final int ratings;
+
+  int get todayApp => todayTotal - todayCash;
+  int get weekApp => weekTotal - weekCash;
+
+  factory DriverEarnings.fromJson(Map<String, dynamic> j) {
+    int i(String k) => (j[k] as num?)?.toInt() ?? 0;
+    return DriverEarnings(
+      todayTotal: i('today_total'),
+      todayTrips: i('today_trips'),
+      todayCash: i('today_cash'),
+      weekTotal: i('week_total'),
+      weekTrips: i('week_trips'),
+      weekCash: i('week_cash'),
+      rating: (j['rating'] as num?)?.toDouble(),
+      ratings: i('ratings'),
+    );
+  }
+}
