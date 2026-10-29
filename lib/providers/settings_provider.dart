@@ -31,3 +31,33 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
 
 final themeModeProvider =
     StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) => ThemeModeNotifier());
+
+/// Cómo se usa la app: pasajero (por defecto) o conductor, como el
+/// interruptor de InDrive. Se recuerda en el teléfono.
+enum AppMode { passenger, driver }
+
+class AppModeNotifier extends StateNotifier<AppMode> {
+  AppModeNotifier() : super(AppMode.passenger) {
+    _load();
+  }
+
+  static const key = 'app_mode_v1';
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getString(key) == AppMode.driver.name) state = AppMode.driver;
+    } catch (_) {}
+  }
+
+  Future<void> set(AppMode mode) async {
+    state = mode;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(key, mode.name);
+    } catch (_) {}
+  }
+}
+
+final appModeProvider =
+    StateNotifierProvider<AppModeNotifier, AppMode>((ref) => AppModeNotifier());

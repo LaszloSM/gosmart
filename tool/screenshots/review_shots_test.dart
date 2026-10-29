@@ -2,6 +2,9 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:gosmart/features/driver/driver_console.dart';
+import 'package:gosmart/models/driver_model.dart';
+import 'package:gosmart/providers/driver_provider.dart';
 import 'package:gosmart/features/trip/trip_screen.dart';
 import 'package:gosmart/features/trip/widgets/leg_panels.dart';
 import 'package:gosmart/models/dispatch_models.dart';
@@ -193,6 +196,16 @@ void main() {
       activeTripProvider.overrideWith((ref) async => trip),
       recentTripsProvider.overrideWith((ref) async => const []),
     ]);
+    final me = DriverProfile.fromJson({
+      'user_id': 'u', 'full_name': 'Wilmer Pushaina', 'cedula': '1118555444', 'phone': '+573001234567',
+      'service': 'mototaxi', 'zone': 'riohacha', 'status': 'approved', 'available': false,
+      'vehicles': [{'plate': 'ABC12D', 'kind': 'moto', 'seats': 1, 'brand': 'Bajaj', 'color': 'negra'}],
+      'driver_documents': [],
+    });
+    final earn = [driverEarningsProvider.overrideWith((ref) async => const DriverEarnings(
+        todayTotal: 23000, todayTrips: 4, todayCash: 8000, weekTotal: 118000, weekTrips: 21,
+        weekCash: 40000, rating: 4.8, ratings: 51))];
+    await shot(DriverConsole(driver: me), 'phone-driver-offline', settle: false, extra: earn);
     guest = true;
     await shot(const HomeScreen(), 'phone-home-real', settle: false);
     await t.pump(const Duration(milliseconds: 300));

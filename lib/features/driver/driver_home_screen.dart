@@ -16,13 +16,12 @@ import '../../providers/driver_provider.dart';
 import '../../router/app_router.dart';
 import '../../services/driver_service.dart';
 import '../../theme/design_tokens.dart';
-import '../../widgets/gs_button.dart';
 import '../../widgets/gs_empty_state.dart';
 import '../../widgets/gs_inline_error.dart';
 import '../../widgets/gs_list_row.dart';
 import '../../widgets/gs_route_plate.dart';
 import '../../widgets/gs_toast.dart';
-import 'driver_work_panel.dart';
+import 'driver_console.dart';
 
 class DriverHomeScreen extends ConsumerWidget {
   const DriverHomeScreen({super.key});
@@ -31,41 +30,24 @@ class DriverHomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final driver = ref.watch(myDriverProvider);
     final d = driver.valueOrNull;
-    final approved = d?.status == DriverStatus.approved;
+    // Aprobado: la consola sobre el mapa (Conectarme, solicitudes, ganancias).
+    if (d != null && d.status == DriverStatus.approved) return DriverConsole(driver: d);
     return Scaffold(
       backgroundColor: GSColors.background,
-      // Lo secundario va arriba; la zona del pulgar queda para lo que toca ahora (DS6).
       appBar: AppBar(
-        // Título corto: con texto grande comparte la barra con tres acciones.
         title: const Text('Conductor'),
+        // Desde aquí siempre se puede volver a usar la app como pasajero.
+        leading: IconButton(
+          tooltip: 'Volver al modo pasajero',
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => switchToPassenger(context, ref),
+        ),
         actions: [
-          if (approved)
-            IconButton(
-              tooltip: 'Cobrar con QR',
-              icon: const Icon(Icons.qr_code_2_rounded),
-              onPressed: () => context.push(AppRoutes.driverCharge),
-            ),
           if (d != null)
             IconButton(
               tooltip: 'Editar mis datos',
               icon: const Icon(Icons.edit_rounded),
               onPressed: () => context.push(AppRoutes.driverSignup),
-            ),
-          if (approved && d!.available)
-            IconButton(
-              tooltip: 'Pausar: dejar de recibir solicitudes',
-              icon: const Icon(Icons.pause_circle_rounded),
-              onPressed: () async {
-                final messenger = ScaffoldMessenger.of(context);
-                try {
-                  await driverService.setAvailable(d.userId, false);
-                  ref.invalidate(myDriverProvider);
-                } catch (_) {
-                  GSToast.showWithMessenger(messenger,
-                      message: 'No pudimos pausarte. Revisa tu conexión.',
-                      type: GSToastType.error);
-                }
-              },
             ),
         ],
       ),
@@ -105,7 +87,6 @@ class _DriverBody extends ConsumerStatefulWidget {
 
 class _DriverBodyState extends ConsumerState<_DriverBody> {
   String? _uploading;
-  bool _toggling = false;
 
   Future<void> _upload(String kind) async {
     final user = ref.read(currentUserProvider);
@@ -130,22 +111,6 @@ class _DriverBodyState extends ConsumerState<_DriverBody> {
     }
   }
 
-  Future<void> _toggle() async {
-    final messenger = ScaffoldMessenger.of(context);
-    setState(() => _toggling = true);
-    try {
-      await driverService.setAvailable(
-          widget.driver.userId, !widget.driver.available);
-      ref.invalidate(myDriverProvider);
-    } catch (_) {
-      GSToast.showWithMessenger(messenger,
-          message: 'No pudimos cambiar tu estado. Revisa tu conexión.',
-          type: GSToastType.error);
-    } finally {
-      if (mounted) setState(() => _toggling = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final d = widget.driver;
@@ -167,25 +132,6 @@ class _DriverBodyState extends ConsumerState<_DriverBody> {
       DriverStatus.suspended => ('Cuenta suspendida',
           d.reviewNote ?? 'Escríbenos para saber cómo reactivarla.'),
     };
-
-    final plate = Padding(
-      padding: const EdgeInsets.fromLTRB(
-          GSSpacing.s4, GSSpacing.s4, GSSpacing.s4, 0),
-      child: GSRoutePlate(
-        text: statusTitle,
-        detail: statusDetail,
-        detailMaxLines: 4,
-        leading: approved && d.available
-            ? Icons.radio_button_checked_rounded
-            : Icons.radio_button_unchecked_rounded,
-        isActive: approved && d.available,
-        size: GSPlateSize.lg,
-      ),
-    );
-    // Disponible: el panel de trabajo ocupa la pantalla y maneja la zona del pulgar.
-    if (approved && d.available) {
-      return DriverWorkPanel(driver: d, header: [plate]);
-    }
 
     return Column(
       children: [
@@ -265,25 +211,6 @@ class _DriverBodyState extends ConsumerState<_DriverBody> {
             ],
           ),
         ),
-        // Zona del pulgar: una sola acción grande (DS6).
-        if (approved)
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                  GSSpacing.s4, GSSpacing.s2, GSSpacing.s4, GSSpacing.s3),
-              child: ConstrainedBox(
-                constraints:
-                    const BoxConstraints(minHeight: GSSize.touchTargetDriver),
-                child: GSButton(
-                  label: 'Ponerme disponible',
-                  size: GSButtonSize.driver,
-                  isLoading: _toggling,
-                  onPressed: _toggling ? null : _toggle,
-                ),
-              ),
-            ),
-          ),
       ],
     );
   }

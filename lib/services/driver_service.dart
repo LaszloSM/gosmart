@@ -72,6 +72,14 @@ class DriverService {
     );
   }
 
+  /// Ganancias de hoy y de los últimos 7 días (023).
+  Future<DriverEarnings> earnings() async {
+    final rows = await _db.rpc('driver_earnings') as List<dynamic>;
+    return rows.isEmpty
+        ? const DriverEarnings()
+        : DriverEarnings.fromJson(Map<String, dynamic>.from(rows.first as Map));
+  }
+
   Future<void> setAvailable(String userId, bool available) async {
     await _db
         .from('drivers')

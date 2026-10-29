@@ -86,6 +86,7 @@ All migrations live in `supabase/migrations/`. Run them in order in the Supabase
 | `018_push.sql` | `push_tokens` + `register_push_token`; `push_targets_for_request` (conductores disponibles ≤ 3 km, vistos hace < 10 min) y `push_targets_for_report` (viajeros en la Troncal), solo service_role. |
 | `021_map_alerts.sql` | Alertas estilo Waze: `road_reports.segment_id` opcional (reporte por punto en la ciudad, bbox La Guajira), tipos nuevos `trancon`/`peligro`/`obra`, duplicado = mismo tipo a ≤150 m en 30 min. RPC pública `map_alerts(bbox)` (pines con votos, `mine`, `my_vote`). `road_status()` y push solo cuentan reportes con tramo. |
 | `022_offer_cards.sql` | RPC `ride_offer_cards(request)`: ofertas pendientes con nombre de pila, vehículo, calificación, distancia y minutos del conductor (solo el pasajero de la solicitud). |
+| `023_driver_earnings.sql` | RPC `driver_earnings()`: hoy y 7 días (total, viajes, efectivo confirmado) + calificación del conductor (solo lo propio). |
 | `010_wallet_hardening.sql` | **Security fix for 008.** Drops user UPDATE on `wallets` and INSERT on `wallet_transactions`; revokes `recharge_wallet` from clients; adds `idempotency_key`; new RPC `wallet_recharge_simulated(p_amount, p_idempotency_key)` that uses `auth.uid()`. Backfills wallets for older users. |
 
 **SQL tests:** `supabase/tests/` runs on a plain Postgres 16 (CI job `sql-tests`). `_supabase_stub.sql`
@@ -219,6 +220,8 @@ All providers in `lib/providers/`. Pattern: `StateNotifierProvider<Notifier, Asy
 | `visibleAlertsProvider` | `Provider<List<MapAlert>>` | Alertas de los tipos que el usuario quiere ver |
 | `themeModeProvider` | `StateNotifierProvider<…, ThemeMode>` | Sistema / claro / oscuro (`theme_mode_v1`); cambiar con `ThemeSwitchHost.run` (fundido) |
 | `tripDriverProvider` | `StateProvider<AssignedDriver?>` | Conductor del tramo en curso; lo publica `RideLegPanel` al consultar y `TripMap` lo desliza |
+| `appModeProvider` | `StateNotifierProvider<…, AppMode>` | passenger / driver (InDrive switch), `app_mode_v1`; splash opens `/driver` when driver |
+| `driverEarningsProvider` | `FutureProvider<DriverEarnings?>` | `driver_earnings()`; null = no data (never a made-up figure) |
 | `topFavoritePlacesProvider` | `Provider<List<FavoritePlace>>` | Top 3 by use_count |
 
 **Critical state pattern** — `updateProfile()` preserves previous state on error:
@@ -543,6 +546,10 @@ Currency: `'cop'` | `'usd'` | `'eur'`
   current leg. `RideLegPanel` phases: ask (`FareComposer` + `PayMethodPicker`) → search (`SearchingRadar`,
   `OfferCard`s from `ride_offer_cards`, falls back to price-only) → coming/riding (ETA, plate) → pay.
   `RideLegPanel(preview: …)` renders a phase without network (tests, screenshots).
+- **Driver mode (InDrive switch)**: `switchToDriver` / `switchToPassenger` (lib/features/driver/driver_console.dart)
+  set `appModeProvider` and navigate; going to passenger also disconnects. Approved drivers get `DriverConsole`
+  (map, menu, today's earnings pill, QR; offline → 72 dp "Conectarme"; online → `DriverWorkPanel` in a bottom
+  panel with `onActive`/`onPosition` for the map). Not approved → registration/documents screen.
 - **Payments**: a mototaxi/taxi leg closes only once paid (`pay_ride`, wallet or cash); QR charges are
   `gosmart:pay:<uuid>` (`chargeQrData` / `chargeIdFromQr`). Show `PaymentException.message`.
   The QR is always drawn on white (also at night) so any camera reads it.

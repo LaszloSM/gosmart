@@ -93,7 +93,7 @@ jobs:
           # Cada migración dos veces: deben ser seguras de re-ejecutar.
           for m in 011_roles_safety 012_places_directory 013_corridor 019_signup_fix \
                    014_transport_graph 015_dispatch 016_payments 017_trust_admin 018_push 020_fares \
-                   021_map_alerts 022_offer_cards; do
+                   021_map_alerts 022_offer_cards 023_driver_earnings; do
             run "supabase/migrations/$m.sql"
             run "supabase/migrations/$m.sql"
           done
@@ -113,6 +113,7 @@ jobs:
           run supabase/tests/018_push_test.sql
           run supabase/tests/021_map_alerts_test.sql
           run supabase/tests/022_offer_cards_test.sql
+          run supabase/tests/023_driver_earnings_test.sql
           # Datos de demo y conductor automático (sin pg_cron aquí: se llama el tick a mano)
           run supabase/demo/demo.sql
           run supabase/demo/demo.sql

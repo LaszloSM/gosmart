@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../router/app_router.dart';
+import '../driver/driver_console.dart' show switchToDriver;
 import '../../services/profile_service.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_bottom_nav.dart';
@@ -154,16 +155,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               children: [
                 const GSSectionTitle('Conducir'),
                 GSGroup(children: [
-                  GSListRow(
-                    icon: Icons.badge_rounded,
-                    title: (profile?.isDriver ?? false)
-                        ? 'Modo conductor'
-                        : 'Quiero ser conductor',
-                    subtitle: (profile?.isDriver ?? false)
-                        ? 'Tu disponibilidad y tus datos'
-                        : 'Mototaxi, taxi, colectivo o intermunicipal',
-                    onTap: () => context.push(AppRoutes.driver),
-                  ),
+                  if (profile?.isDriver ?? false)
+                    // Como InDrive: un interruptor cambia toda la app a la
+                    // vista de conductor (y desde allá se vuelve).
+                    SwitchListTile(
+                      value: false,
+                      onChanged: (_) => switchToDriver(context, ref),
+                      secondary: Icon(Icons.badge_rounded, color: GSColors.brand),
+                      title: const Text('Modo conductor'),
+                      subtitle: const Text('Conéctate, recibe solicitudes y mira tus ganancias'),
+                    )
+                  else
+                    GSListRow(
+                      icon: Icons.badge_rounded,
+                      title: 'Quiero ser conductor',
+                      subtitle: 'Mototaxi, taxi, colectivo o intermunicipal',
+                      onTap: () => context.push(AppRoutes.driver),
+                    ),
                 ]),
                 const GSSectionTitle('Seguridad'),
                 GSGroup(children: [

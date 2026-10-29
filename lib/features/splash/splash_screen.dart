@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../providers/auth_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../router/app_router.dart';
 import '../../theme/design_tokens.dart';
 
@@ -27,9 +29,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   Future<void> _navigate() async {
     final prefs = await SharedPreferences.getInstance();
     final onboardingDone = prefs.getBool('onboarding_complete') ?? false;
+    // Quien dejó la app en modo conductor (y tiene sesión) vuelve a ese modo.
+    final driverMode = prefs.getString(AppModeNotifier.key) == AppMode.driver.name &&
+        ref.read(currentUserProvider) != null;
     if (!mounted) return;
     // Modo invitado (DS3): con o sin sesión se entra al inicio.
-    context.go(onboardingDone ? AppRoutes.home : AppRoutes.intro);
+    context.go(!onboardingDone
+        ? AppRoutes.intro
+        : driverMode
+            ? AppRoutes.driver
+            : AppRoutes.home);
   }
 
   @override
