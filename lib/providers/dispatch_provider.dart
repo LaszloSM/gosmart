@@ -23,3 +23,7 @@ final recentTripsProvider = FutureProvider((ref) async {
   }
   return paymentService.recentTrips();
 });
+
+/// Conductor del tramo en curso (lo publica el panel del tramo al consultar):
+/// el mapa del viaje lo pinta y lo desliza entre una consulta y otra.
+final tripDriverProvider = StateProvider<AssignedDriver?>((ref) => null);

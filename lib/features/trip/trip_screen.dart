@@ -3,6 +3,8 @@
 // toca hacer ahora según el modo: caminar, pedir mototaxi/taxi (con ofertas
 // estilo InDrive) o reservar cupo en un colectivo. Cada tramo se cierra solo
 // y el viaje se completa cuando se cierran todos (máquina de estados en SQL).
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,6 +23,9 @@ import '../../widgets/gs_route_plate.dart';
 import '../../widgets/gs_toast.dart';
 import '../safety/sos_sheet.dart';
 import 'widgets/leg_panels.dart';
+import 'widgets/trip_map.dart';
+import 'widgets/trip_visuals.dart';
+import '../../widgets/gs_pressable.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_nav_spacer.dart';
 
@@ -76,6 +81,14 @@ class TripScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final trip = ref.watch(activeTripProvider);
+    // Sin viaje, nadie que pintar en el mapa.
+    ref.listen<AsyncValue<ChainedTrip?>>(activeTripProvider, (_, next) {
+      if (next.valueOrNull == null && next.hasValue) {
+        ref.read(tripDriverProvider.notifier).state = null;
+      }
+    });
+    final t = trip.valueOrNull;
+    if (t != null) return _ActiveTrip(trip: t, onCancel: () => _cancel(context, ref, t));
     return Scaffold(
       extendBody: true,
       backgroundColor: GSColors.background,
@@ -99,70 +112,208 @@ class TripScreen extends ConsumerWidget {
             onRetry: () => ref.invalidate(activeTripProvider),
           ),
         ),
-        data: (t) => t == null
-            ? ListView(children: [
-                GSEmptyState(
-                  icon: Icons.route_rounded,
-                  title: 'Sin viaje en curso',
-                  subtitle: ref.watch(isGuestProvider)
-                      ? 'Planea a dónde vas sin cuenta. Para iniciar el viaje, '
-                          'pedir mototaxi o reservar cupo, entra a tu cuenta.'
-                      : 'Planea a dónde vas y toca "Iniciar viaje". Aquí '
-                          'pides cada tramo y ves a tu conductor.',
-                  actionLabel: 'Planear un viaje',
-                  onAction: () => context.push(AppRoutes.routePlanner),
-                ),
-                const _RecentTrips(),
-              ])
-            : RefreshIndicator(
-                onRefresh: () async => ref.invalidate(activeTripProvider),
-                child: ListView(
-                  padding: EdgeInsets.zero,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                          GSSpacing.s4, GSSpacing.s4, GSSpacing.s4, 0),
-                      // Destino en la placa y el origen debajo: con texto
-                      // grande, "desde → hasta" en una línea se partía.
-                      child: GSRoutePlate(
-                        text: t.destLabel ?? 'Tu destino',
-                        detail: t.originLabel == null
-                            ? null
-                            : 'Desde ${t.originLabel}',
-                        detailMaxLines: 3,
-                        leading: Icons.route_rounded,
-                        size: GSPlateSize.md,
-                        maxLines: 3,
+        data: (_) => ListView(children: [
+          GSEmptyState(
+            icon: Icons.route_rounded,
+            title: 'Sin viaje en curso',
+            subtitle: ref.watch(isGuestProvider)
+                ? 'Planea a dónde vas sin cuenta. Para iniciar el viaje, '
+                    'pedir mototaxi o reservar cupo, entra a tu cuenta.'
+                : 'Planea a dónde vas y toca "Iniciar viaje". Aquí '
+                    'pides cada tramo y ves a tu conductor en el mapa.',
+            actionLabel: 'Planear un viaje',
+            onAction: () => context.push(AppRoutes.routePlanner),
+          ),
+          const _RecentTrips(),
+          const GSNavSpacer(),
+        ]),
+      ),
+      bottomNavigationBar: const GSBottomNav(current: GSNavTab.trip),
+    );
+  }
+}
+
+/// Viaje en curso como en Uber/InDrive: el mapa de fondo con la ruta y el
+/// conductor, y una hoja que se arrastra con lo que toca ahora.
+class _ActiveTrip extends ConsumerStatefulWidget {
+  const _ActiveTrip({required this.trip, required this.onCancel});
+  final ChainedTrip trip;
+  final VoidCallback onCancel;
+
+  @override
+  ConsumerState<_ActiveTrip> createState() => _ActiveTripState();
+}
+
+class _ActiveTripState extends ConsumerState<_ActiveTrip> {
+  /// Lo que tapa la hoja, ya asentado (el mapa no se reacomoda en cada cuadro).
+  double _extent = 0.56;
+  Timer? _settle;
+
+  @override
+  void dispose() {
+    _settle?.cancel();
+    super.dispose();
+  }
+
+  bool _onSheet(DraggableScrollableNotification n) {
+    _settle?.cancel();
+    _settle = Timer(const Duration(milliseconds: 140), () {
+      if (mounted && (n.extent - _extent).abs() > 0.02) setState(() => _extent = n.extent);
+    });
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.trip;
+    final text = Theme.of(context).textTheme;
+    final top = MediaQuery.paddingOf(context).top;
+    return Scaffold(
+      extendBody: true,
+      backgroundColor: GSColors.background,
+      body: LayoutBuilder(builder: (context, box) {
+        final h = box.maxHeight;
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: TripMap(
+                trip: t,
+                padding: EdgeInsets.only(top: top + 64, bottom: h * _extent.clamp(0.0, 0.7)),
+              ),
+            ),
+            // Arriba: hacia dónde vas y el botón de ayuda, flotando.
+            Positioned(
+              top: top + GSSpacing.s2,
+              left: GSSpacing.s3,
+              right: GSSpacing.s3,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: GSSize.touchTarget,
+                      padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
+                      decoration: BoxDecoration(
+                        color: GSColors.surface,
+                        borderRadius: BorderRadius.circular(GSRadius.full),
+                        boxShadow: GSShadow.float,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.flag_rounded, size: GSSize.iconMd, color: GSColors.brand),
+                          const SizedBox(width: GSSpacing.s2),
+                          Expanded(
+                            child: Text(
+                              'Hacia ${t.destLabel ?? 'tu destino'}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: text.titleSmall,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const GSSectionTitle('Tramos'),
-                    for (final l in t.legs)
-                      _LegRow(leg: l, isCurrent: l.id == t.currentLeg?.id),
-                    if (t.currentLeg != null) ...[
-                      const GSSectionTitle('Ahora'),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: GSSpacing.s4),
-                        child: CurrentLegPanel(
-                            key: ValueKey(t.currentLeg!.id),
-                            leg: t.currentLeg!),
-                      ),
-                    ],
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                          GSSpacing.s4, GSSpacing.s6, GSSpacing.s4, 0),
-                      child: GSButton(
-                        label: 'Cancelar viaje',
-                        variant: GSButtonVariant.danger,
-                        leadingIcon: Icons.close_rounded,
-                        onPressed: () => _cancel(context, ref, t),
+                  ),
+                  const SizedBox(width: GSSpacing.s2),
+                  Tooltip(
+                    message: 'Ayuda',
+                    child: GSPressable(
+                      onTap: () => showSosSheet(context),
+                      semanticLabel: 'Ayuda',
+                      child: Container(
+                        width: GSSize.touchTarget,
+                        height: GSSize.touchTarget,
+                        decoration: BoxDecoration(
+                          color: GSColors.surface,
+                          shape: BoxShape.circle,
+                          boxShadow: GSShadow.float,
+                        ),
+                        child: Icon(Icons.health_and_safety_rounded, color: GSColors.brand),
                       ),
                     ),
-                    const GSNavSpacer(),
-                  ],
+                  ),
+                ],
+              ),
+            ),
+            NotificationListener<DraggableScrollableNotification>(
+              onNotification: _onSheet,
+              child: DraggableScrollableSheet(
+                initialChildSize: 0.56,
+                minChildSize: 0.28,
+                maxChildSize: 0.94,
+                snap: true,
+                snapSizes: const [0.56],
+                builder: (context, controller) => Container(
+                  decoration: BoxDecoration(
+                    color: GSColors.background,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(GSRadius.xl)),
+                    boxShadow: GSShadow.sheet,
+                  ),
+                  child: RefreshIndicator(
+                    onRefresh: () async => ref.invalidate(activeTripProvider),
+                    child: SingleChildScrollView(
+                      controller: controller,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Center(
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: GSSpacing.s2),
+                              width: 40,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: GSColors.line,
+                                borderRadius: BorderRadius.circular(GSRadius.full),
+                              ),
+                            ),
+                          ),
+                          Text(t.destLabel ?? 'Tu destino',
+                              maxLines: 2, overflow: TextOverflow.ellipsis, style: text.headlineSmall),
+                          if (t.originLabel != null)
+                            Text('Desde ${t.originLabel}',
+                                maxLines: 2, overflow: TextOverflow.ellipsis, style: text.bodyMedium),
+                          const SizedBox(height: GSSpacing.s3),
+                          LegTimeline(
+                            legs: t.legs,
+                            currentId: t.currentLeg?.id,
+                            iconFor: legModeIcon,
+                            labelFor: legModeLabel,
+                          ),
+                          const SizedBox(height: GSSpacing.s4),
+                          if (t.currentLeg != null)
+                            Container(
+                              padding: const EdgeInsets.all(GSSpacing.s4),
+                              decoration: BoxDecoration(
+                                color: GSColors.surface,
+                                borderRadius: BorderRadius.circular(GSRadius.lg),
+                              ),
+                              child: CurrentLegPanel(
+                                  key: ValueKey(t.currentLeg!.id), leg: t.currentLeg!),
+                            ),
+                          const SizedBox(height: GSSpacing.s5),
+                          Text('Tramos', style: text.titleLarge),
+                          const SizedBox(height: GSSpacing.s3),
+                          for (final l in t.legs)
+                            _LegRow(leg: l, isCurrent: l.id == t.currentLeg?.id),
+                          const SizedBox(height: GSSpacing.s2),
+                          GSButton(
+                            label: 'Cancelar viaje',
+                            variant: GSButtonVariant.ghost,
+                            leadingIcon: Icons.close_rounded,
+                            onPressed: widget.onCancel,
+                          ),
+                          const GSNavSpacer(),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
-      ),
+            ),
+          ],
+        );
+      }),
       bottomNavigationBar: const GSBottomNav(current: GSNavTab.trip),
     );
   }
@@ -184,8 +335,7 @@ class _LegRow extends StatelessWidget {
       LegStatus.planned => (Icons.radio_button_unchecked_rounded, 'Pendiente'),
     };
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-          GSSpacing.s4, 0, GSSpacing.s4, GSSpacing.s2),
+      padding: const EdgeInsets.only(bottom: GSSpacing.s2),
       child: GSRoutePlate(
         text: legModeLabel(leg.mode),
         leading: legModeIcon(leg.mode),

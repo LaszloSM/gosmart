@@ -21,6 +21,10 @@ import '../../../widgets/gs_button.dart';
 import '../../../widgets/gs_list_row.dart';
 import '../../../widgets/gs_toast.dart';
 import '../../../core/clock.dart';
+import '../../../core/motion.dart';
+import '../../../widgets/gs_vehicle_pin.dart';
+import '../../safety/sos_sheet.dart';
+import 'trip_visuals.dart';
 
 /// Tarifa con la que se pide: el precio del tramo (taxi: oficial; mototaxi:
 /// sugerida), en múltiplos de $100.
@@ -239,8 +243,12 @@ class _ScheduledLegPanelState extends ConsumerState<ScheduledLegPanel> {
 
 // ── Mototaxi / taxi (estilo InDrive) ────────────────────────────────────────
 class RideLegPanel extends ConsumerStatefulWidget {
-  const RideLegPanel({super.key, required this.leg, this.pollEvery});
+  const RideLegPanel({super.key, required this.leg, this.pollEvery, this.preview});
   final TripLegRow leg;
+
+  /// Solo para pruebas y capturas: arranca en ese estado sin ir a la red.
+  final ({RideRequest? request, List<RideOffer> offers, AssignedDriver? driver, bool paid})?
+      preview;
 
   /// Cada cuánto se revisa la solicitud. null = 4 s.
   final Duration? pollEvery;
@@ -258,6 +266,9 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
   bool _busy = false;
   bool _loaded = false;
   bool _paid = false;
+
+  /// Forma de pago elegida al pedir; decide cuál botón va primero al pagar.
+  String _method = 'wallet';
   Timer? _timer;
   // Una llave por pago: reintentos sin señal no cobran dos veces.
   final _payKey = const Uuid().v4();
@@ -267,12 +278,22 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
   @override
   void initState() {
     super.initState();
+    final p = widget.preview;
+    if (p != null) {
+      _request = p.request;
+      _offers = p.offers;
+      _driver = p.driver;
+      _paid = p.paid;
+      _loaded = true;
+      return;
+    }
     _resume();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _clock?.cancel();
     super.dispose();
   }
 
@@ -292,7 +313,14 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
     if (_request != null) _startPolling();
   }
 
+  /// Mientras se busca, el reloj de la solicitud baja de a un segundo.
+  Timer? _clock;
+
   void _startPolling() {
+    _clock?.cancel();
+    _clock = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && _request?.status == RideStatus.open) setState(() {});
+    });
     _timer?.cancel();
     _timer = Timer.periodic(
         widget.pollEvery ?? const Duration(seconds: 4), (_) => _poll());
@@ -318,6 +346,8 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
         _offers = offers;
         _driver = driver;
       });
+      // El mapa del viaje pinta y desliza al conductor.
+      ref.read(tripDriverProvider.notifier).state = driver;
       await _syncLeg(fresh);
     } catch (_) {
       // Sin señal: se reintenta en el próximo ciclo.
@@ -425,9 +455,11 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
       return;
     }
     _timer?.cancel();
+    ref.read(tripDriverProvider.notifier).state = null;
     setState(() {
       _request = null;
       _offers = const [];
+      _driver = null;
       _key = const Uuid().v4();
     });
   }
@@ -437,8 +469,12 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
     final text = Theme.of(context).textTheme;
     final r = _request;
     final label = _service == 'taxi' ? 'taxi' : 'mototaxi';
+    final reduce = MediaQuery.of(context).disableAnimations;
     if (!_loaded) {
-      return const Center(child: CircularProgressIndicator());
+      return const Padding(
+        padding: EdgeInsets.all(GSSpacing.s6),
+        child: Center(child: CircularProgressIndicator()),
+      );
     }
     if (_unknown) {
       return Column(
@@ -457,186 +493,318 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
       );
     }
 
-    // 1. Sin pedir: elegir tarifa y pedir.
+    final Widget body;
+    final String phase;
+    // 1. Sin pedir: proponer tarifa, forma de pago y pedir.
     if (r == null ||
         r.status == RideStatus.cancelled ||
         (r.status == RideStatus.open && !r.isLive(DateTime.now())) ||
         r.status == RideStatus.expired) {
-      final expired = r != null && r.status != RideStatus.cancelled;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            expired
-                ? 'Nadie aceptó a tiempo. Sube un poco la tarifa o vuelve a pedir.'
-                : 'Pide un $label hasta ${widget.leg.toLabel ?? 'tu destino'}. '
-                    'Los conductores cercanos aceptan o te ofrecen otro precio.',
-            style: text.bodyLarge,
-          ),
-          const SizedBox(height: GSSpacing.s3),
-          Row(
-            children: [
-              IconButton(
-                tooltip: 'Bajar \$500',
-                onPressed:
-                    _fare > 1000 ? () => setState(() => _fare -= 500) : null,
-                icon: const Icon(Icons.remove_rounded),
-              ),
-              Expanded(
-                child: Text(
-                  formatCop(_fare),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: GSFonts.display,
-                    fontFeatures: GSFonts.tabular,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: GSColors.text,
-                  ),
-                ),
-              ),
-              IconButton(
-                tooltip: 'Subir \$500',
-                onPressed: () => setState(() => _fare += 500),
-                icon: const Icon(Icons.add_rounded),
-              ),
-            ],
-          ),
-          if (widget.leg.fareMax > 0)
-            Text(
-              widget.leg.mode == 'taxi'
-                  ? 'Tarifa oficial: ${formatCop(widget.leg.fareMax)}'
-                  : 'Tarifa sugerida: ${formatCop(widget.leg.fareMax)}. Puedes ofrecer otra.',
-              textAlign: TextAlign.center,
-              style: text.bodySmall,
-            ),
-          const SizedBox(height: GSSpacing.s3),
-          GSButton(
-            label: 'Pedir $label por ${formatCop(_fare)}',
-            isLoading: _busy,
-            onPressed: _busy
-                ? null
-                : () {
-                    if (expired) _key = const Uuid().v4();
-                    _sendRequest();
-                  },
-          ),
-        ],
-      );
+      phase = 'ask';
+      body = _askView(context, r, label);
+    } else if (r.status == RideStatus.open) {
+      // 2. Buscando: radar y ofertas.
+      phase = 'search';
+      body = _searchView(context, r, label);
+    } else {
+      // 3. Viene, vas con él, pagar.
+      phase = 'ride-${r.status.name}-$_paid';
+      body = _rideView(context, r);
     }
+    // Entre fases: fundido con un leve deslizamiento (Material shared axis).
+    return AnimatedSwitcher(
+      duration: reduce ? Duration.zero : GSDuration.normal,
+      switchInCurve: GSCurve.enter,
+      switchOutCurve: GSCurve.exit,
+      layoutBuilder: (current, previous) => Stack(
+        alignment: Alignment.topCenter,
+        children: [...previous, if (current != null) current],
+      ),
+      transitionBuilder: (child, a) => FadeTransition(
+        opacity: a,
+        child: SlideTransition(
+          position: Tween(begin: const Offset(0, 0.04), end: Offset.zero).animate(a),
+          child: child,
+        ),
+      ),
+      child: KeyedSubtree(key: ValueKey(phase), child: body),
+    );
+  }
 
-    // 2. Esperando: ofertas.
-    if (r.status == RideStatus.open) {
-      final left =
-          r.expiresAt.difference(DateTime.now()).inSeconds.clamp(0, 999);
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(children: [
-            const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2.5)),
-            const SizedBox(width: GSSpacing.s3),
-            Expanded(
-              child: Text(
-                  'Buscando $label por ${formatCop(r.offeredFare)}… '
-                  '(${left ~/ 60}:${(left % 60).toString().padLeft(2, '0')})',
-                  style: text.bodyLarge),
-            ),
-          ]),
-          for (final o in _offers)
-            GSListRow(
-              icon: Icons.local_offer_rounded,
-              title: 'Un conductor ofrece ${formatCop(o.fare)}',
-              onTap: _busy ? null : () => _acceptOffer(o),
-              trailing: const Text('Aceptar'),
-            ),
-          const SizedBox(height: GSSpacing.s2),
-          TextButton(
-              onPressed: _cancelRequest,
-              child: const Text('Cancelar solicitud')),
-        ],
-      );
-    }
-
-    // 3. Asignado o en camino.
-    final d = _driver;
+  Widget _askView(BuildContext context, RideRequest? r, String label) {
+    final text = Theme.of(context).textTheme;
+    final expired = r != null && r.status != RideStatus.cancelled;
+    final leg = widget.leg;
+    final balance = ref.watch(walletBalanceProvider);
+    final hint = leg.fareMax <= 0
+        ? null
+        : leg.mode == 'taxi'
+            ? 'Tarifa oficial: ${formatCop(leg.fareMax)}'
+            : 'Sugerida: ${formatCop(leg.fareMax)}. Puedes ofrecer otra.';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _DriverCard(
-          title: r.status == RideStatus.inProgress
-              ? 'Vas con ${d?.firstName ?? 'tu conductor'}.'
-              : '${d?.firstName ?? 'Tu conductor'} viene por ti.',
-          driver: d,
-          fare: formatCop(r.agreedFare ?? r.offeredFare),
-          onTheWay: r.status == RideStatus.accepted,
+        Text(expired ? 'Nadie aceptó a tiempo' : 'Tu oferta', style: text.titleLarge),
+        const SizedBox(height: 2),
+        Text(
+          expired
+              ? 'Sube un poco la tarifa o vuelve a pedir.'
+              : 'Los conductores cercanos aceptan o te proponen otro precio.',
+          style: text.bodyMedium,
         ),
-        const SizedBox(height: GSSpacing.s2),
-        if (r.status == RideStatus.accepted)
-          Text('Revisa que la placa coincida antes de subir.',
-              style: text.bodySmall),
-        if (r.status == RideStatus.accepted)
-          TextButton(onPressed: _cancelRequest, child: const Text('Cancelar')),
-        if (r.status != RideStatus.accepted && !_paid) ...[
-          const SizedBox(height: GSSpacing.s3),
-          Text(
-            r.status == RideStatus.completed
-                ? 'Llegaste. Paga el tramo para cerrarlo.'
-                : 'Puedes pagar ya o al llegar.',
-            style: text.bodyMedium,
+        const SizedBox(height: GSSpacing.s4),
+        FareComposer(
+          fare: _fare,
+          onChanged: (v) => setState(() => _fare = v.clamp(1000, 500000).toInt()),
+          hint: hint,
+        ),
+        const SizedBox(height: GSSpacing.s4),
+        PayMethodPicker(
+          method: _method,
+          balance: balance > 0 ? balance : null,
+          onChanged: (m) => setState(() => _method = m),
+        ),
+        if (_method == 'wallet' && balance < _fare)
+          Padding(
+            padding: const EdgeInsets.only(top: GSSpacing.s2),
+            child: Text('Tu saldo no alcanza: podrás pagar en efectivo.',
+                style: text.bodySmall),
+          ),
+        const SizedBox(height: GSSpacing.s4),
+        GSButton(
+          label: 'Pedir $label por ${formatCop(_fare)}',
+          leadingIcon: vehicleIcon(_service),
+          size: GSButtonSize.lg,
+          isLoading: _busy,
+          onPressed: _busy
+              ? null
+              : () {
+                  if (expired) _key = const Uuid().v4();
+                  _sendRequest();
+                },
+        ),
+      ],
+    );
+  }
+
+  Widget _searchView(BuildContext context, RideRequest r, String label) {
+    final text = Theme.of(context).textTheme;
+    final left = r.expiresAt.difference(DateTime.now());
+    final secs = left.inSeconds.clamp(0, 999);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Center(child: SearchingRadar(icon: vehicleIcon(_service))),
+        const SizedBox(height: GSSpacing.s3),
+        Text(
+          _offers.isEmpty
+              ? 'Buscando $label por ${formatCop(r.offeredFare)}…'
+              : _offers.length == 1
+                  ? 'Un conductor te hizo una oferta'
+                  : '${_offers.length} conductores te hicieron ofertas',
+          textAlign: TextAlign.center,
+          style: text.titleMedium,
+        ),
+        const SizedBox(height: 2),
+        Text(
+          'Quedan ${secs ~/ 60}:${(secs % 60).toString().padLeft(2, '0')} · '
+          'avisamos a los conductores cerca',
+          textAlign: TextAlign.center,
+          style: text.bodySmall?.copyWith(fontFeatures: GSFonts.tabular),
+        ),
+        const SizedBox(height: GSSpacing.s3),
+        CountdownBar(left: left, total: const Duration(minutes: 3)),
+        const SizedBox(height: GSSpacing.s3),
+        for (var i = 0; i < _offers.length; i++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: GSSpacing.s2),
+            child: OfferCard(
+              key: ValueKey(_offers[i].id),
+              offer: _offers[i],
+              index: i,
+              myFare: r.offeredFare,
+              busy: _busy,
+              onAccept: () => _acceptOffer(_offers[i]),
+            ),
+          ),
+        TextButton(
+          onPressed: _cancelRequest,
+          style: TextButton.styleFrom(foregroundColor: GSColors.textMuted),
+          child: const Text('Cancelar solicitud'),
+        ),
+      ],
+    );
+  }
+
+  Widget _rideView(BuildContext context, RideRequest r) {
+    final text = Theme.of(context).textTheme;
+    final d = _driver;
+    final fare = r.agreedFare ?? r.offeredFare;
+    final pickup = widget.leg.from;
+    final eta = d?.at != null && pickup != null ? etaMinutes(d!.at!, pickup) : null;
+    final coming = r.status == RideStatus.accepted;
+    final done = r.status == RideStatus.completed;
+    final title = coming
+        ? '${d?.firstName ?? 'Tu conductor'} viene por ti'
+        : done
+            ? 'Llegaste'
+            : 'Vas con ${d?.firstName ?? 'tu conductor'}';
+    final subtitle = coming
+        ? (eta == null ? 'En camino al punto de recogida' : 'Llega en unos $eta min')
+        : done
+            ? 'Paga el tramo para cerrarlo.'
+            : 'Hacia ${widget.leg.toLabel ?? 'tu destino'}';
+    final cashFirst = _method == 'cash';
+    final payWallet = GSButton(
+      label: 'Pagar ${formatCop(fare)} con saldo de prueba',
+      leadingIcon: Icons.account_balance_wallet_rounded,
+      variant: cashFirst ? GSButtonVariant.outline : GSButtonVariant.primary,
+      isLoading: _busy && !cashFirst,
+      onPressed: _busy ? null : () => _pay('wallet'),
+    );
+    final payCash = GSButton(
+      label: 'Pago en efectivo',
+      leadingIcon: Icons.payments_rounded,
+      variant: cashFirst ? GSButtonVariant.primary : GSButtonVariant.outline,
+      isLoading: _busy && cashFirst,
+      onPressed: _busy ? null : () => _pay('cash'),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: text.titleLarge),
+                  Text(subtitle, style: text.bodyMedium?.copyWith(fontFeatures: GSFonts.tabular)),
+                ],
+              ),
+            ),
+            if (coming && eta != null) _EtaBadge(minutes: eta),
+          ],
+        ),
+        const SizedBox(height: GSSpacing.s3),
+        _DriverCard(driver: d, fare: formatCop(fare)),
+        if (coming) ...[
+          const SizedBox(height: GSSpacing.s2),
+          Row(
+            children: [
+              Icon(Icons.verified_user_rounded, size: GSSize.iconSm, color: GSColors.textMuted),
+              const SizedBox(width: GSSpacing.s2),
+              Expanded(
+                child: Text('Revisa que la placa coincida antes de subir.',
+                    style: text.bodySmall),
+              ),
+            ],
           ),
           const SizedBox(height: GSSpacing.s2),
-          GSButton(
-            label:
-                'Pagar ${formatCop(r.agreedFare ?? r.offeredFare)} con saldo de prueba',
-            leadingIcon: Icons.account_balance_wallet_rounded,
-            isLoading: _busy,
-            onPressed: _busy ? null : () => _pay('wallet'),
+          Row(
+            children: [
+              Expanded(
+                child: GSButton(
+                  label: 'Ayuda',
+                  leadingIcon: Icons.health_and_safety_rounded,
+                  variant: GSButtonVariant.outline,
+                  onPressed: () => showSosSheet(context),
+                ),
+              ),
+              const SizedBox(width: GSSpacing.s2),
+              Expanded(
+                child: GSButton(
+                  label: 'Cancelar',
+                  leadingIcon: Icons.close_rounded,
+                  variant: GSButtonVariant.ghost,
+                  onPressed: _cancelRequest,
+                ),
+              ),
+            ],
           ),
+        ],
+        if (!coming && !_paid) ...[
+          const SizedBox(height: GSSpacing.s4),
+          if (!done)
+            Padding(
+              padding: const EdgeInsets.only(bottom: GSSpacing.s2),
+              child: Text('Puedes pagar ya o al llegar.', style: text.bodyMedium),
+            ),
+          if (cashFirst) payCash else payWallet,
           const SizedBox(height: GSSpacing.s2),
-          GSButton(
-            label: 'Pago en efectivo',
-            leadingIcon: Icons.payments_rounded,
-            variant: GSButtonVariant.outline,
-            onPressed: _busy ? null : () => _pay('cash'),
-          ),
+          if (cashFirst) payWallet else payCash,
         ],
         if (_paid)
           Padding(
-            padding: const EdgeInsets.only(top: GSSpacing.s2),
-            child: Text('Tramo pagado.', style: text.bodyMedium),
+            padding: const EdgeInsets.only(top: GSSpacing.s3),
+            child: Row(
+              children: [
+                Icon(Icons.check_circle_rounded, color: GSColors.brand),
+                const SizedBox(width: GSSpacing.s2),
+                Text('Tramo pagado', style: text.titleMedium),
+              ],
+            ).gsPop(context, from: 0.9),
           ),
       ],
     );
   }
 }
 
-/// Conductor asignado como en InDrive/DiDi: estado arriba, foto (inicial) con
-/// la calificación, la placa como una placa de verdad y la tarifa acordada.
-class _DriverCard extends StatelessWidget {
-  const _DriverCard({
-    required this.title,
-    required this.driver,
-    required this.fare,
-    required this.onTheWay,
-  });
+/// Minutos que faltan, en una píldora de marca (lo que más se mira).
+class _EtaBadge extends StatelessWidget {
+  const _EtaBadge({required this.minutes});
+  final int minutes;
 
-  final String title;
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Llega en $minutes minutos',
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s3, vertical: GSSpacing.s2),
+        decoration: BoxDecoration(
+          color: GSColors.brand,
+          borderRadius: BorderRadius.circular(GSRadius.full),
+        ),
+        child: Column(
+          children: [
+            Text('$minutes',
+                style: TextStyle(
+                  fontFamily: GSFonts.sans,
+                  fontFeatures: GSFonts.tabular,
+                  fontSize: 22,
+                  height: 1,
+                  fontWeight: FontWeight.w800,
+                  color: GSColors.onBrand,
+                )),
+            Text('min',
+                style: TextStyle(
+                  fontFamily: GSFonts.sans,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: GSColors.onBrand,
+                )),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Conductor asignado como en InDrive/DiDi: inicial con la calificación,
+/// el vehículo, la placa como una placa de verdad y la tarifa acordada.
+class _DriverCard extends StatelessWidget {
+  const _DriverCard({required this.driver, required this.fare});
+
   final AssignedDriver? driver;
   final String fare;
-  final bool onTheWay;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final d = driver;
-    final initial = (d?.firstName.trim().isNotEmpty ?? false)
-        ? d!.firstName.trim()[0].toUpperCase()
-        : '?';
     return Container(
-      padding: const EdgeInsets.all(GSSpacing.s4),
+      padding: const EdgeInsets.all(GSSpacing.s3),
       decoration: BoxDecoration(
         color: GSColors.surface,
         borderRadius: BorderRadius.circular(GSRadius.lg),
@@ -647,64 +815,33 @@ class _DriverCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                onTheWay
-                    ? Icons.near_me_rounded
-                    : Icons.route_rounded,
-                size: 20,
-                color: GSColors.brand,
-              ),
-              const SizedBox(width: GSSpacing.s2),
-              Expanded(child: Text(title, style: text.titleLarge)),
-            ],
-          ),
-          const SizedBox(height: GSSpacing.s3),
-          Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: GSColors.brandTint,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  initial,
-                  style: TextStyle(
-                    fontFamily: GSFonts.sans,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: GSColors.brand,
-                  ),
-                ),
-              ),
+              DriverAvatar(name: d?.firstName ?? '?'),
               const SizedBox(width: GSSpacing.s3),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      d?.vehicle ?? d?.firstName ?? 'Tu conductor',
+                      d?.firstName ?? 'Tu conductor',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: text.titleMedium,
                     ),
-                    const SizedBox(height: 2),
+                    if (d?.vehicle != null)
+                      Text(d!.vehicle!,
+                          maxLines: 1, overflow: TextOverflow.ellipsis, style: text.bodySmall),
                     Row(
                       children: [
-                        Icon(Icons.star_rounded,
-                            size: GSSize.iconSm, color: GSColors.text),
+                        Icon(Icons.star_rounded, size: GSSize.iconSm, color: GSColors.text),
                         const SizedBox(width: 2),
                         Flexible(
                           child: Text(
                             d?.rating == null
                                 ? 'Conductor nuevo en GoSmart'
-                                : '${d!.rating!.toStringAsFixed(1)} · ${d.ratings} calificaciones',
+                                : '${d!.rating!.toStringAsFixed(1).replaceAll('.', ',')} (${d.ratings})',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: text.bodySmall
-                                ?.copyWith(fontFeatures: GSFonts.tabular),
+                            style: text.bodySmall?.copyWith(fontFeatures: GSFonts.tabular),
                           ),
                         ),
                       ],
@@ -718,15 +855,12 @@ class _DriverCard extends StatelessWidget {
               ],
             ],
           ),
-          const SizedBox(height: GSSpacing.s3),
+          const Divider(height: GSSpacing.s6),
           Row(
             children: [
               Text('Tarifa acordada', style: text.bodyMedium),
               const Spacer(),
-              Text(
-                fare,
-                style: text.titleLarge?.copyWith(fontFeatures: GSFonts.tabular),
-              ),
+              Text(fare, style: text.titleLarge?.copyWith(fontFeatures: GSFonts.tabular)),
             ],
           ),
         ],

@@ -78,15 +78,43 @@ class RideRequest {
 }
 
 class RideOffer {
-  const RideOffer({required this.id, required this.fare, required this.status});
+  const RideOffer({
+    required this.id,
+    required this.fare,
+    this.status = 'pending',
+    this.firstName,
+    this.vehicle,
+    this.rating,
+    this.ratings = 0,
+    this.pickupKm,
+    this.etaMin,
+  });
   final String id;
   final int fare;
   final String status;
 
+  /// Quién ofrece (ride_offer_cards, 022). null con el respaldo de solo precio.
+  final String? firstName;
+  final String? vehicle;
+
+  /// Promedio de estrellas; null con menos de 3 calificaciones.
+  final double? rating;
+  final int ratings;
+
+  /// Qué tan lejos está del punto de recogida y en cuántos minutos llega.
+  final double? pickupKm;
+  final int? etaMin;
+
   factory RideOffer.fromJson(Map<String, dynamic> j) => RideOffer(
         id: j['id'] as String,
         fare: (j['fare'] as num).toInt(),
-        status: j['status'] as String,
+        status: j['status'] as String? ?? 'pending',
+        firstName: j['first_name'] as String?,
+        vehicle: j['vehicle'] as String?,
+        rating: (j['rating'] as num?)?.toDouble(),
+        ratings: (j['ratings'] as num?)?.toInt() ?? 0,
+        pickupKm: (j['pickup_km'] as num?)?.toDouble(),
+        etaMin: (j['eta_min'] as num?)?.toInt(),
       );
 }
 

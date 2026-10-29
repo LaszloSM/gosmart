@@ -2,6 +2,10 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:gosmart/features/trip/trip_screen.dart';
+import 'package:gosmart/features/trip/widgets/leg_panels.dart';
+import 'package:gosmart/models/dispatch_models.dart';
+import 'package:gosmart/providers/dispatch_provider.dart';
 import 'package:gosmart/features/routes/widgets/mode_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -130,7 +134,7 @@ void main() {
       GSColors.apply(dark ? Brightness.dark : Brightness.light);
       await t.pumpWidget(ProviderScope(key: UniqueKey(), overrides: [...ov, ...extra], child: MaterialApp(debugShowCheckedModeBanner: false, theme: dark ? AppTheme.dark : AppTheme.light,
           home: RepaintBoundary(key: const ValueKey('shot'), child: w))));
-      if (settle) { await t.pumpAndSettle(); } else { await t.pump(const Duration(milliseconds: 400)); }
+      if (settle) { await t.pumpAndSettle(); } else { for (var i = 0; i < 6; i++) { await t.pump(const Duration(milliseconds: 80)); } }
       // Las ilustraciones (assets) se decodifican fuera del reloj falso.
       await t.runAsync(() => Future.wait(find.byType(Image).evaluate()
           .map((e) => precacheImage((e.widget as Image).image, e))));
@@ -153,6 +157,43 @@ void main() {
     guest = true;
     await shot(Scaffold(backgroundColor: const Color(0xFF9AA3B0), body: Align(alignment: Alignment.bottomCenter,
         child: AlertDetailSheet(alertId: 'a2', initial: _alerts[1]))), 'phone-alert-detail');
+    // Viaje (InDrive/Uber): cada fase del tramo en mototaxi, sin red.
+    const leg = TripLegRow(id: 'l', seq: 0, mode: 'mototaxi', status: LegStatus.awaitingDispatch,
+        fromLabel: 'Parque Padilla', toLabel: 'Universidad de La Guajira',
+        from: LatLng(11.5441, -72.9071), to: LatLng(11.5262, -72.8740), fareMin: 5000, fareMax: 5000);
+    final req = RideRequest(id: 'r', service: 'mototaxi', status: RideStatus.open, offeredFare: 5000,
+        expiresAt: DateTime.now().add(const Duration(minutes: 2, seconds: 14)));
+    const offers = [
+      RideOffer(id: 'o1', fare: 5500, firstName: 'Wilmer', vehicle: 'Bajaj negra', rating: 4.8, ratings: 51, pickupKm: 0.6, etaMin: 3),
+      RideOffer(id: 'o2', fare: 6000, firstName: 'Yair', vehicle: 'AKT roja', pickupKm: 1.3, etaMin: 5),
+    ];
+    const drv = AssignedDriver(firstName: 'Wilmer', service: 'mototaxi', plate: 'ABC12D',
+        vehicle: 'Bajaj negra', at: LatLng(11.5470, -72.9040), rating: 4.8, ratings: 51);
+    Widget phase(RideRequest? r, {List<RideOffer> o = const [], AssignedDriver? d, bool paid = false}) =>
+        Scaffold(backgroundColor: GSColors.background, body: SafeArea(child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Container(padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: GSColors.surface, borderRadius: BorderRadius.circular(16)),
+            child: RideLegPanel(leg: leg, preview: (request: r, offers: o, driver: d, paid: paid))))));
+    guest = false;
+    await shot(phase(null), 'phone-trip-ask');
+    await shot(phase(req, o: offers), 'phone-trip-offers', settle: false);
+    await shot(phase(RideRequest(id: 'r', service: 'mototaxi', status: RideStatus.accepted, offeredFare: 5000,
+        agreedFare: 5500, expiresAt: DateTime.now()), d: drv), 'phone-trip-coming');
+    await shot(phase(RideRequest(id: 'r', service: 'mototaxi', status: RideStatus.inProgress, offeredFare: 5000,
+        agreedFare: 5500, expiresAt: DateTime.now()), d: drv), 'phone-trip-riding');
+    final trip = ChainedTrip.fromJson({
+      'id': 't', 'status': 'in_progress', 'origin_label': 'Parque Padilla', 'dest_label': 'Universidad de La Guajira',
+      'trip_legs': [
+        {'id': 'a', 'seq': 0, 'mode': 'walk', 'status': 'completed', 'to_label': 'Calle 2 con carrera 7', 'minutes': 3},
+        {'id': 'b', 'seq': 1, 'mode': 'walk', 'status': 'planned', 'to_label': 'Universidad de La Guajira', 'minutes': 4},
+      ],
+    });
+    await shot(const TripScreen(), 'phone-trip-screen', settle: false, extra: [
+      activeTripProvider.overrideWith((ref) async => trip),
+      recentTripsProvider.overrideWith((ref) async => const []),
+    ]);
+    guest = true;
     await shot(const HomeScreen(), 'phone-home-real', settle: false);
     await t.pump(const Duration(milliseconds: 300));
     await _save(t, 'phone-home-real');

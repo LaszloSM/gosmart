@@ -18,6 +18,7 @@ import '../../../models/map_alert.dart';
 import '../../../models/route_result.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_alert_badge.dart';
+import '../../../widgets/gs_vehicle_pin.dart';
 
 /// Lo que el inicio le pide a la cámara, sea cual sea el mapa.
 abstract class MapViewController {
@@ -50,7 +51,17 @@ class MapView extends StatelessWidget {
     this.padding = EdgeInsets.zero,
     this.alerts = const [],
     this.onAlertTap,
+    this.vehicle,
+    this.vehicleService = 'mototaxi',
+    this.onLongPressEnabled = true,
   });
+
+  /// El conductor que viene o con quien vas (ya interpolado: ver TripMap).
+  final LatLng? vehicle;
+  final String vehicleService;
+
+  /// En el viaje no hay "¿Ir aquí?": la pulsación larga no hace nada.
+  final bool onLongPressEnabled;
 
   /// Alertas tipo Waze: globos que se vuelven puntos al alejar el mapa.
   final List<MapAlert> alerts;
@@ -119,6 +130,18 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
 
   static gm.LatLng _g(LatLng p) => gm.LatLng(p.latitude, p.longitude);
 
+  /// Imagen del conductor por servicio (se dibuja una vez).
+  final _vehicleIcons = <String, gm.BitmapDescriptor>{};
+
+  Future<void> _ensureVehicle(String service) async {
+    if (_vehicleIcons.containsKey(service)) return;
+    _vehicleIcons[service] = gm.BitmapDescriptor.defaultMarker; // reserva
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final bytes = await renderVehiclePin(service, pixelRatio: dpr, brand: GSColors.brand);
+    _vehicleIcons[service] = gm.BitmapDescriptor.bytes(bytes, imagePixelRatio: dpr);
+    if (mounted) setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
@@ -156,6 +179,7 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
     final night = Theme.of(context).brightness == Brightness.dark;
     final legs = v.route?.legs ?? const [];
     if (v.alerts.isNotEmpty) unawaited(_ensurePins(night));
+    if (v.vehicle != null) unawaited(_ensureVehicle(v.vehicleService));
     return gm.GoogleMap(
       initialCameraPosition: gm.CameraPosition(target: _g(v.initialCenter), zoom: 15.5),
       padding: v.padding,
@@ -177,7 +201,9 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
       minMaxZoomPreference: const gm.MinMaxZoomPreference(5, 19),
       cameraTargetBounds: gm.CameraTargetBounds(gm.LatLngBounds(
           southwest: _g(guajiraSouthWest), northeast: _g(guajiraNorthEast))),
-      onLongPress: (p) => v.onLongPress(LatLng(p.latitude, p.longitude)),
+      onLongPress: v.onLongPressEnabled
+          ? (p) => v.onLongPress(LatLng(p.latitude, p.longitude))
+          : null,
       // Al alejar o acercar, los pines cambian de tamaño solo al cruzar un
       // umbral (no en cada cuadro): globo grande, globo chico, punto.
       onCameraMove: (pos) {
@@ -216,6 +242,15 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
           ),
         if (v.pin != null)
           gm.Marker(markerId: const gm.MarkerId('pin'), position: _g(v.pin!)),
+        if (v.vehicle != null && _vehicleIcons[v.vehicleService] != null)
+          gm.Marker(
+            markerId: const gm.MarkerId('vehicle'),
+            position: _g(v.vehicle!),
+            icon: _vehicleIcons[v.vehicleService]!,
+            anchor: const Offset(0.5, 0.5),
+            zIndexInt: 5,
+            infoWindow: const gm.InfoWindow(title: 'Tu conductor'),
+          ),
         for (final a in v.alerts)
           if (_pinCache[_pinKey(a.kind, _pinSize, night)] case final icon?)
             gm.Marker(
@@ -280,7 +315,7 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
           bounds: fm.LatLngBounds(guajiraSouthWest, guajiraNorthEast),
         ),
         interactionOptions: const fm.InteractionOptions(flags: fm.InteractiveFlag.all),
-        onLongPress: (_, point) => v.onLongPress(point),
+        onLongPress: v.onLongPressEnabled ? (_, point) => v.onLongPress(point) : null,
         onPositionChanged: (camera, _) {
           final next = alertPinSizeFor(camera.zoom);
           if (next != _pinSize) setState(() => _pinSize = next);
@@ -357,6 +392,16 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
               height: 44,
               alignment: Alignment.topCenter,
               child: Icon(Icons.location_on_rounded, color: GSColors.text, size: 44),
+            ),
+          if (v.vehicle != null)
+            fm.Marker(
+              point: v.vehicle!,
+              width: vehiclePinSize + 8,
+              height: vehiclePinSize + 8,
+              child: Semantics(
+                label: 'Tu conductor',
+                child: Center(child: GSVehiclePin(service: v.vehicleService)),
+              ),
             ),
           for (final a in v.alerts)
             fm.Marker(
