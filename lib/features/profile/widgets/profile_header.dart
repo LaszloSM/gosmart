@@ -59,7 +59,9 @@ class ProfileHeader extends ConsumerWidget {
         data: (p) {
           final name = p.name.trim().isEmpty ? 'Tu nombre' : p.name.trim();
           final details = [
-            if ((p.cedula ?? '').isNotEmpty) 'Cédula ${p.cedula}',
+            // En la calle la pantalla se ve por encima del hombro (Ley 1581):
+            // solo los últimos 4 dígitos.
+            if ((p.cedula ?? '').isNotEmpty) 'Cédula ${maskCedula(p.cedula!)}',
             if ((p.city ?? '').isNotEmpty) p.city!,
           ].join(' · ');
           return Row(
@@ -252,3 +254,6 @@ class _Avatar extends StatelessWidget {
     );
   }
 }
+
+/// "1124038745" → "•••• 8745".
+String maskCedula(String c) => c.length <= 4 ? c : '•••• ${c.substring(c.length - 4)}';

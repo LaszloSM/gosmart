@@ -59,6 +59,10 @@ class _ReportSheetState extends ConsumerState<ReportSheet> {
   /// Sin GPS: el tramo elegido a mano.
   String? _manualSegment;
 
+  /// Lo elegido en la cuadrícula; se publica al confirmar (un toque en
+  /// movimiento no publica nada por error).
+  AlertKind? _picked;
+
   @override
   void initState() {
     super.initState();
@@ -231,14 +235,25 @@ class _ReportSheetState extends ConsumerState<ReportSheet> {
                   child: _KindTile(
                     kind: kinds[i],
                     busy: _sendingKind == kinds[i].id,
+                    selected: _picked?.id == kinds[i].id,
                     enabled: _phase == _Phase.choose,
-                    onTap: () => _send(kinds[i]),
+                    onTap: () => setState(() {
+                      _picked = kinds[i];
+                      _error = null;
+                    }),
                   // Entrada corta y escalonada: es una acción poco frecuente.
                   ).gsEnter(context, delay: (i * 18).ms, duration: 160.ms, scale: 0.9),
                 ),
             ],
           );
         }),
+        const SizedBox(height: GSSpacing.s5),
+        GSButton(
+          label: _picked == null ? 'Elige qué ves' : 'Reportar ${_picked!.label.toLowerCase()}',
+          leadingIcon: Icons.add_location_alt_rounded,
+          isLoading: _phase == _Phase.sending,
+          onPressed: _picked == null || _phase != _Phase.choose ? null : () => _send(_picked!),
+        ),
         if (_error != null) ...[
           const SizedBox(height: GSSpacing.s4),
           Text(_error!,
@@ -263,9 +278,11 @@ class _KindTile extends StatelessWidget {
     required this.busy,
     required this.enabled,
     required this.onTap,
+    this.selected = false,
   });
   final AlertKind kind;
   final bool busy;
+  final bool selected;
   final bool enabled;
   final VoidCallback onTap;
 
@@ -273,20 +290,38 @@ class _KindTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return GSPressable(
       onTap: enabled ? onTap : null,
-      semanticLabel: 'Reportar ${kind.label}',
+      semanticLabel: kind.label,
+      selected: selected,
       child: Column(
         children: [
           SizedBox(
-            width: 60,
-            height: 60,
+            width: 68,
+            height: 68,
             child: Stack(
               alignment: Alignment.center,
               children: [
-                GSAlertBadge(kind: kind, size: 60),
+                // Elegido: anillo de marca alrededor del globo.
+                AnimatedContainer(
+                  duration: MediaQuery.of(context).disableAnimations ? Duration.zero : GSDuration.fast,
+                  curve: GSCurve.enter,
+                  width: 68,
+                  height: 68,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                        color: selected ? GSColors.brand : Colors.transparent, width: 3),
+                  ),
+                ),
+                AnimatedScale(
+                  scale: selected ? 1.06 : 1,
+                  duration: MediaQuery.of(context).disableAnimations ? Duration.zero : GSDuration.fast,
+                  curve: GSCurve.enter,
+                  child: GSAlertBadge(kind: kind, size: 58),
+                ),
                 if (busy)
                   SizedBox(
-                    width: 60,
-                    height: 60,
+                    width: 68,
+                    height: 68,
                     child: CircularProgressIndicator(
                         strokeWidth: 3, color: GSColors.text),
                   ),

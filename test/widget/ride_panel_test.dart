@@ -56,7 +56,7 @@ void main() {
     expect(find.text('Un conductor te hizo una oferta'), findsOneWidget);
     expect(find.text('Wilmer'), findsOneWidget);
     expect(find.textContaining('a 3 min · 600 m'), findsOneWidget);
-    expect(find.text('+\$500'), findsOneWidget);
+    expect(find.text('\$500 más'), findsOneWidget);
     expect(find.text('Aceptar'), findsOneWidget);
   });
 
@@ -68,7 +68,7 @@ void main() {
             at: LatLng(11.5470, -72.9040))));
     await tester.pumpAndSettle();
     expect(find.text('Wilmer viene por ti'), findsOneWidget);
-    expect(find.textContaining('Llega en unos'), findsOneWidget);
+    expect(find.text('min'), findsOneWidget);
     expect(find.text('\$5.500'), findsOneWidget);
   });
 

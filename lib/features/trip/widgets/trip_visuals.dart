@@ -442,7 +442,7 @@ class OfferCard extends StatelessWidget {
               Text(formatCop(o.fare),
                   style: text.titleLarge?.copyWith(fontFeatures: GSFonts.tabular)),
               if (diff != 0)
-                Text(diff > 0 ? '+${formatCop(diff)}' : '−${formatCop(-diff)}',
+                Text(diff > 0 ? '${formatCop(diff)} más' : '${formatCop(-diff)} menos',
                     style: text.bodySmall?.copyWith(fontFeatures: GSFonts.tabular)),
               const SizedBox(height: GSSpacing.s1),
               FilledButton(

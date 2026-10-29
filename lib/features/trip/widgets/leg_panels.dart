@@ -540,10 +540,30 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
         ? null
         : leg.mode == 'taxi'
             ? 'Tarifa oficial: ${formatCop(leg.fareMax)}'
-            : 'Sugerida: ${formatCop(leg.fareMax)}. Puedes ofrecer otra.';
+            : _fare == leg.fareMax
+                ? 'Es la tarifa sugerida para este trayecto'
+                : 'Sugerida: ${formatCop(leg.fareMax)}';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (leg.fromLabel != null || leg.toLabel != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: GSSpacing.s3),
+            child: Row(
+              children: [
+                Icon(Icons.route_rounded, size: GSSize.iconMd, color: GSColors.brand),
+                const SizedBox(width: GSSpacing.s2),
+                Expanded(
+                  child: Text(
+                    '${leg.fromLabel ?? 'Aquí'} → ${leg.toLabel ?? 'tu destino'}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: text.titleSmall,
+                  ),
+                ),
+              ],
+            ),
+          ),
         Text(expired ? 'Nadie aceptó a tiempo' : 'Tu oferta', style: text.titleLarge),
         const SizedBox(height: 2),
         Text(
@@ -594,7 +614,17 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Center(child: SearchingRadar(icon: vehicleIcon(_service))),
+        // Con ofertas, el radar se encoge y las ofertas suben (son lo que importa).
+        AnimatedSize(
+          duration: MediaQuery.of(context).disableAnimations
+              ? const Duration(milliseconds: 1)
+              : GSDuration.normal,
+          curve: GSCurve.enter,
+          child: Center(
+            child: SearchingRadar(
+                icon: vehicleIcon(_service), size: _offers.isEmpty ? 132 : 72),
+          ),
+        ),
         const SizedBox(height: GSSpacing.s3),
         Text(
           _offers.isEmpty
@@ -650,7 +680,7 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
             ? 'Llegaste'
             : 'Vas con ${d?.firstName ?? 'tu conductor'}';
     final subtitle = coming
-        ? (eta == null ? 'En camino al punto de recogida' : 'Llega en unos $eta min')
+        ? (eta == null ? 'En camino al punto de recogida' : 'Va hacia ${widget.leg.fromLabel ?? 'tu punto de recogida'}')
         : done
             ? 'Paga el tramo para cerrarlo.'
             : 'Hacia ${widget.leg.toLabel ?? 'tu destino'}';
@@ -713,11 +743,14 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
               ),
               const SizedBox(width: GSSpacing.s2),
               Expanded(
-                child: GSButton(
-                  label: 'Cancelar',
-                  leadingIcon: Icons.close_rounded,
-                  variant: GSButtonVariant.ghost,
+                child: TextButton.icon(
                   onPressed: _cancelRequest,
+                  icon: const Icon(Icons.close_rounded),
+                  label: const Text('Cancelar'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: GSColors.textMuted,
+                    minimumSize: const Size(0, GSSize.button),
+                  ),
                 ),
               ),
             ],

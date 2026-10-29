@@ -65,9 +65,14 @@ void main() {
       expect(find.text(k.label), findsOneWidget, reason: k.label);
     }
     expect(find.text('Vía despejada'), findsNothing);
+    // Un toque elige; publicar pide confirmar (nada se publica por un roce).
+    expect(find.text('Elige qué ves'), findsOneWidget);
+    await tester.tap(find.text('Trancón'));
+    await tester.pumpAndSettle();
+    expect(find.text('Reportar trancón'), findsOneWidget);
   });
 
-  testWidgets('ocultar un tipo apaga su "Avisarme" y lo saca del mapa',
+  testWidgets('cada tipo: ocultar, ver o avisar; lo oculto sale del mapa',
       (tester) async {
     phone(tester);
     late ProviderContainer c;
@@ -79,17 +84,20 @@ void main() {
     final kindRow = find.ancestor(
         of: find.text('Retén'),
         matching: find.byWidgetPredicate((w) => w.runtimeType.toString() == '_KindRow'));
-    Finder warnIn() => find.descendant(of: kindRow, matching: find.text('Avisarme al acercarme'));
-    expect(warnIn(), findsOneWidget);
-
-    final row = find.ancestor(of: find.text('Retén'), matching: find.byType(Row)).first;
-    final toggle = find.descendant(of: row, matching: find.byType(Switch));
-    await tester.ensureVisible(toggle);
+    final hide = find.descendant(of: kindRow, matching: find.text('Ocultar'));
+    await tester.ensureVisible(hide);
     await tester.pumpAndSettle();
-    await tester.tap(toggle);
+    await tester.tap(hide);
     await tester.pumpAndSettle();
     expect(c.read(alertPrefsProvider)['reten']!.show, isFalse);
-    expect(warnIn(), findsNothing);
+    expect(c.read(alertPrefsProvider)['reten']!.warn, isFalse);
+    // "Ver" sin aviso: se ve pero no avisa.
+    await tester.tap(find.descendant(of: kindRow, matching: find.text('Ver')));
+    await tester.pumpAndSettle();
+    expect(c.read(alertPrefsProvider)['reten']!.show, isTrue);
+    expect(c.read(alertPrefsProvider)['reten']!.warn, isFalse);
+    await tester.tap(find.descendant(of: kindRow, matching: find.text('Ocultar')));
+    await tester.pumpAndSettle();
     // Lo oculto deja de pintarse en el mapa.
     c.read(mapAlertsProvider.notifier).state = AsyncData([
       MapAlert(id: 'r', kind: AlertKind.reten, at: const LatLng(11.5, -72.9), happenedAt: DateTime(2026)),

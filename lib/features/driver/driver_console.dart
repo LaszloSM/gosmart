@@ -24,7 +24,10 @@ import '../../widgets/gs_list_row.dart';
 import '../../widgets/gs_pressable.dart';
 import '../../widgets/gs_toast.dart';
 import '../../widgets/gs_vehicle_pin.dart';
+import '../alerts/alert_detail_sheet.dart';
+import '../alerts/report_sheet.dart';
 import '../home/widgets/map_view.dart';
+import '../../providers/map_alerts_provider.dart';
 import '../trip/widgets/trip_visuals.dart' show DriverAvatar;
 import 'driver_work_panel.dart';
 
@@ -123,6 +126,9 @@ class _DriverConsoleState extends ConsumerState<DriverConsole> {
                 onLongPressEnabled: false,
                 user: _me,
                 pin: pin,
+                // El conductor ve la vía todo el día: las alertas también son suyas.
+                alerts: ref.watch(visibleAlertsProvider),
+                onAlertTap: (al) => showAlertDetail(context, al),
                 padding: EdgeInsets.only(top: top + 64, bottom: online ? panelH : 220),
               ),
             ),
@@ -152,7 +158,33 @@ class _DriverConsoleState extends ConsumerState<DriverConsole> {
               left: 0,
               right: 0,
               bottom: 0,
-              child: AnimatedSwitcher(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // Reportar en la vía, a la mano del pulgar derecho (72 dp, DS6).
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 0, GSSpacing.s3, GSSpacing.s3),
+                    child: Tooltip(
+                      message: 'Reportar en la vía',
+                      child: GSPressable(
+                        onTap: () => showReportSheet(context),
+                        semanticLabel: 'Reportar en la vía',
+                        child: Container(
+                          width: GSSize.touchTargetDriver,
+                          height: GSSize.touchTargetDriver,
+                          decoration: BoxDecoration(
+                            color: GSColors.alertCaution,
+                            shape: BoxShape.circle,
+                            boxShadow: GSShadow.float,
+                          ),
+                          child: Icon(Icons.add_location_alt_rounded,
+                              color: GSColors.onAlertCaution, size: 32),
+                        ),
+                      ),
+                    ),
+                  ),
+                  AnimatedSwitcher(
                 duration: MediaQuery.of(context).disableAnimations ? Duration.zero : GSDuration.normal,
                 switchInCurve: GSCurve.enter,
                 switchOutCurve: GSCurve.exit,
@@ -195,6 +227,8 @@ class _DriverConsoleState extends ConsumerState<DriverConsole> {
                         busy: _toggling,
                         onConnect: () => _setOnline(true),
                       ),
+                  ),
+                ],
               ),
             ),
           ],

@@ -21,8 +21,9 @@ class AlertSettingsScreen extends ConsumerWidget {
     final prefs = ref.watch(alertPrefsProvider);
     final notifier = ref.read(alertPrefsProvider.notifier);
     final text = Theme.of(context).textTheme;
-    final allShown = prefs.values.every((p) => p.show);
-    final anyWarn = prefs.values.any((p) => p.show && p.warn);
+    // El nivel común si todos coinciden; si no, ninguno marcado.
+    final levels = {for (final p in prefs.values) _level(p)};
+    final allLevel = levels.length == 1 ? levels.first : null;
 
     return Scaffold(
       backgroundColor: GSColors.background,
@@ -68,22 +69,14 @@ class AlertSettingsScreen extends ConsumerWidget {
               ),
             ),
           ),
-          const GSSectionTitle('Todas'),
-          GSGroup(children: [
-            SwitchListTile(
-              value: allShown,
-              onChanged: (v) => notifier.setAll(show: v),
-              title: const Text('Ver todas en el mapa'),
-              secondary: const Icon(Icons.layers_rounded),
+          const GSSectionTitle('Todas a la vez'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
+            child: _LevelPicker(
+              level: allLevel,
+              onChanged: (l) => notifier.setAll(show: l > 0, warn: l > 1),
             ),
-            SwitchListTile(
-              value: anyWarn,
-              onChanged: (v) => notifier.setAll(warn: v),
-              title: const Text('Avisarme al acercarme'),
-              subtitle: const Text('Un aviso arriba del mapa a unos 400 m'),
-              secondary: const Icon(Icons.notifications_active_rounded),
-            ),
-          ]),
+          ),
           const GSSectionTitle('Por tipo'),
           GSGroup(children: [
             for (var i = 0; i < AlertKind.all.length; i++)
@@ -108,8 +101,35 @@ class AlertSettingsScreen extends ConsumerWidget {
   }
 }
 
-/// Una fila por tipo: globo, nombre, para qué sirve y el interruptor de
-/// "Ver en el mapa". Si se ve, debajo aparece "Avisarme" (con AnimatedSize).
+int _level(AlertPref p) => !p.show ? 0 : (p.warn ? 2 : 1);
+
+/// Ocultar / Ver / Ver y avisar: una sola decisión por tipo, sin interruptores
+/// anidados (Waze lo separa en dos; aquí se lee de una vez).
+class _LevelPicker extends StatelessWidget {
+  const _LevelPicker({required this.level, required this.onChanged});
+  final int? level;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget label(String s) => FittedBox(fit: BoxFit.scaleDown, child: Text(s, maxLines: 1));
+    return SegmentedButton<int>(
+      showSelectedIcon: false,
+      emptySelectionAllowed: true,
+      segments: [
+        ButtonSegment(value: 0, icon: const Icon(Icons.visibility_off_rounded), label: label('Ocultar')),
+        ButtonSegment(value: 1, icon: const Icon(Icons.visibility_rounded), label: label('Ver')),
+        ButtonSegment(value: 2, icon: const Icon(Icons.notifications_active_rounded), label: label('Avisar')),
+      ],
+      selected: {if (level != null) level!},
+      onSelectionChanged: (s) {
+        if (s.isNotEmpty) onChanged(s.first);
+      },
+    );
+  }
+}
+
+/// Una fila por tipo: globo, nombre, para qué sirve y su nivel.
 class _KindRow extends StatelessWidget {
   const _KindRow({required this.kind, required this.pref, required this.onChanged});
   final AlertKind kind;
@@ -119,10 +139,10 @@ class _KindRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final reduce = MediaQuery.of(context).disableAnimations;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(GSSpacing.s4, GSSpacing.s3, GSSpacing.s2, GSSpacing.s2),
+      padding: const EdgeInsets.fromLTRB(GSSpacing.s4, GSSpacing.s3, GSSpacing.s4, GSSpacing.s3),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
@@ -137,31 +157,12 @@ class _KindRow extends StatelessWidget {
                   ],
                 ),
               ),
-              Switch(
-                value: pref.show,
-                onChanged: (v) => onChanged(pref.copyWith(show: v)),
-              ),
             ],
           ),
-          AnimatedSize(
-            duration: reduce ? const Duration(milliseconds: 1) : GSDuration.normal,
-            curve: GSCurve.enter,
-            child: pref.show
-                ? Padding(
-                    padding: const EdgeInsets.only(left: 52),
-                    child: Row(
-                      children: [
-                        Icon(Icons.notifications_rounded, size: GSSize.iconSm, color: GSColors.textMuted),
-                        const SizedBox(width: GSSpacing.s2),
-                        Expanded(child: Text('Avisarme al acercarme', style: text.bodyMedium)),
-                        Switch(
-                          value: pref.warn,
-                          onChanged: (v) => onChanged(pref.copyWith(warn: v)),
-                        ),
-                      ],
-                    ),
-                  )
-                : const SizedBox(width: double.infinity),
+          const SizedBox(height: GSSpacing.s2),
+          _LevelPicker(
+            level: _level(pref),
+            onChanged: (l) => onChanged(AlertPref(show: l > 0, warn: l > 1)),
           ),
         ],
       ),
