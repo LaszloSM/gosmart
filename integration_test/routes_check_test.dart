@@ -22,6 +22,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gosmart/features/routes/place_confirm_screen.dart';
+import 'package:gosmart/features/routes/route_planner_screen.dart';
 import 'package:gosmart/main.dart' as app;
 import 'package:gosmart/providers/active_route_provider.dart';
 import 'package:gosmart/router/app_router.dart';
@@ -122,6 +123,12 @@ void main() {
     }
     step('mapa-despues');
     await wait(2);
+    // El emulador es lento: a veces toma el inicio de un arrastre como
+    // pulsación larga y abre "¿Ir aquí?". Se cierra para seguir limpio.
+    if (find.text('Cancelar').evaluate().isNotEmpty) {
+      await tester.tap(find.text('Cancelar').first);
+      await wait(1);
+    }
     SchedulerBinding.instance.removeTimingsCallback(collect);
     if (timings.length < 20) {
       log('FLUIDEZ solo ${timings.length} cuadros medidos: no se puede concluir');
@@ -155,9 +162,14 @@ void main() {
         continue;
       }
       await tester.enterText(field.first, c.query);
-      // La primera fila de la lista es la primera sugerencia (con 3+ letras no
-      // hay favoritos ni accesos).
-      final first = find.byType(GSListRow);
+      // Primera sugerencia de verdad: fila del planificador (no de la pantalla
+      // de atrás durante la transición) que no sea un acceso fijo.
+      const accesos = {'Elegir en el mapa', 'Pregúntale al asistente', 'Casa', 'Trabajo'};
+      final first = find.descendant(
+        of: find.byType(RoutePlannerScreen),
+        matching: find.byWidgetPredicate(
+            (w) => w is GSListRow && !accesos.contains(w.title)),
+      );
       if (!await waitFor(first, seconds: 25)) {
         failed.add('${c.query}: sin sugerencias');
         log('ROUTE ${c.query} | sin sugerencias');
@@ -165,7 +177,13 @@ void main() {
         await wait(2);
         continue;
       }
-      await wait(1);
+      await wait(2); // que lleguen todas las capas (directorio + Google/Photon)
+      if (first.evaluate().isEmpty) {
+        failed.add('${c.query}: las sugerencias desaparecieron');
+        router.pop();
+        await wait(2);
+        continue;
+      }
       final chosen = tester.widget<GSListRow>(first.first);
       step('sugerencias-$tag');
       await tester.tap(first.first);

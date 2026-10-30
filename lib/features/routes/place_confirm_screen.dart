@@ -174,18 +174,21 @@ class _PlaceConfirmScreenState extends State<PlaceConfirmScreen> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Text(widget.title, style: text.titleLarge),
-                            const SizedBox(height: GSSpacing.s1),
-                            Text(
-                              'Mueve el mapa si el punto no está en la entrada.',
-                              style: text.bodyMedium
-                                  ?.copyWith(color: GSColors.textMuted),
-                            ),
-                            const SizedBox(height: GSSpacing.s4),
-                            _PlaceLine(name: name, detail: detail),
+                            // Aproximado: el aviso va arriba (con texto grande
+                            // no queda escondido) y reemplaza la ayuda.
                             if (p.approximate && !_moved) ...[
                               const SizedBox(height: GSSpacing.s3),
                               const _ApproxNotice(),
+                            ] else ...[
+                              const SizedBox(height: GSSpacing.s1),
+                              Text(
+                                'Mueve el mapa si el punto no está en la entrada.',
+                                style: text.bodyMedium
+                                    ?.copyWith(color: GSColors.textMuted),
+                              ),
                             ],
+                            const SizedBox(height: GSSpacing.s4),
+                            _PlaceLine(name: name, detail: detail),
                           ],
                         ),
                       ),
