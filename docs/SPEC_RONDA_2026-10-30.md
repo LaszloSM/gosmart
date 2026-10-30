@@ -186,6 +186,10 @@ Pedido para la presentación: sin tocar cuotas, que las rutas se armen bien en c
   Ahora la lista se ordena por parecido y al directorio no se le manda la ciudad.
 - **Confirmado:** los puntos reales (Google/OSM) de catedral, muelle y terminal quedan ~800 m al norte de
   la semilla: la semilla estaba corrida, que era el error original del Almirante Padilla.
+- **Plaza Almirante Padilla (el caso original): resuelto.** En el emulador cae a 61 m de la Catedral,
+  sobre "Plaza José Prudencio Padilla" en el mapa (antes ~900 m al sur). 9 de 9 destinos correctos.
+- La semilla toma esos puntos (muelle, catedral, plaza, aeropuerto, terminal, Uniguajira, parque de
+  Maicao) para que el respaldo sin internet tampoco quede corrido; siguen "sin verificar en campo".
 - **Fluidez (emulador):** construcción por cuadro p50 ≈ 1 ms, p90 ≈ 12–16 ms al arrastrar y hacer zoom;
   unos 25 de 270 cuadros pasan de 16 ms (momentos puntuales: tarjeta "¿Ir aquí?", pines al detenerse).
   El dibujo del emulador es por software (≈ 270 ms) y no representa un celular: la sensación real se
