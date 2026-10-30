@@ -193,6 +193,11 @@ void main() {
           await tap(find.byType(BackButton).last, 'atrás desde Alertas');
           await wait(2);
         }
+        // Al volver de Alertas la lista quedó abajo: subir hasta el tema.
+        try {
+          await tester.scrollUntilVisible(find.text('Sistema'), -300,
+              scrollable: find.byType(Scrollable).first);
+        } catch (_) {}
         if (await tap(find.text('Sistema'), 'tema Sistema')) {
           await wait(3);
           step('tema-sistema');
@@ -239,6 +244,7 @@ void main() {
             if (await tap(find.text('Cambiar a modo pasajero'), 'volver a pasajero')) {
               await wait(8);
               step('de-vuelta-pasajero');
+              await wait(6);
             }
           }
         }

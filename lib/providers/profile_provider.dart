@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/profile_model.dart';
 import '../services/profile_service.dart';
+import 'auth_provider.dart';
 
 class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel>> {
   ProfileNotifier() : super(const AsyncValue.loading()) {
@@ -67,6 +68,9 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel>> {
 }
 
 final profileProvider =
-    StateNotifierProvider<ProfileNotifier, AsyncValue<ProfileModel>>(
-  (ref) => ProfileNotifier(),
-);
+    StateNotifierProvider<ProfileNotifier, AsyncValue<ProfileModel>>((ref) {
+  // Otro usuario (salir y entrar con otra cuenta): perfil nuevo. Solo el id,
+  // para no recargar en cada renovación del token.
+  ref.watch(currentUserProvider.select((u) => u?.id));
+  return ProfileNotifier();
+});
