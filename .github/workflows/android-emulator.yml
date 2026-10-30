@@ -18,13 +18,18 @@ on:
       - 'supabase/demo/**'
       - '.github/workflows/android-emulator.yml'
   workflow_dispatch:
+    inputs:
+      publicar_capturas:
+        description: 'Publicar también las capturas en la rama ci-shots (para revisarlas sin bajar el artifact)'
+        type: boolean
+        default: false
 
 concurrency:
   group: android-emulator-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write   # solo para la rama ci-shots, cuando se pide a mano
 
 jobs:
   emulator:
@@ -99,6 +104,17 @@ jobs:
           path: shots-named/
           if-no-files-found: ignore
           retention-days: 14
+
+      - name: Publicar capturas (rama ci-shots, solo si se pidió)
+        if: always() && inputs.publicar_capturas
+        run: |
+          [ -d shots-named ] || exit 0
+          cd shots-named
+          git init -q
+          git checkout -q -b ci-shots
+          git add -A
+          git -c user.name='GoSmart CI' -c user.email='ci@users.noreply.github.com' commit -qm "Capturas de ${GITHUB_SHA::7}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-shots
 
       # La prueba entra como la pasajera demo y deja un viaje: se limpia para
       # que la cuenta quede lista para presentar.
