@@ -3,13 +3,18 @@
 //   1. Directorio propio (`places`): como la gente nombra los sitios.
 //   2. Google Places (función `maps`); sus sugerencias traen coordenadas
 //      solo al elegirlas (`resolve`).
-//   3. Si nada sirve, el usuario marca el punto en el mapa.
+//   3. Si Google no responde (cuota agotada, sin clave), Photon con datos de
+//      OpenStreetMap: gratis y con coordenadas; solo de respaldo (uso justo).
+//   4. Si nada sirve, el usuario marca el punto en el mapa.
 // Coordenadas: un lugar verificado en campo usa la suya; uno sin verificar
 // toma la de Google al elegirlo y solo usa la aproximada si Google no responde.
 // Si el proveedor falla o no está configurado, se sigue con el directorio y
 // la pantalla lo avisa (`PlaceSearchResult.limited`).
+import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
 import '../core/supabase_client.dart';
@@ -80,15 +85,83 @@ class ProviderPlaceSearch implements PlaceSearch {
       _service.searchStrict(query, proximity: near);
 }
 
+/// Respaldo sin clave ni cuota: Photon (photon.komoot.io) sobre OpenStreetMap,
+/// limitado a La Guajira. El servicio público pide uso justo: solo se llama
+/// cuando Google falla, con la misma espera entre letras y caché propia.
+class PhotonPlaceSearch implements PlaceSearch {
+  PhotonPlaceSearch({http.Client? client}) : _client = client ?? http.Client();
+  final http.Client _client;
+  final _cache = <String, List<GeocodeSuggestion>>{};
+
+  static const _bbox = '-73.7,10.3,-71.0,12.6'; // oeste,sur,este,norte
+
+  @override
+  Future<List<GeocodeSuggestion>> search(String query, {LatLng? near}) async {
+    final q = query.trim();
+    if (q.length < 2) return [];
+    final key = q.toLowerCase();
+    final cached = _cache[key];
+    if (cached != null) return cached;
+    final uri = Uri.https('photon.komoot.io', '/api/', {
+      'q': q,
+      'limit': '6',
+      'bbox': _bbox,
+      'lat': '${(near ?? const LatLng(11.5444, -72.9072)).latitude}',
+      'lon': '${(near ?? const LatLng(11.5444, -72.9072)).longitude}',
+    });
+    final res = await _client
+        .get(uri, headers: {'User-Agent': 'GoSmart/1.0 (MVP La Guajira)'})
+        .timeout(const Duration(seconds: 8));
+    if (res.statusCode != 200) throw GeocodingException('photon_${res.statusCode}');
+    final items = parsePhoton(jsonDecode(utf8.decode(res.bodyBytes)));
+    if (_cache.length > 40) _cache.clear();
+    return _cache[key] = items;
+  }
+
+  /// GeoJSON de Photon → sugerencias con coordenadas (no hay que resolverlas).
+  static List<GeocodeSuggestion> parsePhoton(Object? json) {
+    final out = <GeocodeSuggestion>[];
+    final features = json is Map ? json['features'] : null;
+    for (final f in features is List ? features : const []) {
+      if (f is! Map) continue;
+      final c = (f['geometry'] as Map?)?['coordinates'];
+      final p = f['properties'] is Map ? f['properties'] as Map : const {};
+      if (c is! List || c.length < 2 || c[0] is! num || c[1] is! num) continue;
+      final street = [p['street'], p['housenumber']].whereType<String>().join(' ');
+      final name = (p['name'] as String?) ?? (street.isEmpty ? null : street);
+      if (name == null || name.trim().isEmpty) continue;
+      final place = [
+        if (street.isNotEmpty && street != name) street,
+        p['district'] ?? p['locality'],
+        p['city'] ?? p['county'],
+      ].whereType<String>().where((x) => x.isNotEmpty).toSet().join(', ');
+      final kind = p['osm_key'] == 'highway' || p['type'] == 'street'
+          ? 'address'
+          : (p['type'] == 'city' || p['type'] == 'district' ? 'neighborhood' : 'poi');
+      out.add(GeocodeSuggestion(
+        placeName: name,
+        fullAddress: place.isEmpty ? 'La Guajira' : place,
+        latLng: LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble()),
+        featureType: kind,
+      ));
+    }
+    return out;
+  }
+}
+
 /// Une las capas: directorio primero, luego el proveedor sin repetidos.
 class LayeredPlaceSearch {
   LayeredPlaceSearch({
     required this.directory,
     required this.provider,
+    this.fallback,
     Future<GeocodeSuggestion> Function(GeocodeSuggestion)? resolver,
   }) : _resolver = resolver ?? geocodingService.resolve;
   final PlaceSearch directory;
   final PlaceSearch provider;
+
+  /// Si [provider] falla: otro buscador con coordenadas (Photon).
+  final PlaceSearch? fallback;
   final Future<GeocodeSuggestion> Function(GeocodeSuggestion) _resolver;
 
   /// Coordenadas de la sugerencia elegida (las de Google llegan aquí).
@@ -116,16 +189,15 @@ class LayeredPlaceSearch {
   static const maxShiftMeters = 3000.0;
 
   /// Busca en Google el lugar del directorio por nombre y ciudad, cerca de su
-  /// punto aproximado. Conserva el nombre que la gente conoce.
+  /// punto aproximado; si Google no responde, en el respaldo (Photon). Conserva
+  /// el nombre que la gente conoce.
   Future<GeocodeSuggestion?> _locateWithProvider(GeocodeSuggestion s) async {
     final approx = s.latLng;
     final city = s.fullAddress.split(' · ').first;
-    try {
-      final found = await provider.search('${s.placeName}, $city', near: approx);
-      if (found.isEmpty) return null;
-      final g = await _resolver(found.first);
-      final at = g.latLng;
-      if (at == null) return null;
+    final query = '${s.placeName}, $city';
+    GeocodeSuggestion? near(GeocodeSuggestion? g) {
+      final at = g?.latLng;
+      if (g == null || at == null) return null;
       if (approx != null && _meters(approx, at) > maxShiftMeters) return null;
       return GeocodeSuggestion(
         placeName: s.placeName,
@@ -135,10 +207,27 @@ class LayeredPlaceSearch {
         featureType: s.featureType,
         fromDirectory: true,
       );
+    }
+
+    try {
+      final found = await provider.search(query, near: approx);
+      if (found.isEmpty) return null;
+      return near(await _resolver(found.first));
     } on GeocodingException catch (e) {
       if (e.code != 'no_key') Telemetry.degraded('geocoding', e.code);
     } catch (e) {
       Telemetry.degraded('geocoding', e.runtimeType.toString());
+    }
+    final backup = fallback;
+    if (backup == null) return null;
+    try {
+      // Los del respaldo ya traen coordenadas: el primero que caiga cerca.
+      for (final g in await backup.search(query, near: approx)) {
+        final ok = near(g);
+        if (ok != null) return ok;
+      }
+    } catch (e) {
+      Telemetry.degraded('photon', e.runtimeType.toString());
     }
     return null;
   }
@@ -153,7 +242,10 @@ class LayeredPlaceSearch {
       _safe(() => provider.search(query, near: near), 'geocoding'),
     ]);
     final dir = results[0];
-    final ext = results[1];
+    var ext = results[1];
+    if (ext == null && fallback != null) {
+      ext = await _safe(() => fallback!.search(query, near: near), 'photon');
+    }
 
     final merged = <GeocodeSuggestion>[...?dir];
     for (final s in ext ?? const <GeocodeSuggestion>[]) {
@@ -210,4 +302,5 @@ double _meters(LatLng a, LatLng b) {
 final placeSearch = LayeredPlaceSearch(
   directory: DirectoryPlaceSearch(),
   provider: ProviderPlaceSearch(),
+  fallback: PhotonPlaceSearch(),
 );

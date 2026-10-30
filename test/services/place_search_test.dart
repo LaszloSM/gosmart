@@ -26,6 +26,7 @@ GeocodeSuggestion _s(String name, double lat, double lng, {bool dir = false}) =>
         fromDirectory: dir);
 
 void main() {
+  photonTests();
   final muelleDir = _s('Muelle Turístico de Riohacha', 11.5449, -72.9075, dir: true);
   final muelleExt = _s('Muelle turistico', 11.5450, -72.9076);
   final otro = _s('Calle 15', 11.5400, -72.9100);
@@ -210,6 +211,78 @@ void main() {
       ).search('almirante padilla');
       expect(r.items.map((s) => s.placeName),
           ['Parque Almirante Padilla', 'Parque José Prudencio Padilla']);
+    });
+  });
+}
+
+void photonTests() {
+  group('respaldo Photon (OpenStreetMap) cuando Google no responde', () {
+    test('lee el GeoJSON de Photon con coordenadas y dirección', () {
+      final items = PhotonPlaceSearch.parsePhoton({
+        'features': [
+          {
+            'geometry': {'coordinates': [-72.9077, 11.5446]},
+            'properties': {
+              'name': 'Parque José Prudencio Padilla',
+              'street': 'Calle 2', 'city': 'Riohacha', 'osm_key': 'leisure',
+            },
+          },
+          {
+            'geometry': {'coordinates': [-72.91, 11.54]},
+            'properties': {'street': 'Calle 15', 'housenumber': '8-20',
+                           'city': 'Riohacha', 'osm_key': 'place', 'type': 'house'},
+          },
+          {'geometry': {'coordinates': []}, 'properties': {'name': 'Sin punto'}},
+        ],
+      });
+      expect(items, hasLength(2));
+      expect(items[0].placeName, 'Parque José Prudencio Padilla');
+      expect(items[0].fullAddress, 'Calle 2, Riohacha');
+      expect(items[0].latLng, const LatLng(11.5446, -72.9077));
+      expect(items[1].placeName, 'Calle 15 8-20');
+      expect(items[1].fullAddress, 'Riohacha');
+    });
+
+    const photonPark = GeocodeSuggestion(
+        placeName: 'Parque José Prudencio Padilla',
+        fullAddress: 'Riohacha',
+        latLng: LatLng(11.5446, -72.9077));
+
+    test('Google con cuota agotada: la búsqueda sigue con Photon', () async {
+      final r = await LayeredPlaceSearch(
+        directory: _Fake([]),
+        provider: _Fake([], error: const GeocodingException('http_429')),
+        fallback: _Fake([photonPark]),
+      ).search('parque padilla');
+      expect(r.items.single.placeName, 'Parque José Prudencio Padilla');
+      expect(r.items.single.latLng, isNotNull);
+      expect(r.limited, isFalse);
+    });
+
+    test('con Google respondiendo, Photon no se llama', () async {
+      final r = await LayeredPlaceSearch(
+        directory: _Fake([]),
+        provider: _Fake([_s('Calle 15', 11.54, -72.91)]),
+        fallback: _Fake([], error: StateError('no debe llamarse')),
+      ).search('calle 15');
+      expect(r.items.single.placeName, 'Calle 15');
+    });
+
+    test('la plaza del directorio se ubica con Photon si Google falla', () async {
+      const plazaDir = GeocodeSuggestion(
+          placeName: 'Parque Almirante Padilla',
+          fullAddress: 'Riohacha',
+          latLng: LatLng(11.5441, -72.9071),
+          fromDirectory: true,
+          approximate: true);
+      final r = await LayeredPlaceSearch(
+        directory: _Fake([]),
+        provider: _Fake([], error: const GeocodingException('http_429')),
+        fallback: _Fake([photonPark]),
+      ).resolve(plazaDir);
+      expect(r!.latLng, const LatLng(11.5446, -72.9077));
+      expect(r.placeName, 'Parque Almirante Padilla');
+      expect(r.approximate, isFalse);
     });
   });
 }

@@ -32,6 +32,14 @@ BG=$!
 flutter test integration_test/demo_flow_test.dart -d emulator-5554 \
   --dart-define=DEMO_PASSWORD="${DEMO_PASSWORD:-}" 2>&1 | tee test.log
 status=${PIPESTATUS[0]}
+# Rutas a varios destinos (¿la ruta termina donde está el lugar?) y fluidez
+# del mapa. Corre aunque la demo falle: son pruebas independientes.
+flutter test integration_test/routes_check_test.dart -d emulator-5554 2>&1 | tee -a test.log
+routes=${PIPESTATUS[0]}
+[ "$status" = 0 ] && status=$routes
+grep -E 'ROUTE |FLUIDEZ ' test.log | sed 's/^.*\(ROUTE\|FLUIDEZ\)/\1/' > routes.txt
+cat routes.txt
+[ -n "${GITHUB_STEP_SUMMARY:-}" ] && { echo '### Rutas y fluidez del mapa'; sed 's/^/- /' routes.txt; } >> "$GITHUB_STEP_SUMMARY"
 sleep 4
 kill "$BG" 2>/dev/null
 
@@ -53,5 +61,5 @@ for line in open('steps.txt'):
         shutil.copy(f'shots/{after[0]}.png', f'shots-named/{n:02d}-{name}.png')
 print(f'{n} capturas por paso de {len(shots)} tomadas')
 PY
-cp steps.txt test.log shots-named/ 2>/dev/null
+cp steps.txt test.log routes.txt shots-named/ 2>/dev/null
 exit "$status"
