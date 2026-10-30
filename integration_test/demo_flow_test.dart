@@ -174,7 +174,8 @@ void main() {
         if (!await waitFor(find.text('Elige cómo ir'))) {
           failed.add('Repetir no trajo origen y destino');
         }
-        await tester.pageBack();
+        // Atrás del sistema Android (lo que hace la gente).
+        await tester.binding.handlePopRoute();
         await wait(3);
       }
     }

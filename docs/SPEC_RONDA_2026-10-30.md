@@ -50,6 +50,16 @@ aproximado y el pin cae en otro sitio. Le puede pasar a cualquier lugar de la se
 - Prueba unitaria: el directorio aproximado no pisa a Google; sin Google se usa el directorio con "aprox.".
 - Sin red o sin clave: el buscador sigue funcionando con el directorio y lo avisa (D8).
 
+## 1b. Hallazgo: cuota diaria de Google Places agotada
+
+El chequeo de claves de CI (2026-10-30) dice `RESOURCE_EXHAUSTED: Quota exceeded for quota metric
+'AutocompletePlacesRequest' and limit 'AutocompletePlacesRequest per day'`. Con la cuota agotada, toda
+búsqueda cae al directorio aproximado: **probable causa real** de que la plaza "no se agarre bien".
+Lo arregla el dueño del proyecto de Google Cloud (subir ese tope en APIs y servicios → Places API (New)
+→ Cuotas; es decisión de costos). Desde el código: caché de búsquedas repetidas y 450 ms de espera
+antes de buscar; el pin de confirmación cubre el caso aproximado. Ojo: cada corrida del emulador
+también gasta algunas búsquedas.
+
 ## 2. Fluidez del mapa — HECHO (falta probar en celular)
 
 **Implementado:** el mapa del inicio ya no escucha `onCameraMove` (un mensaje Android → Dart por

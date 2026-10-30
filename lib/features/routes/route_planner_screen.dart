@@ -177,7 +177,9 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       });
       return;
     }
-    _debounce = Timer(const Duration(milliseconds: 300), () async {
+    // 450 ms: se busca al hacer una pausa, no en cada letra (cada búsqueda
+    // gasta cuota diaria de Google Places).
+    _debounce = Timer(const Duration(milliseconds: 450), () async {
       final result = await placeSearch.search(text, near: _originLatLng);
       // Si el usuario siguió escribiendo, esta respuesta ya no aplica.
       if (!mounted || _destCtrl.text.trim() != text) return;

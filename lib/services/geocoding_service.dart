@@ -52,6 +52,10 @@ class GeocodingService {
 
   final _reverseCache = <String, String>{};
 
+  /// Últimas búsquedas (texto normalizado → sugerencias): borrar y volver a
+  /// escribir no gasta otra petición de la cuota diaria de Google.
+  final _searchCache = <String, List<GeocodeSuggestion>>{};
+
   /// Dirección corta de un punto ("Cl. 2 #7-30, Riohacha" o "Cerca de
   /// Parque Padilla"); null si no se pudo. Guarda las últimas por ~50 m.
   Future<String?> reverse(LatLng p) async {
@@ -89,6 +93,10 @@ class GeocodingService {
       {LatLng? proximity}) async {
     final q = query.trim();
     if (q.length < 2) return [];
+    final cacheKey = '${q.toLowerCase()}|'
+        '${proximity?.latitude.toStringAsFixed(2)},${proximity?.longitude.toStringAsFixed(2)}';
+    final cached = _searchCache[cacheKey];
+    if (cached != null) return cached;
     _session ??= _newSession();
     final data = await _invoke({
       'action': 'autocomplete',
@@ -97,7 +105,7 @@ class GeocodingService {
       if (proximity != null)
         'near': {'lat': proximity.latitude, 'lng': proximity.longitude},
     });
-    return [
+    final items = [
       for (final it in data['items'] as List? ?? const [])
         if (it is Map)
           GeocodeSuggestion(
@@ -108,6 +116,8 @@ class GeocodingService {
             featureType: _featureType(it['types']),
           ),
     ];
+    if (_searchCache.length > 40) _searchCache.clear();
+    return _searchCache[cacheKey] = items;
   }
 
   /// Coordenadas de una sugerencia elegida. Cierra la sesión de Google.
