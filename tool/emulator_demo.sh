@@ -14,12 +14,12 @@ adb shell settings put global hide_error_dialogs 1 >/dev/null 2>&1 || true
 adb shell settings put global anr_show_background 0 >/dev/null 2>&1 || true
 mkdir -p shots shots-named
 
-# En segundo plano: GPS en el Parque Padilla (Riohacha), permisos en cuanto la
+# En segundo plano: GPS en el Parque Padilla, frente a la Catedral (Riohacha), permisos en cuanto la
 # app quede instalada (el diálogo del sistema no se puede tocar desde la prueba)
 # y una captura cada 3 s.
 (
   while true; do
-    adb emu geo fix -72.9071 11.5441 >/dev/null 2>&1
+    adb emu geo fix -72.9086 11.5514 >/dev/null 2>&1
     for p in ACCESS_FINE_LOCATION ACCESS_COARSE_LOCATION POST_NOTIFICATIONS; do
       adb shell pm grant "$PKG" "android.permission.$p" >/dev/null 2>&1
     done

@@ -43,6 +43,9 @@ class _Case {
 }
 
 const _cases = [
+  // El caso con que empezó todo: la plaza está frente a la Catedral (punto
+  // de la Catedral según Google en este mismo emulador).
+  _Case('Plaza Almirante Padilla', LatLng(11.5518, -72.9092), 500),
   _Case('Universidad de La Guajira', LatLng(11.525, -72.882), 2500),
   _Case('Aeropuerto Almirante Padilla', LatLng(11.526, -72.926), 1500),
   _Case('Terminal de Transportes Riohacha', LatLng(11.533, -72.912), 2000),
@@ -232,7 +235,8 @@ void main() {
       // distingue la búsqueda y sus números ("Calle 15") van en el nombre.
       final want = queryCore(c.query).split(' ');
       final got = queryCore(place.placeName).toLowerCase();
-      final missing = [
+      // Del directorio vale por alias ("plaza almirante padilla" → Parque …).
+      final missing = place.fromDirectory ? const <String>[] : [
         for (final w in want)
           if ((w == want.first || RegExp(r'^\d').hasMatch(w)) && !got.contains(w)) w,
       ];
