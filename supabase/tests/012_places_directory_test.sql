@@ -14,6 +14,21 @@ BEGIN
   IF r.verified THEN RAISE EXCEPTION '1: la semilla no debe venir verificada'; END IF;
 END $$;
 
+-- 1b. La plaza del centro: el nombre de la gente le gana al aeropuerto homónimo
+DO $$
+DECLARE r RECORD; q TEXT;
+BEGIN
+  FOREACH q IN ARRAY ARRAY['plaza almirante padilla', 'Plaza Almirante Padilla', 'parque padilla',
+                           'parque jose prudencio padilla', 'la plaza'] LOOP
+    SELECT * INTO r FROM search_places(q, 11.544, -72.907) LIMIT 1;
+    IF r.name IS DISTINCT FROM 'Parque Almirante Padilla' THEN
+      RAISE EXCEPTION '1b: "%" dio %', q, r.name;
+    END IF;
+  END LOOP;
+  SELECT * INTO r FROM search_places('aeropuerto almirante padilla') LIMIT 1;
+  IF r.name <> 'Aeropuerto Almirante Padilla' THEN RAISE EXCEPTION '1b: aeropuerto dio %', r.name; END IF;
+END $$;
+
 -- 2. Tildes y mayúsculas no importan; error de tecleo tolerado
 DO $$
 DECLARE r RECORD;

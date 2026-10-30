@@ -10,6 +10,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/favorites_provider.dart';
 import '../../../router/app_router.dart';
 import '../../../services/place_search.dart';
+import '../../routes/place_confirm_screen.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_button.dart';
 import '../../../widgets/gs_pressable.dart';
@@ -488,12 +489,25 @@ class _SetPlaceSheetState extends ConsumerState<_SetPlaceSheet> {
       ));
       return;
     }
-    final at = place!.latLng!;
+    if (!mounted) return;
+    // Casa y Trabajo se usan en cada viaje: el punto se confirma en el mapa.
+    final label = widget.type == FavoritePlaceType.home ? 'tu casa' : 'tu trabajo';
+    final confirmed = await context.push<GeocodeSuggestion>(
+      AppRoutes.placeConfirm,
+      extra: PlaceConfirmRequest(place!,
+          title: 'Confirma $label', actionLabel: 'Guardar este punto'),
+    );
+    if (!mounted) return;
+    if (confirmed == null) {
+      setState(() => _saving = false);
+      return;
+    }
+    final at = confirmed.latLng!;
 
     final success = await ref.read(favoritesNotifierProvider.notifier)
         .addOrUpdatePlace(
           name: widget.type == FavoritePlaceType.home ? 'Casa' : 'Trabajo',
-          address: place.fullAddress,
+          address: confirmed.fullAddress,
           latitude: at.latitude,
           longitude: at.longitude,
           type: widget.type,

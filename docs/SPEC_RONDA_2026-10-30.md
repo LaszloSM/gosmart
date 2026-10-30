@@ -8,11 +8,26 @@ Skills para la parte visual: `impeccable` (proceso, `reference/craft-floor.md`, 
 
 ---
 
-## 1. Direcciones exactas (Plaza Almirante Padilla y demás)
+## 1. Direcciones exactas (Plaza Almirante Padilla y demás) — HECHO
+
+**Implementado (2026-10-30):**
+- `placeSearch.resolve` ubica con Google todo lugar del directorio sin verificar ("<nombre>, <ciudad>",
+  máx. 3 km del punto de la semilla); el aproximado solo queda si Google no responde.
+- Segundo fallo encontrado y arreglado: el planificador se saltaba `resolve` si la sugerencia ya traía
+  coordenadas (las del directorio), así que usaba el punto aproximado directamente.
+- Pantalla `PlaceConfirmScreen` (`/routes/confirm`): pin fijo al centro, el mapa se mueve debajo; al
+  soltar busca la dirección del punto nuevo. Se usa al elegir destino y al guardar Casa/Trabajo.
+- Semilla: alias "plaza almirante padilla", "plaza padilla", "parque jose prudencio padilla",
+  "plaza principal"; re-ejecutarla suma alias a las filas de la semilla. Prueba SQL 1b.
+- `tool/verify_places.py` + workflow manual "Verificar lugares": compara la semilla con Google Places.
+  Desde este contenedor no se pudo (OSM y Google sin clave bloqueados), así que **ninguna fila se marcó
+  verificada todavía**.
+- Pendiente del usuario: correr "Verificar lugares" y probar en el celular con Google Maps real.
+
 
 **Problema encontrado en el código.** `LayeredPlaceSearch` pone el directorio propio (`places`)
 antes que Google, e `isSamePlace` descarta la sugerencia de Google si tiene nombre parecido y está
-a menos de 150 m. Los 14 lugares de `supabase/seed/places_seed.sql` tienen coordenadas
+a menos de 150 m. Los 12 lugares de `supabase/seed/places_seed.sql` tienen coordenadas
 aproximadas (`verified = false`). Resultado: al elegir "Parque Almirante Padilla" gana el punto
 aproximado y el pin cae en otro sitio. Le puede pasar a cualquier lugar de la semilla.
 
@@ -24,7 +39,7 @@ aproximado y el pin cae en otro sitio. Le puede pasar a cualquier lugar de la se
 2. **Alias locales.** Si la gente escribe "la plaza", el directorio traduce el alias a una consulta
    para Google ("Parque José Prudencio Padilla, Riohacha") y se usa el resultado de Google.
    Solo si Google no responde (`limited`) se usa la coordenada del directorio, marcada "aprox.".
-3. **Verificar la semilla.** Revisar las 14 coordenadas una por una contra Google Places/OSM;
+3. **Verificar la semilla.** Revisar las 12 coordenadas una por una contra Google Places/OSM;
    marcar `verified = true` solo las comprobadas. Las que no se puedan verificar se quedan "aprox.".
 4. **Pin de confirmación.** Al elegir un destino u origen, el mapa centra un pin que se puede
    arrastrar ("Ajusta el punto si hace falta" → "Confirmar"). Si el lugar es "aprox." el aviso es

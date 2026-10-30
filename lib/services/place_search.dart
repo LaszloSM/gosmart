@@ -4,6 +4,8 @@
 //   2. Google Places (función `maps`); sus sugerencias traen coordenadas
 //      solo al elegirlas (`resolve`).
 //   3. Si nada sirve, el usuario marca el punto en el mapa.
+// Coordenadas: un lugar verificado en campo usa la suya; uno sin verificar
+// toma la de Google al elegirlo y solo usa la aproximada si Google no responde.
 // Si el proveedor falla o no está configurado, se sigue con el directorio y
 // la pantalla lo avisa (`PlaceSearchResult.limited`).
 import 'dart:math' as math;
@@ -58,7 +60,8 @@ class DirectoryPlaceSearch implements PlaceSearch {
     final city = _cityLabel[r['city']] ?? 'La Guajira';
     return GeocodeSuggestion(
       placeName: r['name'] as String,
-      fullAddress: verified ? city : '$city · ubicación aprox.',
+      // "aprox." se decide al elegirlo: casi siempre Google da el punto real.
+      fullAddress: city,
       latLng: LatLng((r['lat'] as num).toDouble(), (r['lng'] as num).toDouble()),
       featureType: _kindType[r['kind']] ?? 'poi',
       fromDirectory: true,
@@ -90,12 +93,50 @@ class LayeredPlaceSearch {
 
   /// Coordenadas de la sugerencia elegida (las de Google llegan aquí).
   /// null si no se pudo: la pantalla avisa y la persona puede elegir otra.
+  /// Un lugar del directorio sin verificar se ubica con Google; si Google no
+  /// responde, queda su punto aproximado (`approximate`, la pantalla lo dice).
   Future<GeocodeSuggestion?> resolve(GeocodeSuggestion s) async {
+    if (s.fromDirectory) {
+      if (!s.approximate) return s;
+      return await _locateWithProvider(s) ?? s;
+    }
     if (s.latLng != null) return s;
     try {
       return await _resolver(s);
     } on GeocodingException catch (e) {
       Telemetry.degraded('geocoding', e.code);
+    } catch (e) {
+      Telemetry.degraded('geocoding', e.runtimeType.toString());
+    }
+    return null;
+  }
+
+  /// Distancia máxima entre el punto aproximado y el de Google: más lejos es
+  /// otro sitio con nombre parecido y no se toma.
+  static const maxShiftMeters = 3000.0;
+
+  /// Busca en Google el lugar del directorio por nombre y ciudad, cerca de su
+  /// punto aproximado. Conserva el nombre que la gente conoce.
+  Future<GeocodeSuggestion?> _locateWithProvider(GeocodeSuggestion s) async {
+    final approx = s.latLng;
+    final city = s.fullAddress.split(' · ').first;
+    try {
+      final found = await provider.search('${s.placeName}, $city', near: approx);
+      if (found.isEmpty) return null;
+      final g = await _resolver(found.first);
+      final at = g.latLng;
+      if (at == null) return null;
+      if (approx != null && _meters(approx, at) > maxShiftMeters) return null;
+      return GeocodeSuggestion(
+        placeName: s.placeName,
+        fullAddress: g.fullAddress.isEmpty ? city : g.fullAddress,
+        latLng: at,
+        placeId: g.placeId,
+        featureType: s.featureType,
+        fromDirectory: true,
+      );
+    } on GeocodingException catch (e) {
+      if (e.code != 'no_key') Telemetry.degraded('geocoding', e.code);
     } catch (e) {
       Telemetry.degraded('geocoding', e.runtimeType.toString());
     }
@@ -140,7 +181,7 @@ class LayeredPlaceSearch {
 }
 
 /// Mismo lugar: nombre parecido y a menos de 150 m. Si una sugerencia aún no
-/// tiene coordenadas (Google sin resolver), basta con el mismo nombre.
+/// tiene coordenadas (Google sin resolver), basta con el nombre parecido.
 bool isSamePlace(GeocodeSuggestion a, GeocodeSuggestion b) {
   String norm(String s) => s
       .toLowerCase()
@@ -153,8 +194,8 @@ bool isSamePlace(GeocodeSuggestion a, GeocodeSuggestion b) {
       .trim();
   final na = norm(a.placeName), nb = norm(b.placeName);
   final la = a.latLng, lb = b.latLng;
-  if (la == null || lb == null) return na == nb;
   final similarName = na == nb || na.contains(nb) || nb.contains(na);
+  if (la == null || lb == null) return similarName;
   return similarName && _meters(la, lb) < 150;
 }
 

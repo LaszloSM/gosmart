@@ -34,6 +34,7 @@ import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_list_row.dart';
 import '../../widgets/gs_toast.dart';
+import 'place_confirm_screen.dart';
 import 'widgets/destination_plate.dart';
 import 'widgets/mode_options.dart';
 import 'widgets/mode_selector.dart';
@@ -89,9 +90,9 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     });
   }
 
-  /// Las sugerencias de Google traen coordenadas solo al elegirlas.
+  /// Todas pasan por `resolve` (Google trae el punto, también para los
+  /// lugares del directorio sin verificar) y luego se confirman en el mapa.
   Future<void> _pickSuggestion(GeocodeSuggestion s) async {
-    if (s.latLng != null) return _setDest(s.placeName, s.latLng);
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _loading = true);
     final place = await placeSearch.resolve(s);
@@ -104,7 +105,12 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
           type: GSToastType.error);
       return;
     }
-    _setDest(place!.placeName, place.latLng);
+    final confirmed = await context.push<GeocodeSuggestion>(
+        AppRoutes.placeConfirm,
+        extra: PlaceConfirmRequest(place!));
+    // Volvió sin confirmar: la lista sigue ahí para elegir otro.
+    if (confirmed == null || !mounted) return;
+    _setDest(confirmed.placeName, confirmed.latLng);
   }
 
   void _applyPendingDestination() {

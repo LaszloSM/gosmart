@@ -54,7 +54,19 @@ class MapView extends StatelessWidget {
     this.vehicle,
     this.vehicleService = 'mototaxi',
     this.onLongPressEnabled = true,
+    this.onCameraMoveStarted,
+    this.onCameraIdle,
+    this.initialZoom,
   });
+
+  /// Empezó a moverse la cámara (dedo o animación). Una vez por movimiento.
+  final VoidCallback? onCameraMoveStarted;
+
+  /// La cámara se detuvo: centro visible (con [padding] ya descontado).
+  final ValueChanged<LatLng>? onCameraIdle;
+
+  /// Zoom inicial; null = el de cada mapa.
+  final double? initialZoom;
 
   /// El conductor que viene o con quien vas (ya interpolado: ver TripMap).
   final LatLng? vehicle;
@@ -101,6 +113,9 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
 
   /// Tamaño actual de los pines (cambia solo al cruzar un umbral de zoom).
   AlertPinSize _pinSize = alertPinSizeFor(15.5);
+
+  /// Último centro de la cámara; se entrega al detenerse (sin setState).
+  gm.LatLng? _target;
 
   /// Imágenes de los pines ya dibujadas: tipo|tamaño|noche → ícono.
   final _pinCache = <String, gm.BitmapDescriptor>{};
@@ -183,7 +198,8 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
     if (v.alerts.isNotEmpty) unawaited(_ensurePins(night));
     if (v.vehicle != null) unawaited(_ensureVehicle(v.vehicleService));
     return gm.GoogleMap(
-      initialCameraPosition: gm.CameraPosition(target: _g(v.initialCenter), zoom: 15.5),
+      initialCameraPosition:
+          gm.CameraPosition(target: _g(v.initialCenter), zoom: v.initialZoom ?? 15.5),
       padding: v.padding,
       style: night ? _nightStyle : _lightStyle,
       onMapCreated: (c) {
@@ -208,10 +224,18 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
           : null,
       // Al alejar o acercar, los pines cambian de tamaño solo al cruzar un
       // umbral (no en cada cuadro): globo grande, globo chico, punto.
+      onCameraMoveStarted: v.onCameraMoveStarted,
       onCameraMove: (pos) {
+        _target = pos.target;
         final next = alertPinSizeFor(pos.zoom);
         if (next != _pinSize) setState(() => _pinSize = next);
       },
+      onCameraIdle: v.onCameraIdle == null
+          ? null
+          : () {
+              final t = _target;
+              if (t != null) v.onCameraIdle!(LatLng(t.latitude, t.longitude));
+            },
       polylines: {
         if (v.route != null)
           for (var i = 0; i < v.route!.legs.length; i++)
@@ -310,7 +334,7 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
       mapController: _c,
       options: fm.MapOptions(
         initialCenter: v.initialCenter,
-        initialZoom: 14,
+        initialZoom: v.initialZoom ?? 14,
         minZoom: 5.0,
         maxZoom: 19.0,
         cameraConstraint: fm.CameraConstraint.containCenter(
@@ -321,6 +345,13 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
         onPositionChanged: (camera, _) {
           final next = alertPinSizeFor(camera.zoom);
           if (next != _pinSize) setState(() => _pinSize = next);
+        },
+        onMapEvent: (e) {
+          if (e is fm.MapEventMoveStart || e is fm.MapEventFlingAnimationStart) {
+            v.onCameraMoveStarted?.call();
+          } else if (e is fm.MapEventMoveEnd || e is fm.MapEventFlingAnimationEnd) {
+            v.onCameraIdle?.call(e.camera.center);
+          }
         },
       ),
       children: [

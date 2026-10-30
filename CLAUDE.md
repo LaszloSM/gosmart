@@ -322,6 +322,7 @@ AppRoutes.profile          // '/profile'
 AppRoutes.aiChat           // '/ai-chat'
 AppRoutes.routePlanner     // '/routes'
 AppRoutes.routeDetail      // '/routes/detail'
+AppRoutes.placeConfirm     // '/routes/confirm'  pin fijo para confirmar el punto (extra: PlaceConfirmRequest; public)
 AppRoutes.paymentValidation // '/payment-validation'
 AppRoutes.nfcSimulator     // '/debug/nfc-simulator'
 AppRoutes.emergencyContacts // '/safety/contacts'  (needs account)
@@ -528,6 +529,11 @@ Currency: `'cop'` | `'usd'` | `'eur'`
   `items` and `limited`), not `geocodingService` directly. Directory rows with `verified=false` show "aprox.".
   Google suggestions come WITHOUT coordinates: call `placeSearch.resolve(s)` when the user picks one
   (null = show a notice). That closes the Google session, so typing is billed once per pick.
+  **Always resolve, also directory rows**: an unverified row (`approximate`) gets its point from Google
+  ("<name>, <city>", ≤ 3 km from the seed point); its seed point is used only if Google fails, and then
+  stays `approximate`. Verified rows keep their own point. After resolving, the planner and Casa/Trabajo
+  push `AppRoutes.placeConfirm` (`PlaceConfirmRequest`) so the person confirms the pin on the map.
+  `tool/verify_places.py` (Actions → "Verificar lugares", manual) compares the seed with Google.
 - **`GSChoicePlates<T>`** (`lib/widgets/gs_choice_plates.dart`): pick one of a few options as pills
   (driver signup). The planner uses `ModeSelector` (tiles) and, once both points exist, `ModeOptions` (rows with ~ETA and fare).
 - **Driver status is server-only**: the client never writes `drivers.status`; a trigger rejects it and
