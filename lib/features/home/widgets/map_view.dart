@@ -111,10 +111,13 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
   String? _nightStyle;
   String? _lightStyle;
 
-  /// Tamaño actual de los pines (cambia solo al cruzar un umbral de zoom).
-  AlertPinSize _pinSize = alertPinSizeFor(15.5);
+  /// Zoom con el que se eligen tamaño y visibilidad de los pines. Se lee al
+  /// detenerse la cámara, no en cada cuadro: el gesto no cruza el puente
+  /// Android → Dart cuadro a cuadro ni reconstruye marcadores a medio gesto.
+  late double _zoom = widget.view.initialZoom ?? 15.5;
+  AlertPinSize get _pinSize => alertPinSizeFor(_zoom);
 
-  /// Último centro de la cámara; se entrega al detenerse (sin setState).
+  /// Último centro de la cámara (solo si alguien pidió onCameraIdle).
   gm.LatLng? _target;
 
   /// Imágenes de los pines ya dibujadas: tipo|tamaño|noche → ícono.
@@ -123,18 +126,25 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
 
   String _pinKey(AlertKind k, AlertPinSize s, bool dark) => '${k.id}|${s.name}|$dark';
 
-  /// Dibuja (una sola vez) las imágenes que faltan para los tipos visibles.
+  /// Dibuja (una sola vez) los tres tamaños de cada tipo visible: al cambiar
+  /// el zoom el ícono ya está y el pin no desaparece mientras se dibuja.
   Future<void> _ensurePins(bool dark) async {
     if (_drawingPins) return;
-    final missing = {
+    final missing = <(AlertKind, AlertPinSize)>{
       for (final a in widget.view.alerts)
-        if (!_pinCache.containsKey(_pinKey(a.kind, _pinSize, dark))) a.kind,
+        for (final s in AlertPinSize.values)
+          if (!_pinCache.containsKey(_pinKey(a.kind, s, dark))) (a.kind, s),
     };
     if (missing.isEmpty) return;
     _drawingPins = true;
     final dpr = MediaQuery.devicePixelRatioOf(context);
-    final size = _pinSize;
-    for (final k in missing) {
+    // Primero el tamaño de ahora, para que aparezcan cuanto antes.
+    final now = _pinSize;
+    final ordered = [
+      ...missing.where((m) => m.$2 == now),
+      ...missing.where((m) => m.$2 != now),
+    ];
+    for (final (k, size) in ordered) {
       final bytes = await renderAlertPin(k, size, pixelRatio: dpr, dark: dark);
       _pinCache[_pinKey(k, size, dark)] = gm.BitmapDescriptor.bytes(
         bytes,
@@ -143,6 +153,30 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
     }
     _drawingPins = false;
     if (mounted) setState(() {});
+  }
+
+  /// Ícono del tamaño pedido o, mientras se dibuja, el de otro tamaño (con
+  /// su tamaño, para poner bien el ancla).
+  (gm.BitmapDescriptor, AlertPinSize)? _pinIcon(AlertKind k, bool dark) {
+    for (final s in [_pinSize, ...AlertPinSize.values]) {
+      final icon = _pinCache[_pinKey(k, s, dark)];
+      if (icon != null) return (icon, s);
+    }
+    return null;
+  }
+
+  Future<void> _onIdle() async {
+    final c = _c;
+    if (c == null) return;
+    final t = _target;
+    if (t != null) widget.view.onCameraIdle?.call(LatLng(t.latitude, t.longitude));
+    final z = await c.getZoomLevel();
+    if (!mounted) return;
+    // Solo reconstruir si cambia lo que se ve (tamaño o lo lejano).
+    final changed = alertPinSizeFor(z) != _pinSize ||
+        (z < alertFarZoom) != (_zoom < alertFarZoom);
+    _zoom = z;
+    if (changed) setState(() {});
   }
 
   static gm.LatLng _g(LatLng p) => gm.LatLng(p.latitude, p.longitude);
@@ -172,9 +206,21 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
     });
   }
 
+  /// Movimientos de cámara de la app (ubicarme, encuadrar la ruta): con una
+  /// duración pareja se ven como un paseo; la de fábrica salta en los viajes
+  /// largos. Con "quitar animaciones" la cámara va directo.
+  static const _cameraGlide = Duration(milliseconds: 650);
+
+  Future<void> _animate(gm.CameraUpdate u) async {
+    final c = _c;
+    if (c == null) return;
+    if (mounted && MediaQuery.of(context).disableAnimations) return c.moveCamera(u);
+    return c.animateCamera(u, duration: _cameraGlide);
+  }
+
   @override
-  Future<void> moveTo(LatLng p, {double zoom = 15.5}) async =>
-      _c?.animateCamera(gm.CameraUpdate.newLatLngZoom(_g(p), zoom));
+  Future<void> moveTo(LatLng p, {double zoom = 15.5}) =>
+      _animate(gm.CameraUpdate.newLatLngZoom(_g(p), zoom));
 
   @override
   Future<void> fit(List<LatLng> points) async {
@@ -186,7 +232,7 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
       if (p.longitude < w) w = p.longitude;
       if (p.longitude > e) e = p.longitude;
     }
-    await _c!.animateCamera(gm.CameraUpdate.newLatLngBounds(
+    await _animate(gm.CameraUpdate.newLatLngBounds(
         gm.LatLngBounds(southwest: gm.LatLng(s, w), northeast: gm.LatLng(n, e)), 56));
   }
 
@@ -225,17 +271,9 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
       // Al alejar o acercar, los pines cambian de tamaño solo al cruzar un
       // umbral (no en cada cuadro): globo grande, globo chico, punto.
       onCameraMoveStarted: v.onCameraMoveStarted,
-      onCameraMove: (pos) {
-        _target = pos.target;
-        final next = alertPinSizeFor(pos.zoom);
-        if (next != _pinSize) setState(() => _pinSize = next);
-      },
-      onCameraIdle: v.onCameraIdle == null
-          ? null
-          : () {
-              final t = _target;
-              if (t != null) v.onCameraIdle!(LatLng(t.latitude, t.longitude));
-            },
+      // Solo quien necesita el centro (confirmar un punto) escucha cada cuadro.
+      onCameraMove: v.onCameraIdle == null ? null : (pos) => _target = pos.target,
+      onCameraIdle: _onIdle,
       polylines: {
         if (v.route != null)
           for (var i = 0; i < v.route!.legs.length; i++)
@@ -278,12 +316,13 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
             infoWindow: const gm.InfoWindow(title: 'Tu conductor'),
           ),
         for (final a in v.alerts)
-          if (_pinCache[_pinKey(a.kind, _pinSize, night)] case final icon?)
+          if (alertVisibleAt(a.kind, _zoom))
+          if (_pinIcon(a.kind, night) case (final icon, final size))
             gm.Marker(
               markerId: gm.MarkerId('alert-${a.id}'),
               position: _g(a.at),
               icon: icon,
-              anchor: _pinSize == AlertPinSize.dot
+              anchor: size == AlertPinSize.dot
                   ? const Offset(0.5, 0.5)
                   : const Offset(0.5, 1),
               // Lo grave queda encima de lo demás.
@@ -307,7 +346,8 @@ class _FlutterMapView extends StatefulWidget {
 
 class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewController {
   final _c = fm.MapController();
-  AlertPinSize _pinSize = alertPinSizeFor(14);
+  late double _zoom = widget.view.initialZoom ?? 14;
+  AlertPinSize get _pinSize => alertPinSizeFor(_zoom);
 
   @override
   void initState() {
@@ -343,8 +383,14 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
         interactionOptions: const fm.InteractionOptions(flags: fm.InteractiveFlag.all),
         onLongPress: v.onLongPressEnabled ? (_, point) => v.onLongPress(point) : null,
         onPositionChanged: (camera, _) {
-          final next = alertPinSizeFor(camera.zoom);
-          if (next != _pinSize) setState(() => _pinSize = next);
+          // Reconstruir solo al cruzar un umbral (tamaño o lo lejano).
+          final z = camera.zoom;
+          if (alertPinSizeFor(z) != _pinSize ||
+              (z < alertFarZoom) != (_zoom < alertFarZoom)) {
+            setState(() => _zoom = z);
+          } else {
+            _zoom = z;
+          }
         },
         onMapEvent: (e) {
           if (e is fm.MapEventMoveStart || e is fm.MapEventFlingAnimationStart) {
@@ -437,6 +483,7 @@ class _FlutterMapViewState extends State<_FlutterMapView> implements MapViewCont
               ),
             ),
           for (final a in v.alerts)
+            if (alertVisibleAt(a.kind, _zoom))
             fm.Marker(
               point: a.at,
               width: 48,

@@ -580,6 +580,12 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 - **`ThemeData(fontFamily:)` overrides every textTheme family**: the type scale is re-applied with
   `base.copyWith(textTheme: base.textTheme.merge(textTheme))` in `app_theme.dart`. Keep that.
 - **Draw arrows with `Icons.arrow_forward_rounded`**, never a text glyph.
+- **Map performance**: the home map does NOT listen to `onCameraMove` (that sends a message per frame from
+  Android); pin size/visibility is read on `onCameraIdle` via `getZoomLevel()`. Only screens that pass
+  `MapView.onCameraIdle` (place confirm) track the camera target per frame. Alert pins are pre-rendered in
+  all three sizes so a zoom change never drops markers. Sizes: `alertPinSizeFor` (≥15 full, ≥13.5 small,
+  else dot); below `alertFarZoom` (12) only severe kinds show (`alertVisibleAt`). App camera moves use one
+  650 ms glide (`moveCamera` with reduced motion).
 - **Alerts (Waze)**: report with `showReportSheet(context)` (amber FAB on the map); tap a pin → `showAlertDetail`
   ("Sigue ahí" / "Ya no está"). `AlertProximityBanner` warns at ~400 m once per alert. Alert colors
   `GSColors.alertSevere/Caution/Clear` are road state (allowed red/amber/green).
