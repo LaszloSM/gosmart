@@ -190,7 +190,7 @@ void main() {
         if (await tap(find.text('Alertas en el mapa'), 'Alertas en el mapa')) {
           await wait(3);
           step('alertas-config');
-          await tester.pageBack();
+          await tap(find.byType(BackButton).last, 'atrás desde Alertas');
           await wait(2);
         }
         if (await tap(find.text('Sistema'), 'tema Sistema')) {
