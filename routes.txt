@@ -1,0 +1,10 @@
+FLUIDEZ 277 cuadros | construcción p50 0.9 ms, p90 7.4 ms, máx 248.1 ms, >16 ms: 20 | dibujo (emulador, software) p50 230.0 ms, p90 405.6 ms
+ROUTE Plaza Almirante Padilla | "Parque Almirante Padilla" (Riohacha) | punto 11.55152,-72.90969 | fin de ruta a 26 m | zona a 61 m | 0.4 km | OK
+ROUTE Universidad de La Guajira | "Universidad de La Guajira" (Riohacha) | punto 11.51179,-72.87064 | fin de ruta a 2 m | zona a 1920 m | 6.8 km | OK
+ROUTE Aeropuerto Almirante Padilla | "Aeropuerto Almirante Padilla" (Riohacha) | punto 11.52711,-72.91833 | fin de ruta a 169 m | zona a 844 m | 4.0 km | OK
+ROUTE Terminal de Transportes Riohacha | "Terminal de Transportes de Riohacha" (Riohacha) | punto 11.54074,-72.91127 | fin de ruta a 7 m | zona a 864 m | 1.5 km | OK
+ROUTE Muelle turístico Riohacha | "Muelle Turístico de Riohacha" (Riohacha) | punto 11.55323,-72.90637 | fin de ruta a 13 m | zona a 806 m | 0.5 km | OK
+ROUTE Catedral Riohacha | "Catedral Nuestra Señora de los Remedios" (Riohacha) | punto 11.55179,-72.90922 | fin de ruta a 16 m | zona a 899 m | 0.4 km | OK
+ROUTE Hospital Nuestra Señora de los Remedios | "Hospital Nuestra Señora de los Remedios" (Carrera 15 11A-07, Coquivacoa, Riohacha) | punto 11.54669,-72.91438 | fin de ruta a 31 m | zona a 1264 m | 1.1 km | OK
+ROUTE Calle 15 Riohacha | "Calle 15" (Nuestra Señora de los Remedios, Riohacha) | punto 11.54339,-72.90726 | fin de ruta a 2 m | zona a 648 m | 1.1 km | OK
+ROUTE Parque Central Maicao | "Parque Central de Maicao" (Maicao) | punto 11.37918,-72.25140 | fin de ruta a 23 m | zona a 1249 m | 76.6 km | OK
