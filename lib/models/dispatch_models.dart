@@ -341,3 +341,50 @@ class ChainedTrip {
     );
   }
 }
+
+/// Un viaje terminado o cancelado del historial, con lo necesario para
+/// repetirlo: el punto de salida del primer tramo y el de llegada del último.
+class RecentTrip {
+  const RecentTrip({
+    required this.id,
+    required this.status,
+    required this.at,
+    this.originLabel,
+    this.destLabel,
+    this.origin,
+    this.dest,
+  });
+
+  final String id;
+  final String status;
+  final DateTime at;
+  final String? originLabel;
+  final String? destLabel;
+  final LatLng? origin;
+  final LatLng? dest;
+
+  /// Se puede repetir si se conocen los dos puntos.
+  bool get canRepeat => origin != null && dest != null;
+
+  /// Fila de `chained_trips` con sus `trip_legs` (seq y coordenadas).
+  factory RecentTrip.fromRow(Map<String, dynamic> r) {
+    final legs = [
+      for (final l in (r['trip_legs'] as List?) ?? const [])
+        Map<String, dynamic>.from(l as Map),
+    ]..sort((a, b) => ((a['seq'] as num?) ?? 0).compareTo((b['seq'] as num?) ?? 0));
+    LatLng? at(Map<String, dynamic>? l, String lat, String lng) {
+      final a = l?[lat], b = l?[lng];
+      return a is num && b is num ? LatLng(a.toDouble(), b.toDouble()) : null;
+    }
+
+    return RecentTrip(
+      id: r['id'] as String,
+      status: r['status'] as String,
+      at: _ts(r['created_at']) ?? DateTime.now(),
+      originLabel: r['origin_label'] as String?,
+      destLabel: r['dest_label'] as String?,
+      origin: legs.isEmpty ? null : at(legs.first, 'from_lat', 'from_lng'),
+      dest: legs.isEmpty ? null : at(legs.last, 'to_lat', 'to_lng'),
+    );
+  }
+}

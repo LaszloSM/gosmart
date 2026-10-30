@@ -1,0 +1,18 @@
+# Compara la semilla del directorio con Google Places y deja la tabla en el
+# resumen del job. Manual (cada consulta a Google cuesta): Actions → Verificar
+# lugares → Run workflow. Solo informa; nunca falla.
+name: Verificar lugares
+
+on:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Semilla vs Google Places
+        env:
+          GOOGLE_MAPS_SERVER_KEY: ${{ secrets.GOOGLE_MAPS_SERVER_KEY }}
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+        run: python3 tool/verify_places.py

@@ -19,6 +19,7 @@ import '../features/settings/alert_settings_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/wallet/wallet_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../features/routes/place_confirm_screen.dart';
 import '../features/routes/route_planner_screen.dart';
 import '../features/routes/route_detail_screen.dart';
 import '../features/ai_chat/ai_chat_screen.dart';
@@ -120,6 +121,7 @@ abstract class AppRoutes {
   static const profile          = '/profile';
   static const routePlanner     = '/routes';
   static const routeDetail      = '/routes/detail';
+  static const placeConfirm     = '/routes/confirm'; // extra: PlaceConfirmRequest
   static const aiChat           = '/ai-chat';
   static const paymentValidation = '/payment-validation';
   static const nfcSimulator     = '/debug/nfc-simulator';
@@ -157,6 +159,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isPublicPage = state.matchedLocation == AppRoutes.home ||
           state.matchedLocation == AppRoutes.routePlanner ||
           state.matchedLocation == AppRoutes.routeDetail ||
+          state.matchedLocation == AppRoutes.placeConfirm ||
           state.matchedLocation == AppRoutes.aiChat ||
           // Mirar sí, actuar con cuenta: la pantalla pide entrar al enviar.
           state.matchedLocation == AppRoutes.trip ||
@@ -235,6 +238,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.routePlanner,
         pageBuilder: (context, state) => _page(state, const RoutePlannerScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.placeConfirm,
+        // El lugar viaja en `extra`: sin él (enlace directo) no hay qué confirmar.
+        redirect: (context, state) =>
+            state.extra is PlaceConfirmRequest ? null : AppRoutes.routePlanner,
+        pageBuilder: (context, state) {
+          final r = state.extra! as PlaceConfirmRequest;
+          return _page(state, PlaceConfirmScreen(
+              place: r.place, title: r.title, actionLabel: r.actionLabel));
+        },
       ),
       GoRoute(
         path: AppRoutes.routeDetail,

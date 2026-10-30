@@ -75,7 +75,9 @@ class ProfileService {
           .from('avatars')
           .getPublicUrl('$userId/avatar.jpg');
 
-      return url;
+      // Mismo archivo, URL nueva: sin esto la app (y la caché del CDN)
+      // seguiría mostrando la foto anterior.
+      return '$url?v=${DateTime.now().millisecondsSinceEpoch}';
     } catch (e) {
       debugPrint('[ProfileService] uploadAvatar error: $e');
       return null;
