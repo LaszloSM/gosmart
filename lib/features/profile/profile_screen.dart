@@ -7,7 +7,9 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import '../../models/driver_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/driver_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../router/app_router.dart';
 import '../driver/driver_console.dart' show switchToDriver;
@@ -137,6 +139,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(profileProvider).valueOrNull;
+    // Conductor por rol o con registro aprobado (el rol puede tardar en llegar).
+    final isDriver = (profile?.isDriver ?? false) ||
+        ref.watch(myDriverProvider).valueOrNull?.status == DriverStatus.approved;
 
     return Scaffold(
       extendBody: true,
@@ -155,7 +160,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               children: [
                 const GSSectionTitle('Conducir'),
                 GSGroup(children: [
-                  if (profile?.isDriver ?? false)
+                  if (isDriver)
                     // Como InDrive: un interruptor cambia toda la app a la
                     // vista de conductor (y desde allá se vuelve).
                     SwitchListTile(

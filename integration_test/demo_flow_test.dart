@@ -64,21 +64,29 @@ void main() {
     await wait(25);
     step('inicio-google');
 
-    // Entrar como pasajera demo.
-    if (_password.isNotEmpty && await tap(find.text('Perfil'), 'pestaña Perfil')) {
-      if (await waitFor(find.text('Entra a GoSmart'))) {
-        final fields = find.byType(TextField);
-        await tester.enterText(fields.at(0), 'pasajero@example.com');
-        await tester.enterText(fields.at(1), _password);
-        await tester.testTextInput.receiveAction(TextInputAction.done);
-        await wait(1);
-        step('login');
-        await tap(find.text('Iniciar sesión'), 'botón Iniciar sesión');
-        await wait(10);
-        step('despues-login');
-      } else {
-        failed.add('no abrió el login');
+    /// Entra con una cuenta demo desde donde esté (abre el login si hace falta).
+    Future<bool> login(String email, String tag) async {
+      if (find.text('Entra a GoSmart').evaluate().isEmpty) {
+        await tap(find.text('Perfil'), 'pestaña Perfil ($tag)');
       }
+      if (!await waitFor(find.text('Entra a GoSmart'))) {
+        failed.add('no abrió el login ($tag)');
+        return false;
+      }
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), email);
+      await tester.enterText(fields.at(1), _password);
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await wait(1);
+      step('login-$tag');
+      await tap(find.text('Iniciar sesión'), 'botón Iniciar sesión ($tag)');
+      await wait(10);
+      step('despues-login-$tag');
+      return true;
+    }
+
+    // Entrar como pasajera demo.
+    if (_password.isNotEmpty && await login('pasajero@example.com', 'pasajera')) {
       await tap(find.text('Inicio'), 'pestaña Inicio');
       await wait(10);
       step('inicio-con-cuenta');
@@ -146,10 +154,98 @@ void main() {
     }
     if (await tap(find.text('Inicio'), 'pestaña Inicio')) {
       await wait(8);
-      step('inicio-final');
+      step('inicio-alertas');
+    }
+
+    // Alertas como Waze: el botón ámbar del mapa, elegir y confirmar.
+    if (_password.isNotEmpty &&
+        await tap(find.byTooltip('Reportar en la vía'), 'botón Reportar')) {
+      await wait(3);
+      step('reportar-hoja');
+      if (await tap(find.text('Trancón'), 'tipo Trancón')) {
+        await wait(1);
+        step('reportar-elegido');
+        if (await tap(find.text('Reportar trancón'), 'confirmar reporte')) {
+          if (await waitFor(find.textContaining('Gracias'), seconds: 15)) {
+            step('reportar-gracias');
+          } else {
+            failed.add('el reporte no se confirmó');
+          }
+          await wait(4);
+        }
+      }
+    }
+
+    // Configuración: tema oscuro, preferencias de alertas y de vuelta a Sistema.
+    if (await tap(find.text('Perfil'), 'pestaña Perfil (config)')) {
+      await wait(3);
+      step('perfil');
+      if (await tap(find.byTooltip('Configuración'), 'engranaje Configuración')) {
+        await wait(3);
+        step('configuracion');
+        if (await tap(find.text('Oscuro'), 'tema Oscuro')) {
+          await wait(3);
+          step('tema-oscuro');
+        }
+        if (await tap(find.text('Alertas en el mapa'), 'Alertas en el mapa')) {
+          await wait(3);
+          step('alertas-config');
+          await tester.pageBack();
+          await wait(2);
+        }
+        if (await tap(find.text('Sistema'), 'tema Sistema')) {
+          await wait(3);
+          step('tema-sistema');
+        }
+        // Salir para entrar como conductor.
+        if (_password.isNotEmpty &&
+            await tap(find.text('Cerrar sesión'), 'Cerrar sesión')) {
+          await wait(6);
+          step('sesion-cerrada');
+        }
+      }
+    }
+
+    // Modo conductor (interruptor como InDrive) con el mototaxista demo.
+    if (_password.isNotEmpty && await login('conductor@example.com', 'conductor')) {
+      if (find.text('Modo conductor').evaluate().isEmpty) {
+        await tap(find.text('Perfil'), 'pestaña Perfil (conductor)');
+        await wait(4);
+      }
+      step('perfil-conductor');
+      if (await tap(find.text('Modo conductor'), 'interruptor Modo conductor')) {
+        await wait(10);
+        step('consola-conductor');
+        if (await waitFor(find.text('Conectado')) || await waitFor(find.text('Conectarme'))) {
+          if (find.text('Conectarme').evaluate().isNotEmpty) {
+            await tap(find.text('Conectarme'), 'Conectarme');
+            await wait(8);
+            step('conductor-conectado');
+          }
+        } else {
+          failed.add('no abrió la consola del conductor');
+        }
+        if (await tap(find.byTooltip('Menú del conductor'), 'menú del conductor')) {
+          await wait(2);
+          step('menu-conductor');
+          if (await tap(find.text('Hoy y los últimos 7 días'), 'Ganancias')) {
+            await wait(4);
+            step('ganancias');
+            await tester.tapAt(const Offset(200, 120)); // cierra la hoja
+            await wait(2);
+          }
+          if (await tap(find.byTooltip('Menú del conductor'), 'menú del conductor 2')) {
+            await wait(2);
+            if (await tap(find.text('Cambiar a modo pasajero'), 'volver a pasajero')) {
+              await wait(8);
+              step('de-vuelta-pasajero');
+            }
+          }
+        }
+      }
     }
 
     // ignore: avoid_print
     print('RESULT ${failed.isEmpty ? 'OK' : failed.join(' | ')}');
-  }, timeout: const Timeout(Duration(minutes: 15)));
+  }, timeout: const Timeout(Duration(minutes: 25)));
 }
