@@ -26,6 +26,7 @@ import 'package:gosmart/features/routes/route_planner_screen.dart';
 import 'package:gosmart/main.dart' as app;
 import 'package:gosmart/providers/active_route_provider.dart';
 import 'package:gosmart/router/app_router.dart';
+import 'package:gosmart/services/place_search.dart';
 import 'package:gosmart/widgets/gs_list_row.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:latlong2/latlong.dart';
@@ -196,8 +197,9 @@ void main() {
       }
       final place = tester.widget<PlaceConfirmScreen>(find.byType(PlaceConfirmScreen)).place;
       final point = place.latLng!;
-      await wait(4);
+      await wait(8); // que el mapa nativo dibuje sus teselas antes de la captura
       step('punto-$tag');
+      await wait(3);
       await tester.tap(find.text('Confirmar destino'));
       await wait(3);
 
@@ -226,7 +228,17 @@ void main() {
       final toPoint = _meters(end, point);
       final toArea = _meters(point, c.area);
       final label = route.destinationLabel ?? '';
+      // La sugerencia elegida debe ser lo buscado: la primera palabra que
+      // distingue la búsqueda y sus números ("Calle 15") van en el nombre.
+      final want = queryCore(c.query).split(' ');
+      final got = queryCore(place.placeName).toLowerCase();
+      final missing = [
+        for (final w in want)
+          if ((w == want.first || RegExp(r'^\d').hasMatch(w)) && !got.contains(w)) w,
+      ];
       final problems = [
+        if (missing.isNotEmpty)
+          'se eligió "${place.placeName}", que no es lo buscado (falta: ${missing.join(', ')})',
         if (toPoint > 250) 'la ruta termina a ${toPoint.round()} m del punto elegido',
         if (toArea > c.radiusM) 'el punto cae a ${toArea.round()} m de la zona esperada',
         if (label != place.placeName) 'el destino dice "$label" y se eligió "${place.placeName}"',

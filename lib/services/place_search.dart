@@ -49,8 +49,12 @@ const _kindType = {
 class DirectoryPlaceSearch implements PlaceSearch {
   @override
   Future<List<GeocodeSuggestion>> search(String query, {LatLng? near}) async {
+    // Sin el nombre de la ciudad: "Calle 15 Riohacha" no debe traer el
+    // "Muelle Turístico de Riohacha" solo por compartir "Riohacha".
+    final core = queryCore(query);
+    if (core.length < 2) return [];
     final rows = await GoSmartSupabase.client.rpc('search_places', params: {
-      'p_query': query,
+      'p_query': core,
       'p_lat': near?.latitude,
       'p_lng': near?.longitude,
       'p_limit': 6,
@@ -71,6 +75,7 @@ class DirectoryPlaceSearch implements PlaceSearch {
       featureType: _kindType[r['kind']] ?? 'poi',
       fromDirectory: true,
       approximate: !verified,
+      matchScore: (r['score'] as num?)?.toDouble(),
     );
   }
 }
@@ -251,6 +256,11 @@ class LayeredPlaceSearch {
     for (final s in ext ?? const <GeocodeSuggestion>[]) {
       if (!merged.any((m) => isSamePlace(m, s))) merged.add(s);
     }
+    // Primero lo que más se parece a lo escrito (con empate, el directorio,
+    // que ya va adelante): "Hospital … de los Remedios" no debe dar la
+    // Catedral del mismo nombre como primera opción.
+    final score = {for (final s in merged) s: placeRelevance(query, s)};
+    mergeSortStable(merged, (a, b) => score[b]!.compareTo(score[a]!));
     return PlaceSearchResult(
       merged.take(maxResults).toList(),
       limited: dir == null || ext == null,
@@ -269,6 +279,61 @@ class LayeredPlaceSearch {
       Telemetry.degraded(service, e.runtimeType.toString());
       return null;
     }
+  }
+}
+
+/// Palabras que no distinguen un lugar: ciudad, departamento y conectores.
+const _noise = {
+  'riohacha', 'maicao', 'guajira', 'colombia', 'la', 'el', 'los', 'las', 'de',
+  'del', 'y', 'en', 'al', 'a',
+};
+
+String _norm(String s) => s
+    .toLowerCase()
+    .replaceAll(RegExp('[áä]'), 'a')
+    .replaceAll(RegExp('[éë]'), 'e')
+    .replaceAll(RegExp('[íï]'), 'i')
+    .replaceAll(RegExp('[óö]'), 'o')
+    .replaceAll(RegExp('[úü]'), 'u')
+    .replaceAll(RegExp(r'[^a-zñ0-9 ]'), ' ')
+    .trim();
+
+List<String> _words(String s) =>
+    [for (final w in _norm(s).split(RegExp(r'\s+'))) if (w.isNotEmpty && !_noise.contains(w)) w];
+
+/// Lo que distingue la búsqueda (sin ciudad ni conectores); si no queda nada,
+/// la búsqueda tal cual ("Riohacha" sola sigue sirviendo).
+String queryCore(String query) {
+  final w = _words(query);
+  return w.isEmpty ? query.trim() : w.join(' ');
+}
+
+/// Qué tanto se parece una sugerencia a lo escrito (0–1): parte de las
+/// palabras escritas que están en el nombre (una palabra a medio escribir
+/// cuenta si el nombre la empieza así). En el directorio cuenta también su
+/// propio parecido, que incluye los alias ("la plaza").
+double placeRelevance(String query, GeocodeSuggestion s) {
+  final q = _words(query);
+  if (q.isEmpty) return s.matchScore ?? 0.5;
+  final name = _words(s.placeName);
+  var hit = 0;
+  for (final w in q) {
+    if (name.any((n) => n == w || (w.length >= 3 && n.startsWith(w)))) hit++;
+  }
+  final byName = hit / q.length;
+  return math.max(byName, s.matchScore ?? 0);
+}
+
+/// Orden estable (List.sort no lo garantiza).
+void mergeSortStable<T>(List<T> list, int Function(T, T) compare) {
+  if (list.length < 2) return;
+  final indexed = [for (var i = 0; i < list.length; i++) (i, list[i])];
+  indexed.sort((a, b) {
+    final c = compare(a.$2, b.$2);
+    return c != 0 ? c : a.$1.compareTo(b.$1);
+  });
+  for (var i = 0; i < list.length; i++) {
+    list[i] = indexed[i].$2;
   }
 }
 

@@ -27,6 +27,7 @@ GeocodeSuggestion _s(String name, double lat, double lng, {bool dir = false}) =>
 
 void main() {
   photonTests();
+  rankingTests();
   final muelleDir = _s('Muelle Turístico de Riohacha', 11.5449, -72.9075, dir: true);
   final muelleExt = _s('Muelle turistico', 11.5450, -72.9076);
   final otro = _s('Calle 15', 11.5400, -72.9100);
@@ -283,6 +284,55 @@ void photonTests() {
       expect(r!.latLng, const LatLng(11.5446, -72.9077));
       expect(r.placeName, 'Parque Almirante Padilla');
       expect(r.approximate, isFalse);
+    });
+  });
+}
+
+void rankingTests() {
+  group('orden: primero lo que más se parece a lo escrito (casos del emulador)', () {
+    GeocodeSuggestion dir(String name, double score) => GeocodeSuggestion(
+        placeName: name,
+        fullAddress: 'Riohacha',
+        latLng: const LatLng(11.55, -72.90),
+        fromDirectory: true,
+        approximate: true,
+        matchScore: score);
+    GeocodeSuggestion ext(String name) =>
+        GeocodeSuggestion(placeName: name, fullAddress: 'Riohacha', latLng: null, placeId: name);
+
+    test('Hospital … de los Remedios no da primero la Catedral homónima', () async {
+      final r = await LayeredPlaceSearch(
+        directory: _Fake([dir('Catedral Nuestra Señora de los Remedios', 0.7)]),
+        provider: _Fake([ext('Hospital Nuestra Señora de los Remedios')]),
+      ).search('Hospital Nuestra Señora de los Remedios');
+      expect(r.items.first.placeName, 'Hospital Nuestra Señora de los Remedios');
+    });
+
+    test('Calle 15 Riohacha no da primero el Muelle de Riohacha', () async {
+      final r = await LayeredPlaceSearch(
+        directory: _Fake([dir('Muelle Turístico de Riohacha', 0.5)]),
+        provider: _Fake([ext('Calle 15')]),
+      ).search('Calle 15 Riohacha');
+      expect(r.items.first.placeName, 'Calle 15');
+    });
+
+    test('el alias del directorio ("la plaza") sigue primero', () async {
+      final r = await LayeredPlaceSearch(
+        directory: _Fake([dir('Parque Almirante Padilla', 1.0)]),
+        provider: _Fake([ext('Plaza Bolívar'), ext('Plazoleta del Mar')]),
+      ).search('la plaza');
+      expect(r.items.first.placeName, 'Parque Almirante Padilla');
+    });
+
+    test('a medio escribir también cuenta ("univer")', () {
+      expect(placeRelevance('univer', ext('Universidad de La Guajira')), 1.0);
+      expect(placeRelevance('univer', ext('Terminal')), 0.0);
+    });
+
+    test('al directorio no se le manda la ciudad', () {
+      expect(queryCore('Calle 15 Riohacha'), 'calle 15');
+      expect(queryCore('Terminal de Maicao'), 'terminal');
+      expect(queryCore('Riohacha'), 'Riohacha');
     });
   });
 }

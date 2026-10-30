@@ -26,6 +26,10 @@ class GeocodeSuggestion {
   /// true = coordenada aproximada, aún sin verificar en campo.
   final bool approximate;
 
+  /// Parecido según el directorio (0–1, nombre o alias); null si viene de
+  /// otro buscador. Sirve para ordenar la lista (`placeRelevance`).
+  final double? matchScore;
+
   const GeocodeSuggestion({
     required this.placeName,
     required this.fullAddress,
@@ -34,6 +38,7 @@ class GeocodeSuggestion {
     this.featureType = 'place',
     this.fromDirectory = false,
     this.approximate = false,
+    this.matchScore,
   });
 
   GeocodeSuggestion withLocation(LatLng at, {String? address}) =>
@@ -45,6 +50,7 @@ class GeocodeSuggestion {
         featureType: featureType,
         fromDirectory: fromDirectory,
         approximate: approximate,
+        matchScore: matchScore,
       );
 
   /// Returns an icon that represents the kind of place.

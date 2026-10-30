@@ -51,6 +51,10 @@ class PlaceConfirmScreen extends StatefulWidget {
 class _PlaceConfirmScreenState extends State<PlaceConfirmScreen> {
   late LatLng _center = widget.place.latLng!;
   bool _moving = false;
+
+  /// El mapa nativo tarda un momento en dibujar su primer cuadro (antes se ve
+  /// negro): mientras tanto, un fondo gris que se desvanece.
+  bool _mapShown = false;
   String? _movedAddress; // dirección del punto nuevo, si se movió
   bool _looking = false; // buscando la dirección del punto nuevo
   int _lookup = 0;
@@ -123,11 +127,28 @@ class _PlaceConfirmScreenState extends State<PlaceConfirmScreen> {
                   child: MapView(
                     initialCenter: p.latLng!,
                     initialZoom: 17.5,
-                    onCreated: (_) {},
+                    onCreated: (_) => Future.delayed(
+                      const Duration(milliseconds: 600),
+                      () {
+                        if (mounted) setState(() => _mapShown = true);
+                      },
+                    ),
                     onLongPress: (_) {},
                     onLongPressEnabled: false,
                     onCameraMoveStarted: _onMoveStarted,
                     onCameraIdle: _onIdle,
+                  ),
+                ),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: AnimatedOpacity(
+                      opacity: _mapShown ? 0 : 1,
+                      duration: MediaQuery.of(context).disableAnimations
+                          ? Duration.zero
+                          : GSDuration.page,
+                      curve: GSCurve.exit,
+                      child: ColoredBox(color: GSColors.surfaceSunken),
+                    ),
                   ),
                 ),
                 // El pin no es un marcador: está encima del mapa, en el centro.
