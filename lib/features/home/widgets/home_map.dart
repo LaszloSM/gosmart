@@ -147,7 +147,6 @@ class _HomeMapState extends ConsumerState<HomeMap> {
           fixedBottom: widget.fixedBottom,
           onRecenter: _recenter,
           onReport: () => showReportSheet(context),
-          showReport: activeRoute == null,
         ),
       ],
     );
@@ -165,14 +164,12 @@ class _FloatingControls extends StatelessWidget {
     required this.fixedBottom,
     required this.onRecenter,
     required this.onReport,
-    required this.showReport,
   });
   final ValueListenable<double>? sheetExtent;
   final double stackHeight;
   final double? fixedBottom;
   final VoidCallback onRecenter;
   final VoidCallback onReport;
-  final bool showReport;
 
   @override
   Widget build(BuildContext context) {
@@ -209,15 +206,15 @@ class _FloatingControls extends StatelessWidget {
             onTap: onRecenter,
           ),
           const Spacer(),
-          if (showReport)
-            _RoundFab(
-              tooltip: 'Reportar en la vía',
-              icon: Icons.add_location_alt_rounded,
-              background: GSColors.alertCaution,
-              foreground: GSColors.onAlertCaution,
-              size: 60,
-              onTap: onReport,
-            ),
+          // Como Waze: se reporta también con una ruta en pantalla.
+          _RoundFab(
+            tooltip: 'Reportar en la vía',
+            icon: Icons.add_location_alt_rounded,
+            background: GSColors.alertCaution,
+            foreground: GSColors.onAlertCaution,
+            size: 60,
+            onTap: onReport,
+          ),
         ],
       ),
     );

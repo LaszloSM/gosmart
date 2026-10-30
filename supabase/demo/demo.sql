@@ -144,6 +144,9 @@ BEGIN
   UPDATE profiles SET name = 'Yeinis Epiayú', city = 'Riohacha' WHERE id = v_pas;
   UPDATE profiles SET name = 'Wilmer Uriana', city = 'Riohacha' WHERE id = v_drv;
   UPDATE profiles SET name = 'Rafael Pushaina', city = 'Maicao' WHERE id = v_col;
+  -- Rol de conductor (lo que hace admin_review_driver al aprobar): sin él la
+  -- app no ofrece el interruptor "Modo conductor" en el perfil.
+  UPDATE profiles SET role = 'driver' WHERE id IN (v_drv, v_col) AND role <> 'admin';
 
   -- Conductores aprobados (como postgres: el guard deja escribir el estado).
   INSERT INTO drivers (user_id, full_name, cedula, phone, service, zone, license_number,

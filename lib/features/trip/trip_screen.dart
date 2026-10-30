@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/dispatch_models.dart';
+import '../../providers/active_route_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/dispatch_provider.dart';
 import '../../router/app_router.dart';
@@ -82,9 +83,13 @@ class TripScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final trip = ref.watch(activeTripProvider);
     // Sin viaje, nadie que pintar en el mapa.
-    ref.listen<AsyncValue<ChainedTrip?>>(activeTripProvider, (_, next) {
+    ref.listen<AsyncValue<ChainedTrip?>>(activeTripProvider, (prev, next) {
       if (next.valueOrNull == null && next.hasValue) {
         ref.read(tripDriverProvider.notifier).state = null;
+        // El viaje terminó o se canceló: su ruta ya no va en el inicio.
+        if (prev?.valueOrNull != null) {
+          ref.read(activeRouteProvider.notifier).state = null;
+        }
       }
     });
     final t = trip.valueOrNull;

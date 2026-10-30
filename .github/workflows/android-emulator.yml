@@ -2,8 +2,8 @@ name: Android emulator (demo)
 
 # Corre la app en un Android virtual (Google APIs, con Play services) contra el
 # Supabase real y con la llave de Google Maps de los secrets, recorre la demo
-# (integration_test/demo_flow_test.dart) y publica una captura por paso en la
-# rama ci-shots. Es la prueba de que el mapa de Google se dibuja.
+# (integration_test/demo_flow_test.dart) y sube una captura por paso como
+# artifact "emulator-shots". Es la prueba de que el mapa de Google se dibuja.
 
 on:
   push:
@@ -15,15 +15,21 @@ on:
       - 'pubspec.yaml'
       - 'tool/ci_env.sh'
       - 'tool/emulator_demo.sh'
+      - 'supabase/demo/**'
       - '.github/workflows/android-emulator.yml'
   workflow_dispatch:
+    inputs:
+      publicar_capturas:
+        description: 'Publicar también las capturas en la rama ci-shots (para revisarlas sin bajar el artifact)'
+        type: boolean
+        default: false
 
 concurrency:
   group: android-emulator-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
-  contents: write   # publicar las capturas en la rama ci-shots
+  contents: write   # solo para la rama ci-shots, cuando se pide a mano
 
 jobs:
   emulator:
@@ -61,6 +67,16 @@ jobs:
           GOOGLE_MAPS_SERVER_KEY: ${{ secrets.GOOGLE_MAPS_SERVER_KEY }}
         run: bash tool/ci_env.sh
 
+      # Datos demo al día (funciones de supabase/demo/demo.sql de este commit) y
+      # cuentas en su punto de partida antes de recorrer la app.
+      - name: Preparar la demo
+        env:
+          DB: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          [ -n "$DB" ] || exit 0
+          psql "$DB" -v ON_ERROR_STOP=1 -q -f supabase/demo/demo.sql
+          psql "$DB" -v ON_ERROR_STOP=1 -q -tAc "select demo_seed('normal')"
+
       - name: Habilitar KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -80,8 +96,17 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
           script: bash tool/emulator_demo.sh
 
-      - name: Publicar capturas (rama ci-shots)
+      - name: Subir capturas
         if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emulator-shots
+          path: shots-named/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Publicar capturas (rama ci-shots, solo si se pidió)
+        if: always() && inputs.publicar_capturas
         run: |
           [ -d shots-named ] || exit 0
           cd shots-named
@@ -90,7 +115,6 @@ jobs:
           git add -A
           git -c user.name='GoSmart CI' -c user.email='ci@users.noreply.github.com' commit -qm "Capturas de ${GITHUB_SHA::7}"
           git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-shots
-          echo "Capturas: https://github.com/${{ github.repository }}/tree/ci-shots"
 
       # La prueba entra como la pasajera demo y deja un viaje: se limpia para
       # que la cuenta quede lista para presentar.

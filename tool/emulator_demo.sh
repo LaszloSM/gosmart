@@ -8,6 +8,10 @@ PKG=com.example.gosmart
 adb wait-for-device
 adb shell settings put secure location_mode 3 >/dev/null 2>&1 || true
 adb shell cmd location set-location-enabled true >/dev/null 2>&1 || true
+# El emulador de CI es lento: el sistema muestra "Pixel Launcher isn't
+# responding" sobre la app. No es de GoSmart; se ocultan esos diálogos.
+adb shell settings put global hide_error_dialogs 1 >/dev/null 2>&1 || true
+adb shell settings put global anr_show_background 0 >/dev/null 2>&1 || true
 mkdir -p shots shots-named
 
 # En segundo plano: GPS en el Parque Padilla (Riohacha), permisos en cuanto la

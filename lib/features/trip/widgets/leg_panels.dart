@@ -421,6 +421,8 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
       );
       _request = await dispatchService.fetchRequest(id);
       _startPolling();
+      // El tramo pasó a "esperando": que la lista de tramos lo diga.
+      ref.invalidate(activeTripProvider);
     } on DispatchException catch (e) {
       GSToast.showWithMessenger(messenger,
           message: e.message, type: GSToastType.error);
@@ -870,7 +872,7 @@ class _DriverCard extends StatelessWidget {
                         Flexible(
                           child: Text(
                             d?.rating == null
-                                ? 'Conductor nuevo en GoSmart'
+                                ? 'Conductor nuevo'
                                 : '${d!.rating!.toStringAsFixed(1).replaceAll('.', ',')} (${d.ratings})',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
