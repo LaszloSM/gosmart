@@ -172,6 +172,25 @@ para QR, Google Maps real) queda listado para que el usuario lo pruebe.
 
 ---
 
+## 7. Pruebas de rutas y fluidez en el emulador (2026-10-30, tarde)
+
+Pedido para la presentación: sin tocar cuotas, que las rutas se armen bien en cualquier lugar.
+
+- **Respaldo Photon (OpenStreetMap)** cuando Google Places no responde: búsqueda y ubicación de los
+  lugares del directorio siguen funcionando con la cuota agotada.
+- **`integration_test/routes_check_test.dart`** (corre en el emulador tras la demo): 8 destinos de
+  Riohacha y Maicao; por cada uno verifica que la sugerencia elegida sea lo buscado, que la ruta termine
+  en el punto elegido (≤ 250 m) y que el punto caiga en la zona del lugar.
+- **Encontrado y corregido:** "Hospital Nuestra Señora de los Remedios" daba primero la Catedral y
+  "Calle 15 Riohacha" daba el Muelle (el directorio iba siempre primero y emparejaba por "Riohacha").
+  Ahora la lista se ordena por parecido y al directorio no se le manda la ciudad.
+- **Confirmado:** los puntos reales (Google/OSM) de catedral, muelle y terminal quedan ~800 m al norte de
+  la semilla: la semilla estaba corrida, que era el error original del Almirante Padilla.
+- **Fluidez (emulador):** construcción por cuadro p50 ≈ 1 ms, p90 ≈ 12–16 ms al arrastrar y hacer zoom;
+  unos 25 de 270 cuadros pasan de 16 ms (momentos puntuales: tarjeta "¿Ir aquí?", pines al detenerse).
+  El dibujo del emulador es por software (≈ 270 ms) y no representa un celular: la sensación real se
+  prueba en el teléfono.
+
 ## Orden de trabajo propuesto
 
 1. Direcciones exactas (1): es lo más grave, porque afecta todas las rutas.
