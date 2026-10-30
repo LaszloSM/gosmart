@@ -164,6 +164,21 @@ void main() {
       }
     }
 
+    // Repetir el viaje recién hecho desde el historial (como Uber): el
+    // planificador abre con el mismo origen y destino y ya ofrece las opciones.
+    if (_password.isNotEmpty && await tap(find.text('Viaje'), 'pestaña Viaje')) {
+      await wait(4);
+      if (await tap(find.text('Repetir'), 'botón Repetir')) {
+        await wait(6);
+        step('repetir-planificador');
+        if (!await waitFor(find.text('Elige cómo ir'))) {
+          failed.add('Repetir no trajo origen y destino');
+        }
+        await tester.pageBack();
+        await wait(3);
+      }
+    }
+
     if (_password.isNotEmpty && await tap(find.text('Billetera'), 'pestaña Billetera')) {
       await wait(6);
       step('billetera');

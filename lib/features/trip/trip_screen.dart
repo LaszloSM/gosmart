@@ -355,9 +355,21 @@ class _LegRow extends StatelessWidget {
   }
 }
 
-/// Viajes terminados con su recibo (D5: un recibo por viaje).
+/// Viajes terminados con su recibo (D5: un recibo por viaje). "Repetir" abre
+/// el planificador con el mismo origen y destino (como Uber): se elige otra
+/// vez en qué ir y se ven los precios de hoy.
 class _RecentTrips extends ConsumerWidget {
   const _RecentTrips();
+
+  void _repeat(BuildContext context, WidgetRef ref, RecentTrip t) {
+    ref.read(pendingPlanProvider.notifier).state = PlannerPreset(
+      origin: t.origin!,
+      originLabel: t.originLabel ?? 'Salida del viaje anterior',
+      dest: t.dest!,
+      destLabel: t.destLabel ?? 'Destino del viaje anterior',
+    );
+    context.push(AppRoutes.routePlanner);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -372,11 +384,22 @@ class _RecentTrips extends ConsumerWidget {
             icon: t.status == 'completed'
                 ? Icons.receipt_long_rounded
                 : Icons.cancel_rounded,
-            title: t.dest ?? 'Viaje',
+            title: t.destLabel ?? 'Viaje',
             subtitle: '${t.at.day}/${t.at.month} · '
                 '${t.status == 'completed' ? 'Ver recibo' : 'Cancelado'}',
             onTap: t.status == 'completed'
                 ? () => context.push('${AppRoutes.receipt}?id=${t.id}')
+                : null,
+            trailing: t.canRepeat
+                ? GSButton(
+                    label: 'Repetir',
+                    leadingIcon: Icons.replay_rounded,
+                    variant: GSButtonVariant.outline,
+                    size: GSButtonSize.sm,
+                    isFullWidth: false,
+                    semanticLabel: 'Repetir el viaje a ${t.destLabel ?? 'ese destino'}',
+                    onPressed: () => _repeat(context, ref, t),
+                  )
                 : null,
           ),
           const Divider(indent: GSSpacing.s4),

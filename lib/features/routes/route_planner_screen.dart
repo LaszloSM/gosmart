@@ -60,6 +60,9 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   bool _loading = false;
   bool _locating = true;
 
+  /// Origen puesto a mano ("Repetir" o intercambiar): el GPS ya no lo cambia.
+  bool _originFixed = false;
+
   @override
   void initState() {
     super.initState();
@@ -114,6 +117,18 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   }
 
   void _applyPendingDestination() {
+    // "Repetir" del historial: mismo origen y destino exactos.
+    final plan = ref.read(pendingPlanProvider);
+    if (plan != null) {
+      ref.read(pendingPlanProvider.notifier).state = null;
+      setState(() {
+        _originFixed = true;
+        _originLatLng = plan.origin;
+        _originLabel = plan.originLabel;
+      });
+      _setDest(plan.destLabel, plan.dest);
+      return;
+    }
     final pending = ref.read(pendingDestinationProvider);
     if (pending == null) return;
     _setDest('Punto en el mapa', pending);
@@ -129,6 +144,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     final label = _originLabel;
     final latLng = _originLatLng;
     setState(() {
+      _originFixed = true;
       _originLabel = _destLabel!;
       _originLatLng = _destLatLng;
     });
@@ -140,9 +156,9 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     if (!mounted) return;
     setState(() {
       _locating = false;
-      if (pos != null) _originLatLng = pos;
+      if (pos != null && !_originFixed) _originLatLng = pos;
     });
-    if (pos == null) return;
+    if (pos == null || _originFixed) return;
     // "Mi ubicación" → la calle donde estás (como Uber).
     final address = await geocodingService.reverse(pos);
     if (address != null && mounted && _originLatLng == pos && _originLabel == 'Mi ubicación') {

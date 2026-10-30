@@ -50,7 +50,13 @@ aproximado y el pin cae en otro sitio. Le puede pasar a cualquier lugar de la se
 - Prueba unitaria: el directorio aproximado no pisa a Google; sin Google se usa el directorio con "aprox.".
 - Sin red o sin clave: el buscador sigue funcionando con el directorio y lo avisa (D8).
 
-## 2. Fluidez del mapa
+## 2. Fluidez del mapa — HECHO (falta probar en celular)
+
+**Implementado:** el mapa del inicio ya no escucha `onCameraMove` (un mensaje Android → Dart por
+cuadro); tamaño y visibilidad de los pines se leen en `onCameraIdle`. Movimientos de cámara de la app
+con un deslizamiento parejo de 650 ms (directo con "quitar animaciones"). El plugin ya usaba el modo
+recomendado (Texture Layer Hybrid Composition). La sensación real solo se puede medir en el teléfono.
+
 
 **Síntomas reportados:** arrastrar y hacer zoom se traba; los movimientos automáticos de cámara
 son bruscos.
@@ -71,7 +77,13 @@ y puede reconstruir el conjunto de marcadores mientras el dedo mueve el mapa.
 **Criterio:** arrastrar y hacer zoom sin saltos visibles en un Android de gama media; sin reconstrucciones
 del mapa durante el gesto (comprobado con contadores en una prueba de widget).
 
-## 3. Alertas en el mapa (estilo Waze)
+## 3. Alertas en el mapa (estilo Waze) — HECHO
+
+**Implementado:** ≥ 15 globo completo, ≥ 13,5 chico, más lejos punto (Riohacha entera = puntos);
+bajo zoom 12 solo lo grave (bloqueo, accidente). Los tres tamaños se dibujan de una vez: al cambiar
+de zoom el pin no desaparece. No se agruparon (el agrupado nativo de Google usa rojo/verde, que en
+GoSmart es solo para la vía).
+
 
 **Problema reportado:** al alejar el mapa los pines siguen viéndose grandes; debería comportarse como Waze.
 
@@ -85,7 +97,14 @@ del mapa durante el gesto (comprobado con contadores en una prueba de widget).
 **Criterio:** con el mapa alejado a la vista de Riohacha completa, las alertas no tapan calles; con zoom de
 barrio se ven los globos completos.
 
-## 4. Repetir viaje
+## 4. Repetir viaje — HECHO
+
+**Corrección:** no hizo falta migración. `trip_legs` ya guarda las coordenadas de cada tramo: el
+origen es la salida del primer tramo y el destino la llegada del último (`RecentTrip.fromRow`).
+"Repetir" (en Viajes recientes, también los cancelados) abre el planificador con los dos puntos; el
+GPS ya no pisa un origen puesto a mano. Se eligen modo y precio de hoy, como en Uber. Está en el
+recorrido del emulador.
+
 
 **Decisión:** botón "Repetir" en cada viaje de **Viajes recientes** (pestaña Viaje), con el **mismo
 origen y destino exactos**, como en Uber o InDrive.
@@ -103,7 +122,12 @@ origen y destino exactos**, como en Uber o InDrive.
 **Criterio:** del historial al planificador con las mismas opciones en 1 toque; prueba SQL de las columnas
 nuevas; prueba de widget del botón.
 
-## 5. Subir foto de perfil
+## 5. Subir foto de perfil — HECHO (falta aplicar en Supabase)
+
+**Implementado:** `024_avatars.sql` (bucket público, 2 MB, imágenes; cada usuario solo su carpeta) con
+prueba de políticas y de que la prueba detecta una política floja. La URL lleva `?v=<hora>` para no
+mostrar la foto vieja. **Hay que correr Actions → "Supabase deploy"** para crear el bucket en la base real.
+
 
 **Problema encontrado.** `profile_service.dart` sube a un bucket `avatars` que **ninguna migración crea**.
 
