@@ -4,7 +4,8 @@
 // que acepta el conductor de demo, pagar y ver la billetera.
 // El workflow toma capturas con adb mientras corre; cada paso imprime
 // "STEP <nombre> <epoch ms>" para ubicarlas. Un paso que falla se anota y la
-// prueba sigue: el resultado es el registro de pasos y las capturas.
+// prueba sigue hasta el final (para tener todas las capturas), pero al terminar
+// falla si hubo algún paso fallido: un verde con pasos rotos no prueba nada.
 //
 // Local: flutter test integration_test/demo_flow_test.dart -d <emulador> \
 //          --dart-define=DEMO_PASSWORD=...
@@ -101,7 +102,22 @@ void main() {
         await tester.enterText(field.first, 'Universidad');
         await wait(6);
         step('sugerencias');
-        if (await tap(find.text('Universidad de La Guajira'), 'sugerencia Uniguajira')) {
+        // El punto se confirma en el mapa (pin fijo al centro); la captura
+        // muestra si Google lo dejó en la universidad.
+        Future<bool> confirmPoint() async {
+          final button = find.text('Confirmar destino');
+          if (!await waitFor(button)) {
+            failed.add('no apareció: confirmar el punto');
+            step('FAIL-confirmar el punto');
+            return false;
+          }
+          await wait(6);
+          step('confirmar-punto');
+          return tap(button, 'botón Confirmar destino');
+        }
+
+        if (await tap(find.text('Universidad de La Guajira'), 'sugerencia Uniguajira') &&
+            await confirmPoint()) {
           await wait(4);
           step('opciones');
           await tap(find.text('Mototaxi'), 'opción Mototaxi');
@@ -253,5 +269,6 @@ void main() {
 
     // ignore: avoid_print
     print('RESULT ${failed.isEmpty ? 'OK' : failed.join(' | ')}');
+    expect(failed, isEmpty, reason: 'pasos de la demo que fallaron');
   }, timeout: const Timeout(Duration(minutes: 25)));
 }

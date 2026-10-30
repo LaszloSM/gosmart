@@ -106,6 +106,10 @@ jobs:
                    014_transport_graph 015_dispatch; do
             run "supabase/tests/${t}_test.sql"
           done
+          # Fotos de perfil: bucket y políticas sobre un storage mínimo, en su propia base.
+          psql -v ON_ERROR_STOP=1 -q -c 'create database gosmart_storage'
+          psql -d gosmart_storage -v ON_ERROR_STOP=1 -q -f supabase/tests/_supabase_stub.sql
+          psql -d gosmart_storage -v ON_ERROR_STOP=1 -q -f supabase/tests/024_avatars_test.sql
           # D7: dos conexiones a la vez compiten por el mismo viaje y el último cupo
           bash supabase/tests/015_race_test.sh gosmart_core
           run supabase/tests/016_payments_test.sql

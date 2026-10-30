@@ -87,6 +87,7 @@ All migrations live in `supabase/migrations/`. Run them in order in the Supabase
 | `021_map_alerts.sql` | Alertas estilo Waze: `road_reports.segment_id` opcional (reporte por punto en la ciudad, bbox La Guajira), tipos nuevos `trancon`/`peligro`/`obra`, duplicado = mismo tipo a ≤150 m en 30 min. RPC pública `map_alerts(bbox)` (pines con votos, `mine`, `my_vote`). `road_status()` y push solo cuentan reportes con tramo. |
 | `022_offer_cards.sql` | RPC `ride_offer_cards(request)`: ofertas pendientes con nombre de pila, vehículo, calificación, distancia y minutos del conductor (solo el pasajero de la solicitud). |
 | `023_driver_earnings.sql` | RPC `driver_earnings()`: hoy y 7 días (total, viajes, efectivo confirmado) + calificación del conductor (solo lo propio). |
+| `024_avatars.sql` | Bucket público `avatars` (2 MB, jpeg/png/webp) para la foto de perfil; cada usuario escribe solo `'<uid>/…'`. Antes no existía y subir la foto fallaba siempre. Prueba: `supabase/tests/024_avatars_test.sql` (trae su propio `storage` mínimo). |
 | `010_wallet_hardening.sql` | **Security fix for 008.** Drops user UPDATE on `wallets` and INSERT on `wallet_transactions`; revokes `recharge_wallet` from clients; adds `idempotency_key`; new RPC `wallet_recharge_simulated(p_amount, p_idempotency_key)` that uses `auth.uid()`. Backfills wallets for older users. |
 
 **SQL tests:** `supabase/tests/` runs on a plain Postgres 16 (CI job `sql-tests`). `_supabase_stub.sql`
