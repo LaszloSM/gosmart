@@ -44,6 +44,9 @@ class LocationService {
   /// Última posición conocida (para reportar al instante, sin esperar el GPS).
   LatLng? last;
 
+  /// Cuándo llegó [last].
+  DateTime? lastAt;
+
   /// Por qué falló la última vez (null = la última lectura funcionó).
   LocationIssue? lastIssue;
 
@@ -60,6 +63,7 @@ class LocationService {
   LatLng _publish(Position p) {
     final at = LatLng(p.latitude, p.longitude);
     last = at;
+    lastAt = DateTime.now();
     lastIssue = null;
     _positions.add(at);
     return at;
@@ -143,22 +147,101 @@ class LocationService {
     return null;
   }
 
-  /// Posición mientras te mueves (cada [distanceFilter] metros). Sin permiso
-  /// o sin GPS no emite nada; nunca lanza.
-  Stream<LatLng> watch({int distanceFilter = 40}) async* {
-    try {
-      if (await check(request: false) != null) return;
-      await for (final p in Geolocator.getPositionStream(
-        locationSettings: LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: distanceFilter,
-        ),
-      )) {
-        yield _publish(p);
-      }
-    } catch (_) {
-      return;
+  // ── Seguimiento continuo ──────────────────────────────────────────────
+  // Una sola suscripción al GPS para toda la app (geolocator en Android
+  // reutiliza el primer stream y sus ajustes): el mapa, el aviso de alertas
+  // y el modo conductor la comparten. En modo conductor sigue con la app en
+  // segundo plano gracias a un servicio en primer plano (notificación fija),
+  // como InDrive o Uber Driver.
+  StreamSubscription<Position>? _platform;
+  int _watchers = 0;
+  bool _background = false;
+
+  /// true mientras el conductor está conectado (servicio en primer plano).
+  bool get backgroundTracking => _background;
+
+  /// Una posición reciente (menos de [maxAge]) sin pedir al GPS, o la actual.
+  Future<LatLng?> currentOrRecent({Duration maxAge = const Duration(seconds: 20)}) {
+    final at = lastAt;
+    if (last != null && at != null && DateTime.now().difference(at) < maxAge) {
+      return Future.value(last);
     }
+    return getCurrentPosition(request: false);
+  }
+
+  LocationSettings _settings() {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return AndroidSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+        foregroundNotificationConfig: _background
+            ? const ForegroundNotificationConfig(
+                notificationTitle: 'GoSmart: estás conectado',
+                notificationText:
+                    'Compartiendo tu ubicación para recibir viajes cercanos.',
+                notificationChannelName: 'Modo conductor',
+                enableWakeLock: true,
+                setOngoing: true,
+              )
+            : null,
+      );
+    }
+    return const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10);
+  }
+
+  Future<void> _ensurePlatform({bool restart = false}) async {
+    if (_platform != null && !restart) return;
+    if (await check(request: false) != null) return;
+    await _platform?.cancel();
+    _platform = null;
+    if (_watchers == 0 && !_background) return;
+    try {
+      _platform = Geolocator.getPositionStream(locationSettings: _settings())
+          .listen(_publish, onError: (_) {
+        _platform?.cancel();
+        _platform = null;
+      });
+    } catch (_) {
+      _platform = null;
+    }
+  }
+
+  Future<void> _maybeStop() async {
+    if (_watchers > 0 || _background) return;
+    await _platform?.cancel();
+    _platform = null;
+  }
+
+  /// Modo conductor: seguir la ubicación también en segundo plano.
+  Future<void> setBackground(bool on) async {
+    if (_background == on) return;
+    _background = on;
+    if (on || _watchers > 0) {
+      await _ensurePlatform(restart: true);
+    } else {
+      await _maybeStop();
+    }
+  }
+
+  /// Posición mientras te mueves. Sin permiso o sin GPS no emite nada; nunca
+  /// lanza. [distanceFilter] se conserva por compatibilidad (el GPS
+  /// compartido avisa cada 10 m).
+  Stream<LatLng> watch({int distanceFilter = 40}) {
+    StreamSubscription<LatLng>? sub;
+    late final StreamController<LatLng> c;
+    c = StreamController<LatLng>(
+      onListen: () {
+        _watchers++;
+        sub = positions.listen(c.add);
+        _ensurePlatform();
+      },
+      onCancel: () async {
+        _watchers--;
+        await sub?.cancel();
+        await _maybeStop();
+      },
+    );
+    return c.stream;
   }
 }
 

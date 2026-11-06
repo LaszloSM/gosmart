@@ -48,6 +48,16 @@ class CancelReason {
   ];
 }
 
+/// Texto de un código de motivo (panel admin). 'sin_motivo' = canceló una
+/// solicitud que nadie había aceptado.
+String cancelReasonLabel(String code) {
+  if (code == 'sin_motivo') return 'Antes de que alguien aceptara';
+  for (final r in [...CancelReason.passenger, ...CancelReason.driver]) {
+    if (r.code == code) return r.label;
+  }
+  return code;
+}
+
 /// Resultado de la hoja: null = no canceló.
 class CancelChoice {
   const CancelChoice(this.reason);

@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show RealtimeChannel;
 import 'package:uuid/uuid.dart';
 
 import '../../../core/money.dart';
@@ -11,6 +12,7 @@ import '../../../models/dispatch_models.dart';
 import '../../../providers/dispatch_provider.dart';
 import '../../../services/dispatch_service.dart';
 import '../../../services/payment_service.dart';
+import '../../../services/ride_realtime.dart';
 import '../../trust/rate_sheet.dart';
 import '../trip_screen.dart' show legModeLabel;
 import '../../../providers/wallet_provider.dart';
@@ -292,10 +294,14 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
     _resume();
   }
 
+  /// Canal de tiempo real de la solicitud (ofertas, aceptó, canceló).
+  RealtimeChannel? _live;
+
   @override
   void dispose() {
     _timer?.cancel();
     _clock?.cancel();
+    rideRealtime.close(_live);
     super.dispose();
   }
 
@@ -323,9 +329,14 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted && _request?.status == RideStatus.open) setState(() {});
     });
+    // Al instante por Realtime; la consulta periódica queda de respaldo y
+    // para mover al conductor en el mapa.
+    rideRealtime.close(_live);
+    final id = _request?.id;
+    _live = id == null ? null : rideRealtime.watchRequest(id, _poll);
     _timer?.cancel();
     _timer = Timer.periodic(
-        widget.pollEvery ?? const Duration(seconds: 4), (_) => _poll());
+        widget.pollEvery ?? const Duration(seconds: 5), (_) => _poll());
     _poll();
   }
 

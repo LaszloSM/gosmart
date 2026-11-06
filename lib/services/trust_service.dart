@@ -98,6 +98,19 @@ class TrustService {
       Map<String, dynamic>.from(
           await _db.rpc('admin_metrics', params: {'p_days': days}) as Map);
 
+  /// Cancelaciones por motivo y por quién (025_mvp_real.sql).
+  Future<List<({String reason, String by, int total})>> cancellations(int days) async {
+    final rows = await _db.rpc('admin_cancellations', params: {'p_days': days}) as List;
+    return [
+      for (final r in rows)
+        (
+          reason: r['reason'] as String,
+          by: r['cancelled_by'] as String,
+          total: (r['total'] as num).toInt(),
+        )
+    ];
+  }
+
   Future<Map<String, bool>> flags() async {
     final rows = await _db.from('app_flags').select('key, enabled') as List;
     return {for (final r in rows) r['key'] as String: r['enabled'] as bool};

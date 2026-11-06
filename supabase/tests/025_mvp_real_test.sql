@@ -173,5 +173,20 @@ BEGIN
   IF p.status <> 'cash_pending' THEN RAISE EXCEPTION '6: efectivo no quedó pendiente'; END IF;
 END $$;
 
+-- 7. Cancelaciones por motivo: solo admin.
+DO $$ BEGIN
+  BEGIN
+    PERFORM * FROM admin_cancellations(7);
+    RAISE EXCEPTION '7: no admin vio las cancelaciones';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+END $$;
+RESET ROLE;
+DO $$ BEGIN
+  IF (SELECT count(*) FROM ride_requests WHERE cancel_reason = 'driver_late') < 1 THEN
+    RAISE EXCEPTION '7: falta el motivo guardado';
+  END IF;
+END $$;
+
 RESET ROLE;
 SELECT '025_mvp_real: OK';

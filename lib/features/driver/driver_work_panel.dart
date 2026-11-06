@@ -10,6 +10,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show RealtimeChannel;
 
 import '../../core/money.dart';
 import '../../models/dispatch_models.dart';
@@ -20,6 +21,7 @@ import '../../services/dispatch_service.dart';
 import '../trip/widgets/cancel_sheet.dart';
 import '../../services/location_service.dart';
 import '../../services/payment_service.dart';
+import '../../services/ride_realtime.dart';
 import '../trust/rate_sheet.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
@@ -75,9 +77,15 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
       widget.driver.service == 'colectivo' ||
       widget.driver.service == 'intermunicipal';
 
+  RealtimeChannel? _live;
+
   @override
   void initState() {
     super.initState();
+    // Conectado: la ubicación sigue aunque la app quede en segundo plano.
+    if (widget.locate == null) locationService.setBackground(true);
+    // Lo suyo (aceptaron su oferta, el pasajero canceló) llega al instante.
+    _live = rideRealtime.watchDriver(widget.driver.userId, _tick);
     _tick();
     _timer = Timer.periodic(widget.pollEvery, (_) => _tick());
   }
@@ -85,12 +93,14 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
   @override
   void dispose() {
     _timer?.cancel();
+    rideRealtime.close(_live);
+    if (widget.locate == null) locationService.setBackground(false);
     super.dispose();
   }
 
   Future<void> _tick() async {
     try {
-      final at = await (widget.locate ?? locationService.getCurrentPosition)();
+      final at = await (widget.locate ?? locationService.currentOrRecent)();
       if (at != null) await dispatchService.ping(at);
       final active = await dispatchService.myAssignedRide(widget.driver.userId);
       var nearby = const <NearbyRequest>[];

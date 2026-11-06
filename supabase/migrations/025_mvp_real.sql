@@ -12,6 +12,9 @@
 --   5. Solo efectivo mientras Wompi esté apagado (app_flags.wompi_enabled):
 --      no se paga con saldo ni con QR de saldo, no hay recarga simulada y las
 --      cuentas nuevas empiezan con $0 (sin bono de prueba).
+--   6. Tiempo real: ride_requests y ride_offers en la publicación de
+--      Supabase Realtime (la app reacciona al instante; RLS sigue filtrando).
+--   7. admin_cancellations(días): cancelaciones por motivo y por quién.
 -- Seguro de re-ejecutar.
 
 -- ── 1. Sin conductor de demo ────────────────────────────────────────────────
@@ -280,5 +283,38 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- ── 6. Tiempo real ─────────────────────────────────────────────────────────
+DO $$
+DECLARE t TEXT;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+    RETURN;  -- Postgres sin Supabase (pruebas de CI)
+  END IF;
+  FOREACH t IN ARRAY ARRAY['ride_requests', 'ride_offers'] LOOP
+    IF NOT EXISTS (SELECT 1 FROM pg_publication_tables
+                   WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = t) THEN
+      EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I', t);
+    END IF;
+  END LOOP;
+END $$;
+
+-- ── 7. Cancelaciones para el panel admin ────────────────────────────────────
+-- Cuántas, por motivo y por quién (sin datos personales).
+CREATE OR REPLACE FUNCTION admin_cancellations(p_days INTEGER DEFAULT 7)
+RETURNS TABLE (reason TEXT, cancelled_by TEXT, total BIGINT) AS $$
+BEGIN
+  IF NOT is_admin() THEN RAISE EXCEPTION 'not_admin' USING ERRCODE = '42501'; END IF;
+  RETURN QUERY
+    SELECT coalesce(r.cancel_reason, 'sin_motivo'), coalesce(r.cancelled_by, 'passenger'), count(*)
+    FROM ride_requests r
+    WHERE r.status = 'cancelled'
+      AND r.finished_at > now() - make_interval(days => greatest(1, least(p_days, 90)))
+    GROUP BY 1, 2
+    ORDER BY 3 DESC;
+END;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public;
+REVOKE EXECUTE ON FUNCTION admin_cancellations(INTEGER) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION admin_cancellations(INTEGER) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
