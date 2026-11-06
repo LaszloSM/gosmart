@@ -220,7 +220,8 @@ class _ScheduledLegPanelState extends ConsumerState<ScheduledLegPanel> {
             },
           ),
         const SizedBox(height: GSSpacing.s3),
-        if (l.mode != 'transpadilla') ...[
+        if (l.mode != 'transpadilla' &&
+            (ref.watch(walletPaymentsProvider).valueOrNull ?? false)) ...[
           GSButton(
             label: 'Pagar con QR',
             leadingIcon: Icons.qr_code_scanner_rounded,
@@ -385,7 +386,7 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
       GSToast.showWithMessenger(messenger,
           message: method == 'cash'
               ? 'Listo: paga ${formatCop(r.agreedFare ?? r.offeredFare)} en efectivo.'
-              : 'Pagaste ${formatCop(r.agreedFare ?? r.offeredFare)} con tu saldo de prueba.',
+              : 'Pagaste ${formatCop(r.agreedFare ?? r.offeredFare)} con tu saldo.',
           type: GSToastType.success);
       if (r.status == RideStatus.completed) {
         if (mounted) {
@@ -544,6 +545,7 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
     final expired = r != null && r.status != RideStatus.cancelled;
     final leg = widget.leg;
     final balance = ref.watch(walletBalanceProvider);
+    final walletOn = ref.watch(walletPaymentsProvider).valueOrNull ?? false;
     final hint = leg.fareMax <= 0
         ? null
         : leg.mode == 'taxi'
@@ -587,12 +589,25 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
           hint: hint,
         ),
         const SizedBox(height: GSSpacing.s4),
-        PayMethodPicker(
-          method: _method,
-          balance: balance > 0 ? balance : null,
-          onChanged: (m) => setState(() => _method = m),
-        ),
-        if (_method == 'wallet' && balance < _fare)
+        if (walletOn)
+          PayMethodPicker(
+            method: _method,
+            balance: balance > 0 ? balance : null,
+            onChanged: (m) => setState(() => _method = m),
+          )
+        else
+          // Solo efectivo (MVP): se paga al conductor al llegar.
+          Row(
+            children: [
+              Icon(Icons.payments_rounded, color: GSColors.text, size: GSSize.iconMd),
+              const SizedBox(width: GSSpacing.s2),
+              Expanded(
+                child: Text('Pagas en efectivo al conductor al llegar.',
+                    style: text.bodyMedium),
+              ),
+            ],
+          ),
+        if (walletOn && _method == 'wallet' && balance < _fare)
           Padding(
             padding: const EdgeInsets.only(top: GSSpacing.s2),
             child: Text('Tu saldo no alcanza: podrás pagar en efectivo.',
@@ -692,9 +707,10 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
         : done
             ? 'Paga el tramo para cerrarlo.'
             : 'Hacia ${widget.leg.toLabel ?? 'tu destino'}';
-    final cashFirst = _method == 'cash';
+    final walletOn = ref.watch(walletPaymentsProvider).valueOrNull ?? false;
+    final cashFirst = _method == 'cash' || !walletOn;
     final payWallet = GSButton(
-      label: 'Pagar ${formatCop(fare)} con saldo de prueba',
+      label: 'Pagar ${formatCop(fare)} con saldo',
       leadingIcon: Icons.account_balance_wallet_rounded,
       variant: cashFirst ? GSButtonVariant.outline : GSButtonVariant.primary,
       isLoading: _busy && !cashFirst,
@@ -772,8 +788,10 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
               child: Text('Puedes pagar ya o al llegar.', style: text.bodyMedium),
             ),
           if (cashFirst) payCash else payWallet,
-          const SizedBox(height: GSSpacing.s2),
-          if (cashFirst) payWallet else payCash,
+          if (walletOn) ...[
+            const SizedBox(height: GSSpacing.s2),
+            if (cashFirst) payWallet else payCash,
+          ],
         ],
         if (_paid)
           Padding(

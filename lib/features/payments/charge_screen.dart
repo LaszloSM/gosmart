@@ -120,7 +120,7 @@ class _ChargeScreenState extends State<ChargeScreen> {
               Column(children: [
                 Icon(Icons.check_circle_rounded, size: 96, color: GSColors.brand),
                 Text('Pagado', style: text.headlineSmall),
-                Text('Ya está en tu billetera (saldo de prueba, aún no se puede retirar).',
+                Text('Ya está en tu billetera.',
                     textAlign: TextAlign.center, style: text.bodyMedium),
               ])
             else

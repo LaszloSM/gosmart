@@ -15,6 +15,7 @@ import '../../models/dispatch_models.dart';
 import '../../models/driver_model.dart';
 import '../../providers/driver_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/wallet_provider.dart';
 import '../../router/app_router.dart';
 import '../../services/driver_service.dart';
 import '../../services/location_service.dart';
@@ -145,12 +146,15 @@ class _DriverConsoleState extends ConsumerState<DriverConsole> {
                   ),
                   const SizedBox(width: GSSpacing.s2),
                   const Expanded(child: _EarningsPill()),
-                  const SizedBox(width: GSSpacing.s2),
-                  _FloatButton(
-                    tooltip: 'Cobrar con QR',
-                    icon: Icons.qr_code_2_rounded,
-                    onTap: () => context.push(AppRoutes.driverCharge),
-                  ),
+                  // Cobrar con QR mueve saldo: solo con Wompi (no en solo efectivo).
+                  if (ref.watch(walletPaymentsProvider).valueOrNull ?? false) ...[
+                    const SizedBox(width: GSSpacing.s2),
+                    _FloatButton(
+                      tooltip: 'Cobrar con QR',
+                      icon: Icons.qr_code_2_rounded,
+                      onTap: () => context.push(AppRoutes.driverCharge),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -285,6 +289,7 @@ class _DriverConsoleState extends ConsumerState<DriverConsole> {
                     showEarningsSheet(context);
                   },
                 ),
+                if (ref.read(walletPaymentsProvider).valueOrNull ?? false)
                 GSListRow(
                   icon: Icons.qr_code_2_rounded,
                   title: 'Cobrar con QR',

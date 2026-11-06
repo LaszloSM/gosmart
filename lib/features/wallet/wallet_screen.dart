@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../core/money.dart';
 import '../../router/app_router.dart';
 import '../../services/payment_service.dart';
 import '../../providers/wallet_provider.dart';
@@ -42,8 +41,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         onConfirm: (amount) async {
           Navigator.pop(context);
           final messenger = ScaffoldMessenger.of(context);
-          // Con Wompi activo, la recarga es real (sandbox) y la acredita el webhook.
-          if (await paymentService.wompiEnabled()) {
+          // Solo recargas reales (Wompi): la acredita el webhook.
+          {
             try {
               final url = await paymentService.wompiCheckout(amount);
               await launchUrl(Uri.parse(url),
@@ -56,15 +55,6 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             }
             return;
           }
-          final ok =
-              await ref.read(walletNotifierProvider.notifier).recharge(amount);
-          GSToast.showWithMessenger(
-            messenger,
-            message: ok
-                ? 'Recargaste ${formatCop(amount)}'
-                : 'La recarga no se confirmó. Intenta de nuevo.',
-            type: ok ? GSToastType.success : GSToastType.error,
-          );
         },
       ),
     );
@@ -78,6 +68,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   @override
   Widget build(BuildContext context) {
     final recharging = ref.watch(walletNotifierProvider).isLoading;
+    final walletOn = ref.watch(walletPaymentsProvider).valueOrNull ?? false;
 
     return Scaffold(
       extendBody: true,
@@ -88,18 +79,20 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           padding: EdgeInsets.zero,
           children: [
             BalanceHeader(actions: [
-              GSHeroAction(
-                icon: Icons.add_rounded,
-                label: 'Recargar',
-                primary: true,
-                busy: recharging,
-                onTap: recharging ? null : _showRechargeSheet,
-              ),
-              GSHeroAction(
-                icon: Icons.qr_code_scanner_rounded,
-                label: 'Pagar con QR',
-                onTap: () => context.push(AppRoutes.scanPay),
-              ),
+              if (walletOn) ...[
+                GSHeroAction(
+                  icon: Icons.add_rounded,
+                  label: 'Recargar',
+                  primary: true,
+                  busy: recharging,
+                  onTap: recharging ? null : _showRechargeSheet,
+                ),
+                GSHeroAction(
+                  icon: Icons.qr_code_scanner_rounded,
+                  label: 'Pagar con QR',
+                  onTap: () => context.push(AppRoutes.scanPay),
+                ),
+              ],
             ]),
             GSHeroBody(
               child: Column(

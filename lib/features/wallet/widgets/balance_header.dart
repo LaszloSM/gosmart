@@ -1,7 +1,7 @@
 // lib/features/wallet/widgets/balance_header.dart
 // Saldo de la billetera como en Nequi: banda azul honda con el saldo grande,
-// un ojo para ocultarlo en la calle, el aviso de que el saldo es de prueba y
-// las acciones redondas debajo.
+// un ojo para ocultarlo en la calle y las acciones redondas debajo. Sin
+// Wompi (solo efectivo) dice eso en vez de mostrar un saldo que no es dinero.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -29,6 +29,9 @@ class _BalanceHeaderState extends ConsumerState<BalanceHeader> {
   @override
   Widget build(BuildContext context) {
     final walletAsync = ref.watch(walletProvider);
+    // Solo efectivo (MVP): sin Wompi el saldo no es dinero, así que no se
+    // muestra como si lo fuera.
+    final walletOn = ref.watch(walletPaymentsProvider).valueOrNull ?? false;
     final on = GSColors.onBrandDeep;
     final onMuted = GSColors.onBrandDeepMuted;
 
@@ -59,6 +62,33 @@ class _BalanceHeaderState extends ConsumerState<BalanceHeader> {
                     message: 'Tu billetera aún no está lista',
                     onRetry: () => ref.invalidate(walletProvider),
                   ),
+                );
+              }
+              if (!walletOn) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Icon(Icons.payments_rounded, color: on, size: 32),
+                      const SizedBox(width: GSSpacing.s3),
+                      Expanded(
+                        child: Text('Pagas en efectivo',
+                            style: TextStyle(
+                                fontFamily: GSFonts.sans,
+                                fontSize: 28,
+                                fontWeight: FontWeight.w800,
+                                color: on)),
+                      ),
+                    ]),
+                    const SizedBox(height: GSSpacing.s2),
+                    Text(
+                      'Al terminar cada viaje le pagas al conductor y él lo '
+                      'confirma en la app. Las recargas y pagos con saldo '
+                      'llegan pronto.',
+                      style: TextStyle(
+                          fontFamily: GSFonts.sans, fontSize: 15, color: onMuted),
+                    ),
+                  ],
                 );
               }
               return Column(
@@ -128,13 +158,6 @@ class _BalanceHeaderState extends ConsumerState<BalanceHeader> {
                     spacing: GSSpacing.s2,
                     runSpacing: GSSpacing.s2,
                     children: [
-                      // PRODUCT.md: las recargas simuladas nunca se
-                      // presentan como dinero real.
-                      _CardTag(
-                        icon: Icons.info_rounded,
-                        label: 'Saldo de prueba',
-                        color: on,
-                      ),
                       _CardTag(
                         icon: wallet.cardStatus == 'active'
                             ? Icons.credit_card_rounded

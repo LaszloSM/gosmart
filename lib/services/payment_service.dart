@@ -27,6 +27,7 @@ class PaymentException implements Exception {
         'not_payable' => 'Este viaje todavía no se puede pagar.',
         'own_charge' => 'No puedes pagarte a ti mismo.',
         'not_configured' => 'Las recargas con Wompi no están activas todavía.',
+        'wallet_disabled' => 'Por ahora los viajes se pagan en efectivo al conductor.',
         _ => 'No se pudo pagar. Revisa tu conexión e intenta de nuevo.',
       };
 
@@ -34,7 +35,7 @@ class PaymentException implements Exception {
     final msg = e is PostgrestException ? e.message : e.toString();
     for (final c in const [
       'insufficient_balance', 'already_paid', 'charge_closed', 'wallet_blocked',
-      'not_payable', 'own_charge', 'not_configured',
+      'not_payable', 'own_charge', 'not_configured', 'wallet_disabled',
     ]) {
       if (msg.contains(c)) throw PaymentException(c);
     }

@@ -134,4 +134,44 @@ BEGIN
 END $$;
 
 RESET ROLE;
+-- 6. Solo efectivo con Wompi apagado.
+UPDATE app_flags SET enabled = false WHERE key = 'wompi_enabled';
+INSERT INTO auth.users (id, email) VALUES ('00000000-0000-0000-0000-000000000a25', 'nueva@test.co')
+ON CONFLICT DO NOTHING;
+DO $$ BEGIN
+  IF (SELECT balance FROM wallets WHERE user_id = '00000000-0000-0000-0000-000000000a25') <> 0 THEN
+    RAISE EXCEPTION '6: la cuenta nueva trae bono de prueba';
+  END IF;
+END $$;
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000a01', false);
+DO $$ BEGIN
+  INSERT INTO t24 VALUES ('req6', request_ride('mototaxi', 11.5441, -72.9071, 'Parque', 11.53, -72.91, 'Uni', 6000, gen_random_uuid()));
+END $$;
+SELECT set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000d02', false);
+DO $$ BEGIN
+  PERFORM accept_ride((SELECT id FROM t24 WHERE k = 'req6'));
+  PERFORM ride_transition((SELECT id FROM t24 WHERE k = 'req6'), 'in_progress');
+  PERFORM ride_transition((SELECT id FROM t24 WHERE k = 'req6'), 'completed');
+END $$;
+SELECT set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000a01', false);
+DO $$
+DECLARE p leg_payments;
+BEGIN
+  BEGIN
+    PERFORM pay_ride((SELECT id FROM t24 WHERE k = 'req6'), 'wallet', gen_random_uuid());
+    RAISE EXCEPTION '6: pagó con saldo sin Wompi';
+  EXCEPTION WHEN object_not_in_prerequisite_state THEN
+    IF SQLERRM <> 'wallet_disabled' THEN RAISE; END IF;
+  END;
+  BEGIN
+    PERFORM wallet_recharge_simulated(5000, gen_random_uuid());
+    RAISE EXCEPTION '6: hubo recarga simulada';
+  EXCEPTION WHEN object_not_in_prerequisite_state THEN NULL;
+  END;
+  p := pay_ride((SELECT id FROM t24 WHERE k = 'req6'), 'cash', gen_random_uuid());
+  IF p.status <> 'cash_pending' THEN RAISE EXCEPTION '6: efectivo no quedó pendiente'; END IF;
+END $$;
+
+RESET ROLE;
 SELECT '025_mvp_real: OK';

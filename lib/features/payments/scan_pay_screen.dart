@@ -145,7 +145,7 @@ class _ScanPayScreenState extends ConsumerState<ScanPayScreen> {
             const SizedBox(height: GSSpacing.s3),
             if (!_paid) ...[
               Text('Revisa que el nombre y la placa coincidan. Se descuenta de '
-                  'tu saldo de prueba.', style: text.bodyMedium),
+                  'tu saldo.', style: text.bodyMedium),
               const SizedBox(height: GSSpacing.s4),
               GSButton(
                 label: 'Pagar ${formatCop(p.amount)}',

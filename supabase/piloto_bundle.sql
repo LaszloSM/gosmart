@@ -2961,6 +2961,9 @@ END $$;
 --      el conductor seguía viniendo) y pide motivo si ya la aceptó alguien.
 --   4. Lugares guardados con nombre: máximo 10 por persona (además de Casa y
 --      Trabajo), nombre de 1 a 40 caracteres.
+--   5. Solo efectivo mientras Wompi esté apagado (app_flags.wompi_enabled):
+--      no se paga con saldo ni con QR de saldo, no hay recarga simulada y las
+--      cuentas nuevas empiezan con $0 (sin bono de prueba).
 -- Seguro de re-ejecutar.
 
 -- ── 1. Sin conductor de demo ────────────────────────────────────────────────
@@ -3157,6 +3160,78 @@ BEGIN
       FOR EACH ROW EXECUTE FUNCTION favorite_places_guard();
   END IF;
 END $$;
+
+-- ── 5. Solo efectivo ───────────────────────────────────────────────────────
+-- Pagos con saldo (wallet, qr) solo con Wompi encendido: sin recargas reales
+-- el saldo no es dinero.
+CREATE OR REPLACE FUNCTION leg_payments_cash_only()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.method IN ('wallet', 'qr') AND NOT flag_on('wompi_enabled') THEN
+    RAISE EXCEPTION 'wallet_disabled' USING ERRCODE = '55000';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SET search_path = public;
+
+DROP TRIGGER IF EXISTS leg_payments_cash_only ON leg_payments;
+CREATE TRIGGER leg_payments_cash_only
+  BEFORE INSERT ON leg_payments
+  FOR EACH ROW EXECUTE FUNCTION leg_payments_cash_only();
+
+-- La misma regla en la transferencia (antes de mirar el saldo), para que el
+-- error sea "pagos con saldo apagados" y no "saldo insuficiente".
+CREATE OR REPLACE FUNCTION _wallet_transfer(
+  p_from_user UUID, p_to_user UUID, p_amount INTEGER, p_desc TEXT, p_meta JSONB)
+RETURNS VOID AS $$
+DECLARE
+  w_from wallets;
+  w_to   wallets;
+BEGIN
+  -- Solo efectivo (025): sin Wompi el saldo no es dinero real.
+  IF NOT flag_on('wompi_enabled') THEN
+    RAISE EXCEPTION 'wallet_disabled' USING ERRCODE = '55000';
+  END IF;
+  PERFORM 1 FROM wallets WHERE user_id IN (p_from_user, p_to_user) ORDER BY id FOR UPDATE;
+  SELECT * INTO w_from FROM wallets WHERE user_id = p_from_user;
+  SELECT * INTO w_to   FROM wallets WHERE user_id = p_to_user;
+  IF w_from.id IS NULL OR w_to.id IS NULL THEN
+    RAISE EXCEPTION 'wallet_not_found' USING ERRCODE = 'P0002';
+  END IF;
+  IF w_from.card_status <> 'active' THEN
+    RAISE EXCEPTION 'wallet_blocked' USING ERRCODE = '55000';
+  END IF;
+  IF w_from.balance < p_amount THEN
+    RAISE EXCEPTION 'insufficient_balance' USING ERRCODE = '55000';
+  END IF;
+  UPDATE wallets SET balance = balance - p_amount, updated_at = now() WHERE id = w_from.id;
+  UPDATE wallets SET balance = balance + p_amount, updated_at = now() WHERE id = w_to.id;
+  INSERT INTO wallet_transactions (wallet_id, type, amount, description, metadata)
+  VALUES (w_from.id, 'trip', -p_amount, p_desc, p_meta),
+         (w_to.id, 'earning', p_amount, p_desc, p_meta);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+REVOKE EXECUTE ON FUNCTION _wallet_transfer(UUID, UUID, INTEGER, TEXT, JSONB) FROM PUBLIC, anon, authenticated;
+
+-- La recarga simulada ya no existe: solo Wompi (wallet_topup_*) suma saldo.
+CREATE OR REPLACE FUNCTION wallet_recharge_simulated(p_amount INTEGER, p_idempotency_key UUID)
+RETURNS TABLE (new_balance INTEGER, transaction_id UUID) AS $$
+BEGIN
+  RAISE EXCEPTION 'simulated_disabled' USING ERRCODE = '55000';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Sin bono de bienvenida de prueba: las billeteras nuevas empiezan en $0.
+ALTER TABLE wallets ALTER COLUMN balance SET DEFAULT 0;
+CREATE OR REPLACE FUNCTION create_wallet_for_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO wallets (user_id, card_number, balance)
+  VALUES (NEW.id, generate_gosmart_card_number(), 0)
+  ON CONFLICT (user_id) DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 NOTIFY pgrst, 'reload schema';
 

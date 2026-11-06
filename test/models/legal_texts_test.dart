@@ -22,10 +22,12 @@ void main() {
   test('los términos no prometen que el SOS siempre llegue', () {
     final t = termsOfUse.sections.map((s) => s.body).join(' ');
     expect(t, contains('no es un servicio de emergencias'));
-    expect(t, contains('no son dinero'));
+    expect(t, contains('en efectivo directamente al conductor'));
   });
 
-  test('el borrador marca a la vista lo que falta', () {
-    expect(all, contains('[PENDIENTE'));
+  test('dice quién responde y cómo contactarlo (Ley 1581)', () {
+    expect(all, isNot(contains('[PENDIENTE')));
+    expect(all, contains('Laszlo Sierra'));
+    expect(all, contains('laszlosierra2@gmail.com'));
   });
 }
