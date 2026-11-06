@@ -25,8 +25,18 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          PROJECT_REF: ndmsiznzvdvpewzkulep
         run: |
-          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+          # El secret SUPABASE_URL llegó a tener otro formato (curl: "URL mal
+          # formada") y el proyecto quedaba sin ping: se usa la del proyecto,
+          # igual que tool/ci_env.sh. Sin espacios ni saltos en la llave.
+          case "$SUPABASE_URL" in
+            https://*.supabase.co|https://*.supabase.co/) ;;
+            *) SUPABASE_URL="https://$PROJECT_REF.supabase.co" ;;
+          esac
+          SUPABASE_URL="${SUPABASE_URL%/}"
+          SUPABASE_ANON_KEY=$(printf '%s' "$SUPABASE_ANON_KEY" | tr -d '[:space:]')
+          if [ -z "$SUPABASE_ANON_KEY" ]; then
             echo "Secrets de Supabase no configurados; keep-alive omitido."
             exit 0
           fi
