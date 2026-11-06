@@ -53,6 +53,24 @@ class RouteLeg {
     this.fareMin = 0,
     this.fareMax = 0,
   });
+
+  /// El mismo tramo con otro trazado (p. ej. por la vía en vez de recto).
+  RouteLeg withPoints(List<LatLng> next) => RouteLeg(
+        mode: mode,
+        points: next,
+        color: color,
+        durationMin: durationMin,
+        distanceKm: distanceKm,
+        instruction: instruction,
+        lineId: lineId,
+        transitMode: transitMode,
+        fromLabel: fromLabel,
+        toLabel: toLabel,
+        fromNode: fromNode,
+        toNode: toNode,
+        fareMin: fareMin,
+        fareMax: fareMax,
+      );
 }
 
 /// The active route shown on the home map.
@@ -104,6 +122,21 @@ class RouteResult {
         fareMax: price,
         notes: notes,
         fareKind: kind,
+      );
+
+  /// Con otros tramos (mismo resumen): ver snapRouteToRoads.
+  RouteResult withLegs(List<RouteLeg> next) => RouteResult(
+        legs: next,
+        distanceKm: distanceKm,
+        durationMin: durationMin,
+        profile: profile,
+        estimatedCostCop: estimatedCostCop,
+        category: category,
+        destinationLabel: destinationLabel,
+        fareMin: fareMin,
+        fareMax: fareMax,
+        notes: notes,
+        fareKind: fareKind,
       );
 
   RouteResult withDestination(String? label) => RouteResult(

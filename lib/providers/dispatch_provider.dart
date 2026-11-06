@@ -19,7 +19,7 @@ final dispatchEnabledProvider =
 /// Últimos viajes cerrados (para ver su recibo).
 final recentTripsProvider = FutureProvider((ref) async {
   if (ref.watch(currentUserProvider) == null) {
-    return const <({String id, String? dest, String status, DateTime at})>[];
+    return const <RecentTrip>[];
   }
   return paymentService.recentTrips();
 });

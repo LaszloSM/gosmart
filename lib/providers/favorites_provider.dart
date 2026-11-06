@@ -51,6 +51,22 @@ final topFavoritePlacesProvider = Provider<List<FavoritePlace>>((ref) {
   return places.take(5).toList();
 });
 
+/// Cuántos lugares con nombre se pueden guardar (además de Casa y Trabajo).
+/// El servidor lo revalida (025_mvp_real.sql, trigger favorite_places_guard).
+const kMaxSavedPlaces = 10;
+
+/// Largo máximo del nombre de un lugar.
+const kSavedPlaceNameMax = 40;
+
+/// Lugares con nombre propio ("Donde mi mamá", "Gimnasio"), por uso.
+final customPlacesProvider = Provider<List<FavoritePlace>>((ref) {
+  final places = ref.watch(favoritePlacesProvider).valueOrNull ?? [];
+  return [
+    for (final p in places)
+      if (p.type == FavoritePlaceType.custom) p
+  ];
+});
+
 /// Notifier para CRUD de favoritos
 class FavoritesNotifier extends AsyncNotifier<void> {
   @override
@@ -118,6 +134,60 @@ class FavoritesNotifier extends AsyncNotifier<void> {
     } catch (e) {
       state = AsyncError(e, StackTrace.current);
       return false;
+    }
+  }
+
+  /// Guarda un lugar con nombre. Con [id] lo actualiza (renombrar o
+  /// cambiar la dirección). Devuelve null si salió bien, o el mensaje que
+  /// hay que mostrar.
+  Future<String?> saveNamedPlace({
+    String? id,
+    required String name,
+    required String address,
+    required double latitude,
+    required double longitude,
+  }) async {
+    final user = ref.read(currentUserProvider);
+    if (user == null) return 'Entra a tu cuenta para guardar lugares.';
+    final clean = name.trim();
+    if (clean.isEmpty) return 'Ponle un nombre al lugar.';
+    if (clean.length > kSavedPlaceNameMax) {
+      return 'El nombre puede tener hasta $kSavedPlaceNameMax letras.';
+    }
+    if (id == null && ref.read(customPlacesProvider).length >= kMaxSavedPlaces) {
+      return 'Ya tienes $kMaxSavedPlaces lugares guardados. Borra uno para agregar otro.';
+    }
+    state = const AsyncLoading();
+    try {
+      final row = {
+        'name': clean,
+        'address': address,
+        'latitude': latitude,
+        'longitude': longitude,
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+      if (id == null) {
+        await GoSmartSupabase.client.from('favorite_places').insert({
+          ...row,
+          'user_id': user.id,
+          'type': 'custom',
+        });
+      } else {
+        await GoSmartSupabase.client
+            .from('favorite_places')
+            .update(row)
+            .eq('id', id)
+            .eq('user_id', user.id);
+      }
+      ref.invalidate(favoritePlacesProvider);
+      state = const AsyncData(null);
+      return null;
+    } catch (e) {
+      state = AsyncError(e, StackTrace.current);
+      if (e.toString().contains('saved_places_limit')) {
+        return 'Ya tienes $kMaxSavedPlaces lugares guardados. Borra uno para agregar otro.';
+      }
+      return 'No se pudo guardar. Revisa tu conexión e intenta de nuevo.';
     }
   }
 

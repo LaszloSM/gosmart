@@ -29,11 +29,13 @@ import '../../services/directions_service.dart';
 import '../../services/geocoding_service.dart';
 import '../../services/eco_service.dart';
 import '../../services/place_search.dart';
+import '../../services/road_snap.dart';
 import '../../services/location_service.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_list_row.dart';
 import '../../widgets/gs_toast.dart';
+import 'place_confirm_screen.dart';
 import 'widgets/destination_plate.dart';
 import 'widgets/mode_options.dart';
 import 'widgets/mode_selector.dart';
@@ -59,9 +61,31 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   bool _loading = false;
   bool _locating = true;
 
+  /// El origen sigue al GPS mientras sea "mi ubicación" (no un lugar elegido).
+  bool _originIsMe = true;
+  LocationIssue? _locationIssue;
+  StreamSubscription<LatLng>? _positions;
+
   @override
   void initState() {
     super.initState();
+    // Si ya hay una posición (del mapa del inicio), se usa al instante y se
+    // afina en segundo plano: no hay que esperar al GPS para planear.
+    final known = locationService.last;
+    if (known != null) {
+      _originLatLng = known;
+      _locating = false;
+    }
+    _positions = locationService.positions.listen((p) {
+      if (!mounted || !_originIsMe) return;
+      final first = _originLatLng == null;
+      setState(() {
+        _originLatLng = p;
+        _locating = false;
+        _locationIssue = null;
+      });
+      if (first) _labelOrigin(p);
+    });
     _resolveOrigin();
     _destCtrl.addListener(_onDestChanged);
     // Destino elegido con pulsación larga en el mapa del inicio.
@@ -72,6 +96,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   @override
   void dispose() {
     _debounce?.cancel();
+    _positions?.cancel();
     _destCtrl.removeListener(_onDestChanged);
     _destCtrl.dispose();
     super.dispose();
@@ -89,9 +114,9 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     });
   }
 
-  /// Las sugerencias de Google traen coordenadas solo al elegirlas.
+  /// Todas pasan por `resolve` (Google trae el punto, también para los
+  /// lugares del directorio sin verificar) y luego se confirman en el mapa.
   Future<void> _pickSuggestion(GeocodeSuggestion s) async {
-    if (s.latLng != null) return _setDest(s.placeName, s.latLng);
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _loading = true);
     final place = await placeSearch.resolve(s);
@@ -104,10 +129,27 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
           type: GSToastType.error);
       return;
     }
-    _setDest(place!.placeName, place.latLng);
+    final confirmed = await context.push<GeocodeSuggestion>(
+        AppRoutes.placeConfirm,
+        extra: PlaceConfirmRequest(place!));
+    // Volvió sin confirmar: la lista sigue ahí para elegir otro.
+    if (confirmed == null || !mounted) return;
+    _setDest(confirmed.placeName, confirmed.latLng);
   }
 
   void _applyPendingDestination() {
+    // "Repetir" del historial: mismo origen y destino exactos.
+    final plan = ref.read(pendingPlanProvider);
+    if (plan != null) {
+      ref.read(pendingPlanProvider.notifier).state = null;
+      setState(() {
+        _originIsMe = false;
+        _originLatLng = plan.origin;
+        _originLabel = plan.originLabel;
+      });
+      _setDest(plan.destLabel, plan.dest);
+      return;
+    }
     final pending = ref.read(pendingDestinationProvider);
     if (pending == null) return;
     _setDest('Punto en el mapa', pending);
@@ -123,6 +165,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     final label = _originLabel;
     final latLng = _originLatLng;
     setState(() {
+      _originIsMe = false;
       _originLabel = _destLabel!;
       _originLatLng = _destLatLng;
     });
@@ -130,18 +173,35 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   }
 
   Future<void> _resolveOrigin() async {
+    setState(() {
+      _locating = _originLatLng == null;
+      _locationIssue = null;
+    });
     final pos = await locationService.getCurrentPosition();
     if (!mounted) return;
     setState(() {
       _locating = false;
-      if (pos != null) _originLatLng = pos;
+      if (pos != null && _originIsMe) _originLatLng = pos;
+      if (pos == null && _originLatLng == null) {
+        _locationIssue = locationService.lastIssue ?? LocationIssue.noFix;
+      }
     });
-    if (pos == null) return;
-    // "Mi ubicación" → la calle donde estás (como Uber).
+    if (pos != null && _originIsMe) _labelOrigin(pos);
+  }
+
+  /// "Mi ubicación" → la calle donde estás (como Uber).
+  Future<void> _labelOrigin(LatLng pos) async {
     final address = await geocodingService.reverse(pos);
-    if (address != null && mounted && _originLatLng == pos && _originLabel == 'Mi ubicación') {
+    if (address != null && mounted && _originIsMe && _originLabel == 'Mi ubicación') {
       setState(() => _originLabel = address);
     }
+  }
+
+  /// Arreglar lo que impide ubicarte (GPS apagado, permiso) y reintentar.
+  Future<void> _fixLocation() async {
+    final issue = _locationIssue;
+    if (issue != null) await locationService.fix(issue);
+    if (mounted) await _resolveOrigin();
   }
 
   void _onDestChanged() {
@@ -155,7 +215,9 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       });
       return;
     }
-    _debounce = Timer(const Duration(milliseconds: 300), () async {
+    // 450 ms: se busca al hacer una pausa, no en cada letra (cada búsqueda
+    // gasta cuota diaria de Google Places).
+    _debounce = Timer(const Duration(milliseconds: 450), () async {
       final result = await placeSearch.search(text, near: _originLatLng);
       // Si el usuario siguió escribiendo, esta respuesta ya no aplica.
       if (!mounted || _destCtrl.text.trim() != text) return;
@@ -170,10 +232,18 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   Future<void> _search() async {
     final messenger = ScaffoldMessenger.of(context);
     if (_originLatLng == null) {
-      GSToast.showWithMessenger(messenger,
-          message: _locating
-              ? 'Estamos buscando tu ubicación. Espera un momento.'
-              : 'No tenemos tu ubicación. Activa el GPS e intenta de nuevo.');
+      if (_locating) {
+        GSToast.showWithMessenger(messenger,
+            message: 'Estamos buscando tu ubicación. Espera un momento.');
+      } else {
+        final issue = _locationIssue ?? LocationIssue.noFix;
+        GSToast.showWithMessenger(messenger,
+            message: locationIssueText(issue),
+            type: GSToastType.warning,
+            duration: const Duration(seconds: 6),
+            actionLabel: issue == LocationIssue.noFix ? 'Reintentar' : 'Activar',
+            onAction: _fixLocation);
+      }
       return;
     }
     if (_destLatLng == null) {
@@ -247,7 +317,8 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       ),
     );
     if (trips.isEmpty) return null;
-    return routeFromTrip(trips.first, corridor: corridor);
+    // Cada tramo por la vía (no en línea recta) antes de pintarlo.
+    return roadSnapper.snap(routeFromTrip(trips.first, corridor: corridor));
   }
 
   void _awardEcoPoints(RouteResult result, ScaffoldMessengerState messenger) {
@@ -267,15 +338,16 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     final mode = ref.watch(selectedModeProvider);
     final home = ref.watch(homePlaceProvider);
     final work = ref.watch(workPlaceProvider);
+    final saved = ref.watch(customPlacesProvider);
     final typing = _destLabel == null;
     final showFavorites = typing &&
         _destCtrl.text.trim().length < 3 &&
-        (home != null || work != null);
+        (home != null || work != null || saved.isNotEmpty);
     final originText = _originLatLng != null
         ? _originLabel
         : (_locating
             ? 'Buscando tu ubicación…'
-            : 'Sin ubicación: activa el GPS');
+            : locationIssueText(_locationIssue ?? LocationIssue.noFix));
 
     return Scaffold(
       backgroundColor: GSColors.background,
@@ -340,9 +412,23 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                         Text(
                           originText,
                           style: Theme.of(context).textTheme.titleMedium,
-                          maxLines: 2,
+                          maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        if (_originLatLng == null && !_locating)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton.icon(
+                              onPressed: _fixLocation,
+                              icon: const Icon(Icons.my_location_rounded),
+                              label: Text(switch (_locationIssue) {
+                                LocationIssue.serviceOff => 'Activar GPS',
+                                LocationIssue.denied => 'Dar permiso',
+                                LocationIssue.deniedForever => 'Abrir ajustes',
+                                _ => 'Reintentar',
+                              }),
+                            ),
+                          ),
                         const SizedBox(height: GSSpacing.s3),
                         DestinationPlate(
                           controller: _destCtrl,
@@ -383,6 +469,20 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                 subtitle: work.address,
                 onTap: () => _setDest(work.name, work.latLng),
               ),
+            // Tus lugares con nombre ("Donde mi mamá", "Gimnasio").
+            for (final p in saved) ...[
+              if (home != null || work != null || p != saved.first)
+                const Divider(indent: GSSpacing.s4),
+              GSListRow(
+                icon: Icons.bookmark_rounded,
+                title: p.name,
+                subtitle: p.address,
+                onTap: () {
+                  ref.read(favoritesNotifierProvider.notifier).incrementUseCount(p.id);
+                  _setDest(p.name, p.latLng);
+                },
+              ),
+            ],
           ],
           if (typing)
             for (var i = 0; i < _suggestions.length; i++) ...[

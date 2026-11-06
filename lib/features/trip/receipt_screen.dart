@@ -99,8 +99,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                 padding: const EdgeInsets.fromLTRB(
                     GSSpacing.s4, GSSpacing.s3, GSSpacing.s4, 0),
                 child: Text(
-                  'Cada tramo se paga al conductor que lo hizo. Los pagos con '
-                  'saldo usan saldo de prueba mientras no haya recargas reales.',
+                  'Cada tramo se paga al conductor que lo hizo.',
                   style: text.bodySmall,
                 ),
               ),

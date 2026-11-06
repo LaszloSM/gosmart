@@ -13,6 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/money.dart';
 import '../../providers/profile_provider.dart';
 import '../../services/trust_service.dart';
+import '../trip/widgets/cancel_sheet.dart';
 import '../../theme/design_tokens.dart';
 import '../../providers/corridor_provider.dart';
 import '../../widgets/gs_button.dart';
@@ -362,11 +363,19 @@ class _MetricsTabState extends State<_MetricsTab> {
 
   @override
   Widget build(BuildContext context) {
-    return _Loader<Map<String, dynamic>>(
+    return _Loader<(Map<String, dynamic>, List<({String reason, String by, int total})>)>(
       key: ValueKey(_days),
       what: 'las métricas',
-      load: () => trustService.metrics(_days),
-      builder: (context, m, reload) {
+      load: () async {
+        final m = await trustService.metrics(_days);
+        // Si la migración 025 aún no está, las métricas siguen saliendo.
+        final c = await trustService
+            .cancellations(_days)
+            .catchError((_) => const <({String reason, String by, int total})>[]);
+        return (m, c);
+      },
+      builder: (context, data, reload) {
+        final (m, cancels) = data;
         final requested = (m['rides_requested'] as num?) ?? 0;
         final accepted = (m['rides_accepted'] as num?) ?? 0;
         return ListView(children: [
@@ -400,6 +409,22 @@ class _MetricsTabState extends State<_MetricsTab> {
                 ? 'Sin datos'
                 : '${(accepted * 100 / requested).round()} %',
           ),
+          const GSSectionTitle('Cancelaciones por motivo'),
+          if (cancels.isEmpty)
+            const GSListRow(
+              icon: Icons.check_circle_rounded,
+              title: 'Sin cancelaciones en este periodo',
+            )
+          else
+            for (final c in cancels)
+              GSListRow(
+                icon: c.by == 'driver'
+                    ? Icons.badge_rounded
+                    : Icons.person_rounded,
+                title: cancelReasonLabel(c.reason),
+                subtitle: c.by == 'driver' ? 'Canceló el conductor' : 'Canceló el pasajero',
+                value: '${c.total}',
+              ),
         ]);
       },
     );
@@ -409,7 +434,7 @@ class _MetricsTabState extends State<_MetricsTab> {
 // ── Ajustes ──────────────────────────────────────────────────────────────────
 const _flagLabels = {
   'dispatch_enabled': ('Despacho de mototaxi y taxi', 'Apágalo si falla en el piloto: nadie podrá pedir.'),
-  'wompi_enabled': ('Recargas reales con Wompi', 'Solo con las llaves configuradas en la Edge Function.'),
+  'wompi_enabled': ('Pagos con saldo (Wompi)', 'Apagado = solo efectivo. Enciéndelo solo con las llaves de Wompi configuradas.'),
 };
 
 class _FlagsTab extends StatelessWidget {

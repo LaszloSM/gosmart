@@ -6,11 +6,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gosmart/features/driver/driver_home_screen.dart';
 import 'package:gosmart/models/driver_model.dart';
 import 'package:gosmart/providers/driver_provider.dart';
+import 'package:gosmart/providers/wallet_provider.dart';
 import 'package:gosmart/theme/app_theme.dart';
 import 'package:gosmart/widgets/gs_button.dart';
 
-Widget _app(DriverProfile? d) => ProviderScope(
+Widget _app(DriverProfile? d, {bool wallet = true}) => ProviderScope(
       overrides: [
+        walletPaymentsProvider.overrideWith((ref) async => wallet),
         myDriverProvider.overrideWith((ref) async => d),
         driverEarningsProvider.overrideWith((ref) async =>
             const DriverEarnings(todayTotal: 23000, todayTrips: 4, todayCash: 8000)),
@@ -86,5 +88,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Últimos 7 días'), findsOneWidget);
     expect(find.textContaining('\$15.000 por la app'), findsOneWidget);
+  });
+
+  testWidgets('solo efectivo: sin "Cobrar con QR"', (tester) async {
+    await tester.pumpWidget(_app(_d('approved', docs: true), wallet: false));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Cobrar con QR'), findsNothing);
   });
 }

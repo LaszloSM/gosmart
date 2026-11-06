@@ -35,6 +35,11 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _sheetCtrl = DraggableScrollableController();
   final _peekKey = GlobalKey();
+  final _miniKey = GlobalKey();
+
+  /// Altura plegada (solo asa + buscador): la hoja se baja hasta aquí y el
+  /// mapa queda casi entero, como Waze.
+  double _sheetMin = 0.2;
   final _routeCardKey = GlobalKey();
 
   /// Altura de reposo de la hoja: se mide para que termine justo después de
@@ -70,13 +75,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (box == null || !box.hasSize || _stackHeight <= 0) return;
     final visible = box.size.height + _bodyBottomInset;
     final fraction = (visible / _stackHeight).clamp(0.2, 0.75);
-    if ((fraction - _sheetInitial).abs() < 0.005) return;
+
+    // Plegada: hasta el final del buscador, más un poco de aire.
+    var mini = _sheetMin;
+    final pill = _miniKey.currentContext?.findRenderObject() as RenderBox?;
+    if (pill != null && pill.hasSize && pill.attached) {
+      final top = pill.localToGlobal(Offset.zero, ancestor: box).dy;
+      final miniVisible =
+          top + pill.size.height + GSSpacing.s3 + _bodyBottomInset;
+      mini = (miniVisible / _stackHeight).clamp(0.08, fraction - 0.02);
+    }
+    if ((fraction - _sheetInitial).abs() < 0.005 &&
+        (mini - _sheetMin).abs() < 0.005) {
+      return;
+    }
+    final firstTime = (fraction - _sheetInitial).abs() >= 0.005;
     setState(() {
-      _sheetInitial = fraction;
-      _sheetExtent = fraction;
+      _sheetMin = mini;
+      if (firstTime) {
+        _sheetInitial = fraction;
+        _sheetExtent = fraction;
+      }
     });
-    _liveExtent.value = fraction;
-    if (_sheetCtrl.isAttached) _sheetCtrl.jumpTo(fraction);
+    if (firstTime) {
+      _liveExtent.value = fraction;
+      if (_sheetCtrl.isAttached) _sheetCtrl.jumpTo(fraction);
+    }
+  }
+
+  /// Tocar el asa: plegada ↔ en reposo.
+  void _toggleSheet() {
+    if (!_sheetCtrl.isAttached) return;
+    final collapsed = _sheetCtrl.size < (_sheetMin + _sheetInitial) / 2;
+    final target = collapsed ? _sheetInitial : _sheetMin;
+    if (MediaQuery.of(context).disableAnimations) {
+      _sheetCtrl.jumpTo(target);
+    } else {
+      _sheetCtrl.animateTo(target,
+          duration: GSDuration.sheetIn, curve: GSCurve.enter);
+    }
   }
 
   void _onSheetExtent(double extent) {
@@ -158,11 +195,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: DraggableScrollableSheet(
                     controller: _sheetCtrl,
                     initialChildSize: _sheetInitial,
-                    // La hoja no baja de su altura medida: nunca queda una
-                    // fila cortada en reposo.
-                    minChildSize: _sheetInitial,
+                    // Tres alturas, como Waze: plegada (solo el buscador, el
+                    // mapa casi entero), en reposo (accesos y servicios) y
+                    // arriba (todo). Siempre se detiene en una de ellas, así
+                    // nunca queda una fila cortada a la mitad.
+                    minChildSize: _sheetMin,
                     maxChildSize: 0.86,
                     snap: true,
+                    snapSizes: [
+                      if (_sheetInitial > _sheetMin + 0.01) _sheetInitial,
+                    ],
                     builder: (context, scrollController) => DecoratedBox(
                       decoration: BoxDecoration(
                         color: GSColors.surface,
@@ -170,7 +212,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         boxShadow: GSShadow.sheet,
                       ),
                       child: HomeSheetContent(
-                          scrollController: scrollController, peekKey: _peekKey),
+                        scrollController: scrollController,
+                        peekKey: _peekKey,
+                        miniKey: _miniKey,
+                        onHandleTap: _toggleSheet,
+                      ),
                     ),
                   ),
                 )

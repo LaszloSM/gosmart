@@ -3,6 +3,11 @@
 -- (reusa sus usuarios y conductores). Cada usuario arranca con $10.000.
 \set ON_ERROR_STOP on
 
+-- Estas pruebas pagan con saldo: con Wompi encendido (025 lo exige) y con el
+-- saldo que antes daba el bono de bienvenida (025 lo quitó).
+UPDATE app_flags SET enabled = true WHERE key = 'wompi_enabled';
+UPDATE wallets SET balance = 10000;
+
 -- Supabase da SELECT por defecto; el stub no.
 GRANT SELECT ON wallets, wallet_transactions TO authenticated;
 

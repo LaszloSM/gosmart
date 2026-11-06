@@ -46,6 +46,24 @@ void main() {
     expect(sent[3]['session'], 'sesion-2', reason: 'después de elegir, sesión nueva');
   });
 
+  test('la misma búsqueda otra vez no gasta otra petición (cuota diaria)',
+      () async {
+    var calls = 0;
+    final svc = GeocodingService(invoke: (body) async {
+      calls++;
+      return {
+        'items': [
+          {'placeId': 'p1', 'name': 'Parque Padilla', 'address': 'Riohacha'},
+        ]
+      };
+    });
+    await svc.searchStrict('parque pad');
+    await svc.searchStrict('Parque Pad ');
+    expect(calls, 1);
+    await svc.searchStrict('parque padi');
+    expect(calls, 2);
+  });
+
   test('un error de la función llega como GeocodingException (aviso D8)',
       () async {
     final svc = GeocodingService(

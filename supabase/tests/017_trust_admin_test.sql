@@ -7,6 +7,8 @@ INSERT INTO auth.users (id, email) VALUES
   ('00000000-0000-0000-0000-0000000000ad', 'admin2@test.co')
 ON CONFLICT DO NOTHING;
 UPDATE profiles SET role = 'admin' WHERE id = '00000000-0000-0000-0000-0000000000ad';
+-- El moroso paga con saldo más abajo: sin bono de bienvenida (025), se le da.
+UPDATE wallets SET balance = 10000 WHERE user_id = '00000000-0000-0000-0000-000000000a03';
 -- Liberar conductores de pruebas anteriores
 UPDATE ride_requests SET status = 'completed', finished_at = now()
 WHERE status IN ('accepted', 'in_progress', 'open');

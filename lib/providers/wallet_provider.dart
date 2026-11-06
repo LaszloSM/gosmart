@@ -3,16 +3,13 @@
 // Billetera GoSmart en Supabase (tablas `wallets` y `wallet_transactions`).
 // Es el único modelo de dinero de la app. El saldo solo cambia por RPC en el
 // servidor (010_wallet_hardening.sql); RLS limita la lectura al usuario actual.
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
 
 import '../core/supabase_client.dart';
 import '../models/wallet_model.dart';
 import '../models/wallet_transaction_model.dart';
 import 'auth_provider.dart';
 
-const _uuid = Uuid();
 
 /// Billetera del usuario actual (null sin sesión o si aún no existe).
 final walletProvider = FutureProvider<Wallet?>((ref) async {
@@ -24,6 +21,22 @@ final walletProvider = FutureProvider<Wallet?>((ref) async {
       .select('id, user_id, balance, card_number, card_status, created_at, updated_at')
       .maybeSingle();
   return row == null ? null : Wallet.fromJson(row);
+});
+
+/// true si se puede pagar con saldo: solo con Wompi encendido (recargas
+/// reales). Apagado = solo efectivo (025_mvp_real.sql lo exige también en el
+/// servidor). Sin red o con error: false (nunca se ofrece saldo de prueba).
+final walletPaymentsProvider = FutureProvider<bool>((ref) async {
+  try {
+    final row = await GoSmartSupabase.client
+        .from('app_flags')
+        .select('enabled')
+        .eq('key', 'wompi_enabled')
+        .maybeSingle();
+    return row?['enabled'] as bool? ?? false;
+  } catch (_) {
+    return false;
+  }
 });
 
 /// Saldo actual (0 si no disponible).
@@ -50,27 +63,9 @@ final walletTransactionsProvider =
 class WalletNotifier extends AsyncNotifier<void> {
   @override
   Future<void> build() async {}
-
-  /// Recarga simulada hasta que llegue Wompi (Fase 7).
-  /// Un `idempotency_key` por intento: si la red reintenta, no se suma dos veces.
-  Future<bool> recharge(int amount) async {
-    if (ref.read(currentUserProvider) == null) return false;
-
-    state = const AsyncLoading();
-    try {
-      await GoSmartSupabase.client.rpc('wallet_recharge_simulated', params: {
-        'p_amount': amount,
-        'p_idempotency_key': _uuid.v4(),
-      });
-      ref.invalidate(walletProvider);
-      state = const AsyncData(null);
-      return true;
-    } catch (e, st) {
-      debugPrint('[WalletNotifier] recharge failed: $e');
-      state = AsyncError(e, st);
-      return false;
-    }
-  }
+  // La recarga simulada se quitó (025_mvp_real.sql): solo Wompi suma saldo,
+  // por paymentService.wompiCheckout. Este notifier queda para el estado de
+  // carga de la pantalla de la billetera.
 }
 
 final walletNotifierProvider =

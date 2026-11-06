@@ -34,6 +34,8 @@ dependencies:
 
   # UUID for idempotency keys
   uuid: ^4.3.3
+  # Buscador de respaldo (Photon/OpenStreetMap) cuando Google Places no responde.
+  http: ^1.2.0
 
   # Maps — OpenStreetMap via flutter_map (no API key required)
   flutter_map: ^7.0.2

@@ -25,13 +25,15 @@ class DispatchException implements Exception {
         'too_far' => 'Es muy lejos para mototaxi o taxi.',
         'offer_gone' => 'Esa oferta ya no está.',
         'blocked_unpaid' => 'Tienes viajes sin pagar. Págalos para volver a pedir.',
+        'reason_required' => 'Cuéntanos por qué cancelas: el conductor ya viene.',
+        'invalid_transition' => 'Ese viaje ya cambió de estado. Revisa e intenta de nuevo.',
         _ => 'No se pudo. Revisa tu conexión e intenta de nuevo.',
       };
 
   static const _known = [
     'already_taken', 'no_seats', 'dispatch_disabled', 'request_already_open',
     'driver_busy', 'not_active_driver', 'trip_in_progress', 'too_far',
-    'offer_gone', 'blocked_unpaid', 'invalid_transition', 'previous_leg_open', 'own_request',
+    'offer_gone', 'blocked_unpaid', 'invalid_transition', 'reason_required', 'previous_leg_open', 'own_request',
   ];
 
   static Never rethrowFrom(Object e) {
@@ -125,6 +127,11 @@ class DispatchService {
       _rpc<dynamic>('ride_transition',
           {'p_request_id': requestId, 'p_to': rideStatusName(to)});
 
+  /// Cancelar una solicitud. Con conductor asignado [reason] es obligatorio
+  /// (uno de [CancelReason]); el servidor lo revalida.
+  Future<void> cancelRide(String requestId, {String? reason}) =>
+      _rpc<dynamic>('ride_cancel', {'p_request_id': requestId, 'p_reason': reason});
+
   Future<AssignedDriver?> driverFor(String requestId) async {
     final rows = await _rpc<List<dynamic>>(
         'ride_driver_view', {'p_request_id': requestId});
@@ -199,6 +206,20 @@ class DispatchService {
     return row == null ? null : ChainedTrip.fromJson(row);
   }
 
+  /// Historial: todos tus viajes, del más nuevo al más viejo, de a [limit].
+  /// RLS ya filtra por la persona (no hace falta su id).
+  Future<List<ChainedTrip>> tripHistory({int offset = 0, int limit = 20}) async {
+    final rows = await _db
+        .from('chained_trips')
+        .select('*, trip_legs(*)')
+        .order('created_at', ascending: false)
+        .range(offset, offset + limit - 1);
+    return [
+      for (final r in rows as List)
+        ChainedTrip.fromJson(Map<String, dynamic>.from(r as Map))
+    ];
+  }
+
   Future<void> legTransition(String legId, LegStatus to, {int? agreedFare}) =>
       _rpc<dynamic>('trip_leg_transition', {
         'p_leg_id': legId,
@@ -206,8 +227,8 @@ class DispatchService {
         'p_agreed_fare': agreedFare,
       });
 
-  Future<void> cancelTrip(String tripId) =>
-      _rpc<dynamic>('cancel_trip', {'p_trip_id': tripId});
+  Future<void> cancelTrip(String tripId, {String? reason}) =>
+      _rpc<dynamic>('cancel_trip', {'p_trip_id': tripId, 'p_reason': reason});
 
   /// Solicitud abierta o en curso ligada a un tramo (para retomar la espera).
   Future<RideRequest?> requestForLeg(String legId) async {

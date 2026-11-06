@@ -18,9 +18,13 @@ const _leg = TripLegRow(
   fareMin: 5000, fareMax: 5000,
 );
 
-Widget _panel(RideRequest? r, {List<RideOffer> offers = const [], AssignedDriver? driver}) =>
+Widget _panel(RideRequest? r,
+        {List<RideOffer> offers = const [], AssignedDriver? driver, bool wallet = true}) =>
     ProviderScope(
-      overrides: [walletBalanceProvider.overrideWithValue(37500)],
+      overrides: [
+        walletBalanceProvider.overrideWithValue(37500),
+        walletPaymentsProvider.overrideWith((ref) async => wallet),
+      ],
       child: MaterialApp(
         theme: AppTheme.light,
         home: MediaQuery(
@@ -44,6 +48,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Pedir mototaxi por \$6.000'), findsOneWidget);
     expect(find.text('Efectivo'), findsOneWidget);
+  });
+
+  testWidgets('solo efectivo: no ofrece saldo', (tester) async {
+    await tester.pumpWidget(_panel(null, wallet: false));
+    await tester.pumpAndSettle();
+    expect(find.text('Pagas en efectivo al conductor al llegar.'), findsOneWidget);
+    expect(find.textContaining('saldo'), findsNothing);
   });
 
   testWidgets('las ofertas dicen quién, a cuánto está y la diferencia', (tester) async {

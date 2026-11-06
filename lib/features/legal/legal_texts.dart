@@ -1,11 +1,10 @@
 // lib/features/legal/legal_texts.dart
 // Política de tratamiento de datos (Ley 1581 de 2012, Decreto 1377 de 2013)
-// y términos de uso. BORRADOR del MVP: falta que el responsable ponga su
-// nombre o razón social y un correo de contacto, y que lo revise un abogado.
-// Los huecos se marcan con [PENDIENTE] a la vista, a propósito.
+// y términos de uso del MVP. Responsable: Laszlo Sierra (persona natural),
+// Riohacha. Antes de publicar en tiendas conviene que lo revise un abogado.
 
 /// Cambia cuando cambie el texto: queda guardado con cada autorización.
-const legalVersion = '2026-10-12-borrador';
+const legalVersion = '2026-11-06';
 
 class LegalSection {
   const LegalSection(this.title, this.body);
@@ -24,14 +23,17 @@ const privacyPolicy = LegalDoc(
   sections: [
     LegalSection('Quién responde por tus datos',
         'GoSmart, proyecto en piloto para Riohacha, Maicao y la Troncal del '
-            'Caribe. Responsable: [PENDIENTE: nombre o razón social]. '
-            'Contacto: [PENDIENTE: correo].'),
+            'Caribe. Responsable del tratamiento: Laszlo Sierra, Riohacha '
+            '(La Guajira, Colombia). Contacto para consultas y reclamos sobre '
+            'tus datos: laszlosierra2@gmail.com. Respondemos consultas en '
+            'máximo 10 días hábiles y reclamos en máximo 15 (Ley 1581).'),
     LegalSection('Qué datos usamos',
         '• Cuenta: nombre, correo, celular, cédula, ciudad y fecha de nacimiento.\n'
             '• Ubicación: solo cuando usas el mapa, planeas una ruta, pides ayuda '
             'o compartes un viaje.\n'
             '• Seguridad: tus contactos de emergencia y el registro de cada aviso de ayuda.\n'
-            '• Billetera: saldo y movimientos (hoy de prueba).\n'
+            '• Viajes y pagos: origen, destino, tarifa acordada, forma de pago '
+            'y motivo si cancelas.\n'
             '• Conductores: documentos, vehículo y llave de pago.'),
     LegalSection('Para qué',
         'Para tu cuenta, planear tus rutas, avisar a tus contactos cuando lo '
@@ -65,15 +67,20 @@ const termsOfUse = LegalDoc(
   title: 'Términos de uso',
   sections: [
     LegalSection('Qué es GoSmart',
-        'Una app para saber cómo está la vía, planear cómo moverte y, en las '
-            'próximas versiones, pedir y pagar viajes con conductores de la región.'),
+        'Una app para saber cómo está la vía, planear cómo moverte y pedir '
+            'viajes con conductores verificados de la región.'),
     LegalSection('Información de referencia',
         'Tiempos, tarifas y estado de la vía son estimados o reportes de otros '
             'usuarios. Pueden no coincidir con lo que encuentres. Decide con '
             'cuidado y sigue a las autoridades.'),
-    LegalSection('La billetera hoy',
-        'El saldo es de prueba: las recargas son simuladas y no son dinero '
-            'real. Te avisaremos antes de que eso cambie.'),
+    LegalSection('Pagos',
+        'Por ahora los viajes se pagan en efectivo directamente al conductor; '
+            'GoSmart no recibe ni guarda tu dinero. Te avisaremos en la app '
+            'antes de activar pagos con saldo.'),
+    LegalSection('Cancelaciones',
+        'Puedes cancelar antes de que un conductor acepte. Si ya aceptó, '
+            'debes indicar el motivo. Las cancelaciones repetidas sin motivo '
+            'real pueden limitar tu cuenta.'),
     LegalSection('Ayuda y emergencias',
         'El botón Ayuda abre la llamada al 123 y tus mensajes desde tu '
             'teléfono. GoSmart no es un servicio de emergencias ni garantiza '

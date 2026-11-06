@@ -45,9 +45,11 @@ final _recharge = WalletTransactionModel(
 Widget _app({
   FutureOr<Wallet?> Function()? wallet,
   List<WalletTransactionModel> txs = const [],
+  bool walletPayments = true,
 }) {
   return ProviderScope(
     overrides: [
+      walletPaymentsProvider.overrideWith((ref) async => walletPayments),
       activeCardProvider.overrideWith((ref) => _MockCardNotifier(_testCard)),
       walletProvider.overrideWith((ref) async => (wallet ?? () => _testWallet)()),
       walletTransactionsProvider.overrideWith((ref, limit) async => txs),
@@ -65,6 +67,14 @@ void main() {
       expect(find.textContaining('\$37.000', findRichText: true),
           findsOneWidget);
       expect(find.textContaining('GS-****-****-9012'), findsOneWidget);
+    });
+
+    testWidgets('solo efectivo: no muestra saldo ni recargar', (tester) async {
+      await tester.pumpWidget(_app(walletPayments: false));
+      await tester.pumpAndSettle();
+      expect(find.text('Pagas en efectivo'), findsOneWidget);
+      expect(find.textContaining('\$37.000', findRichText: true), findsNothing);
+      expect(find.text('Recargar'), findsNothing);
     });
 
     testWidgets('mientras carga no se rompe', (tester) async {
