@@ -568,7 +568,13 @@ Currency: `'cop'` | `'usd'` | `'eur'`
 - **Cancel**: always through `showCancelSheet` (lib/features/trip/widgets/cancel_sheet.dart) and
   `dispatchService.cancelRide(id, reason:)` / `cancelTrip(id, reason:)`; with a driver assigned the server
   rejects a missing reason (`reason_required`). Reason codes live in `CancelReason` and the SQL CHECK.
-- **No simulations**: the demo autodriver was removed (024). Don't add fake drivers, fake trips or seeded
+- **Cash only while `app_flags.wompi_enabled` is false**: read `walletPaymentsProvider`; hide "pay with
+  balance", recharge and QR charge when false. The server enforces it (`_wallet_transfer` raises
+  `wallet_disabled`); there is no simulated recharge and new wallets start at $0 (025).
+- **Realtime**: `rideRealtime.watchRequest/watchDriver` (lib/services/ride_realtime.dart) pokes a refetch;
+  polling stays as fallback. Driver mode calls `locationService.setBackground(true)` (foreground service).
+  Use `locationService.watch()` (one shared GPS subscription), never `Geolocator.getPositionStream`.
+- **No simulations**: the demo autodriver was removed (025). Don't add fake drivers, fake trips or seeded
   accounts to the real project. What is still simulated (wallet top-ups) is listed in `docs/MVP_SALIDA.md`.
 - **Payments**: a mototaxi/taxi leg closes only once paid (`pay_ride`, wallet or cash); QR charges are
   `gosmart:pay:<uuid>` (`chargeQrData` / `chargeIdFromQr`). Show `PaymentException.message`.

@@ -21,19 +21,31 @@ siendo simulado o sin probar, y las tareas para lanzar, en orden.
 Error encontrado de paso: **cancelar el viaje completo no cancelaba la solicitud al
 conductor** (seguía viniendo). `cancel_trip` ahora la cancela.
 
+## 1b. Segunda entrega (mismo día): rumbo a la presentación
+
+| Qué | Estado |
+|---|---|
+| PR #6 integrado (direcciones exactas con confirmación en el mapa, repetir viaje, foto de perfil) | Hecho. La migración de esta rama pasó a `025_mvp_real.sql` |
+| **Solo efectivo** | Hecho. Sin Wompi no se ofrece ni se acepta pago con saldo o QR (app y servidor), no hay recarga simulada, cuentas nuevas en $0. La billetera dice "Pagas en efectivo" |
+| Política de datos | Hecho. Responsable: Laszlo Sierra, Riohacha, laszlosierra2@gmail.com. Falta la revisión de un abogado antes de tiendas |
+| Tiempo real | Hecho. Supabase Realtime en solicitudes y ofertas; consultas cada 5 s solo de respaldo |
+| Ubicación del conductor en segundo plano | Hecho. Servicio en primer plano con notificación fija mientras está conectado |
+| Cancelaciones por motivo en `/admin` → Métricas | Hecho (`admin_cancellations`) |
+| Plan de 12 días y guion de presentación | `docs/PLAN_PRESENTACION.md` |
+
 ## 2. Lo que sigue simulado o sin probar (verdad completa)
 
 | Qué | Estado real | Riesgo para lanzar |
 |---|---|---|
-| **Saldo y recargas** | Recarga simulada (`wallet_recharge_simulated`) y bono de bienvenida de $10.000 (trigger de 008). Wompi está escrito pero apagado (`app_flags.wompi_enabled`) y nunca se probó contra el sandbox | **Alto.** Pagar "con saldo" hoy mueve dinero que no existe |
-| Pago al conductor con saldo | Se acredita en su billetera, pero no se puede retirar | Alto: el conductor no ve plata real. Mientras tanto, solo efectivo |
+| Saldo y recargas | Resuelto con **solo efectivo** (segunda entrega). Wompi sigue escrito y apagado; nunca se probó contra el sandbox | Bajo para el MVP |
+| Saldos de prueba de cuentas viejas | Siguen en la base, pero no se muestran ni se pueden gastar | Ninguno |
 | Google Routes / Places (`maps`) | Código y pruebas unitarias; nunca verificado contra Google desde aquí | **Alto:** sin `GOOGLE_MAPS_SERVER_KEY` las rutas vuelven a salir rectas y la búsqueda se limita al directorio |
 | Push (FCM) | Código listo, sin Firebase configurado | **Alto:** con la app cerrada el conductor no se entera de pedidos |
-| Despacho en vivo | Consultas cada 4–5 s, no Realtime | Medio: funciona, gasta datos y batería |
-| GPS en segundo plano del conductor | Solo con la app abierta | Medio |
+| Despacho en vivo | Realtime (segunda entrega). El conductor ve pedidos NUEVOS cercanos por consulta cada 5 s (RLS no le deja ver solicitudes ajenas por Realtime); con la app cerrada depende de push | Medio |
+| GPS en segundo plano del conductor | Hecho (segunda entrega); sin probar en un celular | Medio |
 | Simulador NFC | Solo en builds de depuración | Ninguno en producción |
 | Datos de campo | Lugares, tramos de la Troncal, rutas y tarifas son aproximados | Medio |
-| Política de datos | `[PENDIENTE]` visible (responsable, contacto, abogado) | **Alto:** requisito legal (Ley 1581) |
+| Política de datos | Completa; falta revisión de abogado | Bajo para presentar; necesario para tiendas |
 | Nada de esto se probó en un celular real desde este entorno | — | Hay que hacer la prueba de campo (fase B) |
 
 ## 3. Tareas para el MVP de salida
@@ -67,6 +79,6 @@ conductor** (seguía viniendo). `cancel_trip` ahora la cancela.
 18. Soporte: un WhatsApp de atención y el proceso para reportes de seguridad (SOS).
 
 ## 4. Cómo verificar lo de esta entrega
-- `flutter analyze` sin avisos y `flutter test` (153 pruebas) pasan.
+- `flutter analyze` sin avisos y `flutter test` (179 pruebas) pasan.
 - Pruebas SQL: `supabase/tests/025_mvp_real_test.sql` (cancelar con motivo, `cancel_trip` suelta al conductor, límite de 10 lugares, demo eliminada) más las existentes.
 - En el celular: abrir el inicio con GPS apagado → el botón de ubicación ofrece "Activar"; al prender el GPS y volver, aparece el punto.
