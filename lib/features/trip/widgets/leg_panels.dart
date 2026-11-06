@@ -24,6 +24,7 @@ import '../../../core/clock.dart';
 import '../../../core/motion.dart';
 import '../../../widgets/gs_vehicle_pin.dart';
 import '../../safety/sos_sheet.dart';
+import 'cancel_sheet.dart';
 import 'trip_visuals.dart';
 
 /// Tarifa con la que se pide: el precio del tramo (taxi: oficial; mototaxi:
@@ -449,8 +450,13 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
     final r = _request;
     if (r == null) return;
     final messenger = ScaffoldMessenger.of(context);
+    // Confirmar siempre; si el conductor ya aceptó, con motivo.
+    final choice = await showCancelSheet(context,
+        driverAssigned: r.status == RideStatus.accepted,
+        what: r.status == RideStatus.accepted ? 'el viaje' : 'la solicitud');
+    if (choice == null || !mounted) return;
     try {
-      await dispatchService.transitionRide(r.id, RideStatus.cancelled);
+      await dispatchService.cancelRide(r.id, reason: choice.reason);
     } on DispatchException catch (e) {
       GSToast.showWithMessenger(messenger,
           message: e.message, type: GSToastType.error);

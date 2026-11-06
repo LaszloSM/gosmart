@@ -87,6 +87,7 @@ All migrations live in `supabase/migrations/`. Run them in order in the Supabase
 | `021_map_alerts.sql` | Alertas estilo Waze: `road_reports.segment_id` opcional (reporte por punto en la ciudad, bbox La Guajira), tipos nuevos `trancon`/`peligro`/`obra`, duplicado = mismo tipo a ≤150 m en 30 min. RPC pública `map_alerts(bbox)` (pines con votos, `mine`, `my_vote`). `road_status()` y push solo cuentan reportes con tramo. |
 | `022_offer_cards.sql` | RPC `ride_offer_cards(request)`: ofertas pendientes con nombre de pila, vehículo, calificación, distancia y minutos del conductor (solo el pasajero de la solicitud). |
 | `023_driver_earnings.sql` | RPC `driver_earnings()`: hoy y 7 días (total, viajes, efectivo confirmado) + calificación del conductor (solo lo propio). |
+| `024_mvp_real.sql` | Sin simulaciones: borra el conductor de demo (`demo_autodriver`, tarea pg_cron, funciones y cuentas `@example.com`). `ride_cancel(request, reason)` con motivos cerrados (obligatorio si ya hay conductor; `ride_transition(...,'cancelled')` pasa por ahí), `cancel_trip(trip, reason)` también cancela la solicitud del tramo. Trigger `favorite_places_guard`: máx. 10 lugares `custom`, nombre 1–40. Plan: `docs/MVP_SALIDA.md`. |
 | `010_wallet_hardening.sql` | **Security fix for 008.** Drops user UPDATE on `wallets` and INSERT on `wallet_transactions`; revokes `recharge_wallet` from clients; adds `idempotency_key`; new RPC `wallet_recharge_simulated(p_amount, p_idempotency_key)` that uses `auth.uid()`. Backfills wallets for older users. |
 
 **SQL tests:** `supabase/tests/` runs on a plain Postgres 16 (CI job `sql-tests`). `_supabase_stub.sql`
@@ -172,10 +173,12 @@ lib/
 │   ├── auth_service.dart
 │   ├── card_service.dart
 │   ├── profile_service.dart
-│   ├── location_service.dart     # GPS via geolocator — returns LatLng? (null if unavailable)
+│   ├── location_service.dart     # GPS: check() (LocationIssue: serviceOff/denied/deniedForever/noFix), fix(),
+│   │                             #   last known + high→medium accuracy; `positions` stream shared by all screens
 │   ├── directions_service.dart   # Google Routes via Edge Function `maps` — walk/drive polylines
 │   ├── geocoding_service.dart    # Google Places (Autocomplete New + Details, session token) via `maps`; searchStrict() throws GeocodingException
 │   ├── place_search.dart         # placeSearch: directory (places) first, then Google; resolve(s) gets coords on pick; limited = degraded (D8)
+│   ├── road_snap.dart            # roadSnapper: tramos rectos → trazado por la vía (Google Routes vía `maps`), con caché
 │   └── safety_service.dart       # emergency contacts, sos_events, trip_share_* RPCs
 ├── theme/
 │   ├── app_theme.dart            # MaterialApp ThemeData
@@ -325,6 +328,8 @@ AppRoutes.routeDetail      // '/routes/detail'
 AppRoutes.paymentValidation // '/payment-validation'
 AppRoutes.nfcSimulator     // '/debug/nfc-simulator'
 AppRoutes.emergencyContacts // '/safety/contacts'  (needs account)
+AppRoutes.savedPlaces      // '/places'          Mis lugares: Casa, Trabajo y hasta 10 con nombre (needs account)
+AppRoutes.tripHistory      // '/trip/history'    todos los viajes (needs account)
 AppRoutes.trip             // '/trip'    (pestaña Viaje; needs account)
 AppRoutes.report           // '/report'  → redirige a /home (se reporta con el botón ámbar del mapa)
 AppRoutes.settings         // '/settings'        Configuración: tema, alertas, cuenta, legal, salir (public)
@@ -550,6 +555,14 @@ Currency: `'cop'` | `'usd'` | `'eur'`
   set `appModeProvider` and navigate; going to passenger also disconnects. Approved drivers get `DriverConsole`
   (map, menu, today's earnings pill, QR; offline → 72 dp "Conectarme"; online → `DriverWorkPanel` in a bottom
   panel with `onActive`/`onPosition` for the map). Not approved → registration/documents screen.
+- **Location**: never call Geolocator directly; use `locationService.getCurrentPosition()` (returns null and sets
+  `lastIssue`) and show `locationIssueText(issue)` with `locationService.fix(issue)` as the action. Listen to
+  `locationService.positions` to follow the user. Home sheet has three heights (collapsed = search pill only).
+- **Cancel**: always through `showCancelSheet` (lib/features/trip/widgets/cancel_sheet.dart) and
+  `dispatchService.cancelRide(id, reason:)` / `cancelTrip(id, reason:)`; with a driver assigned the server
+  rejects a missing reason (`reason_required`). Reason codes live in `CancelReason` and the SQL CHECK.
+- **No simulations**: the demo autodriver was removed (024). Don't add fake drivers, fake trips or seeded
+  accounts to the real project. What is still simulated (wallet top-ups) is listed in `docs/MVP_SALIDA.md`.
 - **Payments**: a mototaxi/taxi leg closes only once paid (`pay_ride`, wallet or cash); QR charges are
   `gosmart:pay:<uuid>` (`chargeQrData` / `chargeIdFromQr`). Show `PaymentException.message`.
   The QR is always drawn on white (also at night) so any camera reads it.

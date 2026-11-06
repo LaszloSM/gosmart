@@ -310,12 +310,21 @@ class ChainedTrip {
     required this.legs,
     this.originLabel,
     this.destLabel,
+    this.createdAt,
   });
   final String id;
   final String status;
   final List<TripLegRow> legs;
   final String? originLabel;
   final String? destLabel;
+
+  /// Cuándo se planeó (hora local); null si la consulta no lo trajo.
+  final DateTime? createdAt;
+
+  /// Lo que se acordó pagar en los tramos ya hechos (0 si nada se pagó).
+  int get paidTotal => legs
+      .where((l) => l.status == LegStatus.completed)
+      .fold(0, (a, l) => a + (l.agreedFare ?? 0));
 
   /// El primer tramo sin cerrar: el que toca ahora.
   TripLegRow? get currentLeg {
@@ -338,6 +347,9 @@ class ChainedTrip {
       legs: legs,
       originLabel: j['origin_label'] as String?,
       destLabel: j['dest_label'] as String?,
+      createdAt: j['created_at'] == null
+          ? null
+          : DateTime.tryParse(j['created_at'] as String)?.toLocal(),
     );
   }
 }

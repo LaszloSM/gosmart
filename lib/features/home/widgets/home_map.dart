@@ -19,8 +19,10 @@ import '../../../providers/active_route_provider.dart';
 import '../../../router/app_router.dart';
 import '../../../services/geocoding_service.dart';
 import '../../../services/location_service.dart';
+import '../../../services/road_snap.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_pressable.dart';
+import '../../../widgets/gs_toast.dart';
 import 'map_view.dart';
 
 class HomeMap extends ConsumerStatefulWidget {
@@ -51,20 +53,29 @@ class HomeMap extends ConsumerStatefulWidget {
   ConsumerState<HomeMap> createState() => _HomeMapState();
 }
 
-class _HomeMapState extends ConsumerState<HomeMap> {
+class _HomeMapState extends ConsumerState<HomeMap> with WidgetsBindingObserver {
   MapViewController? _map;
 
-  LatLng _userPosition = GSRegion.riohacha;
-  bool _hasFix = false;
+  LatLng _userPosition = locationService.last ?? GSRegion.riohacha;
+  bool _hasFix = locationService.last != null;
   LatLng? _longPressPoint;
 
   Timer? _alertsTimer;
+  StreamSubscription<LatLng>? _positions;
+  StreamSubscription<LatLng>? _watch;
+
+  /// El usuario tocó "Mi ubicación": la próxima lectura mueve la cámara.
+  bool _followNext = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Cualquier lectura (de aquí, del planificador o del aviso de alertas)
+    // mueve el punto azul.
+    _positions = locationService.positions.listen(_onPosition);
     // Resolver el GPS después del primer frame (no async en initState).
-    WidgetsBinding.instance.addPostFrameCallback((_) => _recenter());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _recenter(quiet: true));
     // Las alertas cambian rápido (un retén dura 2 h): se refrescan cada 90 s
     // mientras el mapa está abierto.
     _alertsTimer = Timer.periodic(const Duration(seconds: 90), (_) {
@@ -74,19 +85,66 @@ class _HomeMapState extends ConsumerState<HomeMap> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _alertsTimer?.cancel();
+    _positions?.cancel();
+    _watch?.cancel();
     super.dispose();
   }
 
-  Future<void> _recenter() async {
-    final pos = await locationService.getCurrentPosition();
-    if (pos != null && mounted) {
-      setState(() {
-        _userPosition = pos;
-        _hasFix = true;
-      });
-      _map?.moveTo(pos);
+  /// Al volver de los ajustes (prendió el GPS o dio permiso), reintentar.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && !_hasFix) {
+      _recenter(quiet: true);
     }
+  }
+
+  void _onPosition(LatLng p) {
+    if (!mounted) return;
+    setState(() {
+      _userPosition = p;
+      _hasFix = true;
+    });
+    if (_followNext) {
+      _followNext = false;
+      _map?.moveTo(p);
+    }
+  }
+
+  /// Llevar el mapa a donde estás. Si falta GPS o permiso, lo dice y ofrece
+  /// arreglarlo; [quiet] (al abrir) no molesta si el usuario no lo pidió.
+  Future<void> _recenter({bool quiet = false}) async {
+    final messenger = ScaffoldMessenger.of(context);
+    _followNext = true;
+    // Mientras llega la lectura nueva, ir ya a la última conocida.
+    if (_hasFix) _map?.moveTo(_userPosition);
+    final pos = await locationService.getCurrentPosition();
+    if (!mounted) return;
+    if (pos != null) {
+      _onPosition(pos);
+      _map?.moveTo(pos);
+      _startWatching();
+      return;
+    }
+    final issue = locationService.lastIssue ?? LocationIssue.noFix;
+    if (quiet && issue == LocationIssue.noFix) return;
+    GSToast.showWithMessenger(
+      messenger,
+      message: locationIssueText(issue),
+      type: GSToastType.warning,
+      duration: const Duration(seconds: 6),
+      actionLabel: issue == LocationIssue.noFix ? 'Reintentar' : 'Activar',
+      onAction: () async {
+        await locationService.fix(issue);
+        if (mounted) _recenter();
+      },
+    );
+  }
+
+  /// Con permiso, el punto sigue al celular mientras el mapa está abierto.
+  void _startWatching() {
+    _watch ??= locationService.watch(distanceFilter: 15).listen((_) {});
   }
 
   @override
@@ -96,6 +154,16 @@ class _HomeMapState extends ConsumerState<HomeMap> {
 
     // Encuadrar la ruta cuando se activa una nueva.
     ref.listen<RouteResult?>(activeRouteProvider, (prev, next) {
+      // Venga de donde venga (planificador, asistente), la ruta va por la
+      // vía: los tramos rectos se cambian por el trazado de calles.
+      if (next != null && next.legs.any((l) => l.points.length == 2)) {
+        roadSnapper.snap(next).then((snapped) {
+          if (!identical(snapped, next) &&
+              identical(ref.read(activeRouteProvider), next)) {
+            ref.read(activeRouteProvider.notifier).state = snapped;
+          }
+        });
+      }
       if (next != null && next.legs.isNotEmpty) {
         // Tras aplicar el relleno nuevo (resumen de la ruta abajo) se encuadra.
         Future.delayed(const Duration(milliseconds: 350), () {
@@ -145,7 +213,7 @@ class _HomeMapState extends ConsumerState<HomeMap> {
           sheetExtent: widget.sheetExtent,
           stackHeight: widget.stackHeight,
           fixedBottom: widget.fixedBottom,
-          onRecenter: _recenter,
+          onRecenter: () => _recenter(),
           onReport: () => showReportSheet(context),
         ),
       ],

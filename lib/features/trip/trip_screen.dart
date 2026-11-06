@@ -23,6 +23,7 @@ import '../../widgets/gs_list_row.dart';
 import '../../widgets/gs_route_plate.dart';
 import '../../widgets/gs_toast.dart';
 import '../safety/sos_sheet.dart';
+import 'widgets/cancel_sheet.dart';
 import 'widgets/leg_panels.dart';
 import 'widgets/trip_map.dart';
 import 'widgets/trip_visuals.dart';
@@ -54,25 +55,15 @@ class TripScreen extends ConsumerWidget {
 
   Future<void> _cancel(BuildContext context, WidgetRef ref, ChainedTrip t) async {
     final messenger = ScaffoldMessenger.of(context);
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('¿Cancelar el viaje?'),
-        content: const Text('Los tramos que no han empezado se cancelan.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Seguir')),
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Cancelar viaje')),
-        ],
-      ),
-    );
-    if (ok != true) return;
+    // Con un conductor en camino se pide el motivo (como InDrive o Uber).
+    final choice = await showCancelSheet(context,
+        driverAssigned: ref.read(tripDriverProvider) != null);
+    if (choice == null) return;
     try {
-      await dispatchService.cancelTrip(t.id);
+      await dispatchService.cancelTrip(t.id, reason: choice.reason);
+      ref.read(tripDriverProvider.notifier).state = null;
       ref.invalidate(activeTripProvider);
+      ref.invalidate(recentTripsProvider);
     } on DispatchException catch (e) {
       GSToast.showWithMessenger(messenger,
           message: e.message, type: GSToastType.error);
@@ -366,7 +357,15 @@ class _RecentTrips extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const GSSectionTitle('Viajes recientes'),
+        Row(
+          children: [
+            const Expanded(child: GSSectionTitle('Viajes recientes')),
+            TextButton(
+              onPressed: () => context.push(AppRoutes.tripHistory),
+              child: const Text('Ver todos'),
+            ),
+          ],
+        ),
         for (final t in trips) ...[
           GSListRow(
             icon: t.status == 'completed'

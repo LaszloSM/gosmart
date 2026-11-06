@@ -17,10 +17,12 @@ import '../../../models/route_result.dart';
 import '../../../providers/active_route_provider.dart';
 import '../../../providers/dispatch_provider.dart';
 import '../../../services/location_service.dart';
+import '../../../services/road_snap.dart';
 import '../../../theme/design_tokens.dart';
 import '../../home/widgets/map_view.dart';
 
-/// La ruta del viaje en el mapa: los tramos como líneas rectas de su color.
+/// La ruta del viaje en el mapa: los tramos de punta a punta (en recto hasta
+/// que [roadSnapper] trae el trazado por la vía).
 RouteResult routeFromLegs(ChainedTrip t) {
   final legs = [
     for (final l in t.legs)
@@ -66,9 +68,47 @@ class _TripMapState extends ConsumerState<TripMap> with SingleTickerProviderStat
 
   Timer? _fitLater;
 
+  /// Los tramos del viaje por la vía (llega después del primer cuadro).
+  RouteResult? _snapped;
+  String? _snappedFor;
+  StreamSubscription<LatLng>? _positions;
+  LatLng? _me = locationService.last;
+
+  @override
+  void initState() {
+    super.initState();
+    _snap();
+    // Tu punto en el mapa sigue al GPS.
+    _positions = locationService.positions.listen((p) {
+      if (mounted) setState(() => _me = p);
+    });
+  }
+
+  @override
+  void didUpdateWidget(TripMap old) {
+    super.didUpdateWidget(old);
+    _snap();
+  }
+
+  /// Clave de los tramos: si cambian (replaneo), se vuelve a trazar.
+  String _legsKey(ChainedTrip t) => [
+        t.id,
+        for (final l in t.legs) '${l.id}:${l.from}:${l.to}',
+      ].join('|');
+
+  void _snap() {
+    final key = _legsKey(widget.trip);
+    if (key == _snappedFor) return;
+    _snappedFor = key;
+    roadSnapper.snap(routeFromLegs(widget.trip)).then((r) {
+      if (mounted && _snappedFor == key) setState(() => _snapped = r);
+    });
+  }
+
   @override
   void dispose() {
     _fitLater?.cancel();
+    _positions?.cancel();
     _ticker.dispose();
     super.dispose();
   }
@@ -111,7 +151,9 @@ class _TripMapState extends ConsumerState<TripMap> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     final planned = ref.watch(activeRouteProvider);
-    final route = planned != null && planned.legs.isNotEmpty ? planned : routeFromLegs(widget.trip);
+    final route = planned != null && planned.legs.isNotEmpty
+        ? planned
+        : (_snapped ?? routeFromLegs(widget.trip));
     final driver = ref.watch(tripDriverProvider);
 
     ref.listen<AssignedDriver?>(tripDriverProvider, (prev, next) {
@@ -143,7 +185,7 @@ class _TripMapState extends ConsumerState<TripMap> with SingleTickerProviderStat
       onLongPress: (_) {},
       onLongPressEnabled: false,
       route: route,
-      user: locationService.last,
+      user: _me,
       padding: widget.padding,
       vehicle: _shown,
       vehicleService: driver?.service ?? 'mototaxi',

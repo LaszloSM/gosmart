@@ -16,6 +16,7 @@ import '../../../core/env.dart';
 import '../../../core/region.dart';
 import '../../../models/map_alert.dart';
 import '../../../models/route_result.dart';
+import '../../../services/location_service.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_alert_badge.dart';
 import '../../../widgets/gs_vehicle_pin.dart';
@@ -144,9 +145,22 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
     if (mounted) setState(() {});
   }
 
+  void _onPermission() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    locationService.hasPermission.removeListener(_onPermission);
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
+    // El punto azul nativo aparece apenas hay permiso (no espera a la
+    // primera lectura propia, que en interiores puede tardar).
+    locationService.hasPermission.addListener(_onPermission);
     rootBundle.loadString('assets/map_styles/night.json').then((s) {
       if (mounted) setState(() => _nightStyle = s);
     });
@@ -196,7 +210,7 @@ class _GoogleMapViewState extends State<_GoogleMapView> implements MapViewContro
       compassEnabled: true,
       // Punto azul nativo de "estás aquí" (como Google Maps); el botón propio
       // de ubicarme vive en el inicio.
-      myLocationEnabled: v.user != null,
+      myLocationEnabled: v.user != null || locationService.hasPermission.value,
       myLocationButtonEnabled: false,
       mapToolbarEnabled: false,
       zoomControlsEnabled: false,

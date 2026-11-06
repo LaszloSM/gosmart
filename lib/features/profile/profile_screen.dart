@@ -178,6 +178,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       onTap: () => context.push(AppRoutes.driver),
                     ),
                 ]),
+                const GSSectionTitle('Tus viajes'),
+                GSGroup(children: [
+                  GSListRow(
+                    icon: Icons.history_rounded,
+                    title: 'Historial de viajes',
+                    subtitle: 'Todos tus viajes, con recibo y estado',
+                    onTap: () => context.push(AppRoutes.tripHistory),
+                  ),
+                  GSListRow(
+                    icon: Icons.bookmark_rounded,
+                    title: 'Mis lugares',
+                    subtitle: 'Casa, Trabajo y hasta 10 sitios con nombre',
+                    onTap: () => context.push(AppRoutes.savedPlaces),
+                  ),
+                ]),
                 const GSSectionTitle('Seguridad'),
                 GSGroup(children: [
                   GSListRow(

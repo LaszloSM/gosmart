@@ -23,6 +23,8 @@ import '../features/routes/route_planner_screen.dart';
 import '../features/routes/route_detail_screen.dart';
 import '../features/ai_chat/ai_chat_screen.dart';
 import '../features/nfc_simulator/nfc_auth_simulator_screen.dart';
+import '../features/places/saved_places_screen.dart';
+import '../features/trip/trip_history_screen.dart';
 import '../features/safety/emergency_contacts_screen.dart';
 import '../features/legal/legal_screen.dart';
 import '../features/driver/driver_home_screen.dart';
@@ -124,6 +126,8 @@ abstract class AppRoutes {
   static const paymentValidation = '/payment-validation';
   static const nfcSimulator     = '/debug/nfc-simulator';
   static const emergencyContacts = '/safety/contacts';
+  static const savedPlaces      = '/places';         // Casa, Trabajo y hasta 10 con nombre
+  static const tripHistory      = '/trip/history';   // todos tus viajes
   static const privacy          = '/legal/privacy';
   static const driver           = '/driver';
   static const report           = '/report';
@@ -239,6 +243,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.routeDetail,
         pageBuilder: (context, state) => _page(state, const RouteDetailScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.savedPlaces,
+        pageBuilder: (context, state) => _page(state, const SavedPlacesScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.tripHistory,
+        pageBuilder: (context, state) => _page(state, const TripHistoryScreen()),
       ),
       GoRoute(
         path: AppRoutes.emergencyContacts,

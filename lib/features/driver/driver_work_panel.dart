@@ -17,6 +17,7 @@ import '../../models/driver_model.dart';
 import '../../planner/graph.dart';
 import '../../providers/planner_provider.dart';
 import '../../services/dispatch_service.dart';
+import '../trip/widgets/cancel_sheet.dart';
 import '../../services/location_service.dart';
 import '../../services/payment_service.dart';
 import '../trust/rate_sheet.dart';
@@ -277,19 +278,10 @@ class _DriverWorkPanelState extends ConsumerState<DriverWorkPanel> {
   }
 
   Future<void> _confirmCancel(RideRequest r) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('¿Cancelar este viaje?'),
-        content: const Text('El pasajero tendrá que pedir otro conductor.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Seguir')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Cancelar viaje')),
-        ],
-      ),
-    );
-    if (ok == true) {
-      await _run('cancel', () => dispatchService.transitionRide(r.id, RideStatus.cancelled));
+    final choice = await showCancelSheet(context,
+        driverAssigned: true, asDriver: true, what: 'este viaje');
+    if (choice != null) {
+      await _run('cancel', () => dispatchService.cancelRide(r.id, reason: choice.reason));
     }
   }
 

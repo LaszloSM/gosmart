@@ -20,9 +20,21 @@ import 'corridor_detail_sheet.dart';
 import 'quick_places_row.dart';
 
 class HomeSheetContent extends ConsumerWidget {
-  const HomeSheetContent({super.key, this.scrollController, this.peekKey});
+  const HomeSheetContent({
+    super.key,
+    this.scrollController,
+    this.peekKey,
+    this.miniKey,
+    this.onHandleTap,
+  });
 
   final ScrollController? scrollController;
+
+  /// Marca hasta dónde llega la hoja plegada (asa + buscador), estilo Waze.
+  final Key? miniKey;
+
+  /// Tocar el asa: plegar o desplegar la hoja.
+  final VoidCallback? onHandleTap;
 
   /// Marca la parte visible en reposo (asa → servicios) para medir su alto.
   final Key? peekKey;
@@ -56,15 +68,26 @@ class HomeSheetContent extends ConsumerWidget {
           key: peekKey,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(
-                    top: GSSpacing.s3, bottom: GSSpacing.s3),
-                decoration: BoxDecoration(
-                  color: GSColors.line,
-                  borderRadius: BorderRadius.circular(GSRadius.full),
+            // Asa: arrastrarla baja la hoja hasta dejar solo el buscador
+            // (el mapa queda casi entero, como Waze); tocarla la sube o baja.
+            Semantics(
+              button: onHandleTap != null,
+              label: 'Mostrar u ocultar el panel',
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onHandleTap,
+                child: SizedBox(
+                  height: GSSpacing.s3 * 2 + 4,
+                  child: Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: GSColors.line,
+                        borderRadius: BorderRadius.circular(GSRadius.full),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -81,6 +104,7 @@ class HomeSheetContent extends ConsumerWidget {
                 ),
               ),
             Padding(
+              key: miniKey,
               padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),
               child: _SearchPill(onTap: openPlanner),
             ),
