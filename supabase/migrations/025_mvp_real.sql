@@ -1,4 +1,4 @@
--- 024_mvp_real.sql
+-- 025_mvp_real.sql
 -- Hacia el MVP de salida: nada simulado en los viajes.
 --   1. Fuera el "conductor de demo" (demo_autodriver): aceptaba solo cualquier
 --      mototaxi o taxi pedido y lo movía en el mapa. Se apaga, se desprograma

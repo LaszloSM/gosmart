@@ -4,6 +4,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/supabase_client.dart';
+import '../models/dispatch_models.dart';
 
 /// Contenido del QR de cobro: 'gosmart:pay:<charge_id>'.
 String chargeQrData(String chargeId) => 'gosmart:pay:$chargeId';
@@ -189,21 +190,18 @@ class PaymentService {
     return res == null ? null : TripReceipt.fromJson(Map<String, dynamic>.from(res as Map));
   }
 
-  Future<List<({String id, String? dest, String status, DateTime at})>> recentTrips() async {
+  /// Historial con los puntos de cada viaje (para "Repetir").
+  Future<List<RecentTrip>> recentTrips() async {
     final rows = await _db
         .from('chained_trips')
-        .select('id, dest_label, status, created_at')
+        .select('id, origin_label, dest_label, status, created_at, '
+            'trip_legs(seq, from_lat, from_lng, to_lat, to_lng)')
         .inFilter('status', ['completed', 'cancelled'])
         .order('created_at', ascending: false)
         .limit(10);
     return [
       for (final r in rows as List)
-        (
-          id: r['id'] as String,
-          dest: r['dest_label'] as String?,
-          status: r['status'] as String,
-          at: DateTime.parse(r['created_at'] as String).toLocal(),
-        )
+        RecentTrip.fromRow(Map<String, dynamic>.from(r as Map)),
     ];
   }
 

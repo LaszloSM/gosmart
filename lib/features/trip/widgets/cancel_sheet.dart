@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/design_tokens.dart';
 import '../../../widgets/gs_button.dart';
 
-/// Motivos de cancelación (los mismos códigos que 024_mvp_real.sql).
+/// Motivos de cancelación (los mismos códigos que 025_mvp_real.sql).
 class CancelReason {
   const CancelReason(this.code, this.label, this.icon);
   final String code;

@@ -12,10 +12,10 @@ siendo simulado o sin probar, y las tareas para lanzar, en orden.
 | Punto de ubicación y botón "Mi ubicación" | `LocationService` nuevo: revisa GPS y permiso, usa la última posición conocida al instante, espera hasta 15 s en alta precisión y luego cae a precisión de red. Publica cada posición para todas las pantallas. El punto azul nativo sale apenas hay permiso. El botón dice qué falta (GPS apagado, permiso) y abre el ajuste correcto. Al volver de los ajustes reintenta solo | `location_service.dart`, `home_map.dart`, `map_view.dart` |
 | El planificador se quedaba "Buscando tu ubicación…" y luego "Sin ubicación" | Usa la posición que ya tenga el mapa, la afina en segundo plano, sigue al GPS y, si falla, explica el motivo con un botón (Activar GPS / Dar permiso / Abrir ajustes / Reintentar) | `route_planner_screen.dart` |
 | Ubicación actual para pedir el viaje | El origen es tu ubicación real; el mapa del viaje muestra tu punto en vivo | `route_planner_screen.dart`, `trip_map.dart` |
-| Varias direcciones con nombre, máximo 10 | "Mis lugares" (Perfil): Casa, Trabajo y hasta 10 con nombre. Se guardan buscando o con "Usar mi ubicación actual". Salen en la fila de accesos del inicio (mantener presionado = editar) y en el planificador. El límite lo hace cumplir también la base (trigger) | `features/places/`, `favorites_provider.dart`, `024_mvp_real.sql` |
+| Varias direcciones con nombre, máximo 10 | "Mis lugares" (Perfil): Casa, Trabajo y hasta 10 con nombre. Se guardan buscando o con "Usar mi ubicación actual". Salen en la fila de accesos del inicio (mantener presionado = editar) y en el planificador. El límite lo hace cumplir también la base (trigger) | `features/places/`, `favorites_provider.dart`, `025_mvp_real.sql` |
 | Ruta por la vía, no en línea recta | Todo tramo recto (planificador de colectivo/TransPadilla/intermunicipal, asistente, viaje encadenado) se cambia por el trazado de Google Routes: a pie por andenes, lo demás por la vía. Con caché | `road_snap.dart` |
-| Cancelar con confirmación y motivo | Siempre se confirma. Si el conductor ya aceptó, hay que elegir un motivo (lista cerrada, como InDrive/Uber); el conductor tiene sus propios motivos. El servidor lo exige (`ride_cancel`, `cancel_trip`) | `cancel_sheet.dart`, `024_mvp_real.sql` |
-| Fuera la simulación del viaje aceptado | Era el "conductor de demo" (`demo_autodriver` + pg_cron): aceptaba solo cualquier pedido y se movía en el mapa. La migración 024 lo apaga, desprograma la tarea, borra sus funciones y borra las cuentas `@example.com`. Se quitaron `supabase/demo/`, la prueba e2e y el workflow del emulador que dependían de él | `024_mvp_real.sql`, workflows |
+| Cancelar con confirmación y motivo | Siempre se confirma. Si el conductor ya aceptó, hay que elegir un motivo (lista cerrada, como InDrive/Uber); el conductor tiene sus propios motivos. El servidor lo exige (`ride_cancel`, `cancel_trip`) | `cancel_sheet.dart`, `025_mvp_real.sql` |
+| Fuera la simulación del viaje aceptado | Era el "conductor de demo" (`demo_autodriver` + pg_cron): aceptaba solo cualquier pedido y se movía en el mapa. La migración 024 lo apaga, desprograma la tarea, borra sus funciones y borra las cuentas `@example.com`. Se quitaron `supabase/demo/`, la prueba e2e y el workflow del emulador que dependían de él | `025_mvp_real.sql`, workflows |
 | Historial de todos los viajes | Pantalla con todos tus viajes por tandas de 20: fecha, origen → destino, modos, estado y lo pagado; abre el recibo | `trip_history_screen.dart` (Perfil → Historial, o "Ver todos" en Viaje) |
 
 Error encontrado de paso: **cancelar el viaje completo no cancelaba la solicitud al
@@ -39,7 +39,7 @@ conductor** (seguía viniendo). `cancel_trip` ahora la cancela.
 ## 3. Tareas para el MVP de salida
 
 ### Fase A · Base real (bloquea todo lo demás)
-1. Aplicar `024_mvp_real.sql` (Actions → *Supabase deploy*). Confirmar que `cron.job` ya no tiene `gosmart-demo-driver` y que no quedan cuentas `@example.com`.
+1. Aplicar `025_mvp_real.sql` (Actions → *Supabase deploy*). Confirmar que `cron.job` ya no tiene `gosmart-demo-driver` y que no quedan cuentas `@example.com`.
 2. Cargar `GOOGLE_MAPS_SERVER_KEY` con **Routes API** y **Places API (New)** habilitadas y facturación activa. Revisar el reporte de `tool/check_keys.sh` en el CI.
 3. Firebase: crear proyecto, `GOOGLE_SERVICES_JSON`, `FCM_SERVICE_ACCOUNT`, `PUSH_WEBHOOK_SECRET` y desplegar los webhooks.
 4. Aprobar a los primeros conductores reales desde `/admin` con sus documentos verificados.
@@ -68,5 +68,5 @@ conductor** (seguía viniendo). `cancel_trip` ahora la cancela.
 
 ## 4. Cómo verificar lo de esta entrega
 - `flutter analyze` sin avisos y `flutter test` (153 pruebas) pasan.
-- Pruebas SQL: `supabase/tests/024_mvp_real_test.sql` (cancelar con motivo, `cancel_trip` suelta al conductor, límite de 10 lugares, demo eliminada) más las existentes.
+- Pruebas SQL: `supabase/tests/025_mvp_real_test.sql` (cancelar con motivo, `cancel_trip` suelta al conductor, límite de 10 lugares, demo eliminada) más las existentes.
 - En el celular: abrir el inicio con GPS apagado → el botón de ubicación ofrece "Activar"; al prender el GPS y volver, aparece el punto.

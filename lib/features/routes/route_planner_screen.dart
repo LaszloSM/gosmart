@@ -35,6 +35,7 @@ import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_list_row.dart';
 import '../../widgets/gs_toast.dart';
+import 'place_confirm_screen.dart';
 import 'widgets/destination_plate.dart';
 import 'widgets/mode_options.dart';
 import 'widgets/mode_selector.dart';
@@ -113,9 +114,9 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     });
   }
 
-  /// Las sugerencias de Google traen coordenadas solo al elegirlas.
+  /// Todas pasan por `resolve` (Google trae el punto, también para los
+  /// lugares del directorio sin verificar) y luego se confirman en el mapa.
   Future<void> _pickSuggestion(GeocodeSuggestion s) async {
-    if (s.latLng != null) return _setDest(s.placeName, s.latLng);
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _loading = true);
     final place = await placeSearch.resolve(s);
@@ -128,10 +129,27 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
           type: GSToastType.error);
       return;
     }
-    _setDest(place!.placeName, place.latLng);
+    final confirmed = await context.push<GeocodeSuggestion>(
+        AppRoutes.placeConfirm,
+        extra: PlaceConfirmRequest(place!));
+    // Volvió sin confirmar: la lista sigue ahí para elegir otro.
+    if (confirmed == null || !mounted) return;
+    _setDest(confirmed.placeName, confirmed.latLng);
   }
 
   void _applyPendingDestination() {
+    // "Repetir" del historial: mismo origen y destino exactos.
+    final plan = ref.read(pendingPlanProvider);
+    if (plan != null) {
+      ref.read(pendingPlanProvider.notifier).state = null;
+      setState(() {
+        _originIsMe = false;
+        _originLatLng = plan.origin;
+        _originLabel = plan.originLabel;
+      });
+      _setDest(plan.destLabel, plan.dest);
+      return;
+    }
     final pending = ref.read(pendingDestinationProvider);
     if (pending == null) return;
     _setDest('Punto en el mapa', pending);
@@ -147,7 +165,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     final label = _originLabel;
     final latLng = _originLatLng;
     setState(() {
-      _originIsMe = !_originIsMe;
+      _originIsMe = false;
       _originLabel = _destLabel!;
       _originLatLng = _destLatLng;
     });
@@ -197,7 +215,9 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       });
       return;
     }
-    _debounce = Timer(const Duration(milliseconds: 300), () async {
+    // 450 ms: se busca al hacer una pausa, no en cada letra (cada búsqueda
+    // gasta cuota diaria de Google Places).
+    _debounce = Timer(const Duration(milliseconds: 450), () async {
       final result = await placeSearch.search(text, near: _originLatLng);
       // Si el usuario siguió escribiendo, esta respuesta ya no aplica.
       if (!mounted || _destCtrl.text.trim() != text) return;

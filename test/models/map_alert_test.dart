@@ -94,9 +94,19 @@ void main() {
     });
   });
 
-  test('pines por zoom: lejos punto, medio pequeño, cerca completo', () {
+  test('pines por zoom: ciudad punto, barrio pequeño, calle completo', () {
     expect(alertPinSizeFor(10), AlertPinSize.dot);
-    expect(alertPinSizeFor(13), AlertPinSize.small);
+    // Riohacha entera a la vista (~13): puntos, no globos.
+    expect(alertPinSizeFor(13), AlertPinSize.dot);
+    expect(alertPinSizeFor(14), AlertPinSize.small);
     expect(alertPinSizeFor(16), AlertPinSize.full);
+  });
+
+  test('muy lejos solo se ve lo grave', () {
+    final grave = AlertKind.all.firstWhere((k) => k.severity == AlertSeverity.severe);
+    final leve = AlertKind.all.firstWhere((k) => k.severity != AlertSeverity.severe);
+    expect(alertVisibleAt(grave, 10), isTrue);
+    expect(alertVisibleAt(leve, 10), isFalse);
+    expect(alertVisibleAt(leve, 12), isTrue);
   });
 }

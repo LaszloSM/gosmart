@@ -19,6 +19,7 @@ import '../../router/app_router.dart';
 import '../../services/geocoding_service.dart';
 import '../../services/location_service.dart';
 import '../../services/place_search.dart';
+import '../routes/place_confirm_screen.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_toast.dart';
@@ -139,10 +140,19 @@ class _SavedPlaceSheetState extends ConsumerState<SavedPlaceSheet> {
           type: GSToastType.error);
       return;
     }
+    // Como en el planificador: el punto exacto se confirma en el mapa (la
+    // entrada del edificio, no el centro de la manzana).
+    final confirmed = await context.push<GeocodeSuggestion>(
+      AppRoutes.placeConfirm,
+      extra: PlaceConfirmRequest(place!,
+          title: 'Confirma el punto', actionLabel: 'Guardar este punto'),
+    );
+    if (!mounted || confirmed?.latLng == null) return;
     setState(() {
-      _at = place!.latLng;
-      _address =
-          place.fullAddress.isNotEmpty ? place.fullAddress : place.placeName;
+      _at = confirmed!.latLng;
+      _address = confirmed.fullAddress.isNotEmpty
+          ? confirmed.fullAddress
+          : confirmed.placeName;
       _suggestions = const [];
       _query.clear();
       if (_custom && _name.text.trim().isEmpty) {

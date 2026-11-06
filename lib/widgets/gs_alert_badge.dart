@@ -93,11 +93,19 @@ class _PotholePainter extends CustomPainter {
 /// Tamaños del pin en el mapa según el zoom (como Waze: lejos, puntos).
 enum AlertPinSize { dot, small, full }
 
-AlertPinSize alertPinSizeFor(double zoom) => zoom < 12.5
+/// Calle a la vista: globo completo; barrio: globo chico; ciudad: punto.
+AlertPinSize alertPinSizeFor(double zoom) => zoom < 13.5
     ? AlertPinSize.dot
-    : zoom < 14.5
+    : zoom < 15
         ? AlertPinSize.small
         : AlertPinSize.full;
+
+/// Más lejos que esto (varias ciudades a la vista) solo se ve lo grave: el
+/// resto taparía el mapa y no sirve a esa distancia.
+const alertFarZoom = 12.0;
+
+bool alertVisibleAt(AlertKind kind, double zoom) =>
+    zoom >= alertFarZoom || kind.severity == AlertSeverity.severe;
 
 /// Medidas en dp del pin: ancho y alto de la imagen.
 Size alertPinLogicalSize(AlertPinSize s) => switch (s) {

@@ -52,7 +52,7 @@ final topFavoritePlacesProvider = Provider<List<FavoritePlace>>((ref) {
 });
 
 /// Cuántos lugares con nombre se pueden guardar (además de Casa y Trabajo).
-/// El servidor lo revalida (024_mvp_real.sql, trigger favorite_places_guard).
+/// El servidor lo revalida (025_mvp_real.sql, trigger favorite_places_guard).
 const kMaxSavedPlaces = 10;
 
 /// Largo máximo del nombre de un lugar.

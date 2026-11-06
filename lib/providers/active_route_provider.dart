@@ -10,3 +10,20 @@ final activeRouteProvider = StateProvider<RouteResult?>((ref) => null);
 
 /// Destino seleccionado por long-press en el mapa (para pasar al route planner)
 final pendingDestinationProvider = StateProvider<LatLng?>((ref) => null);
+
+/// "Repetir" un viaje del historial: el planificador abre con estos dos
+/// puntos (el GPS no reemplaza el origen). Se consume al abrirlo.
+class PlannerPreset {
+  const PlannerPreset({
+    required this.origin,
+    required this.originLabel,
+    required this.dest,
+    required this.destLabel,
+  });
+  final LatLng origin;
+  final String originLabel;
+  final LatLng dest;
+  final String destLabel;
+}
+
+final pendingPlanProvider = StateProvider<PlannerPreset?>((ref) => null);

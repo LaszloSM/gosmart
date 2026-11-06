@@ -8,7 +8,7 @@ name: Supabase deploy
 #   4. Despliega ai-chat, wompi, push, delete-account y maps (Google Places/Routes).
 #   5. Webhooks de push (ride_requests y road_reports → función push) si hay
 #      PUSH_WEBHOOK_SECRET.
-#   (La demo con conductor automático se quitó en 024_mvp_real.sql: nada simulado.)
+#   (La demo con conductor automático se quitó en 025_mvp_real.sql: nada simulado.)
 #
 # Secrets de GitHub (Settings → Secrets and variables → Actions):
 #   SUPABASE_DB_URL        cadena "Session pooler" (Connect → Session pooler), con la contraseña.

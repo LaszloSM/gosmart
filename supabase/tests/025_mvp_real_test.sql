@@ -1,4 +1,4 @@
--- supabase/tests/024_mvp_real_test.sql (después de 023_driver_earnings_test.sql)
+-- supabase/tests/025_mvp_real_test.sql (después de 023_driver_earnings_test.sql)
 -- Cancelar con motivo, cancel_trip que suelta al conductor y sin conductor de demo.
 \set ON_ERROR_STOP on
 RESET ROLE;
@@ -134,4 +134,4 @@ BEGIN
 END $$;
 
 RESET ROLE;
-SELECT '024_mvp_real: OK';
+SELECT '025_mvp_real: OK';
