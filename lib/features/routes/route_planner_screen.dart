@@ -1,20 +1,27 @@
 // lib/features/routes/route_planner_screen.dart
-// Planificador: la placa de ruta se "pinta" mientras eliges desde, hasta y en
-// qué vas. Origen y destino desde cualquier punto (dirección, referencia o
-// punto del mapa por pulsación larga en el inicio).
+// Planificador estilo Uber/InDrive: recogida y destino en una tarjeta (los
+// dos se pueden escribir: el GPS no siempre es exacto), las opciones con su
+// precio y, para mototaxi y taxi, "Pedir" en un toque: crea el viaje y ya
+// busca conductor (quick_ride, 026). Sin confirmar el pin cuando el lugar es
+// exacto; solo los aproximados pasan por el mapa.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:uuid/uuid.dart';
 
+import '../../core/money.dart';
+import '../../core/region.dart';
 import '../../models/corridor_status.dart';
 import '../../planner/fares.dart';
 import '../../planner/graph.dart';
 import '../../planner/planner.dart';
 import '../../planner/to_route.dart';
 import '../../providers/corridor_provider.dart';
+import '../../providers/dispatch_provider.dart';
+import '../../services/dispatch_service.dart';
 import '../../providers/planner_provider.dart';
 import '../../services/graph_service.dart';
 import '../../models/geocode_suggestion.dart';
@@ -34,11 +41,14 @@ import '../../services/location_service.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_button.dart';
 import '../../widgets/gs_list_row.dart';
+import '../../widgets/gs_pressable.dart';
 import '../../widgets/gs_toast.dart';
 import 'place_confirm_screen.dart';
-import 'widgets/destination_plate.dart';
 import 'widgets/mode_options.dart';
 import 'widgets/mode_selector.dart';
+
+/// Qué punto se está escribiendo en el buscador.
+enum _Field { origin, dest }
 
 class RoutePlannerScreen extends ConsumerStatefulWidget {
   const RoutePlannerScreen({super.key});
@@ -48,12 +58,17 @@ class RoutePlannerScreen extends ConsumerStatefulWidget {
 }
 
 class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
-  final _destCtrl = TextEditingController();
+  final _query = TextEditingController();
+  final _focus = FocusNode();
 
   String _originLabel = 'Mi ubicación';
   LatLng? _originLatLng;
   LatLng? _destLatLng;
-  String? _destLabel; // destino elegido (placa pintada)
+  String? _destLabel;
+
+  /// Qué se está escribiendo; null = los dos puntos listos (se ven los modos).
+  _Field? _editing = _Field.dest;
+
   List<GeocodeSuggestion> _suggestions = [];
   bool _searchLimited = false; // el proveedor externo no respondió (D8)
   String? _searchedFor; // última búsqueda terminada
@@ -61,10 +76,19 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   bool _loading = false;
   bool _locating = true;
 
-  /// El origen sigue al GPS mientras sea "mi ubicación" (no un lugar elegido).
+  /// El origen sigue al GPS mientras sea "mi ubicación" (no un punto elegido).
   bool _originIsMe = true;
   LocationIssue? _locationIssue;
   StreamSubscription<LatLng>? _positions;
+
+  /// Ruta por la vía entre los dos puntos (para el precio de mototaxi/taxi);
+  /// null mientras se calcula o si Google no respondió (se usa el estimado).
+  RouteResult? _driveRoute;
+  int _routeToken = 0;
+
+  /// Llave del pedido: tocar dos veces "Pedir" no crea dos viajes. Cambia
+  /// cuando cambia algo del pedido (puntos o modo).
+  String _rideKey = const Uuid().v4();
 
   @override
   void initState() {
@@ -84,11 +108,15 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
         _locating = false;
         _locationIssue = null;
       });
-      if (first) _labelOrigin(p);
+      if (first) {
+        _labelOrigin(p);
+        _pointsChanged();
+      }
     });
     _resolveOrigin();
-    _destCtrl.addListener(_onDestChanged);
-    // Destino elegido con pulsación larga en el mapa del inicio.
+    _query.addListener(_onQueryChanged);
+    // Destino elegido con pulsación larga en el mapa del inicio, o "Pedir de
+    // nuevo" desde el historial.
     WidgetsBinding.instance
         .addPostFrameCallback((_) => _applyPendingDestination());
   }
@@ -97,27 +125,75 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
   void dispose() {
     _debounce?.cancel();
     _positions?.cancel();
-    _destCtrl.removeListener(_onDestChanged);
-    _destCtrl.dispose();
+    _query.removeListener(_onQueryChanged);
+    _query.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
-  /// Elegir destino (placa pintada) o, con latLng null, volver a escribir.
-  void _setDest(String text, LatLng? latLng) {
-    _destCtrl.removeListener(_onDestChanged);
-    _destCtrl.text = latLng == null ? '' : text;
-    _destCtrl.addListener(_onDestChanged);
+  // ── Puntos ──────────────────────────────────────────────────────────────
+  void _setDest(String label, LatLng latLng) {
     setState(() {
       _destLatLng = latLng;
-      _destLabel = latLng == null ? null : text;
-      _suggestions = [];
+      _destLabel = label;
+      // Si el origen aún no está, se pide; si no, listo para elegir modo.
+      _editing = _originLatLng == null && !_originIsMe ? _Field.origin : null;
+    });
+    _clearQuery();
+    _pointsChanged();
+  }
+
+  void _setOrigin(String label, LatLng latLng, {bool isMe = false}) {
+    setState(() {
+      _originIsMe = isMe;
+      _originLatLng = latLng;
+      _originLabel = label;
+      _editing = _destLatLng == null ? _Field.dest : null;
+    });
+    _clearQuery();
+    _pointsChanged();
+  }
+
+  /// Volver a escribir uno de los dos puntos (tocar su fila).
+  void _edit(_Field f) {
+    setState(() => _editing = f);
+    _clearQuery();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focus.requestFocus();
     });
   }
 
-  /// Todas pasan por `resolve` (Google trae el punto, también para los
-  /// lugares del directorio sin verificar) y luego se confirman en el mapa.
+  void _clearQuery() {
+    _query.removeListener(_onQueryChanged);
+    _query.clear();
+    _query.addListener(_onQueryChanged);
+    _debounce?.cancel();
+    setState(() {
+      _suggestions = [];
+      _searchedFor = null;
+    });
+  }
+
+  /// Cambió un punto: pedido nuevo y ruta por la vía para el precio.
+  void _pointsChanged() {
+    _rideKey = const Uuid().v4();
+    final from = _originLatLng, to = _destLatLng;
+    final token = ++_routeToken;
+    setState(() => _driveRoute = null);
+    if (from == null || to == null) return;
+    directionsService
+        .getRoute(origin: from, destination: to, profile: RouteProfile.driving)
+        .then((r) {
+      if (mounted && token == _routeToken) setState(() => _driveRoute = r);
+    }).catchError((_) {});
+  }
+
+  /// Todas pasan por `resolve` (Google trae el punto). Si el punto es
+  /// aproximado (lugar sin verificar sin respuesta de Google) se confirma en
+  /// el mapa; si es exacto se usa directo: un paso menos.
   Future<void> _pickSuggestion(GeocodeSuggestion s) async {
     final messenger = ScaffoldMessenger.of(context);
+    final field = _editing ?? _Field.dest;
     setState(() => _loading = true);
     final place = await placeSearch.resolve(s);
     if (!mounted) return;
@@ -129,16 +205,58 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
           type: GSToastType.error);
       return;
     }
-    final confirmed = await context.push<GeocodeSuggestion>(
-        AppRoutes.placeConfirm,
-        extra: PlaceConfirmRequest(place!));
-    // Volvió sin confirmar: la lista sigue ahí para elegir otro.
-    if (confirmed == null || !mounted) return;
-    _setDest(confirmed.placeName, confirmed.latLng);
+    var chosen = place!;
+    if (chosen.approximate) {
+      final confirmed = await _confirmOnMap(chosen, field);
+      if (confirmed == null || !mounted) return;
+      chosen = confirmed;
+    }
+    if (field == _Field.origin) {
+      _setOrigin(chosen.placeName, chosen.latLng!);
+    } else {
+      _setDest(chosen.placeName, chosen.latLng!);
+    }
+  }
+
+  Future<GeocodeSuggestion?> _confirmOnMap(GeocodeSuggestion place, _Field f) {
+    FocusScope.of(context).unfocus();
+    return context.push<GeocodeSuggestion>(AppRoutes.placeConfirm,
+        extra: PlaceConfirmRequest(place,
+            title: f == _Field.origin ? '¿Dónde te recogemos?' : 'Confirma el destino',
+            actionLabel: f == _Field.origin ? 'Recoger aquí' : 'Confirmar destino'));
+  }
+
+  /// Mover el pin a mano: más preciso que el GPS para que el conductor llegue.
+  Future<void> _adjustOnMap(_Field f) async {
+    final at = f == _Field.origin ? _originLatLng : _destLatLng;
+    final start = at ?? locationService.last ?? GSRegion.riohacha;
+    final label = f == _Field.origin
+        ? (_originIsMe ? 'Tu ubicación' : _originLabel)
+        : (_destLabel ?? 'Punto en el mapa');
+    final confirmed = await _confirmOnMap(
+        GeocodeSuggestion(placeName: label, fullAddress: '', latLng: start), f);
+    if (confirmed?.latLng == null || !mounted) return;
+    if (f == _Field.origin) {
+      _setOrigin(confirmed!.placeName, confirmed.latLng!);
+    } else {
+      _setDest(confirmed!.placeName, confirmed.latLng!);
+    }
+  }
+
+  void _useMyLocation() {
+    final at = locationService.last ?? _originLatLng;
+    _originIsMe = true;
+    if (at != null) {
+      _setOrigin('Mi ubicación', at, isMe: true);
+      _labelOrigin(at);
+    } else {
+      setState(() => _editing = _destLatLng == null ? _Field.dest : null);
+      _resolveOrigin();
+    }
   }
 
   void _applyPendingDestination() {
-    // "Repetir" del historial: mismo origen y destino exactos.
+    // "Pedir de nuevo" del historial: mismo origen y destino exactos.
     final plan = ref.read(pendingPlanProvider);
     if (plan != null) {
       ref.read(pendingPlanProvider.notifier).state = null;
@@ -146,30 +264,43 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
         _originIsMe = false;
         _originLatLng = plan.origin;
         _originLabel = plan.originLabel;
+        _destLatLng = plan.dest;
+        _destLabel = plan.destLabel;
+        _editing = null;
       });
-      _setDest(plan.destLabel, plan.dest);
+      _pointsChanged();
+      return;
+    }
+    final named = ref.read(pendingNamedDestinationProvider);
+    if (named != null) {
+      ref.read(pendingNamedDestinationProvider.notifier).state = null;
+      _setDest(named.label, named.at);
       return;
     }
     final pending = ref.read(pendingDestinationProvider);
     if (pending == null) return;
-    _setDest('Punto en el mapa', pending);
     ref.read(pendingDestinationProvider.notifier).state = null;
+    _setDest('Punto en el mapa', pending);
     // La dirección real del punto, cuando llegue.
     geocodingService.reverse(pending).then((a) {
-      if (a != null && mounted && _destLatLng == pending) _setDest(a, pending);
+      if (a != null && mounted && _destLatLng == pending) {
+        setState(() => _destLabel = a);
+      }
     });
   }
 
   void _swap() {
-    if (_destLatLng == null || _originLatLng == null) return;
+    final from = _originLatLng, to = _destLatLng;
+    if (from == null || to == null) return;
     final label = _originLabel;
-    final latLng = _originLatLng;
     setState(() {
       _originIsMe = false;
       _originLabel = _destLabel!;
-      _originLatLng = _destLatLng;
+      _originLatLng = to;
+      _destLabel = label;
+      _destLatLng = from;
     });
-    _setDest(label, latLng);
+    _pointsChanged();
   }
 
   Future<void> _resolveOrigin() async {
@@ -179,6 +310,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     });
     final pos = await locationService.getCurrentPosition();
     if (!mounted) return;
+    final firstFix = _originLatLng == null;
     setState(() {
       _locating = false;
       if (pos != null && _originIsMe) _originLatLng = pos;
@@ -186,13 +318,16 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
         _locationIssue = locationService.lastIssue ?? LocationIssue.noFix;
       }
     });
-    if (pos != null && _originIsMe) _labelOrigin(pos);
+    if (pos != null && _originIsMe) {
+      _labelOrigin(pos);
+      if (firstFix) _pointsChanged();
+    }
   }
 
   /// "Mi ubicación" → la calle donde estás (como Uber).
   Future<void> _labelOrigin(LatLng pos) async {
     final address = await geocodingService.reverse(pos);
-    if (address != null && mounted && _originIsMe && _originLabel == 'Mi ubicación') {
+    if (address != null && mounted && _originIsMe) {
       setState(() => _originLabel = address);
     }
   }
@@ -204,8 +339,8 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     if (mounted) await _resolveOrigin();
   }
 
-  void _onDestChanged() {
-    final text = _destCtrl.text.trim();
+  void _onQueryChanged() {
+    final text = _query.text.trim();
     setState(() {}); // botón de borrar en el campo
     _debounce?.cancel();
     if (text.length < 3) {
@@ -216,11 +351,12 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
       return;
     }
     // 450 ms: se busca al hacer una pausa, no en cada letra (cada búsqueda
-    // gasta cuota diaria de Google Places).
+    // gasta cuota diaria de Google Places). Cerca de la persona: su ciudad
+    // primero (city_rank.dart).
     _debounce = Timer(const Duration(milliseconds: 450), () async {
-      final result = await placeSearch.search(text, near: _originLatLng);
-      // Si el usuario siguió escribiendo, esta respuesta ya no aplica.
-      if (!mounted || _destCtrl.text.trim() != text) return;
+      final near = locationService.last ?? _originLatLng;
+      final result = await placeSearch.search(text, near: near);
+      if (!mounted || _query.text.trim() != text) return;
       setState(() {
         _suggestions = result.items;
         _searchLimited = result.limited;
@@ -229,6 +365,81 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     });
   }
 
+  // ── Precio y pedido ─────────────────────────────────────────────────────
+  static bool _isRide(String mode) => mode == 'Mototaxi' || mode == 'Taxi';
+
+  /// Tarifa y minutos con los que se pide: por la vía si Google respondió;
+  /// si no, el estimado en línea recta × 1,3 (igual que la lista de modos).
+  ({int fare, int minutes, double km})? _quote(String mode) {
+    final from = _originLatLng, to = _destLatLng;
+    final transit = TransitMode.fromName(mode.toLowerCase());
+    if (from == null || to == null || transit == null) return null;
+    final km = _driveRoute?.distanceKm ?? haversineKm(from, to) * 1.3;
+    final rules = ref.read(transportGraphProvider).valueOrNull?.fareRules ??
+        defaultFareRules;
+    final fare = estimateFare(transit, km, at: DateTime.now(), rules: rules);
+    if (fare.isZero) return null;
+    final minutes = _driveRoute?.durationMin ??
+        estimateMode(mode, from, to, DateTime.now()).minutes;
+    // En múltiplos de $100, como se paga.
+    final price = ((fare.price / 100).round() * 100).clamp(1000, 500000).toInt();
+    return (fare: price, minutes: minutes, km: km);
+  }
+
+  /// Un toque: crea el viaje y empieza a buscar conductor en el servidor
+  /// (quick_ride). La pantalla del viaje abre ya buscando, sin "oferta" ni
+  /// "Iniciar viaje" de por medio.
+  Future<void> _requestNow(String mode) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+    if (ref.read(isGuestProvider)) {
+      GSToast.showWithMessenger(messenger,
+          message: 'Entra a tu cuenta para pedir el viaje.');
+      router.push(AppRoutes.login);
+      return;
+    }
+    final from = _originLatLng, to = _destLatLng;
+    final q = _quote(mode);
+    if (from == null || to == null || q == null) return;
+    final service = mode == 'Taxi' ? 'taxi' : 'mototaxi';
+    final originLabel = _originIsMe && _originLabel == 'Mi ubicación'
+        ? 'Tu ubicación'
+        : _originLabel;
+    setState(() => _loading = true);
+    try {
+      await dispatchService.quickRide(
+        service: service,
+        origin: from,
+        originLabel: originLabel,
+        dest: to,
+        destLabel: _destLabel ?? 'Destino',
+        fare: q.fare,
+        minutes: q.minutes,
+        idempotencyKey: _rideKey,
+      );
+      // El mapa del viaje dibuja la ruta por la vía si la tenemos.
+      final route = _driveRoute;
+      ref.read(activeRouteProvider.notifier).state = route
+          ?.withFare(q.fare, service == 'taxi' ? 'oficial' : 'sugerida')
+          .withDestination(_destLabel);
+      ref.invalidate(activeTripProvider);
+      router.go(AppRoutes.trip);
+    } on DispatchException catch (e) {
+      if (e.code == 'trip_in_progress') {
+        GSToast.showWithMessenger(messenger,
+            message: 'Ya tienes un viaje en curso. Te llevamos a él.');
+        ref.invalidate(activeTripProvider);
+        router.go(AppRoutes.trip);
+      } else {
+        GSToast.showWithMessenger(messenger,
+            message: e.message, type: GSToastType.error);
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  /// Colectivo, TransPadilla, intermunicipal, a pie y carro: ver la ruta.
   Future<void> _search() async {
     final messenger = ScaffoldMessenger.of(context);
     if (_originLatLng == null) {
@@ -271,19 +482,8 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
           type: GSToastType.error);
       return;
     }
-    // Mototaxi y taxi: precio único por la distancia real de la vía.
-    var priced = result;
-    final transit = TransitMode.fromName(mode.toLowerCase());
-    if (transit == TransitMode.mototaxi || transit == TransitMode.taxi) {
-      final rules = ref.read(transportGraphProvider).valueOrNull?.fareRules ??
-          defaultFareRules;
-      final fare = estimateFare(transit!, result.distanceKm,
-          at: DateTime.now(), rules: rules);
-      priced = result.withFare(
-          fare.price, transit == TransitMode.taxi ? 'oficial' : 'sugerida');
-    }
     ref.read(activeRouteProvider.notifier).state =
-        priced.withDestination(_destLabel);
+        result.withDestination(_destLabel);
     _awardEcoPoints(result, messenger);
     context.pop();
   }
@@ -333,114 +533,97 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
         message: '+$pts eco-puntos por ir a pie', type: GSToastType.success);
   }
 
+  // ── Pantalla ────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final mode = ref.watch(selectedModeProvider);
     final home = ref.watch(homePlaceProvider);
     final work = ref.watch(workPlaceProvider);
     final saved = ref.watch(customPlacesProvider);
-    final typing = _destLabel == null;
-    final showFavorites = typing &&
-        _destCtrl.text.trim().length < 3 &&
-        (home != null || work != null || saved.isNotEmpty);
+    final editing = _editing;
+    final typing = editing != null;
+    final shortQuery = _query.text.trim().length < 3;
+    final ready = _destLatLng != null && _originLatLng != null && !typing;
     final originText = _originLatLng != null
         ? _originLabel
         : (_locating
             ? 'Buscando tu ubicación…'
             : locationIssueText(_locationIssue ?? LocationIssue.noFix));
 
+    void pickSaved(String name, LatLng at) {
+      if (editing == _Field.origin) {
+        _setOrigin(name, at);
+      } else {
+        _setDest(name, at);
+      }
+    }
+
+    final showSaved = typing &&
+        shortQuery &&
+        (home != null || work != null || saved.isNotEmpty);
+
     return Scaffold(
       backgroundColor: GSColors.background,
-      appBar: AppBar(
-        title: const Text('Planea tu viaje'),
-      ),
+      appBar: AppBar(title: const Text('¿A dónde vas?')),
       body: ListView(
         padding: const EdgeInsets.only(bottom: GSSpacing.s6),
         children: [
-          // Origen y destino en una tarjeta, unidos por una línea punteada
-          // (como Uber): punto = desde, cuadro = hasta.
+          // Recogida y destino en una tarjeta (Uber/InDrive): punto = recoger,
+          // cuadro = destino. Cada fila se toca para cambiarla.
           Padding(
             padding: const EdgeInsets.fromLTRB(
                 GSSpacing.s4, GSSpacing.s3, GSSpacing.s4, 0),
             child: Container(
               padding: const EdgeInsets.fromLTRB(
-                  GSSpacing.s4, GSSpacing.s3, GSSpacing.s2, GSSpacing.s3),
+                  GSSpacing.s3, GSSpacing.s2, GSSpacing.s1, GSSpacing.s2),
               decoration: BoxDecoration(
                 color: GSColors.surface,
                 borderRadius: BorderRadius.circular(GSRadius.lg),
               ),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: GSColors.brand, width: 3),
-                          ),
-                        ),
-                        for (var i = 0; i < 6; i++)
-                          Container(
-                            width: 2,
-                            height: 4,
-                            margin: const EdgeInsets.symmetric(vertical: 2),
-                            color: GSColors.line,
-                          ),
-                        Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: GSColors.text,
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: GSSpacing.s3),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text('Desde',
-                            style: Theme.of(context).textTheme.labelSmall),
-                        Text(
-                          originText,
-                          style: Theme.of(context).textTheme.titleMedium,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
+                        _PointRow(
+                          dot: _Dot.origin,
+                          label: 'Recoger en',
+                          value: originText,
+                          editing: editing == _Field.origin,
+                          controller: _query,
+                          focusNode: _focus,
+                          hint: '¿Dónde te recogemos?',
+                          onTap: () => _edit(_Field.origin),
+                          onClose: _destLatLng == null && _originLatLng == null
+                              ? null
+                              : () => setState(() =>
+                                  _editing = _destLatLng == null ? _Field.dest : null),
                         ),
-                        if (_originLatLng == null && !_locating)
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextButton.icon(
-                              onPressed: _fixLocation,
-                              icon: const Icon(Icons.my_location_rounded),
-                              label: Text(switch (_locationIssue) {
-                                LocationIssue.serviceOff => 'Activar GPS',
-                                LocationIssue.denied => 'Dar permiso',
-                                LocationIssue.deniedForever => 'Abrir ajustes',
-                                _ => 'Reintentar',
-                              }),
-                            ),
-                          ),
-                        const SizedBox(height: GSSpacing.s3),
-                        DestinationPlate(
-                          controller: _destCtrl,
-                          chosenLabel: _destLabel,
+                        Padding(
+                          padding: const EdgeInsets.only(left: 36),
+                          child: Divider(height: 1, color: GSColors.line),
+                        ),
+                        _PointRow(
+                          dot: _Dot.dest,
+                          label: 'Destino',
+                          value: _destLabel ?? '¿A dónde vas?',
+                          placeholder: _destLabel == null,
+                          editing: editing == _Field.dest,
+                          controller: _query,
+                          focusNode: _focus,
+                          hint: 'Dirección, barrio o lugar',
                           autofocus: _destLabel == null,
-                          onClear: () => _setDest('', null),
+                          onTap: () => _edit(_Field.dest),
+                          onClose: _destLatLng == null
+                              ? null
+                              : () => setState(() => _editing = null),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Intercambiar origen y destino',
+                    tooltip: 'Intercambiar recogida y destino',
                     onPressed: _destLatLng != null && _originLatLng != null
                         ? _swap
                         : null,
@@ -451,14 +634,59 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
               ),
             ),
           ),
+          if (_originLatLng == null && !_locating && editing != _Field.origin)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  GSSpacing.s4, GSSpacing.s2, GSSpacing.s4, 0),
+              child: Row(children: [
+                TextButton.icon(
+                  onPressed: _fixLocation,
+                  icon: const Icon(Icons.my_location_rounded),
+                  label: Text(switch (_locationIssue) {
+                    LocationIssue.serviceOff => 'Activar GPS',
+                    LocationIssue.denied => 'Dar permiso',
+                    LocationIssue.deniedForever => 'Abrir ajustes',
+                    _ => 'Reintentar',
+                  }),
+                ),
+                TextButton(
+                  onPressed: () => _edit(_Field.origin),
+                  child: const Text('Escribir dirección'),
+                ),
+              ]),
+            ),
+          if (_loading && typing)
+            const LinearProgressIndicator(minHeight: 2),
           const SizedBox(height: GSSpacing.s2),
-          if (showFavorites) ...[
+
+          // ── Escribiendo un punto ────────────────────────────────────────
+          if (typing && shortQuery) ...[
+            GSGroup(children: [
+              if (editing == _Field.origin)
+                GSListRow(
+                  icon: Icons.my_location_rounded,
+                  title: 'Usar mi ubicación actual',
+                  subtitle: 'Por GPS. Si no es exacta, escribe la dirección',
+                  onTap: _useMyLocation,
+                ),
+              GSListRow(
+                icon: Icons.pin_drop_rounded,
+                title: 'Elegir en el mapa',
+                subtitle: editing == _Field.origin
+                    ? 'Mueve el pin hasta la puerta donde esperas'
+                    : 'Mueve el pin hasta tu destino',
+                onTap: () => _adjustOnMap(editing),
+              ),
+            ]),
+            const SizedBox(height: GSSpacing.s2),
+          ],
+          if (showSaved) ...[
             if (home != null)
               GSListRow(
                 icon: home.iconData,
                 title: home.typeLabel,
                 subtitle: home.address,
-                onTap: () => _setDest(home.name, home.latLng),
+                onTap: () => pickSaved(home.name, home.latLng),
               ),
             if (home != null && work != null)
               const Divider(indent: GSSpacing.s4),
@@ -467,7 +695,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                 icon: work.iconData,
                 title: work.typeLabel,
                 subtitle: work.address,
-                onTap: () => _setDest(work.name, work.latLng),
+                onTap: () => pickSaved(work.name, work.latLng),
               ),
             // Tus lugares con nombre ("Donde mi mamá", "Gimnasio").
             for (final p in saved) ...[
@@ -479,7 +707,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                 subtitle: p.address,
                 onTap: () {
                   ref.read(favoritesNotifierProvider.notifier).incrementUseCount(p.id);
-                  _setDest(p.name, p.latLng);
+                  pickSaved(p.name, p.latLng);
                 },
               ),
             ],
@@ -492,7 +720,7 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
                 iconColor: GSColors.textMuted,
                 title: _suggestions[i].placeName,
                 subtitle: _suggestions[i].fullAddress,
-                onTap: () => _pickSuggestion(_suggestions[i]),
+                onTap: _loading ? null : () => _pickSuggestion(_suggestions[i]),
               ),
             ],
           if (typing &&
@@ -503,38 +731,55 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
               limited: _searchLimited,
               query: _searchedFor!,
             ),
-          // Sin destino todavía: accesos que siempre sirven (Google Maps).
-          if (typing && _destCtrl.text.trim().length < 3) ...[
-            const SizedBox(height: GSSpacing.s3),
-            GSGroup(children: [
-              GSListRow(
-                icon: Icons.pin_drop_rounded,
-                title: 'Elegir en el mapa',
-                subtitle: 'Te llevamos al mapa: mantén presionado tu destino',
-                onTap: () {
-                  GSToast.show(context,
-                      message: 'Mantén presionado el mapa en tu destino.');
-                  context.go(AppRoutes.home);
-                },
+          if (typing && editing == _Field.dest && shortQuery)
+            Padding(
+              padding: const EdgeInsets.only(top: GSSpacing.s2),
+              child: GSGroup(children: [
+                GSListRow(
+                  icon: Icons.auto_awesome_rounded,
+                  title: 'Pregúntale al asistente',
+                  subtitle: '"¿Cómo llego al terminal de Maicao?"',
+                  onTap: () => context.push(AppRoutes.aiChat),
+                ),
+              ]),
+            ),
+
+          // ── Los dos puntos listos: en qué ir ────────────────────────────
+          if (ready) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  GSSpacing.s4, GSSpacing.s1, GSSpacing.s4, 0),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline_rounded,
+                      size: GSSize.iconSm, color: GSColors.textMuted),
+                  const SizedBox(width: GSSpacing.s1),
+                  Expanded(
+                    child: Text(
+                      _originIsMe
+                          ? 'Te recogemos donde marca tu GPS. ¿No es exacto?'
+                          : 'Te recogemos en el punto que elegiste.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => _adjustOnMap(_Field.origin),
+                    child: const Text('Ajustar'),
+                  ),
+                ],
               ),
-              GSListRow(
-                icon: Icons.auto_awesome_rounded,
-                title: 'Pregúntale al asistente',
-                subtitle: '"¿Cómo llego al terminal de Maicao?"',
-                onTap: () => context.push(AppRoutes.aiChat),
-              ),
-            ]),
-          ],
-          if (_destLatLng != null && _originLatLng != null) ...[
+            ),
             const GSSectionTitle('Elige cómo ir'),
             ModeOptions(
               from: _originLatLng!,
               to: _destLatLng!,
               selected: mode,
-              onChanged: (m) =>
-                  ref.read(selectedModeProvider.notifier).state = m,
+              onChanged: (m) {
+                _rideKey = const Uuid().v4();
+                ref.read(selectedModeProvider.notifier).state = m;
+              },
             ),
-          ] else ...[
+          ] else if (!typing) ...[
             const GSSectionTitle('¿En qué vas?'),
             ModeSelector(
               selected: mode,
@@ -544,16 +789,200 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
           ],
         ],
       ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(GSSpacing.s4, GSSpacing.s2, GSSpacing.s4,
-              GSSpacing.s3 + MediaQuery.of(context).viewInsets.bottom),
-          child: GSButton(
-            label: 'Ver ruta',
-            leadingIcon: Icons.near_me_rounded,
+      bottomNavigationBar: ready
+          ? DecoratedBox(
+              decoration: BoxDecoration(
+                color: GSColors.surface,
+                boxShadow: GSShadow.sheet,
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      GSSpacing.s4, GSSpacing.s3, GSSpacing.s4, GSSpacing.s3),
+                  child: _primaryAction(mode),
+                ),
+              ),
+            )
+          : null,
+    );
+  }
+
+  Widget _primaryAction(String mode) {
+    if (_isRide(mode)) {
+      final q = _quote(mode);
+      final what = mode == 'Taxi' ? 'taxi' : 'mototaxi';
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          GSButton(
+            label: q == null ? 'Pedir $what' : 'Pedir $what · ${formatCop(q.fare)}',
+            leadingIcon: modeIconFor(mode),
+            size: GSButtonSize.lg,
             isLoading: _loading,
-            onPressed: _loading ? null : _search,
+            onPressed: _loading || q == null ? null : () => _requestNow(mode),
           ),
+          const SizedBox(height: GSSpacing.s1),
+          Text(
+            mode == 'Taxi'
+                ? 'Tarifa oficial. Pagas en efectivo al llegar.'
+                : 'Tarifa sugerida: mientras buscamos puedes subirla. '
+                    'Pagas en efectivo al llegar.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      );
+    }
+    return GSButton(
+      label: 'Ver ruta',
+      leadingIcon: Icons.near_me_rounded,
+      isLoading: _loading,
+      onPressed: _loading ? null : _search,
+    );
+  }
+}
+
+enum _Dot { origin, dest }
+
+/// Una fila de la tarjeta: recogida o destino. Escribiendo es un campo; si
+/// no, el punto elegido, que se toca para cambiarlo.
+class _PointRow extends StatelessWidget {
+  const _PointRow({
+    required this.dot,
+    required this.label,
+    required this.value,
+    required this.editing,
+    required this.controller,
+    required this.focusNode,
+    required this.hint,
+    required this.onTap,
+    this.onClose,
+    this.placeholder = false,
+    this.autofocus = false,
+  });
+
+  final _Dot dot;
+  final String label;
+  final String value;
+  final bool editing;
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final String hint;
+  final VoidCallback onTap;
+
+  /// Dejar de escribir y volver a lo que había (null = no hay a qué volver).
+  final VoidCallback? onClose;
+  final bool placeholder;
+  final bool autofocus;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final marker = SizedBox(
+      width: 28,
+      child: Center(
+        child: dot == _Dot.origin
+            ? Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: GSColors.brand, width: 3),
+                ),
+              )
+            : Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: GSColors.text,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+      ),
+    );
+    if (editing) {
+      final style = TextStyle(
+        fontFamily: GSFonts.sans,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: GSColors.text,
+      );
+      return Row(
+        children: [
+          marker,
+          const SizedBox(width: GSSpacing.s2),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              focusNode: focusNode,
+              autofocus: true,
+              textCapitalization: TextCapitalization.sentences,
+              textInputAction: TextInputAction.search,
+              style: style,
+              decoration: InputDecoration(
+                isDense: true,
+                labelText: label,
+                hintText: hint,
+                hintStyle: style.copyWith(color: GSColors.textMuted),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: false,
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: GSSpacing.s3),
+                suffixIcon: controller.text.isNotEmpty
+                    ? IconButton(
+                        tooltip: 'Borrar',
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: controller.clear,
+                      )
+                    : onClose == null
+                        ? null
+                        : IconButton(
+                            tooltip: 'Listo',
+                            icon: const Icon(Icons.close_rounded),
+                            onPressed: onClose,
+                          ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    return GSPressable(
+      onTap: onTap,
+      semanticLabel: '$label: $value. Toca para cambiarlo',
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: GSSize.touchTarget + 8),
+        child: Row(
+          children: [
+            marker,
+            const SizedBox(width: GSSpacing.s2),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: GSSpacing.s2),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label, style: text.labelSmall),
+                    Text(
+                      value,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.titleMedium?.copyWith(
+                          color: placeholder ? GSColors.textMuted : null),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s1),
+              child: Icon(Icons.edit_rounded,
+                  size: GSSize.iconSm, color: GSColors.textMuted),
+            ),
+          ],
         ),
       ),
     );

@@ -27,10 +27,21 @@ Deno.test('autocompletar: solo La Guajira, en español, ordenado desde la person
   assertEquals(b.includedRegionCodes, ['co'])
   assertEquals(b.languageCode, 'es')
   assertEquals(b.sessionToken, 'tok-1')
-  assertEquals(b.locationRestriction.rectangle.low, { latitude: 10.3, longitude: -73.7 })
+  assertEquals(b.locationRestriction?.rectangle.low, { latitude: 10.3, longitude: -73.7 })
   const near = autocompleteBody('muelle', { lat: 11.54, lng: -72.9 })
   assertEquals(near.origin, { latitude: 11.54, longitude: -72.9 })
   assert(!('sessionToken' in near))
+})
+
+Deno.test('autocompletar: con ubicación prioriza la ciudad de la persona', () => {
+  const near = autocompleteBody('calle 15', { lat: 11.54, lng: -72.9 })
+  assertEquals(near.locationBias?.circle.center, { latitude: 11.54, longitude: -72.9 })
+  assertEquals(near.locationBias?.circle.radius, 15000)
+  assert(!('locationRestriction' in near))
+  // Nombra otro municipio: toda La Guajira.
+  const wide = autocompleteBody('hospital manaure', { lat: 11.54, lng: -72.9 }, undefined, true)
+  assert(!('locationBias' in wide))
+  assertEquals(wide.locationRestriction?.rectangle.high, { latitude: 12.6, longitude: -71.0 })
 })
 
 Deno.test('autocompletar: lee nombre y dirección, descarta lo incompleto', () => {

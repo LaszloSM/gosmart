@@ -115,7 +115,7 @@ class ModeOptions extends StatelessWidget {
             const SizedBox(height: GSSpacing.s2),
           ],
           Text(
-            'Tiempos y precios aproximados: la ruta real sale al tocar "Ver ruta".',
+            'Tiempos y precios aproximados: puede haber esperas o trancones.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
@@ -172,16 +172,10 @@ class _OptionRow extends StatelessWidget {
               fontWeight: FontWeight.w800,
             ),
     );
-    final arrivalText = Text(
-      'llegas ${arrivalClock(estimate.minutes)}',
-      maxLines: 1,
-      softWrap: false,
-      style: text.bodySmall?.copyWith(fontFeatures: GSFonts.tabular),
-    );
     return GSPressable(
       onTap: onTap,
       selected: selected,
-      semanticLabel: '$mode, unos ${estimate.minutes} minutos, $price aproximado'
+      semanticLabel: '$mode, ${durationRange(estimate.minutes)}, $price aproximado'
           '${badge == null ? '' : ', $badge'}',
       // La selección cambia de borde y fondo en 150 ms (ease-out), sin saltos.
       child: AnimatedContainer(
@@ -226,7 +220,7 @@ class _OptionRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     [
-                      '${estimate.minutes} min',
+                      durationRange(estimate.minutes),
                       if (_capacity[mode] != null) _capacity[mode]!,
                     ].join(' · '),
                     maxLines: 2,
@@ -264,7 +258,6 @@ class _OptionRow extends StatelessWidget {
                   if (big) ...[
                     const SizedBox(height: GSSpacing.s2),
                     priceText,
-                    arrivalText,
                   ],
                 ],
               ),
@@ -273,7 +266,7 @@ class _OptionRow extends StatelessWidget {
               const SizedBox(width: GSSpacing.s2),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
-                children: [priceText, arrivalText],
+                children: [priceText],
               ),
             ],
           ],

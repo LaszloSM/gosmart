@@ -1,14 +1,17 @@
 // lib/features/trip/trip_history_screen.dart
-// Historial de viajes: todos los viajes de la persona, del más nuevo al más
-// viejo, por tandas de 20 al bajar. Cada uno dice de dónde a dónde, en qué
-// fue (íconos de los tramos), cómo terminó y lo pagado. Los terminados abren
-// su recibo; el que está en curso lleva a la pestaña Viaje.
+// Historial de viajes (estilo InDrive): TODO lo que la persona hizo, del más
+// nuevo al más viejo, por tandas de 20 al bajar (my_trip_history, 026):
+// completados, cancelados, los que nadie aceptó y los hechos como conductor.
+// Cada uno dice de dónde a dónde, en qué, cómo terminó, con quién y cuánto.
+// Tocarlo abre el detalle; "Pedir de nuevo" abre el planificador listo.
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/clock.dart';
 import '../../core/money.dart';
-import '../../models/dispatch_models.dart';
+import '../../models/trip_history.dart';
+import '../../providers/active_route_provider.dart';
 import '../../router/app_router.dart';
 import '../../services/dispatch_service.dart';
 import '../../theme/design_tokens.dart';
@@ -50,7 +53,7 @@ class TripHistoryScreen extends StatefulWidget {
   const TripHistoryScreen({super.key, this.load});
 
   /// Para pruebas: de dónde salen las páginas.
-  final Future<List<ChainedTrip>> Function(int offset)? load;
+  final Future<List<HistoryItem>> Function(int offset)? load;
 
   @override
   State<TripHistoryScreen> createState() => _TripHistoryScreenState();
@@ -58,15 +61,15 @@ class TripHistoryScreen extends StatefulWidget {
 
 class _TripHistoryScreenState extends State<TripHistoryScreen> {
   static const _page = 20;
-  final _trips = <ChainedTrip>[];
+  final _items = <HistoryItem>[];
   final _scroll = ScrollController();
   bool _loading = false;
   bool _done = false;
   bool _failed = false;
 
-  Future<List<ChainedTrip>> _fetch(int offset) =>
+  Future<List<HistoryItem>> _fetch(int offset) =>
       widget.load?.call(offset) ??
-      dispatchService.tripHistory(offset: offset, limit: _page);
+      dispatchService.history(offset: offset, limit: _page);
 
   @override
   void initState() {
@@ -90,10 +93,12 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
       _failed = false;
     });
     try {
-      final next = await _fetch(_trips.length);
+      final next = await _fetch(_items.length);
       if (!mounted) return;
       setState(() {
-        _trips.addAll(next);
+        // Sin repetidos si algo cambió entre páginas.
+        final seen = {for (final i in _items) '${i.kind}:${i.id}'};
+        _items.addAll(next.where((i) => seen.add('${i.kind}:${i.id}')));
         _done = next.length < _page;
       });
     } catch (_) {
@@ -105,7 +110,7 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
 
   Future<void> _refresh() async {
     setState(() {
-      _trips.clear();
+      _items.clear();
       _done = false;
     });
     await _more();
@@ -114,9 +119,9 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final Widget body;
-    if (_trips.isEmpty && _loading) {
+    if (_items.isEmpty && _loading) {
       body = const Center(child: CircularProgressIndicator());
-    } else if (_trips.isEmpty && _failed) {
+    } else if (_items.isEmpty && _failed) {
       body = GSEmptyState(
         icon: Icons.cloud_off_rounded,
         title: 'No pudimos cargar tus viajes',
@@ -124,13 +129,13 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
         actionLabel: 'Reintentar',
         onAction: _more,
       );
-    } else if (_trips.isEmpty) {
+    } else if (_items.isEmpty) {
       body = GSEmptyState(
         icon: Icons.route_rounded,
         title: 'Aún no tienes viajes',
         subtitle:
-            'Cuando hagas tu primer viaje, aquí queda el registro con su recibo.',
-        actionLabel: 'Planear un viaje',
+            'Cuando pidas tu primer viaje, aquí queda todo: también los cancelados.',
+        actionLabel: '¿A dónde vas?',
         onAction: () => context.push(AppRoutes.routePlanner),
       );
     } else {
@@ -141,10 +146,10 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(
               GSSpacing.s4, GSSpacing.s3, GSSpacing.s4, GSSpacing.s8),
-          itemCount: _trips.length + 1,
+          itemCount: _items.length + 1,
           separatorBuilder: (_, __) => const SizedBox(height: GSSpacing.s2),
           itemBuilder: (context, i) {
-            if (i == _trips.length) {
+            if (i == _items.length) {
               if (_loading) {
                 return const Padding(
                   padding: EdgeInsets.all(GSSpacing.s4),
@@ -155,9 +160,16 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
                 return TextButton(
                     onPressed: _more, child: const Text('Reintentar'));
               }
-              return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.all(GSSpacing.s4),
+                child: Text(
+                  _items.length == 1 ? '1 viaje' : '${_items.length} viajes',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              );
             }
-            return TripHistoryTile(trip: _trips[i]);
+            return TripHistoryTile(item: _items[i]);
           },
         ),
       );
@@ -170,41 +182,58 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
   }
 }
 
+/// Abre el planificador con el mismo origen y destino ("Pedir de nuevo").
+void repeatTrip(BuildContext context, WidgetRef ref, HistoryItem item) {
+  final from = item.from, to = item.to;
+  if (from == null || to == null) return;
+  ref.read(pendingPlanProvider.notifier).state = PlannerPreset(
+    origin: from,
+    originLabel: item.originLabel ?? 'Salida del viaje anterior',
+    dest: to,
+    destLabel: item.destLabel ?? 'Destino del viaje anterior',
+  );
+  context.push(AppRoutes.routePlanner);
+}
+
+/// Color e ícono del estado: marca para lo activo, tinta para lo hecho y
+/// gris para lo cancelado (rojo/verde son solo de la vía).
+(IconData, Color) historyToneStyle(HistoryTone t) => switch (t) {
+      HistoryTone.done => (Icons.check_circle_rounded, GSColors.text),
+      HistoryTone.active => (Icons.navigation_rounded, GSColors.brand),
+      HistoryTone.cancelled => (Icons.cancel_rounded, GSColors.textMuted),
+    };
+
 /// Un viaje del historial.
-class TripHistoryTile extends StatelessWidget {
-  const TripHistoryTile({super.key, required this.trip});
-  final ChainedTrip trip;
+class TripHistoryTile extends ConsumerWidget {
+  const TripHistoryTile({super.key, required this.item});
+  final HistoryItem item;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final text = Theme.of(context).textTheme;
-    final t = trip;
-    final (statusLabel, statusIcon) = switch (t.status) {
-      'completed' => ('Completado', Icons.check_circle_rounded),
-      'cancelled' => ('Cancelado', Icons.cancel_rounded),
-      'in_progress' => ('En curso', Icons.navigation_rounded),
-      _ => ('Planeado', Icons.schedule_rounded),
-    };
-    final active = !t.isFinished;
+    final t = item;
+    final (statusLabel, tone) = t.statusText;
+    final (statusIcon, statusColor) = historyToneStyle(tone);
+    final price = t.price;
+    final ride = t.ride;
+    final who = ride?.otherName == null
+        ? null
+        : t.asDriver
+            ? 'Llevaste a ${ride!.otherName}'
+            : [ride!.otherName!, if (ride.plate != null) ride.plate!].join(' · ');
     final modes = <String>[
-      for (final l in t.legs)
-        if (l.mode != 'walk') l.mode,
+      for (final m in t.modes)
+        if (m != 'walk') m,
     ];
-    final paid = t.paidTotal;
-    final VoidCallback? onTap = switch (t.status) {
-      'completed' => () => context.push('${AppRoutes.receipt}?id=${t.id}'),
-      'planned' || 'in_progress' => () => context.go(AppRoutes.trip),
-      _ => null,
-    };
 
     return Semantics(
-      button: onTap != null,
+      button: true,
       child: Material(
         color: GSColors.surface,
         borderRadius: BorderRadius.circular(GSRadius.lg),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: onTap,
+          onTap: () => context.push(AppRoutes.tripDetail, extra: t),
           child: Padding(
             padding: const EdgeInsets.all(GSSpacing.s4),
             child: Column(
@@ -214,19 +243,23 @@ class TripHistoryTile extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        t.createdAt == null ? 'Viaje' : tripWhen(t.createdAt!),
+                        [
+                          t.createdAt == null ? 'Viaje' : tripWhen(t.createdAt!),
+                          if (t.asDriver) 'Como conductor',
+                        ].join(' · '),
+                        // Con el precio al lado: aire entre los dos.
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: text.labelLarge
                             ?.copyWith(color: GSColors.textMuted),
                       ),
                     ),
-                    Icon(statusIcon,
-                        size: GSSize.iconSm,
-                        color: active ? GSColors.brand : GSColors.textMuted),
-                    const SizedBox(width: GSSpacing.s1),
-                    Text(statusLabel,
-                        style: text.labelLarge?.copyWith(
-                            color:
-                                active ? GSColors.brand : GSColors.textMuted)),
+                    if (price != null) ...[
+                      const SizedBox(width: GSSpacing.s3),
+                      Text(formatCop(price),
+                          style: text.titleMedium
+                              ?.copyWith(fontFeatures: GSFonts.tabular)),
+                    ],
                   ],
                 ),
                 const SizedBox(height: GSSpacing.s2),
@@ -240,27 +273,42 @@ class TripHistoryTile extends StatelessWidget {
                 const SizedBox(height: GSSpacing.s3),
                 Row(
                   children: [
-                    for (final m in modes.isEmpty ? const ['walk'] : modes)
+                    for (final m in modes.isEmpty ? const ['walk'] : modes.take(3))
                       Padding(
-                        padding: const EdgeInsets.only(right: GSSpacing.s2),
+                        padding: const EdgeInsets.only(right: GSSpacing.s1),
                         child: Tooltip(
                           message: legModeLabel(m),
                           child: Icon(legModeIcon(m),
                               size: GSSize.iconMd, color: GSColors.text),
                         ),
                       ),
-                    const Spacer(),
-                    if (paid > 0)
-                      Text(formatCop(paid),
-                          style: text.titleMedium
-                              ?.copyWith(fontFeatures: GSFonts.tabular)),
-                    if (onTap != null) ...[
-                      const SizedBox(width: GSSpacing.s1),
-                      Icon(Icons.chevron_right_rounded,
-                          color: GSColors.textMuted),
-                    ],
+                    const SizedBox(width: GSSpacing.s1),
+                    Icon(statusIcon, size: GSSize.iconSm, color: statusColor),
+                    const SizedBox(width: GSSpacing.s1),
+                    Expanded(
+                      child: Text(
+                        who == null ? statusLabel : '$statusLabel · $who',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: text.labelLarge?.copyWith(color: statusColor),
+                      ),
+                    ),
+                    Icon(Icons.chevron_right_rounded, color: GSColors.textMuted),
                   ],
                 ),
+                // Repetir en un toque, en su propia línea (no aprieta el estado).
+                if (t.canRepeat && tone != HistoryTone.active)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => repeatTrip(context, ref, t),
+                      style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s1),
+                          minimumSize: const Size(0, GSSize.touchTarget)),
+                      icon: const Icon(Icons.replay_rounded, size: GSSize.iconSm),
+                      label: const Text('Pedir de nuevo'),
+                    ),
+                  ),
               ],
             ),
           ),

@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:gosmart/features/routes/route_planner_screen.dart';
 import 'package:gosmart/features/trip/trip_screen.dart';
 import 'package:gosmart/models/dispatch_models.dart';
+import 'package:gosmart/models/trip_history.dart';
 import 'package:gosmart/providers/active_route_provider.dart';
 import 'package:gosmart/providers/auth_provider.dart';
 import 'package:gosmart/providers/dispatch_provider.dart';
@@ -39,7 +40,7 @@ void main() {
     expect(sinTramos.canRepeat, isFalse);
   });
 
-  testWidgets('Repetir abre el planificador con los dos puntos del viaje',
+  testWidgets('Pedir de nuevo abre el planificador con los dos puntos del viaje',
       (tester) async {
     final container = ProviderContainer(overrides: [
       activeTripProvider.overrideWith((ref) async => null),
@@ -47,6 +48,21 @@ void main() {
       currentUserProvider.overrideWithValue(null),
       favoritePlacesProvider.overrideWith((ref) async => []),
       recentTripsProvider.overrideWith((ref) async => [RecentTrip.fromRow(_row)]),
+      recentHistoryProvider.overrideWith((ref) async => [
+            HistoryItem.fromJson({
+              'kind': 'trip',
+              'id': 't1',
+              'status': 'completed',
+              'created_at': '2026-10-29T15:00:00Z',
+              'origin': 'Parque Padilla',
+              'destination': 'Universidad de La Guajira',
+              'modes': ['mototaxi'],
+              'from': {'lat': 11.5448, 'lng': -72.9079},
+              'to': {'lat': 11.5275, 'lng': -72.8880},
+              'total_paid': 6000,
+              'requests': 1,
+            }),
+          ]),
     ]);
     addTearDown(container.dispose);
     final router = GoRouter(initialLocation: AppRoutes.trip, routes: [
@@ -60,9 +76,9 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.text('Repetir', skipOffstage: false));
+    await tester.ensureVisible(find.text('Pedir de nuevo', skipOffstage: false));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Repetir'));
+    await tester.tap(find.text('Pedir de nuevo'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
 

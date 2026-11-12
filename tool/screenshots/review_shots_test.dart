@@ -13,6 +13,9 @@ import 'package:gosmart/features/routes/widgets/mode_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gosmart/features/trip/trip_detail_screen.dart';
+import 'package:gosmart/features/trip/trip_history_screen.dart';
+import 'package:gosmart/models/trip_history.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:gosmart/features/ai_chat/ai_chat_screen.dart';
 import 'package:gosmart/features/auth/login_screen.dart';
@@ -112,6 +115,7 @@ void main() {
     ], updatedAt: DateTime.now().subtract(const Duration(minutes: 12)));
     var routeOn = false;
     var guest = true;
+    var shotMode = 'Colectivo';
     final ov = <Override>[
       corridorStatusProvider.overrideWith((ref) async => status),
       isGuestProvider.overrideWith((ref) => guest),
@@ -121,7 +125,7 @@ void main() {
       profileProvider.overrideWith((ref) => _P()),
       aiConversationProvider.overrideWith((ref) => _Ai()),
       activeRouteProvider.overrideWith((ref) => routeOn ? route : null),
-      selectedModeProvider.overrideWith((ref) => 'Colectivo'),
+      selectedModeProvider.overrideWith((ref) => shotMode),
       mapAlertsProvider.overrideWith(_Alerts.new),
       walletProvider.overrideWith((ref) async => Wallet(id: 'w', userId: 'u', balance: 37500, cardNumber: 'GS-1234-5678-9012', cardStatus: 'active', createdAt: DateTime(2026))),
       walletTransactionsProvider.overrideWith((ref, l) async => [
@@ -181,8 +185,52 @@ void main() {
     guest = false;
     await shot(phase(null), 'phone-trip-ask');
     await shot(phase(req, o: offers), 'phone-trip-offers', settle: false);
+    await shot(phase(req), 'phone-trip-searching', settle: false);
     await shot(phase(RideRequest(id: 'r', service: 'mototaxi', status: RideStatus.accepted, offeredFare: 5000,
         agreedFare: 5500, expiresAt: DateTime.now()), d: drv), 'phone-trip-coming');
+    // Pedir en un toque: los dos puntos listos, opciones y "Pedir mototaxi · $X".
+    shotMode = 'Mototaxi';
+    await shot(const RoutePlannerScreen(), 'phone-planner-ready', settle: false, extra: [
+      pendingPlanProvider.overrideWith((ref) => const PlannerPreset(
+          origin: LatLng(11.5444, -72.9072), originLabel: 'Calle 15 # 10-20, Riohacha',
+          dest: LatLng(11.5275, -72.8880), destLabel: 'Universidad de La Guajira')),
+    ]);
+    shotMode = 'Colectivo';
+    // Historial completo y detalle estilo InDrive.
+    final hist = [
+      HistoryItem.fromJson({'kind': 'trip', 'id': 'h1', 'status': 'completed',
+        'created_at': DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
+        'origin': 'Parque Padilla', 'destination': 'Universidad de La Guajira', 'modes': ['mototaxi'],
+        'from': {'lat': 11.54, 'lng': -72.90}, 'to': {'lat': 11.52, 'lng': -72.88}, 'total_paid': 5500, 'requests': 1,
+        'last_ride': {'id': 'r1', 'service': 'mototaxi', 'status': 'completed', 'offered_fare': 5000,
+          'agreed_fare': 5500, 'other_name': 'Wilmer', 'plate': 'ABC12D', 'pay_method': 'cash'}}),
+      HistoryItem.fromJson({'kind': 'trip', 'id': 'h2', 'status': 'cancelled',
+        'created_at': DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
+        'origin': 'Calle 15 # 10-20', 'destination': 'Terminal de Riohacha', 'modes': ['taxi'],
+        'from': {'lat': 11.54, 'lng': -72.90}, 'to': {'lat': 11.53, 'lng': -72.91}, 'requests': 1,
+        'last_ride': {'id': 'r2', 'service': 'taxi', 'status': 'expired', 'offered_fare': 9000}}),
+      HistoryItem.fromJson({'kind': 'ride', 'id': 'h3', 'service': 'mototaxi', 'status': 'completed',
+        'created_at': DateTime.now().subtract(const Duration(days: 3)).toIso8601String(),
+        'origin': 'Barrio Los Almendros', 'destination': 'Hospital', 'offered_fare': 4000,
+        'agreed_fare': 4500, 'other_name': 'Ana', 'paid': 4500}),
+    ];
+    await shot(TripHistoryScreen(load: (o) async => o == 0 ? hist : []), 'phone-history');
+    await shot(TripDetailScreen(item: hist[0], showMap: false, load: (_) async => TripDetail.fromJson({
+      'kind': 'trip', 'id': 'h1', 'status': 'completed', 'origin': 'Parque Padilla',
+      'destination': 'Universidad de La Guajira', 'total_paid': 5500,
+      'created_at': DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
+      'legs': [{'seq': 0, 'mode': 'mototaxi', 'status': 'completed',
+        'from': {'lat': 11.54, 'lng': -72.90}, 'to': {'lat': 11.52, 'lng': -72.88},
+        'rides': [
+          {'id': 'a', 'service': 'mototaxi', 'status': 'expired', 'offered_fare': 5000,
+           'created_at': DateTime.now().subtract(const Duration(hours: 2, minutes: 6)).toIso8601String()},
+          {'id': 'b', 'service': 'mototaxi', 'status': 'completed', 'offered_fare': 5500, 'agreed_fare': 5500,
+           'other_name': 'Wilmer', 'plate': 'ABC12D', 'vehicle': 'Bajaj negra', 'pay_method': 'cash', 'my_stars': 5,
+           'created_at': DateTime.now().subtract(const Duration(hours: 2, minutes: 2)).toIso8601String(),
+           'accepted_at': DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
+           'finished_at': DateTime.now().subtract(const Duration(hours: 1, minutes: 46)).toIso8601String()},
+        ]}],
+    })), 'phone-trip-detail');
     await shot(phase(RideRequest(id: 'r', service: 'mototaxi', status: RideStatus.inProgress, offeredFare: 5000,
         agreedFare: 5500, expiresAt: DateTime.now()), d: drv), 'phone-trip-riding');
     final trip = ChainedTrip.fromJson({

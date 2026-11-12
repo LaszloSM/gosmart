@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/supabase_client.dart';
 import '../models/dispatch_models.dart';
+import '../models/trip_history.dart';
 import '../models/route_result.dart';
 
 /// Error del servidor con su código ('already_taken', 'no_seats'…).
@@ -27,6 +28,7 @@ class DispatchException implements Exception {
         'blocked_unpaid' => 'Tienes viajes sin pagar. Págalos para volver a pedir.',
         'reason_required' => 'Cuéntanos por qué cancelas: el conductor ya viene.',
         'invalid_transition' => 'Ese viaje ya cambió de estado. Revisa e intenta de nuevo.',
+        'invalid_fare' => 'La tarifa nueva debe ser mayor que la anterior.',
         _ => 'No se pudo. Revisa tu conexión e intenta de nuevo.',
       };
 
@@ -34,6 +36,7 @@ class DispatchException implements Exception {
     'already_taken', 'no_seats', 'dispatch_disabled', 'request_already_open',
     'driver_busy', 'not_active_driver', 'trip_in_progress', 'too_far',
     'offer_gone', 'blocked_unpaid', 'invalid_transition', 'reason_required', 'previous_leg_open', 'own_request',
+    'invalid_fare',
   ];
 
   static Never rethrowFrom(Object e) {
@@ -92,6 +95,60 @@ class DispatchService {
         'p_idempotency_key': idempotencyKey,
         'p_trip_leg_id': tripLegId,
       });
+
+  /// Pedir en un toque (026): crea el viaje de un tramo, lo pone a esperar y
+  /// publica la solicitud, todo en el servidor. Con la misma [idempotencyKey]
+  /// un reintento devuelve lo mismo. Devuelve el id del viaje.
+  Future<String> quickRide({
+    required String service,
+    required LatLng origin,
+    required String originLabel,
+    required LatLng dest,
+    required String destLabel,
+    required int fare,
+    required int minutes,
+    required String idempotencyKey,
+  }) async {
+    final res = await _rpc<dynamic>('quick_ride', {
+      'p_service': service,
+      'p_origin_lat': origin.latitude,
+      'p_origin_lng': origin.longitude,
+      'p_origin_label': originLabel,
+      'p_dest_lat': dest.latitude,
+      'p_dest_lng': dest.longitude,
+      'p_dest_label': destLabel,
+      'p_fare': fare,
+      'p_minutes': minutes,
+      'p_idempotency_key': idempotencyKey,
+    });
+    return (res as Map)['trip_id'] as String;
+  }
+
+  /// Subir la tarifa mientras se busca (reinicia los 3 minutos).
+  Future<RideRequest> raiseFare(String requestId, int fare) async {
+    final row = await _rpc<dynamic>(
+        'ride_raise_fare', {'p_request_id': requestId, 'p_fare': fare});
+    return RideRequest.fromJson(Map<String, dynamic>.from(row as Map));
+  }
+
+  /// Historial completo (026): pasajero y conductor, también cancelados.
+  Future<List<HistoryItem>> history({int offset = 0, int limit = 20}) async {
+    final rows = await _rpc<dynamic>(
+        'my_trip_history', {'p_offset': offset, 'p_limit': limit});
+    return [
+      for (final r in (rows as List?) ?? const [])
+        HistoryItem.fromJson(Map<String, dynamic>.from(r as Map)),
+    ];
+  }
+
+  /// Detalle de un renglón del historial; null si no existe o no es tuyo.
+  Future<TripDetail?> historyDetail(HistoryItem item) async {
+    final row = item.asDriver
+        ? await _rpc<dynamic>('my_ride_detail', {'p_request_id': item.id})
+        : await _rpc<dynamic>('my_trip_detail', {'p_trip_id': item.id});
+    if (row is! Map) return null;
+    return TripDetail.fromJson(Map<String, dynamic>.from(row));
+  }
 
   Future<RideRequest?> fetchRequest(String id) async {
     final row =

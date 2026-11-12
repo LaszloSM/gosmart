@@ -240,7 +240,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 }
 
 /// Ruta activa, como el resumen de InDrive/DiDi antes de pedir: el vehículo
-/// grande, a qué hora llegas, el precio y los datos en píldoras. Entra
+/// grande, cuánto dura (aprox.), el precio y los datos en píldoras. Entra
 /// subiendo 16 dp con un fundido (250 ms, ease-out); la X la quita.
 class _RouteCard extends ConsumerWidget {
   const _RouteCard({required this.route});
@@ -307,7 +307,7 @@ class _RouteCard extends ConsumerWidget {
                         const SizedBox(height: 2),
                         Text(
                           route.destinationLabel == null
-                              ? 'Llegas ${arrivalClock(route.durationMin)}'
+                              ? 'Unos ${durationRange(route.durationMin)}'
                               : 'A ${route.destinationLabel}',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -347,14 +347,12 @@ class _RouteCard extends ConsumerWidget {
                   spacing: GSSpacing.s2,
                   runSpacing: GSSpacing.s2,
                   children: [
+                    // Duración en rango, nunca hora de llegada: puede haber
+                    // esperas y trancones.
                     GSMetaChip(
                         icon: Icons.schedule_rounded,
-                        label: '${route.durationMin} min'),
+                        label: durationRange(route.durationMin)),
                     GSMetaChip(icon: Icons.route_rounded, label: '$km km'),
-                    if (route.destinationLabel != null)
-                      GSMetaChip(
-                          icon: Icons.flag_rounded,
-                          label: 'Llegas ${arrivalClock(route.durationMin)}'),
                     if (fareLabel != null)
                       GSMetaChip(
                           icon: Icons.sell_rounded,

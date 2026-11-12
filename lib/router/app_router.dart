@@ -32,6 +32,8 @@ import '../features/driver/driver_home_screen.dart';
 import '../features/trip/trip_screen.dart';
 import '../features/admin/admin_screen.dart';
 import '../features/trip/receipt_screen.dart';
+import '../features/trip/trip_detail_screen.dart';
+import '../models/trip_history.dart';
 import '../features/payments/scan_pay_screen.dart';
 import '../features/payments/charge_screen.dart';
 import '../features/driver/driver_signup_screen.dart';
@@ -130,6 +132,7 @@ abstract class AppRoutes {
   static const emergencyContacts = '/safety/contacts';
   static const savedPlaces      = '/places';         // Casa, Trabajo y hasta 10 con nombre
   static const tripHistory      = '/trip/history';   // todos tus viajes
+  static const tripDetail       = '/trip/history/detail'; // extra: HistoryItem
   static const privacy          = '/legal/privacy';
   static const driver           = '/driver';
   static const report           = '/report';
@@ -265,6 +268,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.tripHistory,
         pageBuilder: (context, state) => _page(state, const TripHistoryScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.tripDetail,
+        // extra se pierde al recargar: sin él, de vuelta al historial.
+        pageBuilder: (context, state) => _page(
+            state,
+            state.extra is HistoryItem
+                ? TripDetailScreen(item: state.extra as HistoryItem)
+                : const TripHistoryScreen()),
       ),
       GoRoute(
         path: AppRoutes.emergencyContacts,

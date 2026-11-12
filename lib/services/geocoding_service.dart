@@ -9,6 +9,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import '../core/city_rank.dart';
 import '../core/supabase_client.dart';
 import '../models/geocode_suggestion.dart';
 
@@ -104,6 +105,9 @@ class GeocodingService {
       'session': _session,
       if (proximity != null)
         'near': {'lat': proximity.latitude, 'lng': proximity.longitude},
+      // Nombra otro municipio ("hospital de Manaure"): buscar en toda La
+      // Guajira. Si no, Google prioriza los ~15 km alrededor de la persona.
+      if (namedOtherTown(q) != null) 'wide': true,
     });
     final items = [
       for (final it in data['items'] as List? ?? const [])

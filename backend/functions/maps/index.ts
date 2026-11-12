@@ -1,6 +1,6 @@
 // backend/functions/maps/index.ts
 // Proxy de Google Maps Platform para la app: la clave nunca va en el APK.
-//   { action: 'autocomplete', input, near?: {lat,lng}, session? } → { items }
+//   { action: 'autocomplete', input, near?: {lat,lng}, wide?, session? } → { items }
 //   { action: 'details', place_id, session? }                    → { place }
 //   { action: 'route', from, to, mode: 'walk'|'drive' }           → { route }
 //   { action: 'reverse', at: {lat,lng} }                          → { address }
@@ -77,7 +77,7 @@ serve(async (req) => {
         const input = String(b.input ?? '').trim()
         if (input.length < 2 || input.length > 120) return json({ items: [] })
         const near = b.near ? point(b.near) : null
-        const r = await google(AUTOCOMPLETE_URL, key, '', autocompleteBody(input, near, token(b.session)))
+        const r = await google(AUTOCOMPLETE_URL, key, '', autocompleteBody(input, near, token(b.session), b.wide === true))
         return json(r.error ? { error: r.error } : { items: parseAutocomplete(r.data) })
       }
       case 'details': {

@@ -17,6 +17,7 @@ import 'dart:math' as math;
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
+import '../core/city_rank.dart';
 import '../core/supabase_client.dart';
 import '../core/telemetry.dart';
 import '../models/geocode_suggestion.dart';
@@ -256,13 +257,15 @@ class LayeredPlaceSearch {
     for (final s in ext ?? const <GeocodeSuggestion>[]) {
       if (!merged.any((m) => isSamePlace(m, s))) merged.add(s);
     }
-    // Primero lo que más se parece a lo escrito (con empate, el directorio,
+    // Primero tu ciudad (Riohacha o Maicao), luego la otra y el corredor;
+    // otros municipios solo si los nombras (city_rank.dart). Dentro de cada
+    // ciudad, lo que más se parece a lo escrito (con empate, el directorio,
     // que ya va adelante): "Hospital … de los Remedios" no debe dar la
     // Catedral del mismo nombre como primera opción.
-    final score = {for (final s in merged) s: placeRelevance(query, s)};
-    mergeSortStable(merged, (a, b) => score[b]!.compareTo(score[a]!));
+    final ranked = rankByCity(query, merged,
+        near: near, relevance: (s) => placeRelevance(query, s));
     return PlaceSearchResult(
-      merged.take(maxResults).toList(),
+      ranked.take(maxResults).toList(),
       limited: dir == null || ext == null,
     );
   }
@@ -352,7 +355,13 @@ bool isSamePlace(GeocodeSuggestion a, GeocodeSuggestion b) {
   final na = norm(a.placeName), nb = norm(b.placeName);
   final la = a.latLng, lb = b.latLng;
   final similarName = na == nb || na.contains(nb) || nb.contains(na);
-  if (la == null || lb == null) return similarName;
+  if (la == null || lb == null) {
+    // Sin punto: el mismo nombre en dos municipios ("Calle 1" de Riohacha y
+    // de Maicao) son dos lugares.
+    final ta = townIn('${a.placeName} ${a.fullAddress}');
+    final tb = townIn('${b.placeName} ${b.fullAddress}');
+    return similarName && (ta == null || tb == null || ta == tb);
+  }
   return similarName && _meters(la, lb) < 150;
 }
 

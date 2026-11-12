@@ -37,13 +37,19 @@ int suggestedFare(TripLegRow l) {
 }
 
 class CurrentLegPanel extends ConsumerWidget {
-  const CurrentLegPanel({super.key, required this.leg});
+  const CurrentLegPanel({super.key, required this.leg, this.tripId, this.soleLeg = false});
   final TripLegRow leg;
+
+  /// Viaje del tramo; con [soleLeg] cancelar la solicitud cancela el viaje.
+  final String? tripId;
+
+  /// El viaje es solo este tramo (pedido en un toque).
+  final bool soleLeg;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return switch (leg.mode) {
-      'mototaxi' || 'taxi' => RideLegPanel(leg: leg),
+      'mototaxi' || 'taxi' => RideLegPanel(leg: leg, tripId: tripId, soleLeg: soleLeg),
       'colectivo' ||
       'transpadilla' ||
       'intermunicipal' =>
@@ -247,8 +253,21 @@ class _ScheduledLegPanelState extends ConsumerState<ScheduledLegPanel> {
 
 // ── Mototaxi / taxi (estilo InDrive) ────────────────────────────────────────
 class RideLegPanel extends ConsumerStatefulWidget {
-  const RideLegPanel({super.key, required this.leg, this.pollEvery, this.preview});
+  const RideLegPanel({
+    super.key,
+    required this.leg,
+    this.pollEvery,
+    this.preview,
+    this.tripId,
+    this.soleLeg = false,
+  });
   final TripLegRow leg;
+
+  /// Viaje del tramo. Con [soleLeg] (viaje de un solo tramo, pedido en un
+  /// toque) cancelar la solicitud cancela el viaje entero: no queda un viaje
+  /// vacío en pantalla esperando otro "Pedir".
+  final String? tripId;
+  final bool soleLeg;
 
   /// Solo para pruebas y capturas: arranca en ese estado sin ir a la red.
   final ({RideRequest? request, List<RideOffer> offers, AssignedDriver? driver, bool paid})?
@@ -458,6 +477,51 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
     }
   }
 
+  /// Subir la tarifa mientras se busca (como InDrive): el mismo pedido con
+  /// otro precio y otros 3 minutos; los conductores ven el precio nuevo.
+  Future<void> _raiseFare(int by) async {
+    final r = _request;
+    if (r == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    try {
+      final fresh = await dispatchService.raiseFare(r.id, r.offeredFare + by);
+      if (!mounted) return;
+      setState(() {
+        _request = fresh;
+        _fare = fresh.offeredFare;
+      });
+      GSToast.showWithMessenger(messenger,
+          message: 'Ahora ofreces ${formatCop(fresh.offeredFare)}.',
+          type: GSToastType.success);
+      await _poll();
+    } on DispatchException catch (e) {
+      GSToast.showWithMessenger(messenger,
+          message: e.message, type: GSToastType.error);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Cancelar el viaje de un solo tramo cuando nadie lo aceptó (no hay
+  /// solicitud viva que cancelar).
+  Future<void> _cancelSoleTrip() async {
+    final trip = widget.tripId;
+    if (trip == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final choice = await showCancelSheet(context, driverAssigned: false, what: 'el viaje');
+    if (choice == null || !mounted) return;
+    try {
+      await dispatchService.cancelTrip(trip, reason: choice.reason);
+      ref.invalidate(activeTripProvider);
+      ref.invalidate(recentTripsProvider);
+        ref.invalidate(recentHistoryProvider);
+    } on DispatchException catch (e) {
+      GSToast.showWithMessenger(messenger,
+          message: e.message, type: GSToastType.error);
+    }
+  }
+
   Future<void> _cancelRequest() async {
     final r = _request;
     if (r == null) return;
@@ -468,6 +532,17 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
         what: r.status == RideStatus.accepted ? 'el viaje' : 'la solicitud');
     if (choice == null || !mounted) return;
     try {
+      final trip = widget.tripId;
+      if (widget.soleLeg && trip != null) {
+        await dispatchService.cancelTrip(trip, reason: choice.reason);
+        _timer?.cancel();
+        ref.read(tripDriverProvider.notifier).state = null;
+        ref.invalidate(activeTripProvider);
+        ref.invalidate(recentTripsProvider);
+        ref.invalidate(recentHistoryProvider);
+        GSToast.showWithMessenger(messenger, message: 'Cancelaste el viaje.');
+        return;
+      }
       await dispatchService.cancelRide(r.id, reason: choice.reason);
     } on DispatchException catch (e) {
       GSToast.showWithMessenger(messenger,
@@ -626,7 +701,9 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
           ),
         const SizedBox(height: GSSpacing.s4),
         GSButton(
-          label: 'Pedir $label por ${formatCop(_fare)}',
+          label: expired
+              ? 'Buscar otra vez por ${formatCop(_fare)}'
+              : 'Pedir $label por ${formatCop(_fare)}',
           leadingIcon: vehicleIcon(_service),
           size: GSButtonSize.lg,
           isLoading: _busy,
@@ -637,6 +714,12 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
                   _sendRequest();
                 },
         ),
+        if (widget.soleLeg && widget.tripId != null)
+          TextButton(
+            onPressed: _busy ? null : _cancelSoleTrip,
+            style: TextButton.styleFrom(foregroundColor: GSColors.textMuted),
+            child: const Text('Cancelar viaje'),
+          ),
       ],
     );
   }
@@ -679,6 +762,30 @@ class _RideLegPanelState extends ConsumerState<RideLegPanel> {
         const SizedBox(height: GSSpacing.s3),
         CountdownBar(left: left, total: const Duration(minutes: 3)),
         const SizedBox(height: GSSpacing.s3),
+        // Mototaxi no tiene tarifa oficial: subirla sin volver a pedir.
+        if (_service == 'mototaxi' && _offers.isEmpty) ...[
+          Text('¿Nadie acepta? Sube tu oferta',
+              textAlign: TextAlign.center, style: text.bodyMedium),
+          const SizedBox(height: GSSpacing.s2),
+          Row(
+            children: [
+              for (final by in const [500, 1000, 2000]) ...[
+                if (by != 500) const SizedBox(width: GSSpacing.s2),
+                Expanded(
+                  child: GSButton(
+                    // "+" y monto juntos (sin corte de línea entre ellos).
+                    label: '+\u2060${formatCop(by)}',
+                    variant: GSButtonVariant.outline,
+                    size: GSButtonSize.sm,
+                    semanticLabel: 'Subir la oferta ${formatCop(by)}',
+                    onPressed: _busy ? null : () => _raiseFare(by),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: GSSpacing.s3),
+        ],
         for (var i = 0; i < _offers.length; i++)
           Padding(
             padding: const EdgeInsets.only(bottom: GSSpacing.s2),

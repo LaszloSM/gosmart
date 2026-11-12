@@ -89,6 +89,7 @@ All migrations live in `supabase/migrations/`. Run them in order in the Supabase
 | `023_driver_earnings.sql` | RPC `driver_earnings()`: hoy y 7 días (total, viajes, efectivo confirmado) + calificación del conductor (solo lo propio). |
 | `024_avatars.sql` | Bucket público `avatars` (2 MB, jpeg/png/webp) para la foto de perfil; cada usuario escribe solo `'<uid>/…'`. Antes no existía y subir la foto fallaba siempre. Prueba: `supabase/tests/024_avatars_test.sql` (trae su propio `storage` mínimo). |
 | `025_mvp_real.sql` | Sin simulaciones: borra el conductor de demo (`demo_autodriver`, tarea pg_cron, funciones y cuentas `@example.com`). `ride_cancel(request, reason)` con motivos cerrados (obligatorio si ya hay conductor; `ride_transition(...,'cancelled')` pasa por ahí), `cancel_trip(trip, reason)` también cancela la solicitud del tramo. Trigger `favorite_places_guard`: máx. 10 lugares `custom`, nombre 1–40. Plan: `docs/MVP_SALIDA.md`. |
+| `026_quick_ride_history.sql` | Pedir en un toque: `quick_ride(service, origen, destino, fare, minutes, key)` crea el viaje de un tramo, lo pone a esperar y publica la solicitud en una llamada (idempotente); antes cierra solos los viajes de un tramo que quedaron "en curso" (pagados → hechos; vencidos/cancelados → cancelados) para que no bloqueen con `trip_in_progress`. `ride_raise_fare(request, fare)`: subir la oferta buscando (reinicia 3 min). Historial: `my_trip_history(offset, limit)` (pasajero + conductor, todos los estados, con conductor/placa/pago/motivo), `my_trip_detail(trip)`, `my_ride_detail(request)`. |
 | `010_wallet_hardening.sql` | **Security fix for 008.** Drops user UPDATE on `wallets` and INSERT on `wallet_transactions`; revokes `recharge_wallet` from clients; adds `idempotency_key`; new RPC `wallet_recharge_simulated(p_amount, p_idempotency_key)` that uses `auth.uid()`. Backfills wallets for older users. |
 
 **SQL tests:** `supabase/tests/` runs on a plain Postgres 16 (CI job `sql-tests`). `_supabase_stub.sql`
@@ -115,6 +116,7 @@ After running 005+, PostgREST reloads automatically via `NOTIFY pgrst, 'reload s
 lib/
 ├── core/
 │   ├── env.dart                  # Typed access to .env via flutter_dotenv
+│   ├── city_rank.dart            # "Tu ciudad primero": rankByCity / tierOf / namedOtherTown (puro, probado)
 │   ├── money.dart                # formatCop(37000) → "$37.000" (signed: "+$10.000" / "−$2.500")
 │   ├── region.dart               # GSRegion: Riohacha/Maicao centers + La Guajira bbox
 │   ├── telemetry.dart            # Optional Sentry; Telemetry.degraded(service, code)
@@ -151,6 +153,7 @@ lib/
 │   ├── profile_model.dart        # ProfileModel (includes cedula, city, birthDate)
 │   ├── transaction_model.dart    # TransactionModel
 │   ├── wallet_model.dart         # Wallet (table `wallets`; SEPARATE from CardModel)
+│   ├── trip_history.dart         # HistoryItem / TripDetail / RideCard (my_trip_history, 026); statusText en palabras
 │   ├── wallet_transaction_model.dart # WalletTransactionModel, WalletTxType enum
 │   └── geocode_suggestion.dart   # Place suggestion: placeName, fullAddress, latLng (null until resolved for Google), placeId
 ├── planner/                      # Planificador en el celular (D6), Dart puro
@@ -227,6 +230,8 @@ All providers in `lib/providers/`. Pattern: `StateNotifierProvider<Notifier, Asy
 | `appModeProvider` | `StateNotifierProvider<…, AppMode>` | passenger / driver (InDrive switch), `app_mode_v1`; splash opens `/driver` when driver |
 | `driverEarningsProvider` | `FutureProvider<DriverEarnings?>` | `driver_earnings()`; null = no data (never a made-up figure) |
 | `topFavoritePlacesProvider` | `Provider<List<FavoritePlace>>` | Top 3 by use_count |
+| `recentHistoryProvider` | `FutureProvider<List<HistoryItem>>` | Last 3 of the full history (Viaje tab without a trip) |
+| `pendingNamedDestinationProvider` | `StateProvider<({LatLng at, String label})?>` | Casa/Trabajo tapped on Home: planner opens with that destination |
 
 **Critical state pattern** — `updateProfile()` preserves previous state on error:
 ```dart
@@ -331,7 +336,8 @@ AppRoutes.paymentValidation // '/payment-validation'
 AppRoutes.nfcSimulator     // '/debug/nfc-simulator'
 AppRoutes.emergencyContacts // '/safety/contacts'  (needs account)
 AppRoutes.savedPlaces      // '/places'          Mis lugares: Casa, Trabajo y hasta 10 con nombre (needs account)
-AppRoutes.tripHistory      // '/trip/history'    todos los viajes (needs account)
+AppRoutes.tripHistory      // '/trip/history'    todos los viajes, también cancelados y como conductor (needs account)
+AppRoutes.tripDetail       // '/trip/history/detail'  detalle estilo InDrive (extra: HistoryItem; sin extra → historial)
 AppRoutes.trip             // '/trip'    (pestaña Viaje; needs account)
 AppRoutes.report           // '/report'  → redirige a /home (se reporta con el botón ámbar del mapa)
 AppRoutes.settings         // '/settings'        Configuración: tema, alertas, cuenta, legal, salir (public)
@@ -537,8 +543,14 @@ Currency: `'cop'` | `'usd'` | `'eur'`
   (null = show a notice). That closes the Google session, so typing is billed once per pick.
   **Always resolve, also directory rows**: an unverified row (`approximate`) gets its point from Google
   ("<name>, <city>", ≤ 3 km from the seed point); its seed point is used only if Google fails, and then
-  stays `approximate`. Verified rows keep their own point. After resolving, the planner and Casa/Trabajo
-  push `AppRoutes.placeConfirm` (`PlaceConfirmRequest`) so the person confirms the pin on the map.
+  stays `approximate`. Verified rows keep their own point. After resolving, the planner uses the point
+  directly (saving Casa/Trabajo still confirms the pin); only `approximate` places push `AppRoutes.placeConfirm` (`PlaceConfirmRequest`)
+  to confirm the pin (one screen less, decided 2026-11-12). The pickup ("Recoger en") is editable the
+  same way: type an address, "Usar mi ubicación actual" or "Elegir en el mapa" (GPS is not always exact).
+  **City first** (`lib/core/city_rank.dart`): results from the city you're in (Riohacha/Maicao) go first,
+  then the other city and the Troncal; other towns (Manaure, Uribia…) only show if the query names them.
+  The `maps` function biases Google to ~15 km around the person (`locationBias`; `origin` alone does NOT
+  reorder) and sends `wide` when the query names another town. Same name in two towns ≠ same place.
   `tool/verify_places.py` (Actions → "Verificar lugares", manual) compares the seed with Google.
 - **`GSChoicePlates<T>`** (`lib/widgets/gs_choice_plates.dart`): pick one of a few options as pills
   (driver signup). The planner uses `ModeSelector` (tiles) and, once both points exist, `ModeOptions` (rows with ~ETA and fare).
@@ -576,6 +588,14 @@ Currency: `'cop'` | `'usd'` | `'eur'`
   Use `locationService.watch()` (one shared GPS subscription), never `Geolocator.getPositionStream`.
 - **No simulations**: the demo autodriver was removed (025). Don't add fake drivers, fake trips or seeded
   accounts to the real project. What is still simulated (wallet top-ups) is listed in `docs/MVP_SALIDA.md`.
+- **Ordering a ride (one tap)**: in the planner, with both points and Mototaxi/Taxi selected, the button is
+  "Pedir mototaxi · $X" → `dispatchService.quickRide` (026) → `/trip` already searching. No offer screen,
+  no "Ver viaje"/"Iniciar viaje" in between (those stay only for colectivo/TransPadilla/intermunicipal).
+  The fare is the road distance (Google Routes) priced with `estimateFare`, else the straight-line ×1.3
+  estimate. While searching, mototaxi can raise the offer (+$500/+$1.000/+$2.000, `ride_raise_fare`).
+  A one-leg trip (`soleLeg`) hides the leg timeline/list and cancelling the request cancels the trip.
+- **No arrival clock for passengers**: never "Llegas 3:45 p. m." (delays happen). Show `durationRange(min)`
+  ("12–16 min") from lib/core/clock.dart. `arrivalClock` stays only for internal use/tests.
 - **Payments**: a mototaxi/taxi leg closes only once paid (`pay_ride`, wallet or cash); QR charges are
   `gosmart:pay:<uuid>` (`chargeQrData` / `chargeIdFromQr`). Show `PaymentException.message`.
   The QR is always drawn on white (also at night) so any camera reads it.

@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/dispatch_models.dart';
+import '../models/trip_history.dart';
 import '../services/dispatch_service.dart';
 import '../services/payment_service.dart';
 import 'auth_provider.dart';
@@ -27,3 +28,14 @@ final recentTripsProvider = FutureProvider((ref) async {
 /// Conductor del tramo en curso (lo publica el panel del tramo al consultar):
 /// el mapa del viaje lo pinta y lo desliza entre una consulta y otra.
 final tripDriverProvider = StateProvider<AssignedDriver?>((ref) => null);
+
+/// Los 3 viajes más recientes del historial completo (026), para la pestaña
+/// Viaje sin viaje en curso. Vacío para invitados o sin señal.
+final recentHistoryProvider = FutureProvider<List<HistoryItem>>((ref) async {
+  if (ref.watch(currentUserProvider) == null) return const [];
+  try {
+    return await dispatchService.history(limit: 3);
+  } catch (_) {
+    return const [];
+  }
+});
