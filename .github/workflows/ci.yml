@@ -22,6 +22,9 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          # Fijo: Flutter 3.50 exige Gradle 9.3 y el proyecto usa Gradle 8.14 / AGP 8.11.
+          # Subir de versión aquí solo junto con la migración de Gradle/AGP/Kotlin.
+          flutter-version: 3.47.9
           cache: true
 
       - name: Install dependencies
@@ -43,6 +46,9 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          # Fijo: Flutter 3.50 exige Gradle 9.3 y el proyecto usa Gradle 8.14 / AGP 8.11.
+          # Subir de versión aquí solo junto con la migración de Gradle/AGP/Kotlin.
+          flutter-version: 3.47.9
           cache: true
 
       - name: Install dependencies
@@ -170,6 +176,9 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          # Fijo: Flutter 3.50 exige Gradle 9.3 y el proyecto usa Gradle 8.14 / AGP 8.11.
+          # Subir de versión aquí solo junto con la migración de Gradle/AGP/Kotlin.
+          flutter-version: 3.47.9
           cache: true
 
       - name: Install dependencies
