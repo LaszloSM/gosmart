@@ -51,10 +51,12 @@ jobs:
     if: github.event.schedule == '43 8 * * 1' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - name: Install pg_dump 16
+      # La base de Supabase ya es Postgres 17: pg_dump debe ser igual o más
+      # nuevo que el servidor (con 16 falla con "server version mismatch").
+      - name: Install pg_dump 17
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y -q postgresql-client-16
+          sudo apt-get install -y -q postgresql-client-17
 
       - name: Dump database
         env:
@@ -65,7 +67,7 @@ jobs:
             exit 0
           fi
           mkdir -p backup
-          /usr/lib/postgresql/16/bin/pg_dump "$SUPABASE_DB_URL" \
+          /usr/lib/postgresql/17/bin/pg_dump "$SUPABASE_DB_URL" \
             --no-owner --no-privileges --schema=public --schema=auth \
             -Fc -f "backup/gosmart-$(date -u +%Y%m%d).dump"
 
