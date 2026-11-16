@@ -30,6 +30,10 @@ class GeocodeSuggestion {
   /// otro buscador. Sirve para ordenar la lista (`placeRelevance`).
   final double? matchScore;
 
+  /// La dirección tal como la escribió la persona ("Calle 14 # 10-20"): se
+  /// ubica con Geocoding al elegirla y su texto no se reemplaza.
+  final bool typedAddress;
+
   const GeocodeSuggestion({
     required this.placeName,
     required this.fullAddress,
@@ -39,6 +43,7 @@ class GeocodeSuggestion {
     this.fromDirectory = false,
     this.approximate = false,
     this.matchScore,
+    this.typedAddress = false,
   });
 
   GeocodeSuggestion withLocation(LatLng at, {String? address}) =>
@@ -51,6 +56,7 @@ class GeocodeSuggestion {
         fromDirectory: fromDirectory,
         approximate: approximate,
         matchScore: matchScore,
+        typedAddress: typedAddress,
       );
 
   /// Returns an icon that represents the kind of place.

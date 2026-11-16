@@ -208,8 +208,12 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     var chosen = place!;
     if (chosen.approximate) {
       final confirmed = await _confirmOnMap(chosen, field);
-      if (confirmed == null || !mounted) return;
-      chosen = confirmed;
+      if (confirmed?.latLng == null || !mounted) return;
+      // Una dirección escrita conserva su texto ("Calle 14 # 10-20"): es lo
+      // que lee el conductor. Del mapa solo se toma el punto.
+      chosen = chosen.typedAddress
+          ? chosen.withLocation(confirmed!.latLng!)
+          : confirmed!;
     }
     if (field == _Field.origin) {
       _setOrigin(chosen.placeName, chosen.latLng!);
@@ -222,7 +226,11 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     FocusScope.of(context).unfocus();
     return context.push<GeocodeSuggestion>(AppRoutes.placeConfirm,
         extra: PlaceConfirmRequest(place,
-            title: f == _Field.origin ? '¿Dónde te recogemos?' : 'Confirma el destino',
+            title: place.typedAddress
+                ? 'Mueve el pin hasta la puerta'
+                : f == _Field.origin
+                    ? '¿Dónde te recogemos?'
+                    : 'Confirma el destino',
             actionLabel: f == _Field.origin ? 'Recoger aquí' : 'Confirmar destino'));
   }
 
@@ -561,6 +569,16 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     final showSaved = typing &&
         shortQuery &&
         (home != null || work != null || saved.isNotEmpty);
+    // Recientes (como Uber): los últimos destinos, sin repetir.
+    final recents = <({String label, LatLng at})>[];
+    if (typing && shortQuery) {
+      for (final h in ref.watch(recentPlacesProvider).valueOrNull ?? const []) {
+        if (recents.length >= 3) break;
+        if (recents.any((r) => r.label == h.label)) continue;
+        if (h.label == home?.name || h.label == work?.name) continue;
+        recents.add(h);
+      }
+    }
 
     return Scaffold(
       backgroundColor: GSColors.background,
@@ -712,6 +730,18 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
               ),
             ],
           ],
+          if (recents.isNotEmpty) ...[
+            const GSSectionTitle('Recientes'),
+            for (var i = 0; i < recents.length; i++) ...[
+              if (i > 0) const Divider(indent: GSSpacing.s4),
+              GSListRow(
+                icon: Icons.history_rounded,
+                iconColor: GSColors.textMuted,
+                title: recents[i].label,
+                onTap: () => pickSaved(recents[i].label, recents[i].at),
+              ),
+            ],
+          ],
           if (typing)
             for (var i = 0; i < _suggestions.length; i++) ...[
               if (i > 0) const Divider(indent: GSSpacing.s4),
@@ -730,6 +760,19 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
               empty: _suggestions.isEmpty,
               limited: _searchLimited,
               query: _searchedFor!,
+            ),
+          // Siempre a mano mientras se escribe: si no aparece, se marca.
+          if (typing && !shortQuery)
+            Padding(
+              padding: const EdgeInsets.only(top: GSSpacing.s2),
+              child: GSGroup(children: [
+                GSListRow(
+                  icon: Icons.pin_drop_rounded,
+                  title: 'Elegir en el mapa',
+                  subtitle: '¿No aparece? Mueve el pin hasta el punto exacto',
+                  onTap: () => _adjustOnMap(editing),
+                ),
+              ]),
             ),
           if (typing && editing == _Field.dest && shortQuery)
             Padding(

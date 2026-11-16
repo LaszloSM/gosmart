@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gosmart/core/city_rank.dart';
 import 'package:gosmart/core/region.dart';
 import 'package:gosmart/models/geocode_suggestion.dart';
+import 'package:gosmart/services/geocoding_service.dart';
 import 'package:gosmart/services/place_search.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -101,5 +102,34 @@ void main() {
     ).search('calle 1', near: GSRegion.maicao);
     expect(r.items.map((s) => s.fullAddress),
         ['Maicao, La Guajira', 'Riohacha, La Guajira']);
+  });
+
+  test('una dirección escrita sale primero y se ubica sin perder su texto', () async {
+    final search = LayeredPlaceSearch(
+      directory: _Fake([]),
+      provider: _Fake([_g('Calle 14', 'Riohacha, La Guajira')]),
+      addressLocator: (a, {near}) async => const GeocodeSuggestion(
+          placeName: 'otro texto', fullAddress: 'Cl. 14 #10-20',
+          latLng: LatLng(11.541, -72.905)),
+    );
+    final r = await search.search('cl 14 #10-20', near: GSRegion.riohacha);
+    expect(r.items.first.placeName, 'Calle 14 # 10-20');
+    expect(r.items.first.fullAddress, 'Dirección exacta · Riohacha');
+    final placed = await search.resolve(r.items.first);
+    expect(placed!.placeName, 'Calle 14 # 10-20');
+    expect(placed.latLng, const LatLng(11.541, -72.905));
+    expect(placed.approximate, isFalse);
+  });
+
+  test('si Google no ubica la dirección, queda en tu ciudad para mover el pin', () async {
+    final search = LayeredPlaceSearch(
+      directory: _Fake([]),
+      provider: _Fake([]),
+      addressLocator: (a, {near}) async => throw const GeocodingException('not_found'),
+    );
+    final r = await search.search('Calle 24 # 7H-45', near: GSRegion.maicao);
+    final placed = await search.resolve(r.items.first);
+    expect(placed!.approximate, isTrue);
+    expect(placed.latLng, GSRegion.maicao);
   });
 }

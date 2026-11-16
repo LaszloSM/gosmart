@@ -146,3 +146,21 @@ List<GeocodeSuggestion> rankByCity(
   });
   return [for (final e in list) e.$2];
 }
+
+/// Nombre para mostrar de una ciudad del MVP ('riohacha' → 'Riohacha').
+String cityLabel(String key) => switch (key) {
+      'riohacha' => 'Riohacha',
+      'maicao' => 'Maicao',
+      _ => key,
+    };
+
+/// Lo que se le manda a Google: si la búsqueda no nombra ningún municipio y
+/// la persona está en Riohacha o Maicao, se le agrega la ciudad ("Calle 14"
+/// → "Calle 14, Riohacha"). Así Google trae las calles de esa ciudad y no las
+/// de toda La Guajira.
+String withCity(String query, LatLng? near) {
+  final q = query.trim();
+  if (townIn(q) != null) return q;
+  final city = cityAt(near);
+  return city == null ? q : '$q, ${cityLabel(city)}';
+}

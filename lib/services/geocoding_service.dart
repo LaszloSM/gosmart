@@ -101,7 +101,7 @@ class GeocodingService {
     _session ??= _newSession();
     final data = await _invoke({
       'action': 'autocomplete',
-      'input': q,
+      'input': withCity(q, proximity),
       'session': _session,
       if (proximity != null)
         'near': {'lat': proximity.latitude, 'lng': proximity.longitude},
@@ -122,6 +122,28 @@ class GeocodingService {
     ];
     if (_searchCache.length > 40) _searchCache.clear();
     return _searchCache[cacheKey] = items;
+  }
+
+  /// Ubica una dirección escrita ("Calle 14 # 10-20") con la Geocoding API
+  /// (acción `geocode` de la función `maps`), en la ciudad de [near].
+  /// `approximate` = Google no la encontró exacta (solo la calle o el barrio):
+  /// la pantalla pide confirmar el pin. Lanza [GeocodingException].
+  Future<GeocodeSuggestion> geocodeAddress(String address, {LatLng? near}) async {
+    final data = await _invoke({
+      'action': 'geocode',
+      'input': withCity(address, near),
+    });
+    final p = data['place'] as Map? ?? const {};
+    final lat = p['lat'], lng = p['lng'];
+    if (lat is! num || lng is! num) throw const GeocodingException('not_found');
+    return GeocodeSuggestion(
+      placeName: address,
+      fullAddress: (p['address'] as String?) ?? '',
+      latLng: LatLng(lat.toDouble(), lng.toDouble()),
+      featureType: 'address',
+      approximate: p['exact'] != true,
+      typedAddress: true,
+    );
   }
 
   /// Coordenadas de una sugerencia elegida. Cierra la sesión de Google.

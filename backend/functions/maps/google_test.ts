@@ -1,6 +1,8 @@
 import { assert, assertEquals } from '../ai-chat/test_assert.ts'
 import {
   autocompleteBody,
+  forwardGeocodeUrl,
+  parseForwardGeocode,
   decodePolyline,
   detailsUrl,
   inColombia,
@@ -117,4 +119,29 @@ Deno.test('dirección de un punto: calle corta o lugar cercano', () => {
   assertEquals(parseNearby({ places: [{ displayName: { text: 'Tienda' }, shortFormattedAddress: 'Cl. 2 #7-08, Riohacha' }] }),
     'Cl. 2 #7-08, Riohacha')
   assertEquals(parseNearby({}), null)
+})
+
+Deno.test('dirección escrita: busca en Colombia y dice si es exacta', () => {
+  const u = new URL(forwardGeocodeUrl('Calle 14 # 10-20, Riohacha', 'k'))
+  assertEquals(u.searchParams.get('address'), 'Calle 14 # 10-20, Riohacha')
+  assertEquals(u.searchParams.get('components'), 'country:CO')
+  const ok = parseForwardGeocode({
+    status: 'OK',
+    results: [{
+      formatted_address: 'Cl. 14 #10-20, Riohacha, La Guajira, Colombia',
+      geometry: { location: { lat: 11.54, lng: -72.91 }, location_type: 'RANGE_INTERPOLATED' },
+    }],
+  })
+  assertEquals(ok, { lat: 11.54, lng: -72.91, address: 'Cl. 14 #10-20, Riohacha', exact: true })
+  const street = parseForwardGeocode({
+    status: 'OK',
+    results: [{ formatted_address: 'Cl. 14, Riohacha', geometry: { location: { lat: 11.54, lng: -72.91 }, location_type: 'GEOMETRIC_CENTER' } }],
+  })
+  assertEquals(street?.exact, false)
+  // Fuera de La Guajira no sirve.
+  assertEquals(parseForwardGeocode({
+    status: 'OK',
+    results: [{ formatted_address: 'Bogotá', geometry: { location: { lat: 4.6, lng: -74.08 }, location_type: 'ROOFTOP' } }],
+  }), null)
+  assertEquals(parseForwardGeocode({ status: 'ZERO_RESULTS', results: [] }), null)
 })

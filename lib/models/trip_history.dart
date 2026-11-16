@@ -4,6 +4,8 @@
 // pinta lo que estos ya resolvieron (estado en palabras, precio, conductor).
 import 'package:latlong2/latlong.dart';
 
+import 'dispatch_models.dart';
+
 DateTime? _ts(Object? v) =>
     v is String ? DateTime.tryParse(v)?.toLocal() : null;
 
@@ -180,10 +182,35 @@ class HistoryItem {
         return (status == 'planned' ? 'Planeado' : 'En curso', HistoryTone.active);
     }
     // Cancelado: por qué, de la forma más útil.
-    if (r == null || requests == 0) return ('No se pidió', HistoryTone.cancelled);
+    if (requests == 0) return ('No se pidió', HistoryTone.cancelled);
+    if (r == null) return ('Cancelado', HistoryTone.cancelled);
     if (r.status == 'expired') return ('Nadie aceptó', HistoryTone.cancelled);
     if (r.cancelledBy == 'driver') return ('Cancelado por el conductor', HistoryTone.cancelled);
     return ('Cancelado', HistoryTone.cancelled);
+  }
+
+  /// Un viaje leído directo de `chained_trips` (servidor sin 026): sin datos
+  /// del conductor ni del pago, pero con su estado y los dos puntos.
+  factory HistoryItem.fromChainedTrip(ChainedTrip t) {
+    // Un viaje cancelado con todos sus tramos aún "planeados" lo canceló
+    // create_trip al planear otro: nunca se pidió. Con un tramo cancelado no
+    // se puede saber sin 026, así que se dice solo "Cancelado".
+    final asked = t.legs.any((l) => l.status != LegStatus.planned);
+    return HistoryItem(
+      kind: 'trip',
+      id: t.id,
+      status: t.status,
+      createdAt: t.createdAt,
+      originLabel: t.originLabel,
+      destLabel: t.destLabel,
+      modes: [for (final l in t.legs) l.mode],
+      from: t.legs.map((l) => l.from).whereType<LatLng>().firstOrNull,
+      to: t.legs.reversed.map((l) => l.to).whereType<LatLng>().firstOrNull,
+      totalPaid: t.paidTotal,
+      // Sin 026 no se sabe cuántas veces se pidió: si un tramo salió de
+      // "planeado", se pidió al menos una vez.
+      requests: asked || t.status != 'cancelled' ? 1 : 0,
+    );
   }
 
   factory HistoryItem.fromJson(Map<String, dynamic> j) {

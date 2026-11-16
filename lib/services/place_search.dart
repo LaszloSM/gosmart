@@ -17,7 +17,9 @@ import 'dart:math' as math;
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
+import '../core/address.dart';
 import '../core/city_rank.dart';
+import '../core/region.dart';
 import '../core/supabase_client.dart';
 import '../core/telemetry.dart';
 import '../models/geocode_suggestion.dart';
@@ -162,19 +164,26 @@ class LayeredPlaceSearch {
     required this.provider,
     this.fallback,
     Future<GeocodeSuggestion> Function(GeocodeSuggestion)? resolver,
-  }) : _resolver = resolver ?? geocodingService.resolve;
+    Future<GeocodeSuggestion> Function(String, {LatLng? near})? addressLocator,
+  })  : _resolver = resolver ?? geocodingService.resolve,
+        _addressLocator = addressLocator ?? geocodingService.geocodeAddress;
   final PlaceSearch directory;
   final PlaceSearch provider;
 
   /// Si [provider] falla: otro buscador con coordenadas (Photon).
   final PlaceSearch? fallback;
   final Future<GeocodeSuggestion> Function(GeocodeSuggestion) _resolver;
+  final Future<GeocodeSuggestion> Function(String, {LatLng? near}) _addressLocator;
+
+  /// Dónde estaba la persona en la última búsqueda (para ubicar direcciones).
+  LatLng? _lastNear;
 
   /// Coordenadas de la sugerencia elegida (las de Google llegan aquí).
   /// null si no se pudo: la pantalla avisa y la persona puede elegir otra.
   /// Un lugar del directorio sin verificar se ubica con Google; si Google no
   /// responde, queda su punto aproximado (`approximate`, la pantalla lo dice).
   Future<GeocodeSuggestion?> resolve(GeocodeSuggestion s) async {
+    if (s.typedAddress) return _locateAddress(s);
     if (s.fromDirectory) {
       if (!s.approximate) return s;
       return await _locateWithProvider(s) ?? s;
@@ -188,6 +197,37 @@ class LayeredPlaceSearch {
       Telemetry.degraded('geocoding', e.runtimeType.toString());
     }
     return null;
+  }
+
+  /// Una dirección escrita: Geocoding la ubica; si no es exacta o Google no
+  /// responde, queda `approximate` en la ciudad de la persona para que mueva
+  /// el pin (como InDrive). El texto escrito nunca se cambia.
+  Future<GeocodeSuggestion> _locateAddress(GeocodeSuggestion s) async {
+    final near = _lastNear;
+    try {
+      final g = await _addressLocator(s.placeName, near: near);
+      return GeocodeSuggestion(
+        placeName: s.placeName,
+        fullAddress: s.fullAddress,
+        latLng: g.latLng,
+        featureType: 'address',
+        approximate: g.approximate,
+        typedAddress: true,
+      );
+    } on GeocodingException catch (e) {
+      if (e.code != 'not_found') Telemetry.degraded('geocoding', e.code);
+    } catch (e) {
+      Telemetry.degraded('geocoding', e.runtimeType.toString());
+    }
+    final city = cityAt(near);
+    return GeocodeSuggestion(
+      placeName: s.placeName,
+      fullAddress: s.fullAddress,
+      latLng: near ?? (city == 'maicao' ? GSRegion.maicao : GSRegion.riohacha),
+      featureType: 'address',
+      approximate: true,
+      typedAddress: true,
+    );
   }
 
   /// Distancia máxima entre el punto aproximado y el de Google: más lejos es
@@ -242,6 +282,7 @@ class LayeredPlaceSearch {
 
   Future<PlaceSearchResult> search(String query, {LatLng? near}) async {
     if (query.trim().length < 2) return const PlaceSearchResult([]);
+    _lastNear = near;
 
     final results = await Future.wait([
       _safe(() => directory.search(query, near: near), 'places_directory'),
@@ -264,6 +305,24 @@ class LayeredPlaceSearch {
     // Catedral del mismo nombre como primera opción.
     final ranked = rankByCity(query, merged,
         near: near, relevance: (s) => placeRelevance(query, s));
+    // Una dirección con número ("Calle 14 # 10-20") va primero, tal como se
+    // escribió: Google suele devolver solo la calle, sin la casa.
+    final typed = normalizeAddress(query);
+    if (typed != null && looksLikeAddress(query)) {
+      final city = cityAt(near);
+      ranked.insert(
+        0,
+        GeocodeSuggestion(
+          placeName: typed,
+          fullAddress: city == null
+              ? 'Dirección exacta'
+              : 'Dirección exacta · ${cityLabel(city)}',
+          latLng: null,
+          featureType: 'address',
+          typedAddress: true,
+        ),
+      );
+    }
     return PlaceSearchResult(
       ranked.take(maxResults).toList(),
       limited: dir == null || ext == null,

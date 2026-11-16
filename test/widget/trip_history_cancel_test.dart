@@ -6,6 +6,7 @@ import 'package:gosmart/features/trip/trip_history_screen.dart';
 import 'package:gosmart/features/trip/widgets/cancel_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gosmart/features/trip/trip_detail_screen.dart';
+import 'package:gosmart/models/dispatch_models.dart';
 import 'package:gosmart/models/trip_history.dart';
 import 'package:gosmart/theme/app_theme.dart';
 
@@ -102,6 +103,21 @@ void main() {
     expect(asDriver.asDriver, isTrue);
     expect(asDriver.price, 9000);
     expect(asDriver.canRepeat, isFalse);
+  });
+
+  test('servidor sin 026: el historial sale de chained_trips sin inventar', () {
+    final t = ChainedTrip.fromJson({
+      'id': 'c', 'status': 'cancelled', 'origin_label': 'Casa', 'dest_label': 'Mercado',
+      'created_at': '2026-11-10T10:00:00Z',
+      'trip_legs': [
+        {'id': 'l', 'seq': 0, 'mode': 'mototaxi', 'status': 'cancelled',
+         'from_lat': 11.54, 'from_lng': -72.9, 'to_lat': 11.53, 'to_lng': -72.91},
+      ],
+    });
+    final h = HistoryItem.fromChainedTrip(t);
+    expect(h.statusText.$1, 'Cancelado');
+    expect(h.canRepeat, isTrue);
+    expect(h.price, isNull);
   });
 
   testWidgets('detalle estilo InDrive: conductor, placa, pago, horas y motivo',

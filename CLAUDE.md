@@ -551,6 +551,14 @@ Currency: `'cop'` | `'usd'` | `'eur'`
   then the other city and the Troncal; other towns (Manaure, Uribia…) only show if the query names them.
   The `maps` function biases Google to ~15 km around the person (`locationBias`; `origin` alone does NOT
   reorder) and sends `wide` when the query names another town. Same name in two towns ≠ same place.
+  The app also appends the city to Google's input (`withCity`: "Calle 14" → "Calle 14, Riohacha") unless
+  the query names a town. A typed Colombian address with house number (`lib/core/address.dart`,
+  "cl 14 #10-20" → "Calle 14 # 10-20") goes first as "Dirección exacta": it is located with the `maps`
+  action `geocode` (Geocoding API; `exact` = ROOFTOP/RANGE_INTERPOLATED) and keeps the typed text;
+  if not exact or Google fails, the pin opens in the person's city to place it by hand.
+- **Server older than the app**: a missing RPC (PGRST202) is `DispatchException('missing_function')`
+  ("El servidor de GoSmart no está actualizado"), never "revisa tu conexión". `quickRide` falls back to
+  create_trip + trip_leg_transition + request_ride, and `history` to `chained_trips`, until 026 is deployed.
   `tool/verify_places.py` (Actions → "Verificar lugares", manual) compares the seed with Google.
 - **`GSChoicePlates<T>`** (`lib/widgets/gs_choice_plates.dart`): pick one of a few options as pills
   (driver signup). The planner uses `ModeSelector` (tiles) and, once both points exist, `ModeOptions` (rows with ~ETA and fare).

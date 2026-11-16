@@ -184,6 +184,41 @@ export function geocodeUrl(p: LatLng, key: string): string {
   return `${GEOCODE_URL}?${q}`
 }
 
+/// Dirección escrita → punto (Geocoding API), solo en La Guajira.
+export function forwardGeocodeUrl(address: string, key: string): string {
+  const b = GUAJIRA_BOUNDS
+  const q = new URLSearchParams({
+    address,
+    language: 'es',
+    region: 'co',
+    components: 'country:CO',
+    bounds: `${b.low.latitude},${b.low.longitude}|${b.high.latitude},${b.high.longitude}`,
+    key,
+  })
+  return `${GEOCODE_URL}?${q}`
+}
+
+/// El primer resultado dentro de La Guajira. `exact` = Google ubicó la casa
+/// (ROOFTOP o interpolada en la cuadra); si no, es la calle o el barrio y la
+/// app pide confirmar el pin.
+// deno-lint-ignore no-explicit-any
+export function parseForwardGeocode(json: any): (Place & { exact: boolean }) | null {
+  if (json?.status !== 'OK') return null
+  const b = GUAJIRA_BOUNDS
+  for (const r of json.results ?? []) {
+    const lat = r?.geometry?.location?.lat, lng = r?.geometry?.location?.lng
+    if (typeof lat !== 'number' || typeof lng !== 'number') continue
+    if (lat < b.low.latitude || lat > b.high.latitude || lng < b.low.longitude || lng > b.high.longitude) continue
+    const kind = String(r?.geometry?.location_type ?? '')
+    return {
+      lat, lng,
+      address: shortAddress(String(r.formatted_address ?? '')),
+      exact: kind === 'ROOFTOP' || kind === 'RANGE_INTERPOLATED',
+    }
+  }
+  return null
+}
+
 /// "Cl. 2 #7-30, Riohacha, La Guajira, Colombia" → "Cl. 2 #7-30, Riohacha".
 export function shortAddress(a: string): string {
   return a.replace(/,?\s*(La Guajira|Colombia)\b/g, '').replace(/,\s*\d{5,6}\b/g, '').trim()
