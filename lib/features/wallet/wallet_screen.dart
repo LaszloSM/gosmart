@@ -60,6 +60,12 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     );
   }
 
+  void _soon(String what) {
+    GSToast.show(context,
+        message: '$what llega pronto. Por ahora pagas tus viajes en efectivo '
+            'al conductor.');
+  }
+
   Future<void> _refresh() async {
     ref.invalidate(walletProvider);
     await ref.read(walletProvider.future).catchError((_) => null);
@@ -78,21 +84,27 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
+            // Las acciones siempre se ven (como Nequi). Sin Wompi explican
+            // que llegan pronto en vez de abrir un flujo que no funciona.
             BalanceHeader(actions: [
-              if (walletOn) ...[
-                GSHeroAction(
-                  icon: Icons.add_rounded,
-                  label: 'Recargar',
-                  primary: true,
-                  busy: recharging,
-                  onTap: recharging ? null : _showRechargeSheet,
-                ),
-                GSHeroAction(
-                  icon: Icons.qr_code_scanner_rounded,
-                  label: 'Pagar con QR',
-                  onTap: () => context.push(AppRoutes.scanPay),
-                ),
-              ],
+              GSHeroAction(
+                icon: Icons.add_rounded,
+                label: 'Recargar',
+                primary: true,
+                busy: recharging,
+                onTap: recharging
+                    ? null
+                    : walletOn
+                        ? _showRechargeSheet
+                        : () => _soon('Recargas con Nequi, PSE o tarjeta'),
+              ),
+              GSHeroAction(
+                icon: Icons.qr_code_scanner_rounded,
+                label: 'Pagar con QR',
+                onTap: walletOn
+                    ? () => context.push(AppRoutes.scanPay)
+                    : () => _soon('Pagar con QR desde tu saldo'),
+              ),
             ]),
             GSHeroBody(
               child: Column(

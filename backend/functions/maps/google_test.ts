@@ -1,6 +1,8 @@
 import { assert, assertEquals } from '../ai-chat/test_assert.ts'
 import {
   autocompleteBody,
+  forwardGeocodeUrl,
+  parseForwardGeocode,
   decodePolyline,
   detailsUrl,
   inColombia,
@@ -27,10 +29,21 @@ Deno.test('autocompletar: solo La Guajira, en español, ordenado desde la person
   assertEquals(b.includedRegionCodes, ['co'])
   assertEquals(b.languageCode, 'es')
   assertEquals(b.sessionToken, 'tok-1')
-  assertEquals(b.locationRestriction.rectangle.low, { latitude: 10.3, longitude: -73.7 })
+  assertEquals(b.locationRestriction?.rectangle.low, { latitude: 10.3, longitude: -73.7 })
   const near = autocompleteBody('muelle', { lat: 11.54, lng: -72.9 })
   assertEquals(near.origin, { latitude: 11.54, longitude: -72.9 })
   assert(!('sessionToken' in near))
+})
+
+Deno.test('autocompletar: con ubicación prioriza la ciudad de la persona', () => {
+  const near = autocompleteBody('calle 15', { lat: 11.54, lng: -72.9 })
+  assertEquals(near.locationBias?.circle.center, { latitude: 11.54, longitude: -72.9 })
+  assertEquals(near.locationBias?.circle.radius, 15000)
+  assert(!('locationRestriction' in near))
+  // Nombra otro municipio: toda La Guajira.
+  const wide = autocompleteBody('hospital manaure', { lat: 11.54, lng: -72.9 }, undefined, true)
+  assert(!('locationBias' in wide))
+  assertEquals(wide.locationRestriction?.rectangle.high, { latitude: 12.6, longitude: -71.0 })
 })
 
 Deno.test('autocompletar: lee nombre y dirección, descarta lo incompleto', () => {
@@ -106,4 +119,29 @@ Deno.test('dirección de un punto: calle corta o lugar cercano', () => {
   assertEquals(parseNearby({ places: [{ displayName: { text: 'Tienda' }, shortFormattedAddress: 'Cl. 2 #7-08, Riohacha' }] }),
     'Cl. 2 #7-08, Riohacha')
   assertEquals(parseNearby({}), null)
+})
+
+Deno.test('dirección escrita: busca en Colombia y dice si es exacta', () => {
+  const u = new URL(forwardGeocodeUrl('Calle 14 # 10-20, Riohacha', 'k'))
+  assertEquals(u.searchParams.get('address'), 'Calle 14 # 10-20, Riohacha')
+  assertEquals(u.searchParams.get('components'), 'country:CO')
+  const ok = parseForwardGeocode({
+    status: 'OK',
+    results: [{
+      formatted_address: 'Cl. 14 #10-20, Riohacha, La Guajira, Colombia',
+      geometry: { location: { lat: 11.54, lng: -72.91 }, location_type: 'RANGE_INTERPOLATED' },
+    }],
+  })
+  assertEquals(ok, { lat: 11.54, lng: -72.91, address: 'Cl. 14 #10-20, Riohacha', exact: true })
+  const street = parseForwardGeocode({
+    status: 'OK',
+    results: [{ formatted_address: 'Cl. 14, Riohacha', geometry: { location: { lat: 11.54, lng: -72.91 }, location_type: 'GEOMETRIC_CENTER' } }],
+  })
+  assertEquals(street?.exact, false)
+  // Fuera de La Guajira no sirve.
+  assertEquals(parseForwardGeocode({
+    status: 'OK',
+    results: [{ formatted_address: 'Bogotá', geometry: { location: { lat: 4.6, lng: -74.08 }, location_type: 'ROOFTOP' } }],
+  }), null)
+  assertEquals(parseForwardGeocode({ status: 'ZERO_RESULTS', results: [] }), null)
 })

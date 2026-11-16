@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../models/corridor_status.dart';
+import '../../../providers/active_route_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/corridor_provider.dart';
 import '../../../providers/profile_provider.dart';
@@ -109,7 +110,12 @@ class HomeSheetContent extends ConsumerWidget {
               child: _SearchPill(onTap: openPlanner),
             ),
             const SizedBox(height: GSSpacing.s3),
-            QuickPlacesRow(onPlaceSelected: (_) => openPlanner()),
+            QuickPlacesRow(onPlaceSelected: (p) {
+              // Abre con ese destino ya puesto: elegir modo y "Pedir".
+              ref.read(pendingNamedDestinationProvider.notifier).state =
+                  (at: p.latLng, label: p.name);
+              openPlanner();
+            }),
             const SizedBox(height: GSSpacing.s5),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: GSSpacing.s4),

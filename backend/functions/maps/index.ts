@@ -1,9 +1,10 @@
 // backend/functions/maps/index.ts
 // Proxy de Google Maps Platform para la app: la clave nunca va en el APK.
-//   { action: 'autocomplete', input, near?: {lat,lng}, session? } → { items }
+//   { action: 'autocomplete', input, near?: {lat,lng}, wide?, session? } → { items }
 //   { action: 'details', place_id, session? }                    → { place }
 //   { action: 'route', from, to, mode: 'walk'|'drive' }           → { route }
 //   { action: 'reverse', at: {lat,lng} }                          → { address }
+//   { action: 'geocode', input }                                   → { place: {lat,lng,address,exact} }
 // Errores como { error: 'no_key' | 'bad_request' | 'http_<n>' | 'not_found' }
 // con 200, para que la app degrade con aviso (D8).
 // Secret: GOOGLE_MAPS_SERVER_KEY (Places API New + Routes API habilitadas).
@@ -16,6 +17,8 @@ import {
   DETAILS_FIELDS,
   detailsUrl,
   geocodeUrl,
+  forwardGeocodeUrl,
+  parseForwardGeocode,
   NEARBY_FIELDS,
   NEARBY_URL,
   nearbyBody,
@@ -77,7 +80,7 @@ serve(async (req) => {
         const input = String(b.input ?? '').trim()
         if (input.length < 2 || input.length > 120) return json({ items: [] })
         const near = b.near ? point(b.near) : null
-        const r = await google(AUTOCOMPLETE_URL, key, '', autocompleteBody(input, near, token(b.session)))
+        const r = await google(AUTOCOMPLETE_URL, key, '', autocompleteBody(input, near, token(b.session), b.wide === true))
         return json(r.error ? { error: r.error } : { items: parseAutocomplete(r.data) })
       }
       case 'details': {
@@ -96,6 +99,14 @@ serve(async (req) => {
         if (r.error) return json({ error: r.error })
         const route = parseRoute(r.data)
         return json(route ? { route } : { error: 'not_found' })
+      }
+      case 'geocode': {
+        const input = String(b.input ?? '').trim()
+        if (input.length < 3 || input.length > 160) return json({ error: 'bad_request' })
+        const res = await fetch(forwardGeocodeUrl(input, key), { signal: AbortSignal.timeout(8000) })
+        if (!res.ok) return json({ error: `http_${res.status}` })
+        const place = parseForwardGeocode(await res.json())
+        return json(place ? { place } : { error: 'not_found' })
       }
       case 'reverse': {
         const at = point(b.at)

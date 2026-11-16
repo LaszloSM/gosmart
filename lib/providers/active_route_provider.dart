@@ -11,6 +11,12 @@ final activeRouteProvider = StateProvider<RouteResult?>((ref) => null);
 /// Destino seleccionado por long-press en el mapa (para pasar al route planner)
 final pendingDestinationProvider = StateProvider<LatLng?>((ref) => null);
 
+/// Destino con nombre (Casa, Trabajo, un lugar guardado) tocado en el inicio:
+/// el planificador abre con él puesto y la recogida en el GPS, listo para
+/// "Pedir". Se consume al abrirlo.
+final pendingNamedDestinationProvider =
+    StateProvider<({LatLng at, String label})?>((ref) => null);
+
 /// "Repetir" un viaje del historial: el planificador abre con estos dos
 /// puntos (el GPS no reemplaza el origen). Se consume al abrirlo.
 class PlannerPreset {

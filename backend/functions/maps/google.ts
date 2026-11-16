@@ -12,6 +12,8 @@ export type Suggestion = {
   name: string
   address: string
   types: string[]
+  /// Distancia desde la persona (si Google la trae).
+  distance_m?: number
 }
 
 export type Place = { lat: number; lng: number; address: string }
@@ -50,17 +52,40 @@ export const GUAJIRA_BOUNDS = {
   high: { latitude: 12.6, longitude: -71.0 },
 }
 
-export function autocompleteBody(input: string, near?: LatLng | null, session?: string) {
-  // El sesgo va en el orden (cerca de la persona primero); la restricción
-  // deja fuera lo que no es de La Guajira. Google no acepta las dos a la vez,
-  // así que el "cerca" se pasa como origen para ordenar por distancia.
+/// Radio en que Google prioriza lo cercano a la persona (su ciudad).
+export const NEAR_BIAS_RADIUS_M = 15000
+
+type GLatLng = { latitude: number; longitude: number }
+export type AutocompleteBody = {
+  input: string
+  languageCode: string
+  regionCode: string
+  includedRegionCodes: string[]
+  locationBias?: { circle: { center: GLatLng; radius: number } }
+  locationRestriction?: { rectangle: { low: GLatLng; high: GLatLng } }
+  origin: GLatLng
+  sessionToken?: string
+}
+
+export function autocompleteBody(
+  input: string, near?: LatLng | null, session?: string, wide = false,
+): AutocompleteBody {
+  // Con la ubicación de la persona: Google PRIORIZA su ciudad (locationBias,
+  // ~15 km). `origin` solo calcula distancias, no cambia el orden: antes
+  // salían Manaure o Uribia estando en Riohacha. La app además ordena por
+  // ciudad y oculta otros municipios que no se nombren (city_rank.dart).
+  // Sin ubicación, o si la búsqueda nombra otro municipio (`wide`): toda La
+  // Guajira como restricción. Google no acepta sesgo y restricción a la vez.
   const c = near ?? GUAJIRA_CENTER
+  const area = near && !wide
+    ? { locationBias: { circle: { center: { latitude: near.lat, longitude: near.lng }, radius: NEAR_BIAS_RADIUS_M } } }
+    : { locationRestriction: { rectangle: GUAJIRA_BOUNDS } }
   return {
     input,
     languageCode: 'es',
     regionCode: 'co',
     includedRegionCodes: ['co'],
-    locationRestriction: { rectangle: GUAJIRA_BOUNDS },
+    ...area,
     origin: { latitude: c.lat, longitude: c.lng },
     ...(session ? { sessionToken: session } : {}),
   }
@@ -79,6 +104,7 @@ export function parseAutocomplete(json: any): Suggestion[] {
       name: String(name),
       address: String(p.structuredFormat?.secondaryText?.text ?? ''),
       types: Array.isArray(p.types) ? p.types.map(String) : [],
+      ...(typeof p.distanceMeters === 'number' ? { distance_m: p.distanceMeters } : {}),
     })
   }
   return out.slice(0, 6)
@@ -156,6 +182,41 @@ export function geocodeUrl(p: LatLng, key: string): string {
     key,
   })
   return `${GEOCODE_URL}?${q}`
+}
+
+/// Dirección escrita → punto (Geocoding API), solo en La Guajira.
+export function forwardGeocodeUrl(address: string, key: string): string {
+  const b = GUAJIRA_BOUNDS
+  const q = new URLSearchParams({
+    address,
+    language: 'es',
+    region: 'co',
+    components: 'country:CO',
+    bounds: `${b.low.latitude},${b.low.longitude}|${b.high.latitude},${b.high.longitude}`,
+    key,
+  })
+  return `${GEOCODE_URL}?${q}`
+}
+
+/// El primer resultado dentro de La Guajira. `exact` = Google ubicó la casa
+/// (ROOFTOP o interpolada en la cuadra); si no, es la calle o el barrio y la
+/// app pide confirmar el pin.
+// deno-lint-ignore no-explicit-any
+export function parseForwardGeocode(json: any): (Place & { exact: boolean }) | null {
+  if (json?.status !== 'OK') return null
+  const b = GUAJIRA_BOUNDS
+  for (const r of json.results ?? []) {
+    const lat = r?.geometry?.location?.lat, lng = r?.geometry?.location?.lng
+    if (typeof lat !== 'number' || typeof lng !== 'number') continue
+    if (lat < b.low.latitude || lat > b.high.latitude || lng < b.low.longitude || lng > b.high.longitude) continue
+    const kind = String(r?.geometry?.location_type ?? '')
+    return {
+      lat, lng,
+      address: shortAddress(String(r.formatted_address ?? '')),
+      exact: kind === 'ROOFTOP' || kind === 'RANGE_INTERPOLATED',
+    }
+  }
+  return null
 }
 
 /// "Cl. 2 #7-30, Riohacha, La Guajira, Colombia" → "Cl. 2 #7-30, Riohacha".

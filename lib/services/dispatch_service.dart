@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/supabase_client.dart';
 import '../models/dispatch_models.dart';
+import '../models/trip_history.dart';
 import '../models/route_result.dart';
 
 /// Error del servidor con su código ('already_taken', 'no_seats'…).
@@ -27,6 +28,13 @@ class DispatchException implements Exception {
         'blocked_unpaid' => 'Tienes viajes sin pagar. Págalos para volver a pedir.',
         'reason_required' => 'Cuéntanos por qué cancelas: el conductor ya viene.',
         'invalid_transition' => 'Ese viaje ya cambió de estado. Revisa e intenta de nuevo.',
+        'invalid_fare' => 'La tarifa nueva debe ser mayor que la anterior.',
+        'not_authenticated' => 'Tu sesión venció. Entra de nuevo a tu cuenta.',
+        // El servidor no tiene todavía la función (falta correr "Supabase
+        // deploy"): no es culpa de la conexión de la persona.
+        'missing_function' =>
+          'El servidor de GoSmart no está actualizado. Intenta más tarde.',
+        'server' => 'Algo falló en el servidor. Intenta de nuevo en un momento.',
         _ => 'No se pudo. Revisa tu conexión e intenta de nuevo.',
       };
 
@@ -34,9 +42,18 @@ class DispatchException implements Exception {
     'already_taken', 'no_seats', 'dispatch_disabled', 'request_already_open',
     'driver_busy', 'not_active_driver', 'trip_in_progress', 'too_far',
     'offer_gone', 'blocked_unpaid', 'invalid_transition', 'reason_required', 'previous_leg_open', 'own_request',
+    'invalid_fare', 'not_authenticated',
   ];
 
+  /// La RPC no existe en el servidor (PostgREST PGRST202 / 42883).
+  static bool isMissingFunction(Object e) =>
+      e is PostgrestException &&
+      (e.code == 'PGRST202' ||
+          e.code == '42883' ||
+          e.message.contains('Could not find the function'));
+
   static Never rethrowFrom(Object e) {
+    if (isMissingFunction(e)) throw const DispatchException('missing_function');
     final msg = e is PostgrestException ? e.message : e.toString();
     for (final c in _known) {
       if (msg.contains(c)) throw DispatchException(c);
@@ -92,6 +109,143 @@ class DispatchService {
         'p_idempotency_key': idempotencyKey,
         'p_trip_leg_id': tripLegId,
       });
+
+  /// Pedir en un toque (026): crea el viaje de un tramo, lo pone a esperar y
+  /// publica la solicitud, todo en el servidor. Con la misma [idempotencyKey]
+  /// un reintento devuelve lo mismo. Devuelve el id del viaje.
+  Future<String> quickRide({
+    required String service,
+    required LatLng origin,
+    required String originLabel,
+    required LatLng dest,
+    required String destLabel,
+    required int fare,
+    required int minutes,
+    required String idempotencyKey,
+  }) async {
+    final dynamic res;
+    try {
+      res = await _rpc<dynamic>('quick_ride', {
+      'p_service': service,
+      'p_origin_lat': origin.latitude,
+      'p_origin_lng': origin.longitude,
+      'p_origin_label': originLabel,
+      'p_dest_lat': dest.latitude,
+      'p_dest_lng': dest.longitude,
+      'p_dest_label': destLabel,
+      'p_fare': fare,
+      'p_minutes': minutes,
+      'p_idempotency_key': idempotencyKey,
+      });
+    } on DispatchException catch (e) {
+      if (e.code != 'missing_function') rethrow;
+      // Servidor sin 026: lo mismo en tres pasos con las RPCs de 015.
+      return _quickRideLegacy(
+        service: service, origin: origin, originLabel: originLabel,
+        dest: dest, destLabel: destLabel, fare: fare, minutes: minutes,
+        idempotencyKey: idempotencyKey,
+      );
+    }
+    return (res as Map)['trip_id'] as String;
+  }
+
+  Future<String> _quickRideLegacy({
+    required String service,
+    required LatLng origin,
+    required String originLabel,
+    required LatLng dest,
+    required String destLabel,
+    required int fare,
+    required int minutes,
+    required String idempotencyKey,
+  }) async {
+    final tripId = await _rpc<String>('create_trip', {
+      'p_origin': originLabel,
+      'p_dest': destLabel,
+      'p_legs': [
+        {
+          'mode': service,
+          'from_label': originLabel,
+          'to_label': destLabel,
+          'from_lat': origin.latitude,
+          'from_lng': origin.longitude,
+          'to_lat': dest.latitude,
+          'to_lng': dest.longitude,
+          'minutes': minutes,
+          'fare_min': fare,
+          'fare_max': fare,
+        }
+      ],
+      'p_idempotency_key': idempotencyKey,
+    });
+    final Map<String, dynamic> leg;
+    try {
+      leg = await _db
+          .from('trip_legs')
+          .select('id, status')
+          .eq('trip_id', tripId)
+          .order('seq')
+          .limit(1)
+          .single();
+    } catch (e) {
+      DispatchException.rethrowFrom(e);
+    }
+    final legId = leg['id'] as String;
+    if (leg['status'] == 'planned') {
+      await legTransition(legId, LegStatus.awaitingDispatch);
+    }
+    await requestRide(
+      service: service,
+      origin: origin,
+      originLabel: originLabel,
+      dest: dest,
+      destLabel: destLabel,
+      offeredFare: fare,
+      idempotencyKey: idempotencyKey,
+      tripLegId: legId,
+    );
+    return tripId;
+  }
+
+  /// Subir la tarifa mientras se busca (reinicia los 3 minutos).
+  Future<RideRequest> raiseFare(String requestId, int fare) async {
+    final row = await _rpc<dynamic>(
+        'ride_raise_fare', {'p_request_id': requestId, 'p_fare': fare});
+    return RideRequest.fromJson(Map<String, dynamic>.from(row as Map));
+  }
+
+  /// Historial completo (026): pasajero y conductor, también cancelados.
+  Future<List<HistoryItem>> history({int offset = 0, int limit = 20}) async {
+    final dynamic rows;
+    try {
+      rows = await _rpc<dynamic>(
+          'my_trip_history', {'p_offset': offset, 'p_limit': limit});
+    } on DispatchException catch (e) {
+      if (e.code != 'missing_function') rethrow;
+      // Servidor sin 026: los viajes como pasajero, con lo que se sabe.
+      final trips = await tripHistory(offset: offset, limit: limit);
+      return [for (final t in trips) HistoryItem.fromChainedTrip(t)];
+    }
+    return [
+      for (final r in (rows as List?) ?? const [])
+        HistoryItem.fromJson(Map<String, dynamic>.from(r as Map)),
+    ];
+  }
+
+  /// Detalle de un renglón del historial; null si no existe o no es tuyo.
+  Future<TripDetail?> historyDetail(HistoryItem item) async {
+    final dynamic row;
+    try {
+      row = item.asDriver
+          ? await _rpc<dynamic>('my_ride_detail', {'p_request_id': item.id})
+          : await _rpc<dynamic>('my_trip_detail', {'p_trip_id': item.id});
+    } on DispatchException catch (e) {
+      if (e.code != 'missing_function') rethrow;
+      return TripDetail(item: item); // lo del historial, sin más
+    }
+    if (row is! Map) return null;
+    return TripDetail.fromJson(Map<String, dynamic>.from(row));
+  }
 
   Future<RideRequest?> fetchRequest(String id) async {
     final row =

@@ -186,8 +186,8 @@ class _RouteBody extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${route.durationMin} min',
-                            style: text.displaySmall
+                            durationRange(route.durationMin),
+                            style: text.headlineMedium
                                 ?.copyWith(fontFeatures: GSFonts.tabular),
                           ),
                           Text(
@@ -217,10 +217,6 @@ class _RouteBody extends StatelessWidget {
                   spacing: GSSpacing.s2,
                   runSpacing: GSSpacing.s2,
                   children: [
-                    GSMetaChip(
-                      icon: Icons.flag_rounded,
-                      label: 'Llegas ${arrivalClock(route.durationMin)}',
-                    ),
                     GSMetaChip(
                       icon: Icons.route_rounded,
                       label:

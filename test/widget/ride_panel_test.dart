@@ -57,6 +57,18 @@ void main() {
     expect(find.textContaining('saldo'), findsNothing);
   });
 
+  testWidgets('buscando sin ofertas: se puede subir la oferta sin volver a pedir',
+      (tester) async {
+    final r = RideRequest(id: 'r', service: 'mototaxi', status: RideStatus.open,
+        offeredFare: 5000, expiresAt: DateTime.now().add(const Duration(minutes: 2)));
+    await tester.pumpWidget(_panel(r));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Buscando mototaxi por \$5.000…'), findsOneWidget);
+    expect(find.text('¿Nadie acepta? Sube tu oferta'), findsOneWidget);
+    expect(find.text('+\u2060\$500'), findsOneWidget);
+    expect(find.text('+\u2060\$1.000'), findsOneWidget);
+  });
+
   testWidgets('las ofertas dicen quién, a cuánto está y la diferencia', (tester) async {
     final r = RideRequest(id: 'r', service: 'mototaxi', status: RideStatus.open,
         offeredFare: 5000, expiresAt: DateTime.now().add(const Duration(minutes: 2)));

@@ -35,6 +35,9 @@ void main() {
     expect(items.single.featureType, 'address');
     expect(sent[0]['session'], 'sesion-1');
     expect(sent[0]['near'], {'lat': 11.54, 'lng': -72.9});
+    // En Riohacha, Google recibe la ciudad: trae las calles de aquí.
+    expect(sent[0]['input'], 'mue, Riohacha');
+    expect(sent[1]['input'], 'muel', reason: 'sin ubicación no se inventa ciudad');
     expect(sent[1]['session'], 'sesion-1', reason: 'misma sesión al seguir escribiendo');
 
     final r = await svc.resolve(items.single);
@@ -101,5 +104,19 @@ void main() {
             destination: const LatLng(11.53, -72.91),
             profile: RouteProfile.driving);
     expect(r, isNull);
+  });
+
+  test('una dirección escrita se ubica con geocode y dice si es exacta', () async {
+    final sent = <Map<String, dynamic>>[];
+    final svc = GeocodingService(invoke: (body) async {
+      sent.add(body);
+      return {'place': {'lat': 11.54, 'lng': -72.91, 'address': 'Cl. 14 #10-20', 'exact': false}};
+    });
+    final g = await svc.geocodeAddress('Calle 14 # 10-20', near: const LatLng(11.54, -72.9));
+    expect(sent.single['action'], 'geocode');
+    expect(sent.single['input'], 'Calle 14 # 10-20, Riohacha');
+    expect(g.placeName, 'Calle 14 # 10-20');
+    expect(g.approximate, isTrue);
+    expect(g.typedAddress, isTrue);
   });
 }

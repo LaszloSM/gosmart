@@ -23,6 +23,7 @@ import '../../widgets/gs_list_row.dart';
 import '../../widgets/gs_route_plate.dart';
 import '../../widgets/gs_toast.dart';
 import '../safety/sos_sheet.dart';
+import 'trip_history_screen.dart';
 import 'widgets/cancel_sheet.dart';
 import 'widgets/leg_panels.dart';
 import 'widgets/trip_map.dart';
@@ -64,6 +65,7 @@ class TripScreen extends ConsumerWidget {
       ref.read(tripDriverProvider.notifier).state = null;
       ref.invalidate(activeTripProvider);
       ref.invalidate(recentTripsProvider);
+      ref.invalidate(recentHistoryProvider);
     } on DispatchException catch (e) {
       GSToast.showWithMessenger(messenger,
           message: e.message, type: GSToastType.error);
@@ -115,9 +117,9 @@ class TripScreen extends ConsumerWidget {
             subtitle: ref.watch(isGuestProvider)
                 ? 'Planea a dónde vas sin cuenta. Para iniciar el viaje, '
                     'pedir mototaxi o reservar cupo, entra a tu cuenta.'
-                : 'Planea a dónde vas y toca "Iniciar viaje". Aquí '
-                    'pides cada tramo y ves a tu conductor en el mapa.',
-            actionLabel: 'Planear un viaje',
+                : 'Elige a dónde vas y toca "Pedir". Aquí ves la '
+                    'búsqueda y a tu conductor en el mapa.',
+            actionLabel: '¿A dónde vas?',
             onAction: () => context.push(AppRoutes.routePlanner),
           ),
           const _RecentTrips(),
@@ -162,6 +164,7 @@ class _ActiveTripState extends ConsumerState<_ActiveTrip> {
   @override
   Widget build(BuildContext context) {
     final t = widget.trip;
+    final sole = t.legs.length == 1;
     final text = Theme.of(context).textTheme;
     final top = MediaQuery.paddingOf(context).top;
     return Scaffold(
@@ -270,13 +273,17 @@ class _ActiveTripState extends ConsumerState<_ActiveTrip> {
                             Text('Desde ${t.originLabel}',
                                 maxLines: 2, overflow: TextOverflow.ellipsis, style: text.bodyMedium),
                           const SizedBox(height: GSSpacing.s3),
-                          LegTimeline(
-                            legs: t.legs,
-                            currentId: t.currentLeg?.id,
-                            iconFor: legModeIcon,
-                            labelFor: legModeLabel,
-                          ),
-                          const SizedBox(height: GSSpacing.s4),
+                          // Un solo tramo (pedido en un toque): sin línea de
+                          // tramos ni lista repetida, solo lo que toca ahora.
+                          if (!sole) ...[
+                            LegTimeline(
+                              legs: t.legs,
+                              currentId: t.currentLeg?.id,
+                              iconFor: legModeIcon,
+                              labelFor: legModeLabel,
+                            ),
+                            const SizedBox(height: GSSpacing.s4),
+                          ],
                           if (t.currentLeg != null)
                             Container(
                               padding: const EdgeInsets.all(GSSpacing.s4),
@@ -285,20 +292,25 @@ class _ActiveTripState extends ConsumerState<_ActiveTrip> {
                                 borderRadius: BorderRadius.circular(GSRadius.lg),
                               ),
                               child: CurrentLegPanel(
-                                  key: ValueKey(t.currentLeg!.id), leg: t.currentLeg!),
+                                  key: ValueKey(t.currentLeg!.id),
+                                  leg: t.currentLeg!,
+                                  tripId: t.id,
+                                  soleLeg: sole),
                             ),
-                          const SizedBox(height: GSSpacing.s5),
-                          Text('Tramos', style: text.titleLarge),
-                          const SizedBox(height: GSSpacing.s3),
-                          for (final l in t.legs)
-                            _LegRow(leg: l, isCurrent: l.id == t.currentLeg?.id),
-                          const SizedBox(height: GSSpacing.s2),
-                          GSButton(
-                            label: 'Cancelar viaje',
-                            variant: GSButtonVariant.ghost,
-                            leadingIcon: Icons.close_rounded,
-                            onPressed: widget.onCancel,
-                          ),
+                          if (!sole) ...[
+                            const SizedBox(height: GSSpacing.s5),
+                            Text('Tramos', style: text.titleLarge),
+                            const SizedBox(height: GSSpacing.s3),
+                            for (final l in t.legs)
+                              _LegRow(leg: l, isCurrent: l.id == t.currentLeg?.id),
+                            const SizedBox(height: GSSpacing.s2),
+                            GSButton(
+                              label: 'Cancelar viaje',
+                              variant: GSButtonVariant.ghost,
+                              leadingIcon: Icons.close_rounded,
+                              onPressed: widget.onCancel,
+                            ),
+                          ],
                           const GSNavSpacer(),
                         ],
                       ),
@@ -346,26 +358,15 @@ class _LegRow extends StatelessWidget {
   }
 }
 
-/// Viajes terminados con su recibo (D5: un recibo por viaje). "Repetir" abre
-/// el planificador con el mismo origen y destino (como Uber): se elige otra
-/// vez en qué ir y se ven los precios de hoy.
+/// Los últimos viajes (también cancelados) con "Pedir de nuevo" y su detalle;
+/// "Ver todos" abre el historial completo.
 class _RecentTrips extends ConsumerWidget {
   const _RecentTrips();
 
-  void _repeat(BuildContext context, WidgetRef ref, RecentTrip t) {
-    ref.read(pendingPlanProvider.notifier).state = PlannerPreset(
-      origin: t.origin!,
-      originLabel: t.originLabel ?? 'Salida del viaje anterior',
-      dest: t.dest!,
-      destLabel: t.destLabel ?? 'Destino del viaje anterior',
-    );
-    context.push(AppRoutes.routePlanner);
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final trips = ref.watch(recentTripsProvider).valueOrNull ?? const [];
-    if (trips.isEmpty) return const SizedBox.shrink();
+    final items = ref.watch(recentHistoryProvider).valueOrNull ?? const [];
+    if (items.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -378,31 +379,12 @@ class _RecentTrips extends ConsumerWidget {
             ),
           ],
         ),
-        for (final t in trips) ...[
-          GSListRow(
-            icon: t.status == 'completed'
-                ? Icons.receipt_long_rounded
-                : Icons.cancel_rounded,
-            title: t.destLabel ?? 'Viaje',
-            subtitle: '${t.at.day}/${t.at.month} · '
-                '${t.status == 'completed' ? 'Ver recibo' : 'Cancelado'}',
-            onTap: t.status == 'completed'
-                ? () => context.push('${AppRoutes.receipt}?id=${t.id}')
-                : null,
-            trailing: t.canRepeat
-                ? GSButton(
-                    label: 'Repetir',
-                    leadingIcon: Icons.replay_rounded,
-                    variant: GSButtonVariant.outline,
-                    size: GSButtonSize.sm,
-                    isFullWidth: false,
-                    semanticLabel: 'Repetir el viaje a ${t.destLabel ?? 'ese destino'}',
-                    onPressed: () => _repeat(context, ref, t),
-                  )
-                : null,
+        for (final t in items)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                GSSpacing.s4, 0, GSSpacing.s4, GSSpacing.s2),
+            child: TripHistoryTile(item: t),
           ),
-          const Divider(indent: GSSpacing.s4),
-        ],
       ],
     );
   }
