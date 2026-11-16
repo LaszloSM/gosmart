@@ -69,12 +69,16 @@ void main() {
       expect(find.textContaining('GS-****-****-9012'), findsOneWidget);
     });
 
-    testWidgets('solo efectivo: no muestra saldo ni recargar', (tester) async {
+    testWidgets('solo efectivo: saldo visible, recargar dice que llega pronto',
+        (tester) async {
       await tester.pumpWidget(_app(walletPayments: false));
       await tester.pumpAndSettle();
-      expect(find.text('Pagas en efectivo'), findsOneWidget);
-      expect(find.textContaining('\$37.000', findRichText: true), findsNothing);
-      expect(find.text('Recargar'), findsNothing);
+      expect(find.textContaining('\$37.000', findRichText: true), findsOneWidget);
+      expect(find.text('Hoy pagas en efectivo'), findsOneWidget);
+      await tester.tap(find.text('Recargar'));
+      await tester.pump();
+      expect(find.textContaining('llega pronto'), findsOneWidget);
+      await tester.pumpAndSettle(const Duration(seconds: 5));
     });
 
     testWidgets('mientras carga no se rompe', (tester) async {

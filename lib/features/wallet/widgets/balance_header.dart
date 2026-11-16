@@ -1,7 +1,7 @@
 // lib/features/wallet/widgets/balance_header.dart
 // Saldo de la billetera como en Nequi: banda azul honda con el saldo grande,
 // un ojo para ocultarlo en la calle y las acciones redondas debajo. Sin
-// Wompi (solo efectivo) dice eso en vez de mostrar un saldo que no es dinero.
+// Wompi (solo efectivo) se ve igual, con la etiqueta "Hoy pagas en efectivo".
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -62,33 +62,6 @@ class _BalanceHeaderState extends ConsumerState<BalanceHeader> {
                     message: 'Tu billetera aún no está lista',
                     onRetry: () => ref.invalidate(walletProvider),
                   ),
-                );
-              }
-              if (!walletOn) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      Icon(Icons.payments_rounded, color: on, size: 32),
-                      const SizedBox(width: GSSpacing.s3),
-                      Expanded(
-                        child: Text('Pagas en efectivo',
-                            style: TextStyle(
-                                fontFamily: GSFonts.sans,
-                                fontSize: 28,
-                                fontWeight: FontWeight.w800,
-                                color: on)),
-                      ),
-                    ]),
-                    const SizedBox(height: GSSpacing.s2),
-                    Text(
-                      'Al terminar cada viaje le pagas al conductor y él lo '
-                      'confirma en la app. Las recargas y pagos con saldo '
-                      'llegan pronto.',
-                      style: TextStyle(
-                          fontFamily: GSFonts.sans, fontSize: 15, color: onMuted),
-                    ),
-                  ],
                 );
               }
               return Column(
@@ -167,6 +140,14 @@ class _BalanceHeaderState extends ConsumerState<BalanceHeader> {
                         color: on,
                         tabular: true,
                       ),
+                      // Sin Wompi: el saldo se ve, pero los viajes se pagan
+                      // en efectivo (y se dice).
+                      if (!walletOn)
+                        _CardTag(
+                          icon: Icons.payments_rounded,
+                          label: 'Hoy pagas en efectivo',
+                          color: on,
+                        ),
                     ],
                   ),
                 ],

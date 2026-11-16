@@ -96,7 +96,10 @@ class MovementRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final detail = [
-      if (tx.description != null && tx.description!.isNotEmpty) tx.description!,
+      if (tx.description != null && tx.description!.isNotEmpty)
+        // Las recargas de la etapa de pruebas (antes de Wompi) se nombran así.
+        tx.description!.replaceAll(
+            RegExp('recarga simulada', caseSensitive: false), 'Recarga de prueba'),
       tx.formattedDate,
     ].join(' · ');
 
