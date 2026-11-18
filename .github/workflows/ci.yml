@@ -99,7 +99,7 @@ jobs:
           # Cada migración dos veces: deben ser seguras de re-ejecutar.
           for m in 011_roles_safety 012_places_directory 013_corridor 019_signup_fix \
                    014_transport_graph 015_dispatch 016_payments 017_trust_admin 018_push 020_fares \
-                   021_map_alerts 022_offer_cards 023_driver_earnings 025_mvp_real 026_quick_ride_history; do
+                   021_map_alerts 022_offer_cards 023_driver_earnings 025_mvp_real 026_quick_ride_history 027_own_alert_vote; do
             run "supabase/migrations/$m.sql"
             run "supabase/migrations/$m.sql"
           done
@@ -126,6 +126,7 @@ jobs:
           run supabase/tests/023_driver_earnings_test.sql
           run supabase/tests/025_mvp_real_test.sql
           run supabase/tests/026_quick_ride_history_test.sql
+          run supabase/tests/027_own_alert_vote_test.sql
 
   edge-functions:
     name: Edge Functions (Deno)

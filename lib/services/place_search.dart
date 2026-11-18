@@ -19,7 +19,6 @@ import 'package:latlong2/latlong.dart';
 
 import '../core/address.dart';
 import '../core/city_rank.dart';
-import '../core/region.dart';
 import '../core/supabase_client.dart';
 import '../core/telemetry.dart';
 import '../models/geocode_suggestion.dart';
@@ -199,33 +198,40 @@ class LayeredPlaceSearch {
     return null;
   }
 
-  /// Una dirección escrita: Geocoding la ubica; si no es exacta o Google no
-  /// responde, queda `approximate` en la ciudad de la persona para que mueva
-  /// el pin (como InDrive). El texto escrito nunca se cambia.
-  Future<GeocodeSuggestion> _locateAddress(GeocodeSuggestion s) async {
+  /// Una dirección escrita ("Calle 24 # 14-45"). Primero la casa exacta; si
+  /// Google no la tiene, la esquina (Calle 24 con Carrera 14), que queda a
+  /// pocos metros, y la persona ajusta el pin. Si tampoco, null: la pantalla
+  /// pide marcarla en el mapa. NUNCA se usa el GPS como destino (antes eso
+  /// hacía viajes de la casa a la casa). El texto escrito no se cambia.
+  Future<GeocodeSuggestion?> _locateAddress(GeocodeSuggestion s) async {
     final near = _lastNear;
-    try {
-      final g = await _addressLocator(s.placeName, near: near);
-      return GeocodeSuggestion(
-        placeName: s.placeName,
-        fullAddress: s.fullAddress,
-        latLng: g.latLng,
-        featureType: 'address',
-        approximate: g.approximate,
-        typedAddress: true,
-      );
-    } on GeocodingException catch (e) {
-      if (e.code != 'not_found') Telemetry.degraded('geocoding', e.code);
-    } catch (e) {
-      Telemetry.degraded('geocoding', e.runtimeType.toString());
+    GeocodeSuggestion? found;
+    Future<GeocodeSuggestion?> tryOne(String q) async {
+      try {
+        return await _addressLocator(q, near: near);
+      } on GeocodingException catch (e) {
+        if (e.code != 'not_found') Telemetry.degraded('geocoding', e.code);
+      } catch (e) {
+        Telemetry.degraded('geocoding', e.runtimeType.toString());
+      }
+      return null;
     }
-    final city = cityAt(near);
+
+    found = await tryOne(s.placeName);
+    if (found == null || found.approximate) {
+      final corner = crossingQuery(s.placeName);
+      final c = corner == null ? null : await tryOne(corner);
+      // La esquina es mejor que el centro de toda la calle.
+      if (c?.latLng != null) found = c;
+    }
+    final at = found?.latLng;
+    if (at == null) return null;
     return GeocodeSuggestion(
       placeName: s.placeName,
       fullAddress: s.fullAddress,
-      latLng: near ?? (city == 'maicao' ? GSRegion.maicao : GSRegion.riohacha),
+      latLng: at,
       featureType: 'address',
-      approximate: true,
+      approximate: found!.approximate,
       typedAddress: true,
     );
   }

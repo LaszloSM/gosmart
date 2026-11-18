@@ -47,6 +47,9 @@ import 'place_confirm_screen.dart';
 import 'widgets/mode_options.dart';
 import 'widgets/mode_selector.dart';
 
+/// Viaje mínimo para pedir (150 m): menos es casi seguro un punto mal puesto.
+const minTripKm = 0.15;
+
 /// Qué punto se está escribiendo en el buscador.
 enum _Field { origin, dest }
 
@@ -200,9 +203,13 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     setState(() => _loading = false);
     if (place?.latLng == null) {
       GSToast.showWithMessenger(messenger,
-          message:
-              'No pudimos ubicar ese lugar. Revisa tu conexión o elige otro.',
-          type: GSToastType.error);
+          message: s.typedAddress
+              ? 'No encontramos "${s.placeName}" en el mapa. Márcala tú.'
+              : 'No pudimos ubicar ese lugar. Revisa tu conexión o elige otro.',
+          type: GSToastType.warning,
+          duration: const Duration(seconds: 6),
+          actionLabel: 'Marcar en el mapa',
+          onAction: () => _adjustOnMap(field));
       return;
     }
     var chosen = place!;
@@ -409,6 +416,19 @@ class _RoutePlannerScreenState extends ConsumerState<RoutePlannerScreen> {
     final from = _originLatLng, to = _destLatLng;
     final q = _quote(mode);
     if (from == null || to == null || q == null) return;
+    // Recogida y destino casi en el mismo punto: casi siempre es una
+    // dirección mal ubicada. Mejor revisarla que pedir un viaje de la casa
+    // a la casa.
+    if (haversineKm(from, to) < minTripKm) {
+      GSToast.showWithMessenger(messenger,
+          message: 'El destino quedó casi en el mismo punto de recogida. '
+              'Revisa la dirección del destino.',
+          type: GSToastType.warning,
+          duration: const Duration(seconds: 6),
+          actionLabel: 'Ajustar',
+          onAction: () => _adjustOnMap(_Field.dest));
+      return;
+    }
     final service = mode == 'Taxi' ? 'taxi' : 'mototaxi';
     final originLabel = _originIsMe && _originLabel == 'Mi ubicación'
         ? 'Tu ubicación'

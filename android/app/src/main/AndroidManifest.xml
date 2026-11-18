@@ -40,6 +40,12 @@
             </intent-filter>
         </activity>
         <!-- Google Maps: la clave la pone Gradle desde GOOGLE_MAPS_API_KEY (.env o CI). -->
+        <!-- Impeller (el motor gráfico nuevo de Flutter) pinta de negro partes
+             de Google Maps y sus letras en algunos Android al acercar el mapa.
+             Con el motor anterior (Skia) el mapa se ve bien. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="${MAPS_API_KEY}" />

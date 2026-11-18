@@ -40,3 +40,25 @@ String? normalizeAddress(String q) {
   return '$street ${up(m.group(2)!).replaceAll('BIS', ' Bis')} # $plate'
       '${rest.isEmpty ? '' : ' $rest'}';
 }
+
+/// Calle que cruza según la nomenclatura colombiana: en "Calle 24 # 14-45"
+/// el 14 es la Carrera 14 (la casa está a 45 m de esa esquina).
+const _crossing = {
+  'Calle': 'Carrera',
+  'Carrera': 'Calle',
+  'Diagonal': 'Transversal',
+  'Transversal': 'Diagonal',
+  'Avenida': 'Carrera',
+};
+
+/// La esquina de una dirección, para la Geocoding API: "Calle 24 # 14-45"
+/// → "Calle 24 & Carrera 14". null si no es una dirección.
+String? crossingQuery(String q) {
+  final m = _address.firstMatch(q);
+  if (m == null) return null;
+  final street = _streetWords[m.group(1)!.toLowerCase()];
+  final cross = street == null ? null : _crossing[street];
+  if (cross == null) return null;
+  String up(String s) => s.replaceAll(RegExp(r'\s+'), '').toUpperCase();
+  return '$street ${up(m.group(2)!)} & $cross ${up(m.group(3)!)}';
+}

@@ -11,6 +11,7 @@ import '../../models/map_alert.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/map_alerts_provider.dart';
 import '../../router/app_router.dart';
+import '../../services/corridor_service.dart';
 import '../../services/geocoding_service.dart';
 import '../../theme/design_tokens.dart';
 import '../../widgets/gs_alert_badge.dart';
@@ -55,15 +56,23 @@ class AlertDetailSheet extends ConsumerWidget {
       try {
         await ref.read(mapAlertsProvider.notifier).vote(alert, stillThere: stillThere);
         GSToast.showWithMessenger(messenger,
-            message: stillThere
-                ? 'Gracias: la alerta sigue en el mapa.'
-                : 'Gracias: si alguien más lo confirma, se quita.',
+            message: alert.mine
+                ? (stillThere
+                    ? 'Listo: tu alerta sigue en el mapa más tiempo.'
+                    : 'Listo: quitaste tu alerta del mapa.')
+                : stillThere
+                    ? 'Gracias: la alerta sigue en el mapa.'
+                    : 'Gracias: si alguien más lo confirma, se quita.',
             type: GSToastType.success);
         nav.maybePop();
-      } catch (_) {
+      } catch (e) {
         GSToast.showWithMessenger(messenger,
-            message: 'No pudimos guardar tu respuesta. Revisa tu conexión.',
+            message: CorridorService.voteErrorText(e),
             type: GSToastType.error);
+        // Si ya no estaba activa, que desaparezca del mapa.
+        if (e.toString().contains('report_not_active')) {
+          ref.read(mapAlertsProvider.notifier).refresh();
+        }
       }
     }
 
@@ -114,8 +123,8 @@ class AlertDetailSheet extends ConsumerWidget {
           const SizedBox(height: GSSpacing.s2),
           _Votes(alert: alert),
           const SizedBox(height: GSSpacing.s5),
-          if (!alert.mine)
-            Row(
+          // También en la propia (como Waze): sigue ahí la alarga, ya no está la quita.
+          Row(
               children: [
                 Expanded(
                   child: _VoteButton(
@@ -129,19 +138,13 @@ class AlertDetailSheet extends ConsumerWidget {
                 const SizedBox(width: GSSpacing.s3),
                 Expanded(
                   child: _VoteButton(
-                    icon: Icons.thumb_down_rounded,
-                    label: 'Ya no está',
+                    icon: alert.mine ? Icons.delete_outline_rounded : Icons.thumb_down_rounded,
+                    label: alert.mine ? 'Ya no está: quitar' : 'Ya no está',
                     selected: alert.myVote == false,
                     onTap: () => vote(false),
                   ),
                 ),
               ],
-            )
-          else
-            Text(
-              'Otros viajeros confirman o desmienten tu reporte.',
-              textAlign: TextAlign.center,
-              style: text.bodyMedium,
             ),
         ],
       ),

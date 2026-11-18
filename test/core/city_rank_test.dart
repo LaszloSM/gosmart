@@ -121,15 +121,36 @@ void main() {
     expect(placed.approximate, isFalse);
   });
 
-  test('si Google no ubica la dirección, queda en tu ciudad para mover el pin', () async {
+  test('sin la casa exacta usa la esquina; nunca el GPS como destino', () async {
+    final asked = <String>[];
+    final search = LayeredPlaceSearch(
+      directory: _Fake([]),
+      provider: _Fake([]),
+      addressLocator: (a, {near}) async {
+        asked.add(a);
+        if (a.contains('&')) {
+          return const GeocodeSuggestion(
+              placeName: 'esquina', fullAddress: '', latLng: LatLng(11.548, -72.905),
+              approximate: true);
+        }
+        throw const GeocodingException('not_found');
+      },
+    );
+    final r = await search.search('Calle 24 # 14', near: GSRegion.riohacha);
+    final placed = await search.resolve(r.items.first);
+    expect(asked, ['Calle 24 # 14', 'Calle 24 & Carrera 14']);
+    expect(placed!.placeName, 'Calle 24 # 14');
+    expect(placed.latLng, const LatLng(11.548, -72.905));
+    expect(placed.approximate, isTrue, reason: 'se confirma el pin en la esquina');
+  });
+
+  test('si no aparece ni la esquina, null (se marca en el mapa)', () async {
     final search = LayeredPlaceSearch(
       directory: _Fake([]),
       provider: _Fake([]),
       addressLocator: (a, {near}) async => throw const GeocodingException('not_found'),
     );
     final r = await search.search('Calle 24 # 7H-45', near: GSRegion.maicao);
-    final placed = await search.resolve(r.items.first);
-    expect(placed!.approximate, isTrue);
-    expect(placed.latLng, GSRegion.maicao);
+    expect(await search.resolve(r.items.first), isNull);
   });
 }
