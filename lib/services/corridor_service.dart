@@ -198,6 +198,26 @@ class CorridorService {
     }
   }
 
+  /// El motivo real de un voto que no se guardó (no siempre es la conexión).
+  static String voteErrorText(Object e) {
+    final m = e.toString();
+    if (m.contains('report_not_active')) {
+      return 'Esa alerta ya no está activa: alguien la quitó o venció.';
+    }
+    if (m.contains('cannot_vote_own')) {
+      return 'Es tu propia alerta: la confirman otros viajeros.';
+    }
+    if (m.contains('not_authenticated') || m.contains('JWT')) {
+      return 'Tu sesión venció. Entra de nuevo a tu cuenta.';
+    }
+    if (m.contains('SocketException') ||
+        m.contains('ClientException') ||
+        m.contains('TimeoutException')) {
+      return 'Sin conexión: no pudimos guardar tu respuesta.';
+    }
+    return 'No pudimos guardar tu respuesta. Intenta de nuevo.';
+  }
+
   Future<void> vote(String reportId, {required bool stillThere}) async {
     await GoSmartSupabase.client.rpc('vote_road_report', params: {
       'p_report_id': reportId,

@@ -19,7 +19,6 @@ import 'package:latlong2/latlong.dart';
 
 import '../core/address.dart';
 import '../core/city_rank.dart';
-import '../core/region.dart';
 import '../core/supabase_client.dart';
 import '../core/telemetry.dart';
 import '../models/geocode_suggestion.dart';
@@ -83,14 +82,33 @@ class DirectoryPlaceSearch implements PlaceSearch {
   }
 }
 
+/// Google: autocompletado (5, sin punto) + Text Search (10, con punto) a la
+/// vez, sin repetidos. Si Text Search falla (p. ej. función vieja) quedan las
+/// del autocompletado; si falla el autocompletado, las de Text Search.
 class ProviderPlaceSearch implements PlaceSearch {
   ProviderPlaceSearch([GeocodingService? service])
       : _service = service ?? geocodingService;
   final GeocodingService _service;
 
   @override
-  Future<List<GeocodeSuggestion>> search(String query, {LatLng? near}) =>
-      _service.searchStrict(query, proximity: near);
+  Future<List<GeocodeSuggestion>> search(String query, {LatLng? near}) async {
+    Object? autoError;
+    final results = await Future.wait([
+      _service.searchStrict(query, proximity: near).catchError((Object e) {
+        autoError = e;
+        return <GeocodeSuggestion>[];
+      }),
+      _service.textSearch(query, proximity: near)
+          .catchError((Object _) => <GeocodeSuggestion>[]),
+    ]);
+    final auto = results[0], text = results[1];
+    if (autoError != null && text.isEmpty) throw autoError!;
+    final merged = <GeocodeSuggestion>[...auto];
+    for (final t in text) {
+      if (!merged.any((m) => isSamePlace(m, t))) merged.add(t);
+    }
+    return merged;
+  }
 }
 
 /// Respaldo sin clave ni cuota: Photon (photon.komoot.io) sobre OpenStreetMap,
@@ -165,8 +183,10 @@ class LayeredPlaceSearch {
     this.fallback,
     Future<GeocodeSuggestion> Function(GeocodeSuggestion)? resolver,
     Future<GeocodeSuggestion> Function(String, {LatLng? near})? addressLocator,
+    Future<List<GeocodeSuggestion>> Function(String, {LatLng? proximity})? addressText,
   })  : _resolver = resolver ?? geocodingService.resolve,
-        _addressLocator = addressLocator ?? geocodingService.geocodeAddress;
+        _addressLocator = addressLocator ?? geocodingService.geocodeAddress,
+        _addressText = addressText ?? geocodingService.textSearch;
   final PlaceSearch directory;
   final PlaceSearch provider;
 
@@ -174,6 +194,7 @@ class LayeredPlaceSearch {
   final PlaceSearch? fallback;
   final Future<GeocodeSuggestion> Function(GeocodeSuggestion) _resolver;
   final Future<GeocodeSuggestion> Function(String, {LatLng? near}) _addressLocator;
+  final Future<List<GeocodeSuggestion>> Function(String, {LatLng? proximity}) _addressText;
 
   /// Dónde estaba la persona en la última búsqueda (para ubicar direcciones).
   LatLng? _lastNear;
@@ -199,33 +220,63 @@ class LayeredPlaceSearch {
     return null;
   }
 
-  /// Una dirección escrita: Geocoding la ubica; si no es exacta o Google no
-  /// responde, queda `approximate` en la ciudad de la persona para que mueva
-  /// el pin (como InDrive). El texto escrito nunca se cambia.
-  Future<GeocodeSuggestion> _locateAddress(GeocodeSuggestion s) async {
+  /// Una dirección escrita ("Calle 24 # 14-45"). Primero la casa exacta; si
+  /// Google no la tiene, la esquina (Calle 24 con Carrera 14), que queda a
+  /// pocos metros, y la persona ajusta el pin. Si tampoco, null: la pantalla
+  /// pide marcarla en el mapa. NUNCA se usa el GPS como destino (antes eso
+  /// hacía viajes de la casa a la casa). El texto escrito no se cambia.
+  Future<GeocodeSuggestion?> _locateAddress(GeocodeSuggestion s) async {
     final near = _lastNear;
-    try {
-      final g = await _addressLocator(s.placeName, near: near);
-      return GeocodeSuggestion(
-        placeName: s.placeName,
-        fullAddress: s.fullAddress,
-        latLng: g.latLng,
-        featureType: 'address',
-        approximate: g.approximate,
-        typedAddress: true,
-      );
-    } on GeocodingException catch (e) {
-      if (e.code != 'not_found') Telemetry.degraded('geocoding', e.code);
-    } catch (e) {
-      Telemetry.degraded('geocoding', e.runtimeType.toString());
+    GeocodeSuggestion? found;
+    Future<GeocodeSuggestion?> tryOne(String q) async {
+      try {
+        return await _addressLocator(q, near: near);
+      } on GeocodingException catch (e) {
+        if (e.code != 'not_found') Telemetry.degraded('geocoding', e.code);
+      } catch (e) {
+        Telemetry.degraded('geocoding', e.runtimeType.toString());
+      }
+      return null;
     }
-    final city = cityAt(near);
+
+    found = await tryOne(s.placeName);
+    // Text Search entiende bien las direcciones colombianas: si trae la casa
+    // con número ("Cl. 24 #14-20"), ese es el punto.
+    if (found == null || found.approximate) {
+      try {
+        final hits = await _addressText(s.placeName, proximity: near);
+        // Una casa trae número ("Cl. 24 #14-20"); una calle sola no sirve aquí.
+        final house = hits
+            .where((h) => h.featureType == 'address' && h.placeName.contains('#'))
+            .firstOrNull;
+        if (house?.latLng != null) {
+          return GeocodeSuggestion(
+            placeName: s.placeName,
+            fullAddress: s.fullAddress,
+            latLng: house!.latLng,
+            featureType: 'address',
+            approximate: true, // se confirma el pin: puede ser solo la calle
+            typedAddress: true,
+          );
+        }
+      } catch (e) {
+        Telemetry.degraded('geocoding', e.runtimeType.toString());
+      }
+    }
+    if (found == null || found.approximate) {
+      final corner = crossingQuery(s.placeName);
+      final c = corner == null ? null : await tryOne(corner);
+      // La esquina es mejor que el centro de toda la calle.
+      if (c?.latLng != null) found = c;
+    }
+    final at = found?.latLng;
+    if (at == null) return null;
     return GeocodeSuggestion(
       placeName: s.placeName,
       fullAddress: s.fullAddress,
-      latLng: near ?? (city == 'maicao' ? GSRegion.maicao : GSRegion.riohacha),
+      latLng: at,
       featureType: 'address',
-      approximate: true,
+      approximate: found!.approximate,
       typedAddress: true,
     );
   }

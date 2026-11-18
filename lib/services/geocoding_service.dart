@@ -124,6 +124,40 @@ class GeocodingService {
     return _searchCache[cacheKey] = items;
   }
 
+  final _textCache = <String, List<GeocodeSuggestion>>{};
+
+  /// Text Search (New) por la función `maps`: hasta 10 lugares CON su punto,
+  /// en la ciudad de la persona. Complementa al autocompletado (máx. 5 y sin
+  /// coordenadas). Lanza [GeocodingException] (p. ej. función sin desplegar).
+  Future<List<GeocodeSuggestion>> textSearch(String query, {LatLng? proximity}) async {
+    final q = query.trim();
+    if (q.length < 3) return [];
+    final key = '${q.toLowerCase()}|'
+        '${proximity?.latitude.toStringAsFixed(2)},${proximity?.longitude.toStringAsFixed(2)}';
+    final cached = _textCache[key];
+    if (cached != null) return cached;
+    final data = await _invoke({
+      'action': 'textsearch',
+      'input': withCity(q, proximity),
+      if (proximity != null)
+        'near': {'lat': proximity.latitude, 'lng': proximity.longitude},
+      if (namedOtherTown(q) != null) 'wide': true,
+    });
+    final items = [
+      for (final it in data['items'] as List? ?? const [])
+        if (it is Map && it['lat'] is num && it['lng'] is num)
+          GeocodeSuggestion(
+            placeName: '${it['name'] ?? ''}',
+            fullAddress: '${it['address'] ?? ''}',
+            latLng: LatLng((it['lat'] as num).toDouble(), (it['lng'] as num).toDouble()),
+            placeId: it['placeId'] as String?,
+            featureType: _featureType(it['types']),
+          ),
+    ];
+    if (_textCache.length > 40) _textCache.clear();
+    return _textCache[key] = items;
+  }
+
   /// Ubica una dirección escrita ("Calle 14 # 10-20") con la Geocoding API
   /// (acción `geocode` de la función `maps`), en la ciudad de [near].
   /// `approximate` = Google no la encontró exacta (solo la calle o el barrio):

@@ -49,12 +49,15 @@ BEGIN
     RAISE EXCEPTION '4: aceptó un reporte duplicado';
   EXCEPTION WHEN program_limit_exceeded THEN NULL;
   END;
-  -- 5. Ni votarse a sí misma
-  BEGIN
-    PERFORM vote_road_report(v_id, true);
-    RAISE EXCEPTION '5: votó su propio reporte';
-  EXCEPTION WHEN insufficient_privilege THEN NULL;
-  END;
+  -- 5. Su propio "sigue ahí" no cuenta como confirmación (027: solo alarga).
+  PERFORM vote_road_report(v_id, true);
+  IF EXISTS (SELECT 1 FROM road_report_votes WHERE report_id = v_id) THEN
+    RAISE EXCEPTION '5: su propio voto contó como confirmación';
+  END IF;
+  SELECT * INTO r FROM road_status() WHERE segment_id = 'troncal-30-40';
+  IF r.state <> 'caution' THEN
+    RAISE EXCEPTION '5: votarse cambió el estado a %', r.state;
+  END IF;
   -- 6. No puede escribir directo en la tabla
   BEGIN
     INSERT INTO road_reports (user_id, segment_id, kind, expires_at, idempotency_key)

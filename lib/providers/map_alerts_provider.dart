@@ -10,10 +10,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/telemetry.dart';
 import '../models/map_alert.dart';
 import '../services/corridor_service.dart';
+import 'auth_provider.dart';
 
 class MapAlertsNotifier extends AsyncNotifier<List<MapAlert>> {
   @override
-  Future<List<MapAlert>> build() => _fetch();
+  Future<List<MapAlert>> build() {
+    // Con otra cuenta (o al entrar), "mine" y "my_vote" cambian: se recarga.
+    ref.watch(currentUserProvider.select((u) => u?.id));
+    return _fetch();
+  }
 
   Future<List<MapAlert>> _fetch() async {
     try {
@@ -36,7 +41,13 @@ class MapAlertsNotifier extends AsyncNotifier<List<MapAlert>> {
     final before = state.valueOrNull ?? const <MapAlert>[];
     state = AsyncData([
       for (final a in before)
-        if (a.id == alert.id) a.withVote(stillThere) else a,
+        if (a.id != alert.id)
+          a
+        // La propia: "ya no está" la quita; "sigue ahí" la deja igual.
+        else if (!a.mine)
+          a.withVote(stillThere)
+        else if (stillThere)
+          a,
     ]);
     try {
       await corridorService.vote(alert.id, stillThere: stillThere);

@@ -90,6 +90,7 @@ All migrations live in `supabase/migrations/`. Run them in order in the Supabase
 | `024_avatars.sql` | Bucket público `avatars` (2 MB, jpeg/png/webp) para la foto de perfil; cada usuario escribe solo `'<uid>/…'`. Antes no existía y subir la foto fallaba siempre. Prueba: `supabase/tests/024_avatars_test.sql` (trae su propio `storage` mínimo). |
 | `025_mvp_real.sql` | Sin simulaciones: borra el conductor de demo (`demo_autodriver`, tarea pg_cron, funciones y cuentas `@example.com`). `ride_cancel(request, reason)` con motivos cerrados (obligatorio si ya hay conductor; `ride_transition(...,'cancelled')` pasa por ahí), `cancel_trip(trip, reason)` también cancela la solicitud del tramo. Trigger `favorite_places_guard`: máx. 10 lugares `custom`, nombre 1–40. Plan: `docs/MVP_SALIDA.md`. |
 | `026_quick_ride_history.sql` | Pedir en un toque: `quick_ride(service, origen, destino, fare, minutes, key)` crea el viaje de un tramo, lo pone a esperar y publica la solicitud en una llamada (idempotente); antes cierra solos los viajes de un tramo que quedaron "en curso" (pagados → hechos; vencidos/cancelados → cancelados) para que no bloqueen con `trip_in_progress`. `ride_raise_fare(request, fare)`: subir la oferta buscando (reinicia 3 min). Historial: `my_trip_history(offset, limit)` (pasajero + conductor, todos los estados, con conductor/placa/pago/motivo), `my_trip_detail(trip)`, `my_ride_detail(request)`. |
+| `027_own_alert_vote.sql` | `vote_road_report` acepta al autor (como Waze): su "sigue ahí" alarga la alerta sin contar como confirmación; su "ya no está" la quita al instante. Antes rechazaba con `cannot_vote_own` y la app decía "revisa tu conexión". |
 | `010_wallet_hardening.sql` | **Security fix for 008.** Drops user UPDATE on `wallets` and INSERT on `wallet_transactions`; revokes `recharge_wallet` from clients; adds `idempotency_key`; new RPC `wallet_recharge_simulated(p_amount, p_idempotency_key)` that uses `auth.uid()`. Backfills wallets for older users. |
 
 **SQL tests:** `supabase/tests/` runs on a plain Postgres 16 (CI job `sql-tests`). `_supabase_stub.sql`
@@ -555,7 +556,13 @@ Currency: `'cop'` | `'usd'` | `'eur'`
   the query names a town. A typed Colombian address with house number (`lib/core/address.dart`,
   "cl 14 #10-20" → "Calle 14 # 10-20") goes first as "Dirección exacta": it is located with the `maps`
   action `geocode` (Geocoding API; `exact` = ROOFTOP/RANGE_INTERPOLATED) and keeps the typed text;
-  if not exact or Google fails, the pin opens in the person's city to place it by hand.
+  if the house isn't found it tries the corner (`crossingQuery`: "Calle 24 # 14-45" → "Calle 24 & Carrera 14")
+  and opens the pin there; if nothing is found it returns null and the planner offers "Marcar en el mapa".
+  Suggestions = Places Autocomplete (max 5, no coords) + Text Search (`maps` action `textsearch`, up to 10
+  WITH coords) merged in `ProviderPlaceSearch`; a typed address also tries Text Search for the house
+  ("Cl. 24 #14-20") before the corner. If `textsearch` fails (old function) autocomplete alone stays.
+  NEVER use the GPS as a destination fallback (it made home-to-home trips). The planner refuses to order
+  when pickup and destination are < 150 m apart (`minTripKm`).
 - **Server older than the app**: a missing RPC (PGRST202) is `DispatchException('missing_function')`
   ("El servidor de GoSmart no está actualizado"), never "revisa tu conexión". `quickRide` falls back to
   create_trip + trip_leg_transition + request_ride, and `history` to `chained_trips`, until 026 is deployed.
@@ -611,6 +618,8 @@ Currency: `'cop'` | `'usd'` | `'eur'`
   First admin is set by SQL (`UPDATE profiles SET role='admin' WHERE id=…`); users can't self-promote.
 - **Push is optional**: `Push.init()` (lib/core/push.dart) does nothing without Firebase; Gradle applies
   google-services only if `android/app/google-services.json` exists (git-ignored).
+- **Impeller is OFF on Android** (`io.flutter.embedding.android.EnableImpeller=false` in AndroidManifest):
+  with Impeller, Google Maps painted black patches and black street labels when zooming on real phones.
 - **Map**: screens never import a map package; they use `MapView` + `MapViewController` (moveTo, fit).
   Google Maps when `useGoogleMaps` (key `AIza…` in `.env`, also read by Gradle into the manifest), with
   rotate/tilt/compass, `assets/map_styles/night.json` at night and camera bounds on La Guajira;

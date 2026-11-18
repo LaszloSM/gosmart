@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gosmart/models/route_result.dart';
 import 'package:gosmart/services/directions_service.dart';
 import 'package:gosmart/services/geocoding_service.dart';
+import 'package:gosmart/services/place_search.dart';
 import 'package:latlong2/latlong.dart';
 
 void main() {
@@ -118,5 +119,48 @@ void main() {
     expect(g.placeName, 'Calle 14 # 10-20');
     expect(g.approximate, isTrue);
     expect(g.typedAddress, isTrue);
+  });
+
+  test('Text Search trae lugares con punto y la ciudad en la búsqueda', () async {
+    final sent = <Map<String, dynamic>>[];
+    final svc = GeocodingService(invoke: (body) async {
+      sent.add(body);
+      return {'items': [
+        {'placeId': 'x', 'name': 'Cl. 24 #14-20', 'address': 'Riohacha',
+         'types': ['street_address'], 'lat': 11.548, 'lng': -72.904},
+      ]};
+    });
+    final items = await svc.textSearch('calle 24 # 14', proximity: const LatLng(11.54, -72.9));
+    expect(sent.single['action'], 'textsearch');
+    expect(sent.single['input'], 'calle 24 # 14, Riohacha');
+    expect(items.single.latLng, const LatLng(11.548, -72.904));
+    expect(items.single.featureType, 'address');
+  });
+
+  test('autocompletado + Text Search juntos, sin repetidos; si Text Search falla, queda el otro', () async {
+    final svc = GeocodingService(invoke: (body) async {
+      if (body['action'] == 'autocomplete') {
+        return {'items': [
+          {'placeId': 'p1', 'name': 'Muelle Turístico', 'address': 'Riohacha', 'types': ['tourist_attraction']},
+        ]};
+      }
+      return {'items': [
+        {'placeId': 'p2', 'name': 'Muelle Turístico', 'address': 'Riohacha', 'types': [], 'lat': 11.5449, 'lng': -72.9075},
+        {'placeId': 'p3', 'name': 'Parque Padilla', 'address': 'Riohacha', 'types': [], 'lat': 11.5444, 'lng': -72.9072},
+      ]};
+    });
+    final both = await ProviderPlaceSearch(svc).search('muelle', near: const LatLng(11.54, -72.9));
+    expect(both.map((s) => s.placeName), ['Muelle Turístico', 'Parque Padilla']);
+
+    final oldServer = GeocodingService(invoke: (body) async {
+      if (body['action'] == 'autocomplete') {
+        return {'items': [
+          {'placeId': 'p1', 'name': 'Muelle Turístico', 'address': 'Riohacha', 'types': []},
+        ]};
+      }
+      throw const GeocodingException('bad_request');
+    });
+    final onlyAuto = await ProviderPlaceSearch(oldServer).search('muelle');
+    expect(onlyAuto.single.placeName, 'Muelle Turístico');
   });
 }

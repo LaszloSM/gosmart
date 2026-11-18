@@ -4,6 +4,7 @@
 //   { action: 'details', place_id, session? }                    → { place }
 //   { action: 'route', from, to, mode: 'walk'|'drive' }           → { route }
 //   { action: 'reverse', at: {lat,lng} }                          → { address }
+//   { action: 'textsearch', input, near?, wide? }                  → { items: [{…, lat, lng}] }
 //   { action: 'geocode', input }                                   → { place: {lat,lng,address,exact} }
 // Errores como { error: 'no_key' | 'bad_request' | 'http_<n>' | 'not_found' }
 // con 200, para que la app degrade con aviso (D8).
@@ -19,6 +20,10 @@ import {
   geocodeUrl,
   forwardGeocodeUrl,
   parseForwardGeocode,
+  TEXT_SEARCH_FIELDS,
+  TEXT_SEARCH_URL,
+  textSearchBody,
+  parseTextSearch,
   NEARBY_FIELDS,
   NEARBY_URL,
   nearbyBody,
@@ -99,6 +104,13 @@ serve(async (req) => {
         if (r.error) return json({ error: r.error })
         const route = parseRoute(r.data)
         return json(route ? { route } : { error: 'not_found' })
+      }
+      case 'textsearch': {
+        const input = String(b.input ?? '').trim()
+        if (input.length < 2 || input.length > 160) return json({ items: [] })
+        const near = b.near ? point(b.near) : null
+        const r = await google(TEXT_SEARCH_URL, key, TEXT_SEARCH_FIELDS, textSearchBody(input, near, b.wide === true))
+        return json(r.error ? { error: r.error } : { items: parseTextSearch(r.data) })
       }
       case 'geocode': {
         const input = String(b.input ?? '').trim()

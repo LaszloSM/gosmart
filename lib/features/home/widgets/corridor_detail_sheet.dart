@@ -178,9 +178,7 @@ class _VoteRowState extends ConsumerState<_VoteRow> {
       setState(() => _done = true);
     } catch (e) {
       GSToast.showWithMessenger(messenger,
-          message: e.toString().contains('cannot_vote_own')
-              ? 'Ese reporte es tuyo: lo confirman otros.'
-              : 'No pudimos guardar tu respuesta. Revisa tu conexión.',
+          message: CorridorService.voteErrorText(e),
           type: GSToastType.error);
     } finally {
       if (mounted) setState(() => _busy = false);

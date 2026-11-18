@@ -32,4 +32,11 @@ void main() {
     expect(withCity('Salinas de Manaure', GSRegion.riohacha), 'Salinas de Manaure');
     expect(withCity('Calle 14', null), 'Calle 14');
   });
+
+  test('la esquina según la nomenclatura colombiana', () {
+    expect(crossingQuery('Calle 24 # 14-45'), 'Calle 24 & Carrera 14');
+    expect(crossingQuery('cra 11 #9-20'), 'Carrera 11 & Calle 9');
+    expect(crossingQuery('Calle 24 # 7h-45'), 'Calle 24 & Carrera 7H');
+    expect(crossingQuery('Uniguajira'), isNull);
+  });
 }
