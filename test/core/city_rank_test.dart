@@ -108,6 +108,7 @@ void main() {
     final search = LayeredPlaceSearch(
       directory: _Fake([]),
       provider: _Fake([_g('Calle 14', 'Riohacha, La Guajira')]),
+      addressText: (a, {proximity}) async => [],
       addressLocator: (a, {near}) async => const GeocodeSuggestion(
           placeName: 'otro texto', fullAddress: 'Cl. 14 #10-20',
           latLng: LatLng(11.541, -72.905)),
@@ -126,6 +127,7 @@ void main() {
     final search = LayeredPlaceSearch(
       directory: _Fake([]),
       provider: _Fake([]),
+      addressText: (a, {proximity}) async => [],
       addressLocator: (a, {near}) async {
         asked.add(a);
         if (a.contains('&')) {
@@ -148,9 +150,28 @@ void main() {
     final search = LayeredPlaceSearch(
       directory: _Fake([]),
       provider: _Fake([]),
+      addressText: (a, {proximity}) async => [],
       addressLocator: (a, {near}) async => throw const GeocodingException('not_found'),
     );
     final r = await search.search('Calle 24 # 7H-45', near: GSRegion.maicao);
     expect(await search.resolve(r.items.first), isNull);
+  });
+
+  test('Text Search ubica la casa cuando Geocoding no la tiene', () async {
+    final search = LayeredPlaceSearch(
+      directory: _Fake([]),
+      provider: _Fake([]),
+      addressLocator: (a, {near}) async => throw const GeocodingException('not_found'),
+      addressText: (a, {proximity}) async => const [
+        GeocodeSuggestion(placeName: 'Calle 24', fullAddress: 'Riohacha',
+            latLng: LatLng(11.50, -72.90), featureType: 'address'),
+        GeocodeSuggestion(placeName: 'Cl. 24 #14-20', fullAddress: 'Riohacha',
+            latLng: LatLng(11.548, -72.904), featureType: 'address'),
+      ],
+    );
+    final r = await search.search('Calle 24 # 14-20', near: GSRegion.riohacha);
+    final placed = await search.resolve(r.items.first);
+    expect(placed!.latLng, const LatLng(11.548, -72.904), reason: 'la casa, no la calle sola');
+    expect(placed.placeName, 'Calle 24 # 14-20');
   });
 }

@@ -558,6 +558,9 @@ Currency: `'cop'` | `'usd'` | `'eur'`
   action `geocode` (Geocoding API; `exact` = ROOFTOP/RANGE_INTERPOLATED) and keeps the typed text;
   if the house isn't found it tries the corner (`crossingQuery`: "Calle 24 # 14-45" → "Calle 24 & Carrera 14")
   and opens the pin there; if nothing is found it returns null and the planner offers "Marcar en el mapa".
+  Suggestions = Places Autocomplete (max 5, no coords) + Text Search (`maps` action `textsearch`, up to 10
+  WITH coords) merged in `ProviderPlaceSearch`; a typed address also tries Text Search for the house
+  ("Cl. 24 #14-20") before the corner. If `textsearch` fails (old function) autocomplete alone stays.
   NEVER use the GPS as a destination fallback (it made home-to-home trips). The planner refuses to order
   when pickup and destination are < 150 m apart (`minTripKm`).
 - **Server older than the app**: a missing RPC (PGRST202) is `DispatchException('missing_function')`

@@ -91,6 +91,52 @@ export function autocompleteBody(
   }
 }
 
+export const TEXT_SEARCH_URL = 'https://places.googleapis.com/v1/places:searchText'
+export const TEXT_SEARCH_FIELDS =
+  'places.id,places.displayName,places.shortFormattedAddress,places.formattedAddress,places.location,places.types'
+
+/// Text Search (New): hasta 10 lugares CON su punto (no hace falta pedir el
+/// detalle). Complementa al autocompletado, que solo da 5 y sin coordenadas,
+/// y entiende mejor direcciones colombianas ("Calle 24 # 14, Riohacha").
+export type TextSearchBody = {
+  textQuery: string
+  languageCode: string
+  regionCode: string
+  pageSize: number
+  locationBias?: { circle: { center: GLatLng; radius: number } }
+  locationRestriction?: { rectangle: { low: GLatLng; high: GLatLng } }
+}
+
+export function textSearchBody(query: string, near?: LatLng | null, wide = false): TextSearchBody {
+  const area = near && !wide
+    ? { locationBias: { circle: { center: { latitude: near.lat, longitude: near.lng }, radius: NEAR_BIAS_RADIUS_M } } }
+    : { locationRestriction: { rectangle: GUAJIRA_BOUNDS } }
+  return { textQuery: query, languageCode: 'es', regionCode: 'co', pageSize: 10, ...area }
+}
+
+export type TextPlace = Suggestion & { lat: number; lng: number }
+
+/// Solo los que caen en La Guajira (con sesgo, Google puede traer de afuera).
+// deno-lint-ignore no-explicit-any
+export function parseTextSearch(json: any): TextPlace[] {
+  const out: TextPlace[] = []
+  const b = GUAJIRA_BOUNDS
+  for (const p of json?.places ?? []) {
+    const lat = p?.location?.latitude, lng = p?.location?.longitude
+    const name = p?.displayName?.text
+    if (!p?.id || typeof lat !== 'number' || typeof lng !== 'number' || !name) continue
+    if (lat < b.low.latitude || lat > b.high.latitude || lng < b.low.longitude || lng > b.high.longitude) continue
+    out.push({
+      placeId: String(p.id),
+      name: String(name),
+      address: shortAddress(String(p.shortFormattedAddress ?? p.formattedAddress ?? '')),
+      types: Array.isArray(p.types) ? p.types.map(String) : [],
+      lat, lng,
+    })
+  }
+  return out.slice(0, 10)
+}
+
 // deno-lint-ignore no-explicit-any
 export function parseAutocomplete(json: any): Suggestion[] {
   const out: Suggestion[] = []

@@ -2,6 +2,8 @@ import { assert, assertEquals } from '../ai-chat/test_assert.ts'
 import {
   autocompleteBody,
   forwardGeocodeUrl,
+  parseTextSearch,
+  textSearchBody,
   parseForwardGeocode,
   decodePolyline,
   detailsUrl,
@@ -144,4 +146,22 @@ Deno.test('dirección escrita: busca en Colombia y dice si es exacta', () => {
     results: [{ formatted_address: 'Bogotá', geometry: { location: { lat: 4.6, lng: -74.08 }, location_type: 'ROOFTOP' } }],
   }), null)
   assertEquals(parseForwardGeocode({ status: 'ZERO_RESULTS', results: [] }), null)
+})
+
+Deno.test('text search: sesgo a la ciudad y solo lugares de La Guajira con punto', () => {
+  const b = textSearchBody('Calle 24 # 14, Riohacha', { lat: 11.54, lng: -72.9 })
+  assertEquals(b.pageSize, 10)
+  assertEquals(b.locationBias?.circle.radius, 15000)
+  const wide = textSearchBody('Hospital Manaure', { lat: 11.54, lng: -72.9 }, true)
+  assertEquals(wide.locationRestriction?.rectangle.low, { latitude: 10.3, longitude: -73.7 })
+  const items = parseTextSearch({
+    places: [
+      { id: 'a', displayName: { text: 'Cl. 24 #14-20' }, shortFormattedAddress: 'Cl. 24 #14-20, Riohacha, La Guajira',
+        location: { latitude: 11.53, longitude: -72.91 }, types: ['street_address'] },
+      { id: 'b', displayName: { text: 'Bogotá' }, location: { latitude: 4.6, longitude: -74.08 } },
+      { id: 'c', displayName: { text: 'Sin punto' } },
+    ],
+  })
+  assertEquals(items.length, 1)
+  assertEquals(items[0], { placeId: 'a', name: 'Cl. 24 #14-20', address: 'Cl. 24 #14-20, Riohacha', types: ['street_address'], lat: 11.53, lng: -72.91 })
 })
